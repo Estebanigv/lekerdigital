@@ -464,6 +464,23 @@
       gap: 8px;
     }
 
+    .legend-filter {
+      transition: all 0.2s ease;
+      opacity: 1;
+    }
+
+    .legend-filter:hover {
+      background: var(--bg-hover) !important;
+    }
+
+    .legend-filter:not(.active) {
+      opacity: 0.4;
+    }
+
+    .legend-filter:not(.active) .legend-dot {
+      background: var(--text-muted) !important;
+    }
+
     .legend-dot {
       width: 12px;
       height: 12px;
@@ -984,6 +1001,51 @@
       color: var(--text-muted);
     }
 
+    /* Executive Panel */
+    .executive-item {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .executive-item:last-child {
+      border-bottom: none;
+    }
+
+    .executive-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .executive-header:hover {
+      background: var(--bg-hover);
+    }
+
+    .executive-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+    }
+
+    .executive-details {
+      padding: 0 16px 16px 16px;
+      background: var(--bg-primary);
+      border-top: 1px solid var(--border);
+    }
+
+    .executive-details > div:first-child {
+      padding-top: 12px;
+    }
+
     /* Empty State */
     .empty-state {
       text-align: center;
@@ -1290,6 +1352,31 @@
           </div>
         </div>
       </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Marketing</div>
+        <div class="nav-item-expandable open">
+          <div class="nav-item nav-item-parent" onclick="toggleSubmenu(this)">
+            <i data-lucide="megaphone"></i>
+            <span>Herramientas</span>
+            <i data-lucide="chevron-down" class="submenu-arrow"></i>
+          </div>
+          <div class="nav-submenu">
+            <div class="nav-subitem" data-tab="marketing" data-subtab="google-analytics">
+              <i data-lucide="bar-chart-2" style="width: 16px; height: 16px;"></i>
+              <span>Google Analytics</span>
+            </div>
+            <div class="nav-subitem" data-tab="marketing" data-subtab="google-ads">
+              <i data-lucide="target" style="width: 16px; height: 16px;"></i>
+              <span>Google Ads</span>
+            </div>
+            <div class="nav-subitem" data-tab="marketing" data-subtab="meta-ads">
+              <i data-lucide="facebook" style="width: 16px; height: 16px;"></i>
+              <span>Meta Ads</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -1357,46 +1444,121 @@
 
         <div class="grid-3-1">
           <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
               <h3><i data-lucide="map" style="width: 18px; height: 18px;"></i> Mapa de Clientes</h3>
+              <button id="btn-geocode-header" onclick="geocodeClientsWithoutCoords()" class="btn btn-warning" style="padding: 6px 12px; font-size: 11px; display: none;">
+                <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                Geocodificar <span id="geocode-count">0</span> clientes
+              </button>
             </div>
             <div class="card-body" style="padding: 0;">
               <div class="map-container">
                 <div id="map"></div>
-                <div class="map-overlay">
-                  <div class="map-legend">
-                    <div style="font-weight: 600; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Ruta VI - O'Higgins</div>
-                    <div class="legend-item">
-                      <div class="legend-dot a"></div>
-                      <span>Segmento A</span>
+                <!-- Left Panel: Search + Filters -->
+                <div class="map-left-panel" style="position: absolute; top: 10px; left: 10px; z-index: 10; width: 260px;">
+                  <!-- Search -->
+                  <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); margin-bottom: 8px;">
+                    <div style="padding: 8px;">
+                      <input type="text" id="map-client-search" class="form-control" placeholder="Buscar cliente..." oninput="searchClientOnMap()" style="font-size: 12px; padding: 8px 12px;">
                     </div>
-                    <div class="legend-item">
-                      <div class="legend-dot b"></div>
-                      <span>Segmento B</span>
-                    </div>
-                    <div class="legend-item">
-                      <div class="legend-dot c"></div>
-                      <span>Segmento C</span>
-                    </div>
-                    <div class="legend-item" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                      <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.4);"></div>
-                      <span>Cliente FOCO</span>
+                    <div id="map-search-results" style="max-height: 180px; overflow-y: auto; display: none; border-top: 1px solid var(--border);">
                     </div>
                   </div>
+                  <!-- Segment Filters -->
+                  <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 10px;">
+                    <div style="font-weight: 600; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Filtrar por Segmento</div>
+                    <div class="legend-item legend-filter active" onclick="filterMapBySegment('A')" data-segment="A" style="cursor: pointer; padding: 6px 8px; border-radius: 6px; margin: 3px 0; display: flex; align-items: center;">
+                      <div class="legend-dot a"></div>
+                      <span style="flex: 1;">Segmento A</span>
+                      <span id="count-segment-a" style="font-size: 11px; background: rgba(5,150,105,0.2); padding: 2px 8px; border-radius: 10px; font-weight: 600;">0</span>
+                    </div>
+                    <div class="legend-item legend-filter active" onclick="filterMapBySegment('B')" data-segment="B" style="cursor: pointer; padding: 6px 8px; border-radius: 6px; margin: 3px 0; display: flex; align-items: center;">
+                      <div class="legend-dot b"></div>
+                      <span style="flex: 1;">Segmento B</span>
+                      <span id="count-segment-b" style="font-size: 11px; background: rgba(217,119,6,0.2); padding: 2px 8px; border-radius: 10px; font-weight: 600;">0</span>
+                    </div>
+                    <div class="legend-item legend-filter active" onclick="filterMapBySegment('C')" data-segment="C" style="cursor: pointer; padding: 6px 8px; border-radius: 6px; margin: 3px 0; display: flex; align-items: center;">
+                      <div class="legend-dot c"></div>
+                      <span style="flex: 1;">Segmento C</span>
+                      <span id="count-segment-c" style="font-size: 11px; background: rgba(107,114,128,0.2); padding: 2px 8px; border-radius: 10px; font-weight: 600;">0</span>
+                    </div>
+                    <div class="legend-item legend-filter active" onclick="filterMapBySegment('FOCO')" data-segment="FOCO" style="cursor: pointer; padding: 6px 8px; border-radius: 6px; margin: 3px 0; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; align-items: center;">
+                      <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.4); margin-right: 8px;"></div>
+                      <span style="flex: 1;">Cliente FOCO</span>
+                      <span id="count-segment-foco" style="font-size: 11px; background: rgba(239,68,68,0.2); padding: 2px 8px; border-radius: 10px; font-weight: 600;">0</span>
+                    </div>
+                    <button onclick="filterMapBySegment('ALL')" style="width: 100%; margin-top: 10px; padding: 6px 10px; font-size: 11px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                      Mostrar Todos
+                    </button>
+                  </div>
+                  <!-- Location Stats (below filters) -->
+                  <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 10px; margin-top: 8px;">
+                    <div style="font-weight: 600; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Ubicaciones</div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                      <span style="color: var(--text-muted); font-size: 12px;">Con GPS:</span>
+                      <span id="stats-with-coords" style="font-weight: 600; color: var(--success); font-size: 12px;">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                      <span style="color: var(--text-muted); font-size: 12px;">Sin GPS:</span>
+                      <span id="stats-without-coords" style="font-weight: 600; color: var(--warning); font-size: 12px;">0</span>
+                    </div>
+                    <button id="btn-geocode" onclick="geocodeClientsWithoutCoords()" style="width: 100%; padding: 6px 8px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; display: none;">
+                      <i data-lucide="map-pin" style="width: 12px; height: 12px; vertical-align: middle;"></i>
+                      Geocodificar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Map Legend (below map) -->
+          <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 16px;">
+            <div style="font-weight: 600; margin-bottom: 12px; font-size: 13px; color: var(--text-primary);">
+              <i data-lucide="info" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>
+              Leyenda de Segmentación
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: rgba(5,150,105,0.08); border-radius: 8px;">
+                <div style="width: 16px; height: 16px; border-radius: 50%; background: #059669; flex-shrink: 0; margin-top: 2px;"></div>
+                <div>
+                  <div style="font-weight: 600; color: #059669; font-size: 13px;">Segmento A</div>
+                  <div style="font-size: 11px; color: var(--text-secondary);">Cliente de alto valor. Mayor frecuencia de visitas y prioridad de atención.</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: rgba(217,119,6,0.08); border-radius: 8px;">
+                <div style="width: 16px; height: 16px; border-radius: 50%; background: #d97706; flex-shrink: 0; margin-top: 2px;"></div>
+                <div>
+                  <div style="font-weight: 600; color: #d97706; font-size: 13px;">Segmento B</div>
+                  <div style="font-size: 11px; color: var(--text-secondary);">Cliente de valor medio. Frecuencia de visitas moderada.</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: rgba(107,114,128,0.08); border-radius: 8px;">
+                <div style="width: 16px; height: 16px; border-radius: 50%; background: #6b7280; flex-shrink: 0; margin-top: 2px;"></div>
+                <div>
+                  <div style="font-weight: 600; color: #6b7280; font-size: 13px;">Segmento C</div>
+                  <div style="font-size: 11px; color: var(--text-secondary);">Cliente regular. Visitas según disponibilidad o por solicitud.</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: rgba(239,68,68,0.08); border-radius: 8px;">
+                <div style="width: 16px; height: 16px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.3); flex-shrink: 0; margin-top: 2px;"></div>
+                <div>
+                  <div style="font-weight: 600; color: #ef4444; font-size: 13px;">Cliente FOCO</div>
+                  <div style="font-size: 11px; color: var(--text-secondary);">Cliente prioritario marcado para seguimiento especial. Requiere atención inmediata.</div>
                 </div>
               </div>
             </div>
           </div>
 
           <div class="card">
-            <div class="card-header">
-              <h3><i data-lucide="activity" style="width: 18px; height: 18px;"></i> Actividad Reciente</h3>
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Ejecutivos</h3>
+              <span id="executives-count" style="font-size: 12px; color: var(--text-muted);"></span>
             </div>
-            <div class="card-body">
-              <div class="visit-list" id="recent-activity">
-                <div class="empty-state">
-                  <i data-lucide="inbox" style="width: 48px; height: 48px;"></i>
-                  <p>Inicia una ruta para ver la actividad</p>
+            <div class="card-body" style="padding: 0;">
+              <div id="executives-panel">
+                <div class="empty-state" style="padding: 24px;">
+                  <i data-lucide="users" style="width: 48px; height: 48px;"></i>
+                  <p>Cargando ejecutivos...</p>
                 </div>
               </div>
             </div>
@@ -1406,48 +1568,116 @@
 
       <!-- Routes Panel -->
       <div class="panel" id="panel-routes">
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-header">
-              <h3><i data-lucide="play-circle" style="width: 18px; height: 18px;"></i> Iniciar Jornada</h3>
-            </div>
-            <div class="card-body">
-              <form id="form-start-day">
-                <div class="form-group">
-                  <label>Vendedor</label>
-                  <select id="start-user" class="form-control" required></select>
+        <!-- Executive Selector Header -->
+        <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);">
+          <div class="card-body" style="padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="color: white;">
+                  <div style="font-size: 12px; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px;">Panel de Logística</div>
+                  <div style="font-size: 20px; font-weight: 700;">Gestión por Ejecutivo</div>
                 </div>
-                <div class="form-group">
-                  <label>Vehículo</label>
-                  <select id="start-vehicle" class="form-control" required></select>
-                </div>
-                <div class="form-group">
-                  <label>Kilometraje Inicial</label>
-                  <input type="number" id="start-km" class="form-control" value="45000" required>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">
-                  <i data-lucide="play" style="width: 16px; height: 16px;"></i>
-                  Iniciar Día
-                </button>
-              </form>
-              <div class="response-box" id="response-start" style="display: none;"></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-              <h3><i data-lucide="map-pin" style="width: 18px; height: 18px;"></i> Mapa de Ruta</h3>
+              </div>
               <div style="display: flex; gap: 12px; align-items: center;">
-                <select id="select-route-executive" class="form-control" style="width: 200px;">
-                  <option value="">Seleccionar Ejecutivo...</option>
+                <select id="executive-filter" class="form-control" style="width: 250px; background: rgba(255,255,255,0.95); border: none;" onchange="filterByExecutive()">
+                  <option value="">-- Todos los Ejecutivos --</option>
                 </select>
-                <button class="btn btn-primary" onclick="loadExecutiveRoute()" style="padding: 8px 16px;">
-                  <i data-lucide="route" style="width: 16px; height: 16px;"></i> Ver Ruta
+                <button class="btn" onclick="loadTodayRoutes()" style="background: white; color: var(--primary); padding: 10px 16px;">
+                  <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Executive Stats Cards -->
+        <div id="executive-stats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
+          <div class="card stat-card">
+            <div class="card-body" style="padding: 16px; text-align: center;">
+              <i data-lucide="users" style="width: 24px; height: 24px; color: var(--primary); margin-bottom: 8px;"></i>
+              <div id="stat-total-executives" style="font-size: 28px; font-weight: 700; color: var(--primary);">0</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Ejecutivos</div>
+            </div>
+          </div>
+          <div class="card stat-card">
+            <div class="card-body" style="padding: 16px; text-align: center;">
+              <i data-lucide="route" style="width: 24px; height: 24px; color: var(--success); margin-bottom: 8px;"></i>
+              <div id="stat-active-routes" style="font-size: 28px; font-weight: 700; color: var(--success);">0</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Rutas Activas Hoy</div>
+            </div>
+          </div>
+          <div class="card stat-card">
+            <div class="card-body" style="padding: 16px; text-align: center;">
+              <i data-lucide="clipboard-check" style="width: 24px; height: 24px; color: var(--warning); margin-bottom: 8px;"></i>
+              <div id="stat-today-visits" style="font-size: 28px; font-weight: 700; color: var(--warning);">0</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Visitas Hoy</div>
+            </div>
+          </div>
+          <div class="card stat-card">
+            <div class="card-body" style="padding: 16px; text-align: center;">
+              <i data-lucide="building-2" style="width: 24px; height: 24px; color: var(--accent); margin-bottom: 8px;"></i>
+              <div id="stat-assigned-clients" style="font-size: 28px; font-weight: 700; color: var(--accent);">0</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Clientes Asignados</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Left: Start Day & Executive Actions -->
+          <div>
+            <div class="card" style="margin-bottom: 16px;">
+              <div class="card-header">
+                <h3><i data-lucide="play-circle" style="width: 18px; height: 18px;"></i> Iniciar Jornada</h3>
+              </div>
+              <div class="card-body">
+                <form id="form-start-day">
+                  <div class="form-group">
+                    <label>Ejecutivo</label>
+                    <select id="start-user" class="form-control" required></select>
+                  </div>
+                  <div class="form-group">
+                    <label>Vehículo</label>
+                    <select id="start-vehicle" class="form-control" required></select>
+                  </div>
+                  <div class="form-group">
+                    <label>Kilometraje Inicial</label>
+                    <input type="number" id="start-km" class="form-control" value="45000" required>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-block">
+                    <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+                    Iniciar Día
+                  </button>
+                </form>
+                <div class="response-box" id="response-start" style="display: none;"></div>
+              </div>
+            </div>
+
+            <!-- Assigned Clients Card -->
+            <div class="card">
+              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3><i data-lucide="users-round" style="width: 18px; height: 18px;"></i> Clientes del Ejecutivo</h3>
+                <button class="btn btn-secondary" onclick="openAssignClientsModal()" style="padding: 6px 12px; font-size: 12px;">
+                  <i data-lucide="user-plus" style="width: 14px; height: 14px;"></i> Asignar
+                </button>
+              </div>
+              <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                <div id="executive-clients-list">
+                  <div class="empty-state" style="padding: 24px;">
+                    <i data-lucide="user-search" style="width: 36px; height: 36px;"></i>
+                    <p style="font-size: 13px;">Selecciona un ejecutivo para ver sus clientes asignados</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Route Map -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="map" style="width: 18px; height: 18px;"></i> Mapa de Ruta</h3>
+            </div>
             <div class="card-body" style="padding: 0;">
-              <div class="map-container" style="height: 380px; position: relative;">
+              <div class="map-container" style="height: 420px; position: relative;">
                 <div id="map-route"></div>
                 <div id="route-legend" class="route-legend" style="display: none;">
                   <div class="legend-title">Ruta del día</div>
@@ -1458,21 +1688,21 @@
           </div>
         </div>
 
-        <div class="card" style="margin-top: 24px;">
-          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <h3><i data-lucide="list" style="width: 18px; height: 18px;"></i> Rutas Activas</h3>
-            <button class="btn btn-secondary" onclick="loadTodayRoutes()" style="padding: 8px 16px;">
-              <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Actualizar
-            </button>
+        <!-- Routes Table -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-header">
+            <h3><i data-lucide="list" style="width: 18px; height: 18px;"></i> Rutas de Hoy</h3>
           </div>
           <div class="table-wrapper">
             <table id="table-routes">
               <thead>
                 <tr>
-                  <th>Vendedor</th>
+                  <th>Ejecutivo</th>
                   <th>Vehículo</th>
-                  <th>Km Inicial</th>
+                  <th>Hora Inicio</th>
+                  <th>Km</th>
                   <th>Visitas</th>
+                  <th>Progreso</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
@@ -1485,22 +1715,49 @@
 
       <!-- Visits Panel -->
       <div class="panel" id="panel-visits">
+        <!-- Executive Header for Visits -->
+        <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, var(--success) 0%, #059669 100%);">
+          <div class="card-body" style="padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div style="color: white;">
+                <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px;">Panel de Visitas</div>
+                <div style="font-size: 20px; font-weight: 700;">Registro de Check-in</div>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <select id="visit-executive-filter" class="form-control" style="width: 250px; background: rgba(255,255,255,0.95); border: none;" onchange="filterVisitsByExecutive()">
+                  <option value="">-- Seleccionar Ejecutivo --</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="grid-2">
           <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
               <h3><i data-lucide="user-check" style="width: 18px; height: 18px;"></i> Registrar Visita</h3>
+              <span id="visit-route-status" class="badge" style="display: none;"></span>
             </div>
             <div class="card-body">
               <form id="form-checkin">
                 <div class="form-group">
-                  <label>Ruta Activa</label>
-                  <select id="checkin-route" class="form-control" required>
-                    <option value="">-- Primero inicia una jornada --</option>
+                  <label>Ruta Activa del Ejecutivo</label>
+                  <select id="checkin-route" class="form-control" required onchange="onRouteSelected()">
+                    <option value="">-- Selecciona un ejecutivo arriba --</option>
                   </select>
+                  <small id="route-info-text" style="color: var(--text-muted); font-size: 11px; display: none;"></small>
                 </div>
                 <div class="form-group">
-                  <label>Cliente</label>
-                  <select id="checkin-client" class="form-control" required onchange="onClientSelectChange()"></select>
+                  <label>Buscar Cliente <span id="client-count-label" style="font-size: 11px; color: var(--text-muted);"></span></label>
+                  <div style="position: relative;">
+                    <input type="text" id="checkin-client-search" class="form-control" placeholder="Escribe código, nombre o nombre fantasía..." oninput="filterCheckinClients()" autocomplete="off" style="padding-left: 36px;">
+                    <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);"></i>
+                  </div>
+                  <div id="client-search-results" style="margin-top: 8px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; display: none;">
+                  </div>
+                  <input type="hidden" id="checkin-client" required>
+                  <div id="selected-client-card" style="display: none; margin-top: 8px; padding: 12px; background: var(--bg-hover); border-radius: 8px; border: 1px solid var(--accent);">
+                  </div>
                 </div>
 
                 <!-- Verificación de dirección -->
@@ -2016,6 +2273,118 @@
         </div>
       </div>
     </div>
+
+      <!-- Panel Marketing -->
+      <div class="panel" id="panel-marketing">
+        <div class="panel-header">
+          <h2><i data-lucide="megaphone" style="width: 24px; height: 24px;"></i> Marketing Digital</h2>
+          <p class="panel-subtitle">Gestiona tus campañas y analíticas</p>
+        </div>
+
+        <!-- Google Analytics -->
+        <div class="data-subpanel active" id="subpanel-google-analytics">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="bar-chart-2" style="width: 18px; height: 18px;"></i> Google Analytics</h3>
+            </div>
+            <div class="card-body">
+              <div style="text-align: center; padding: 40px;">
+                <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #F9AB00, #E37400); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                  <i data-lucide="bar-chart-2" style="width: 40px; height: 40px; color: white;"></i>
+                </div>
+                <h3 style="margin-bottom: 8px;">Google Analytics 4</h3>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Conecta tu cuenta de Google Analytics para ver métricas de tu sitio web</p>
+                <div class="form-group" style="max-width: 400px; margin: 0 auto 16px;">
+                  <label>Measurement ID (GA4)</label>
+                  <input type="text" id="ga-measurement-id" class="form-control" placeholder="G-XXXXXXXXXX" value="">
+                </div>
+                <button class="btn btn-primary" onclick="saveGaConfig()">
+                  <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                  Guardar Configuración
+                </button>
+                <div style="margin-top: 20px;">
+                  <a href="https://analytics.google.com/" target="_blank" class="btn btn-secondary">
+                    <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
+                    Abrir Google Analytics
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Google Ads -->
+        <div class="data-subpanel" id="subpanel-google-ads">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="target" style="width: 18px; height: 18px;"></i> Google Ads</h3>
+            </div>
+            <div class="card-body">
+              <div style="text-align: center; padding: 40px;">
+                <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #4285F4, #34A853, #FBBC05, #EA4335); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                  <i data-lucide="target" style="width: 40px; height: 40px; color: white;"></i>
+                </div>
+                <h3 style="margin-bottom: 8px;">Google Ads</h3>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Gestiona tus campañas publicitarias en Google</p>
+                <div class="form-group" style="max-width: 400px; margin: 0 auto 16px;">
+                  <label>Conversion ID</label>
+                  <input type="text" id="gads-conversion-id" class="form-control" placeholder="AW-XXXXXXXXX" value="">
+                </div>
+                <div class="form-group" style="max-width: 400px; margin: 0 auto 16px;">
+                  <label>Conversion Label (opcional)</label>
+                  <input type="text" id="gads-conversion-label" class="form-control" placeholder="XXXXXXXXXXXXXXXXXXX" value="">
+                </div>
+                <button class="btn btn-primary" onclick="saveGadsConfig()">
+                  <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                  Guardar Configuración
+                </button>
+                <div style="margin-top: 20px;">
+                  <a href="https://ads.google.com/" target="_blank" class="btn btn-secondary">
+                    <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
+                    Abrir Google Ads
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Meta Ads -->
+        <div class="data-subpanel" id="subpanel-meta-ads">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="facebook" style="width: 18px; height: 18px;"></i> Meta Ads (Facebook & Instagram)</h3>
+            </div>
+            <div class="card-body">
+              <div style="text-align: center; padding: 40px;">
+                <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #0081FB, #00C6FF); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                  <i data-lucide="facebook" style="width: 40px; height: 40px; color: white;"></i>
+                </div>
+                <h3 style="margin-bottom: 8px;">Meta Pixel</h3>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Conecta Meta Pixel para rastrear conversiones de Facebook e Instagram</p>
+                <div class="form-group" style="max-width: 400px; margin: 0 auto 16px;">
+                  <label>Pixel ID</label>
+                  <input type="text" id="meta-pixel-id" class="form-control" placeholder="XXXXXXXXXXXXXXXX" value="">
+                </div>
+                <button class="btn btn-primary" onclick="saveMetaConfig()">
+                  <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                  Guardar Configuración
+                </button>
+                <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center;">
+                  <a href="https://business.facebook.com/" target="_blank" class="btn btn-secondary">
+                    <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
+                    Meta Business Suite
+                  </a>
+                  <a href="https://www.facebook.com/business/tools/ads-manager" target="_blank" class="btn btn-secondary">
+                    <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
+                    Ads Manager
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
   </main>
 
   <!-- Modal Cliente -->
@@ -2081,6 +2450,68 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeClientModal()">Cancelar</button>
         <button class="btn btn-primary" onclick="saveClient()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Asignar Clientes a Ejecutivo -->
+  <div id="modal-assign-clients" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="closeAssignClientsModal()"></div>
+    <div class="modal-content" style="max-width: 1000px; width: 95%;">
+      <div class="modal-header">
+        <h3><i data-lucide="users-round" style="width: 18px; height: 18px;"></i> Asignar Clientes a Ejecutivo</h3>
+        <button class="btn-close" onclick="closeAssignClientsModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+          <div class="form-group" style="flex: 1; margin: 0;">
+            <label>Ejecutivo</label>
+            <select id="assign-executive" class="form-control" onchange="loadClientsForAssignment()">
+              <option value="">-- Seleccionar ejecutivo --</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1; margin: 0;">
+            <label>Filtrar por Zona</label>
+            <select id="assign-zone-filter" class="form-control" onchange="filterAvailableClients()">
+              <option value="">-- Todas las zonas --</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <!-- Clientes Disponibles -->
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-weight: 600;">Clientes Disponibles <span id="available-count" style="color: var(--text-muted); font-weight: normal;">(0)</span></span>
+              <input type="text" id="search-available" class="form-control" placeholder="Buscar código o nombre..." style="width: 180px; padding: 6px 10px; font-size: 12px;" oninput="filterAvailableClients()">
+            </div>
+            <div id="available-clients-list" style="height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary);">
+              <div class="empty-state" style="padding: 20px;">
+                <p style="font-size: 12px;">Selecciona un ejecutivo</p>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block" style="margin-top: 10px;" onclick="assignSelectedClients()">
+              <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i> Asignar Seleccionados
+            </button>
+          </div>
+          <!-- Clientes Asignados -->
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-weight: 600;">Clientes Asignados <span id="assigned-count" style="color: var(--primary);">(0)</span></span>
+              <input type="text" id="search-assigned" class="form-control" placeholder="Buscar..." style="width: 180px; padding: 6px 10px; font-size: 12px;" oninput="filterAssignedClients()">
+            </div>
+            <div id="assigned-clients-list" style="height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary);">
+              <div class="empty-state" style="padding: 20px;">
+                <p style="font-size: 12px;">Sin clientes asignados</p>
+              </div>
+            </div>
+            <button class="btn btn-secondary btn-block" style="margin-top: 10px;" onclick="unassignSelectedClients()">
+              <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Quitar Seleccionados
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeAssignClientsModal()">Cerrar</button>
       </div>
     </div>
   </div>
@@ -2190,6 +2621,7 @@
     let allVehicles = [];
     let allClients = [];
     let filteredClients = [];
+    let todayRoutesData = [];
 
     // Pagination for clients
     const CLIENTS_PER_PAGE = 50;
@@ -2224,9 +2656,15 @@
           routes: 'Rutas y Mapa',
           visits: 'Gestión de Visitas',
           intelligence: 'Inteligencia de Mercado',
-          data: 'Datos del Sistema'
+          data: 'Datos del Sistema',
+          marketing: 'Marketing Digital'
         };
         document.getElementById('page-title').textContent = titles[tab] || 'Dashboard';
+
+        // Load marketing config if on marketing panel
+        if (tab === 'marketing') {
+          loadMarketingConfig();
+        }
 
         // Refresh maps when switching tabs
         setTimeout(() => {
@@ -2266,51 +2704,78 @@
     }
 
     // Add client markers to map using lat/lng from client data
+    // Store markers with metadata for filtering
+    let markersBySegment = { A: [], B: [], C: [], FOCO: [] };
+    let activeSegmentFilters = { A: true, B: true, C: true, FOCO: true };
+
     function addClientMarkers(clients) {
       // Clear existing markers
       mainMapMarkers.forEach(m => m.setMap(null));
       mainMapMarkers = [];
+      clientMarkers = [];
+      markersBySegment = { A: [], B: [], C: [], FOCO: [] };
 
       const bounds = new google.maps.LatLngBounds();
-      let hasMarkers = false;
+      let markersWithCoords = 0;
+      let markersWithoutCoords = 0;
+      let segmentCounts = { A: 0, B: 0, C: 0, FOCO: 0 };
 
       clients.forEach(client => {
-        // Use lat/lng from client object
-        if (!client.lat || !client.lng) return;
+        // Check if client has coordinates
+        if (!client.lat || !client.lng) {
+          markersWithoutCoords++;
+          return;
+        }
 
+        markersWithCoords++;
         const position = { lat: parseFloat(client.lat), lng: parseFloat(client.lng) };
         bounds.extend(position);
-        hasMarkers = true;
 
         // Marker colors by segment
         const colors = { A: '#059669', B: '#d97706', C: '#6b7280' };
-        const color = colors[client.segment] || colors.C;
+        const segment = client.segment || 'C';
+        const color = colors[segment] || colors.C;
         const isFoco = client.priority === 'FOCO';
+
+        // Count segments
+        segmentCounts[segment] = (segmentCounts[segment] || 0) + 1;
+        if (isFoco) segmentCounts.FOCO++;
 
         const marker = new google.maps.Marker({
           position: position,
           map: mainMap,
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
-            fillColor: color,
+            fillColor: isFoco ? '#ef4444' : color,
             fillOpacity: 1,
-            strokeColor: isFoco ? '#ef4444' : '#fff',
-            strokeWeight: isFoco ? 3 : 2,
+            strokeColor: isFoco ? '#fff' : '#fff',
+            strokeWeight: 2,
             scale: isFoco ? 12 : 10
           },
           title: client.name
         });
 
+        // Store marker metadata
+        marker.clientData = client;
+        marker.segment = segment;
+        marker.isFoco = isFoco;
+
         const infoContent = `
-          <div style="min-width: 200px; padding: 8px;">
-            <strong style="font-size: 14px; color: #1f2937;">${client.name}</strong>
-            ${client.fantasy_name ? `<div style="font-style: italic; color: #6b7280; font-size: 12px;">${client.fantasy_name}</div>` : ''}
-            <div style="margin-top: 8px; font-size: 12px; color: #374151;">${client.address || ''}</div>
-            <div style="font-size: 12px; color: #6b7280;">${client.commune || ''}</div>
-            <div style="margin-top: 8px;">
-              <span style="background: ${color}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${client.segment}</span>
-              ${isFoco ? '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 4px;">FOCO</span>' : ''}
+          <div style="min-width: 250px; padding: 10px; font-family: system-ui, sans-serif;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+              <strong style="font-size: 14px; color: #1f2937;">${client.fantasy_name || client.name}</strong>
+              <code style="font-size: 11px; background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px;">${client.external_id}</code>
             </div>
+            ${client.fantasy_name && client.name !== client.fantasy_name ? `<div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">${client.name}</div>` : ''}
+            <div style="font-size: 12px; color: #374151; margin-top: 8px;">
+              <i style="color: #9ca3af;">📍</i> ${client.address || 'Sin dirección'}
+            </div>
+            <div style="font-size: 12px; color: #6b7280;">${client.commune || ''}</div>
+            <div style="margin-top: 10px; display: flex; gap: 4px;">
+              <span style="background: ${color}; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 500;">Segmento ${segment}</span>
+              ${isFoco ? '<span style="background: #ef4444; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 500;">FOCO</span>' : ''}
+            </div>
+            ${client.zone ? `<div style="margin-top: 6px; font-size: 11px; color: #9ca3af;">Zona: ${client.zone}</div>` : ''}
           </div>
         `;
 
@@ -2321,12 +2786,256 @@
 
         mainMapMarkers.push(marker);
         clientMarkers.push(marker);
+
+        // Store by segment for filtering
+        if (!markersBySegment[segment]) markersBySegment[segment] = [];
+        markersBySegment[segment].push(marker);
+        if (isFoco) markersBySegment.FOCO.push(marker);
       });
 
+      // Update map stats
+      updateMapStats(markersWithCoords, markersWithoutCoords);
+
+      // Update segment counts in legend
+      const countA = document.getElementById('count-segment-a');
+      const countB = document.getElementById('count-segment-b');
+      const countC = document.getElementById('count-segment-c');
+      const countFoco = document.getElementById('count-segment-foco');
+      if (countA) countA.textContent = segmentCounts.A || 0;
+      if (countB) countB.textContent = segmentCounts.B || 0;
+      if (countC) countC.textContent = segmentCounts.C || 0;
+      if (countFoco) countFoco.textContent = segmentCounts.FOCO || 0;
+
       // Fit bounds to show all markers
-      if (hasMarkers) {
+      if (markersWithCoords > 0) {
         mainMap.fitBounds(bounds);
       }
+    }
+
+    // Filter map markers by segment
+    function filterMapBySegment(segment) {
+      if (segment === 'ALL') {
+        // Show all markers
+        activeSegmentFilters = { A: true, B: true, C: true, FOCO: true };
+        mainMapMarkers.forEach(m => m.setMap(mainMap));
+        // Update legend visual
+        document.querySelectorAll('.legend-filter').forEach(el => el.classList.add('active'));
+        return;
+      }
+
+      // Toggle the segment filter
+      if (segment === 'FOCO') {
+        activeSegmentFilters.FOCO = !activeSegmentFilters.FOCO;
+      } else {
+        activeSegmentFilters[segment] = !activeSegmentFilters[segment];
+      }
+
+      // Update legend visual
+      const legendItem = document.querySelector(`.legend-filter[data-segment="${segment}"]`);
+      if (legendItem) {
+        legendItem.classList.toggle('active', segment === 'FOCO' ? activeSegmentFilters.FOCO : activeSegmentFilters[segment]);
+      }
+
+      // Show/hide markers based on active filters
+      mainMapMarkers.forEach(marker => {
+        const markerSegment = marker.segment;
+        const isFoco = marker.isFoco;
+
+        let shouldShow = false;
+
+        // Check if segment filter is active
+        if (activeSegmentFilters[markerSegment]) {
+          shouldShow = true;
+        }
+
+        // If FOCO filter is active and marker is FOCO, show it
+        if (activeSegmentFilters.FOCO && isFoco) {
+          shouldShow = true;
+        }
+
+        // If only FOCO filter and this is not FOCO, check segment
+        if (!activeSegmentFilters.A && !activeSegmentFilters.B && !activeSegmentFilters.C && activeSegmentFilters.FOCO) {
+          shouldShow = isFoco;
+        }
+
+        marker.setMap(shouldShow ? mainMap : null);
+      });
+    }
+
+    // Search client on map
+    function searchClientOnMap() {
+      const search = document.getElementById('map-client-search').value.toLowerCase().trim();
+      const resultsDiv = document.getElementById('map-search-results');
+
+      if (search.length < 2) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+
+      // Filter clients with coordinates
+      const filtered = allClients.filter(c => {
+        if (!c.lat || !c.lng) return false;
+        const matchCode = c.external_id && c.external_id.toLowerCase().includes(search);
+        const matchName = c.name && c.name.toLowerCase().includes(search);
+        const matchFantasy = c.fantasy_name && c.fantasy_name.toLowerCase().includes(search);
+        return matchCode || matchName || matchFantasy;
+      }).slice(0, 10);
+
+      if (filtered.length === 0) {
+        resultsDiv.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-muted); font-size: 12px;">No se encontraron clientes con ubicación</div>';
+        resultsDiv.style.display = 'block';
+        return;
+      }
+
+      resultsDiv.innerHTML = filtered.map(c => `
+        <div onclick="zoomToClient('${c.id}')" style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='transparent'">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 500; font-size: 12px;">${c.fantasy_name || c.name}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">${c.commune || ''}</div>
+            </div>
+            <code style="font-size: 10px; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px;">${c.external_id}</code>
+          </div>
+        </div>
+      `).join('');
+      resultsDiv.style.display = 'block';
+    }
+
+    // Zoom to specific client on map
+    function zoomToClient(clientId) {
+      const client = allClients.find(c => c.id === clientId);
+      if (!client || !client.lat || !client.lng) return;
+
+      const position = { lat: parseFloat(client.lat), lng: parseFloat(client.lng) };
+
+      // Zoom to client
+      mainMap.setCenter(position);
+      mainMap.setZoom(16);
+
+      // Find and open marker
+      const marker = mainMapMarkers.find(m => m.clientData && m.clientData.id === clientId);
+      if (marker) {
+        google.maps.event.trigger(marker, 'click');
+      }
+
+      // Clear search
+      document.getElementById('map-client-search').value = '';
+      document.getElementById('map-search-results').style.display = 'none';
+    }
+
+    function updateMapStats(withCoords, withoutCoords) {
+      const withCoordsEl = document.getElementById('stats-with-coords');
+      const withoutCoordsEl = document.getElementById('stats-without-coords');
+      const geocodeBtn = document.getElementById('btn-geocode');
+      const geocodeBtnHeader = document.getElementById('btn-geocode-header');
+      const geocodeCount = document.getElementById('geocode-count');
+
+      if (withCoordsEl) withCoordsEl.textContent = withCoords;
+      if (withoutCoordsEl) withoutCoordsEl.textContent = withoutCoords;
+
+      // Count clients that can be geocoded (have address or commune)
+      const geocodable = allClients ? allClients.filter(c => !c.lat && !c.lng && (c.address || c.commune)).length : 0;
+      const noAddressCount = allClients ? allClients.filter(c => !c.lat && !c.lng && !c.address && !c.commune).length : 0;
+
+      if (geocodeBtn) {
+        geocodeBtn.style.display = geocodable > 0 ? 'block' : 'none';
+      }
+      if (geocodeBtnHeader) {
+        geocodeBtnHeader.style.display = geocodable > 0 ? 'inline-flex' : 'none';
+        if (geocodeCount) geocodeCount.textContent = geocodable;
+      }
+
+      // Show warning if many clients have no address
+      if (noAddressCount > 0 && withCoords === 0) {
+        console.log(`Diagnóstico de clientes: ${withCoords} con coords, ${geocodable} con dirección para geocodificar, ${noAddressCount} sin dirección ni coords`);
+      }
+
+      lucide.createIcons();
+    }
+
+    async function geocodeClientsWithoutCoords() {
+      // Filter clients without coordinates that have some address info
+      const clientsToGeocode = allClients.filter(c => !c.lat && !c.lng && (c.address || c.commune));
+
+      if (clientsToGeocode.length === 0) {
+        showToast('info', 'Sin clientes', 'No hay clientes con dirección para geocodificar');
+        return;
+      }
+
+      // Disable buttons during processing
+      const btn = document.getElementById('btn-geocode-header');
+      const btnLegend = document.getElementById('btn-geocode');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width: 14px; height: 14px;"></i> Procesando...'; }
+      if (btnLegend) { btnLegend.disabled = true; }
+
+      showToast('info', 'Geocodificando', `Procesando ${Math.min(clientsToGeocode.length, 100)} de ${clientsToGeocode.length} clientes...`);
+
+      const geocoder = new google.maps.Geocoder();
+      let processed = 0;
+      let success = 0;
+
+      // Process up to 100 clients (Google rate limit consideration)
+      const batchSize = Math.min(clientsToGeocode.length, 100);
+
+      for (let i = 0; i < batchSize; i++) {
+        const client = clientsToGeocode[i];
+        // Build address string with available data
+        let addressParts = [];
+        if (client.address) addressParts.push(client.address);
+        if (client.commune) addressParts.push(client.commune);
+        addressParts.push('Chile');
+        const address = addressParts.join(', ');
+
+        try {
+          const result = await new Promise((resolve, reject) => {
+            geocoder.geocode({ address }, (results, status) => {
+              if (status === 'OK' && results[0]) {
+                resolve(results[0].geometry.location);
+              } else {
+                reject(status);
+              }
+            });
+          });
+
+          // Update client in database
+          await fetch(`${API}/api/clients/${client.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              lat: result.lat(),
+              lng: result.lng()
+            })
+          });
+
+          // Update local data
+          client.lat = result.lat();
+          client.lng = result.lng();
+
+          success++;
+        } catch (e) {
+          console.warn('Geocode failed for', client.name, e);
+        }
+
+        processed++;
+
+        // Update progress every 10 clients
+        if (processed % 10 === 0 && btn) {
+          btn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width: 14px; height: 14px;"></i> ${processed}/${batchSize}...`;
+        }
+
+        // Delay between requests to avoid rate limits
+        await new Promise(r => setTimeout(r, 250));
+      }
+
+      // Re-enable buttons (reuse btn and btnLegend from start of function)
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="map-pin" style="width: 14px; height: 14px;"></i> Geocodificar'; }
+      if (btnLegend) { btnLegend.disabled = false; }
+
+      showToast('success', 'Geocodificación completada', `${success} de ${processed} clientes geocodificados correctamente`);
+
+      // Refresh markers without full reload
+      addClientMarkers(allClients);
+      lucide.createIcons();
     }
 
     // Load all data
@@ -2350,13 +3059,17 @@
         // Populate selects (only active vehicles)
         populateSelect('start-user', users.data, 'id', 'full_name');
         populateSelect('start-vehicle', vehicles.data.filter(v => v.status === 'active'), 'id', d => `${d.license_plate} - ${d.model}`);
-        populateSelect('checkin-client', clients.data, 'id', d => `${d.name} (${d.segment})`);
+
+        // Clear client search (now using search + hidden input)
+        document.getElementById('checkin-client-search').value = '';
+        document.getElementById('checkin-client').value = '';
+        document.getElementById('selected-client-card').style.display = 'none';
+        document.getElementById('client-search-results').style.display = 'none';
         populateSelect('webhook-product', products.data, 'sku', d => `${d.sku} - ${d.name}`);
         populateSelect('compare-product', products.data, 'id', d => `${d.sku} - ${d.name}`);
 
         // Populate route executive select
         const executives = users.data.filter(u => u.role === 'executive');
-        populateSelect('select-route-executive', executives, 'id', 'full_name');
 
         // Store data globally for filtering
         allUsers = users.data;
@@ -2364,6 +3077,18 @@
         allClients = clients.data;
         filteredClients = [...allClients];
         currentClientsPage = 1;
+
+        // Populate executive filter dropdowns
+        const execOptions = '<option value="">-- Todos los Ejecutivos --</option>' +
+          executives.map(e => `<option value="${e.id}">${e.full_name}</option>`).join('');
+        const execFilterEl = document.getElementById('executive-filter');
+        if (execFilterEl) execFilterEl.innerHTML = execOptions;
+
+        const visitExecFilterEl = document.getElementById('visit-executive-filter');
+        if (visitExecFilterEl) {
+          visitExecFilterEl.innerHTML = '<option value="">-- Seleccionar Ejecutivo --</option>' +
+            executives.map(e => `<option value="${e.id}">${e.full_name}</option>`).join('');
+        }
 
         // Update counts
         document.getElementById('users-count').textContent = allUsers.length;
@@ -2382,25 +3107,39 @@
         populateZoneFilter();
         renderClientsTablePaginated();
         renderProductsTable(products.data);
-        renderRoutesTable(routes.data);
         renderPricesTable(prices.data);
 
         // Add markers to map
         addClientMarkers(clients.data);
 
-        // Update routes select
+        // Load today's routes for executive management (must be before rendering routes table)
+        try {
+          const todayRes = await fetch(`${API}/api/daily-routes/today`);
+          const todayData = await todayRes.json();
+          todayRoutesData = todayData.success ? todayData.data : [];
+        } catch (e) {
+          todayRoutesData = [];
+        }
+
+        // Update routes select for visits
         const activeRoutes = routes.data.filter(r => r.status === 'active');
         if (activeRoutes.length > 0) {
           populateSelect('checkin-route', activeRoutes, 'id', d => `${d.user?.full_name} - ${d.date}`);
         }
+
+        // Update executive stats
+        updateExecutiveStats();
 
         // Load comparison
         if (products.data.length > 0) {
           loadComparison();
         }
 
-        // Update recent activity
-        updateRecentActivity(routes.data);
+        // Render executives panel
+        renderExecutivesPanel(routes.data);
+
+        // Render today's routes table
+        renderTodayRoutesTable();
 
         // Re-init icons
         lucide.createIcons();
@@ -2736,9 +3475,433 @@
         'no_stock': 'Sin Stock',
         'not_interested': 'No Interesado',
         'pending': 'Pendiente',
-        'visited': 'Visitado'
+        'visited': 'Visitado',
+        'contacted': 'Contactado',
+        'no_contact': 'Sin Contacto'
       };
       return labels[outcome] || outcome || 'Pendiente';
+    }
+
+    // =============================================
+    // EXECUTIVE MANAGEMENT FUNCTIONS
+    // =============================================
+
+    let selectedExecutiveId = null;
+    let executiveClients = [];
+
+    function filterByExecutive() {
+      selectedExecutiveId = document.getElementById('executive-filter').value;
+      updateExecutiveStats();
+      loadExecutiveClients();
+      loadExecutiveRouteOnMap();
+
+      // Also sync with visits panel
+      const visitFilter = document.getElementById('visit-executive-filter');
+      if (visitFilter) visitFilter.value = selectedExecutiveId;
+      filterVisitsByExecutive();
+    }
+
+    function filterVisitsByExecutive() {
+      const execId = document.getElementById('visit-executive-filter').value;
+      const routeSelect = document.getElementById('checkin-route');
+
+      // Sync with main executive filter
+      const mainFilter = document.getElementById('executive-filter');
+      if (mainFilter && mainFilter.value !== execId) {
+        mainFilter.value = execId;
+      }
+
+      // Filter routes for this executive
+      routeSelect.innerHTML = '';
+
+      if (!execId) {
+        routeSelect.innerHTML = '<option value="">-- Selecciona un ejecutivo arriba --</option>';
+        document.getElementById('client-count-label').textContent = '';
+        return;
+      }
+
+      const execRoutes = todayRoutesData.filter(r => r.user_id === execId);
+      const activeRoute = execRoutes.find(r => r.status === 'active');
+
+      if (activeRoute) {
+        routeSelect.innerHTML = `<option value="${activeRoute.id}">${activeRoute.user?.full_name || 'Ejecutivo'} - Ruta activa</option>`;
+        document.getElementById('route-info-text').textContent = `Vehículo: ${activeRoute.vehicle?.license_plate || 'N/A'} | Inicio: ${activeRoute.start_km} km`;
+        document.getElementById('route-info-text').style.display = 'block';
+        document.getElementById('visit-route-status').textContent = 'Ruta Activa';
+        document.getElementById('visit-route-status').className = 'badge badge-success';
+        document.getElementById('visit-route-status').style.display = 'inline-block';
+      } else if (execRoutes.length > 0) {
+        routeSelect.innerHTML = `<option value="">Ruta completada hoy</option>`;
+        document.getElementById('visit-route-status').textContent = 'Completada';
+        document.getElementById('visit-route-status').className = 'badge badge-secondary';
+        document.getElementById('visit-route-status').style.display = 'inline-block';
+      } else {
+        routeSelect.innerHTML = `<option value="">Sin ruta activa hoy</option>`;
+        document.getElementById('visit-route-status').textContent = 'Sin Ruta';
+        document.getElementById('visit-route-status').className = 'badge badge-warning';
+        document.getElementById('visit-route-status').style.display = 'inline-block';
+      }
+
+      // Update client count for this executive's assigned clients
+      const assignedClients = allClients.filter(c => c.assigned_user_id === execId);
+      document.getElementById('client-count-label').textContent = `(${assignedClients.length} asignados)`;
+    }
+
+    function onRouteSelected() {
+      const routeId = document.getElementById('checkin-route').value;
+      if (routeId) {
+        // Route selected, enable check-in
+      }
+    }
+
+    async function loadExecutiveClients() {
+      const listDiv = document.getElementById('executive-clients-list');
+
+      if (!selectedExecutiveId) {
+        listDiv.innerHTML = `
+          <div class="empty-state" style="padding: 24px;">
+            <i data-lucide="user-search" style="width: 36px; height: 36px;"></i>
+            <p style="font-size: 13px;">Selecciona un ejecutivo para ver sus clientes asignados</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      executiveClients = allClients.filter(c => c.assigned_user_id === selectedExecutiveId);
+
+      if (executiveClients.length === 0) {
+        listDiv.innerHTML = `
+          <div class="empty-state" style="padding: 24px;">
+            <i data-lucide="users" style="width: 36px; height: 36px;"></i>
+            <p style="font-size: 13px;">Este ejecutivo no tiene clientes asignados</p>
+            <button class="btn btn-primary" onclick="openAssignClientsModal()" style="margin-top: 12px;">
+              <i data-lucide="user-plus" style="width: 14px; height: 14px;"></i> Asignar Clientes
+            </button>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      listDiv.innerHTML = executiveClients.slice(0, 50).map(c => `
+        <div style="padding: 8px 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-weight: 500; font-size: 13px;">${c.fantasy_name || c.name}</div>
+            <div style="font-size: 11px; color: var(--text-muted);">${c.commune || c.zone || 'Sin zona'}</div>
+          </div>
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <code style="font-size: 10px; background: var(--bg-hover); padding: 2px 6px; border-radius: 4px;">${c.external_id}</code>
+            <span class="badge badge-${(c.segment || 'c').toLowerCase()}" style="font-size: 9px;">${c.segment || 'C'}</span>
+          </div>
+        </div>
+      `).join('');
+
+      if (executiveClients.length > 50) {
+        listDiv.innerHTML += `<div style="padding: 8px; text-align: center; color: var(--text-muted); font-size: 12px;">... y ${executiveClients.length - 50} más</div>`;
+      }
+    }
+
+    async function loadExecutiveRouteOnMap() {
+      if (!selectedExecutiveId) {
+        clearRouteFromMap();
+        return;
+      }
+
+      // Find active route for this executive
+      const execRoute = todayRoutesData.find(r => r.user_id === selectedExecutiveId && r.status === 'active');
+
+      if (execRoute) {
+        // Load full route with visits
+        try {
+          const res = await fetch(`${API}/api/daily-routes/${execRoute.id}`);
+          const data = await res.json();
+          if (data.success) {
+            displayRouteOnMap(data.data);
+          }
+        } catch (e) {
+          console.error('Error loading route:', e);
+        }
+      } else {
+        // Show assigned clients on map
+        clearRouteFromMap();
+        const clients = allClients.filter(c => c.assigned_user_id === selectedExecutiveId && c.lat && c.lng);
+        displayClientsOnRouteMap(clients);
+      }
+    }
+
+    function displayClientsOnRouteMap(clients) {
+      clearRouteFromMap();
+      if (!clients || clients.length === 0) return;
+
+      const bounds = new google.maps.LatLngBounds();
+
+      clients.forEach((client, index) => {
+        const position = { lat: parseFloat(client.lat), lng: parseFloat(client.lng) };
+        bounds.extend(position);
+
+        const marker = new google.maps.Marker({
+          position: position,
+          map: routeMap,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: client.segment === 'A' ? '#059669' : client.segment === 'B' ? '#d97706' : '#6b7280',
+            fillOpacity: 1,
+            strokeColor: '#fff',
+            strokeWeight: 2,
+            scale: 8
+          },
+          title: client.name
+        });
+
+        marker.addListener('click', () => {
+          routeInfoWindow.setContent(`
+            <div style="padding: 8px;">
+              <strong>${client.fantasy_name || client.name}</strong><br>
+              <small>${client.address || ''}, ${client.commune || ''}</small>
+            </div>
+          `);
+          routeInfoWindow.open(routeMap, marker);
+        });
+
+        routeMarkers.push(marker);
+      });
+
+      if (clients.length > 0) {
+        routeMap.fitBounds(bounds);
+      }
+    }
+
+    function updateExecutiveStats() {
+      const executives = allUsers.filter(u => u.role === 'executive');
+      const activeRoutes = todayRoutesData.filter(r => r.status === 'active');
+      const todayVisits = todayRoutesData.reduce((sum, r) => sum + (r.visits?.length || r.visits_count || 0), 0);
+      const assignedClients = selectedExecutiveId
+        ? allClients.filter(c => c.assigned_user_id === selectedExecutiveId).length
+        : allClients.filter(c => c.assigned_user_id).length;
+
+      document.getElementById('stat-total-executives').textContent = executives.length;
+      document.getElementById('stat-active-routes').textContent = activeRoutes.length;
+      document.getElementById('stat-today-visits').textContent = todayVisits;
+      document.getElementById('stat-assigned-clients').textContent = assignedClients;
+    }
+
+    // =============================================
+    // CLIENT ASSIGNMENT MODAL FUNCTIONS
+    // =============================================
+
+    let availableClientsForAssignment = [];
+    let assignedClientsForModal = [];
+
+    function openAssignClientsModal() {
+      const modal = document.getElementById('modal-assign-clients');
+      const execSelect = document.getElementById('assign-executive');
+      const zoneFilter = document.getElementById('assign-zone-filter');
+
+      // Populate executives
+      const executives = allUsers.filter(u => u.role === 'executive');
+      execSelect.innerHTML = '<option value="">-- Seleccionar ejecutivo --</option>' +
+        executives.map(e => `<option value="${e.id}">${e.full_name}</option>`).join('');
+
+      // Populate zones
+      const zones = [...new Set(allClients.map(c => c.commune || c.zone).filter(Boolean))].sort();
+      zoneFilter.innerHTML = '<option value="">-- Todas las zonas --</option>' +
+        zones.map(z => `<option value="${z}">${z}</option>`).join('');
+
+      // Pre-select current executive
+      if (selectedExecutiveId) {
+        execSelect.value = selectedExecutiveId;
+        loadClientsForAssignment();
+      }
+
+      modal.style.display = 'flex';
+      lucide.createIcons();
+    }
+
+    function closeAssignClientsModal() {
+      document.getElementById('modal-assign-clients').style.display = 'none';
+      // Refresh data
+      loadExecutiveClients();
+    }
+
+    function loadClientsForAssignment() {
+      const execId = document.getElementById('assign-executive').value;
+      const availableDiv = document.getElementById('available-clients-list');
+      const assignedDiv = document.getElementById('assigned-clients-list');
+
+      if (!execId) {
+        availableDiv.innerHTML = '<div class="empty-state" style="padding: 20px;"><p style="font-size: 12px;">Selecciona un ejecutivo</p></div>';
+        assignedDiv.innerHTML = '<div class="empty-state" style="padding: 20px;"><p style="font-size: 12px;">Sin clientes asignados</p></div>';
+        return;
+      }
+
+      // Get assigned and available clients
+      assignedClientsForModal = allClients.filter(c => c.assigned_user_id === execId);
+      availableClientsForAssignment = allClients.filter(c => !c.assigned_user_id || c.assigned_user_id !== execId);
+
+      renderAvailableClients();
+      renderAssignedClients();
+    }
+
+    function renderAvailableClients() {
+      const div = document.getElementById('available-clients-list');
+      const search = document.getElementById('search-available').value.toLowerCase();
+      const zoneFilter = document.getElementById('assign-zone-filter').value;
+      const countEl = document.getElementById('available-count');
+
+      let filtered = availableClientsForAssignment;
+
+      // Filter by zone
+      if (zoneFilter) {
+        filtered = filtered.filter(c => (c.commune || c.zone) === zoneFilter);
+      }
+
+      // Filter by search
+      if (search.length >= 2) {
+        filtered = filtered.filter(c =>
+          (c.external_id && c.external_id.toLowerCase().includes(search)) ||
+          (c.name && c.name.toLowerCase().includes(search)) ||
+          (c.fantasy_name && c.fantasy_name.toLowerCase().includes(search)) ||
+          (c.commune && c.commune.toLowerCase().includes(search))
+        );
+      }
+
+      // Update count
+      if (countEl) countEl.textContent = `(${filtered.length})`;
+
+      // Limit display
+      const displayFiltered = filtered.slice(0, 150);
+
+      if (displayFiltered.length === 0) {
+        div.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px;">No hay clientes disponibles</div>';
+        return;
+      }
+
+      div.innerHTML = displayFiltered.map(c => `
+        <label style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.15s;" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='transparent'">
+          <input type="checkbox" class="available-client-cb" value="${c.id}" style="width: 16px; height: 16px;">
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.fantasy_name || c.name}</div>
+            <div style="font-size: 11px; color: var(--text-muted);">${c.external_id} &bull; ${c.commune || c.zone || 'Sin zona'}</div>
+          </div>
+        </label>
+      `).join('');
+    }
+
+    function renderAssignedClients() {
+      const div = document.getElementById('assigned-clients-list');
+      const search = document.getElementById('search-assigned').value.toLowerCase();
+
+      let filtered = assignedClientsForModal;
+      if (search.length >= 2) {
+        filtered = filtered.filter(c =>
+          (c.external_id && c.external_id.toLowerCase().includes(search)) ||
+          (c.name && c.name.toLowerCase().includes(search)) ||
+          (c.fantasy_name && c.fantasy_name.toLowerCase().includes(search))
+        );
+      }
+
+      document.getElementById('assigned-count').textContent = `(${assignedClientsForModal.length})`;
+
+      if (filtered.length === 0) {
+        div.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px;">Sin clientes asignados</div>';
+        return;
+      }
+
+      div.innerHTML = filtered.map(c => `
+        <label style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.15s;" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='transparent'">
+          <input type="checkbox" class="assigned-client-cb" value="${c.id}" style="width: 16px; height: 16px;">
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.fantasy_name || c.name}</div>
+            <div style="font-size: 11px; color: var(--text-muted);">${c.external_id} &bull; ${c.commune || c.zone || 'Sin zona'}</div>
+          </div>
+        </label>
+      `).join('');
+    }
+
+    function filterAvailableClients() {
+      renderAvailableClients();
+    }
+
+    function filterAssignedClients() {
+      renderAssignedClients();
+    }
+
+    async function assignSelectedClients() {
+      const execId = document.getElementById('assign-executive').value;
+      if (!execId) return;
+
+      const checkboxes = document.querySelectorAll('.available-client-cb:checked');
+      if (checkboxes.length === 0) {
+        showToast('warning', 'Atención', 'Selecciona al menos un cliente');
+        return;
+      }
+
+      const clientIds = Array.from(checkboxes).map(cb => cb.value);
+
+      showToast('info', 'Procesando', `Asignando ${clientIds.length} clientes...`);
+
+      let success = 0;
+      for (const clientId of clientIds) {
+        try {
+          await fetch(`${API}/api/clients/${clientId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ assigned_user_id: execId })
+          });
+          success++;
+
+          // Update local data
+          const client = allClients.find(c => c.id === clientId);
+          if (client) client.assigned_user_id = execId;
+        } catch (e) {
+          console.error('Error assigning client:', e);
+        }
+      }
+
+      showToast('success', 'Completado', `${success} clientes asignados`);
+      loadClientsForAssignment();
+      updateExecutiveStats();
+      // Also update main list if the same executive is selected
+      if (selectedExecutiveId === execId) {
+        loadExecutiveClients();
+      }
+    }
+
+    async function unassignSelectedClients() {
+      const checkboxes = document.querySelectorAll('.assigned-client-cb:checked');
+      if (checkboxes.length === 0) {
+        showToast('warning', 'Atención', 'Selecciona al menos un cliente');
+        return;
+      }
+
+      const clientIds = Array.from(checkboxes).map(cb => cb.value);
+
+      showToast('info', 'Procesando', `Quitando ${clientIds.length} clientes...`);
+
+      let success = 0;
+      for (const clientId of clientIds) {
+        try {
+          await fetch(`${API}/api/clients/${clientId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ assigned_user_id: null })
+          });
+          success++;
+
+          // Update local data
+          const client = allClients.find(c => c.id === clientId);
+          if (client) client.assigned_user_id = null;
+        } catch (e) {
+          console.error('Error unassigning client:', e);
+        }
+      }
+
+      showToast('success', 'Completado', `${success} clientes desasignados`);
+      loadClientsForAssignment();
+      updateExecutiveStats();
+      // Also update main list
+      loadExecutiveClients();
     }
 
     function getBadgeColor(status) {
@@ -2828,35 +3991,149 @@
       container.innerHTML = html;
     }
 
-    function updateRecentActivity(routes) {
-      const container = document.getElementById('recent-activity');
-      const activeRoutes = routes.filter(r => r.status === 'active');
+    function getInitials(name) {
+      if (!name) return '??';
+      const parts = name.trim().split(/[\s.]+/).filter(p => p.length > 0);
+      if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+      return parts.slice(0, 2).map(p => p[0].toUpperCase()).join('');
+    }
 
-      if (activeRoutes.length === 0) {
+    function renderExecutivesPanel(routes) {
+      const container = document.getElementById('executives-panel');
+      const countSpan = document.getElementById('executives-count');
+      const executives = allUsers.filter(u => u.role === 'executive');
+
+      if (countSpan) {
+        const activeCount = executives.filter(e => e.status !== 'inactive').length;
+        countSpan.textContent = `${activeCount} activos de ${executives.length}`;
+      }
+
+      if (executives.length === 0) {
         container.innerHTML = `
-          <div class="empty-state">
-            <i data-lucide="inbox" style="width: 48px; height: 48px;"></i>
-            <p>Inicia una ruta para ver la actividad</p>
+          <div class="empty-state" style="padding: 24px;">
+            <i data-lucide="user-x" style="width: 48px; height: 48px;"></i>
+            <p>No hay ejecutivos registrados</p>
           </div>
         `;
+        lucide.createIcons();
         return;
       }
 
       let html = '';
-      activeRoutes.forEach((route, index) => {
+      executives.forEach(exec => {
+        const initials = getInitials(exec.full_name);
+        const activeRoute = routes?.find(r => r.user_id === exec.id && r.status === 'active');
+        const assignedClients = allClients.filter(c => c.assigned_user_id === exec.id).length;
+        const isActive = exec.status !== 'inactive';
+        const hasRoute = !!activeRoute;
+
         html += `
-          <div class="visit-item">
-            <div class="visit-number">${index + 1}</div>
-            <div class="visit-info">
-              <div class="visit-client">${route.user?.full_name || 'Vendedor'}</div>
-              <div class="visit-time">${route.vehicle?.license_plate} - ${route.visits_count} visitas</div>
+          <div class="executive-item" data-exec-id="${exec.id}">
+            <div class="executive-header" onclick="toggleExecutiveDetails('${exec.id}')">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="executive-avatar" style="background: ${hasRoute ? 'linear-gradient(135deg, #10b981, #059669)' : isActive ? 'linear-gradient(135deg, #3b82f6, #1e40af)' : 'linear-gradient(135deg, #9ca3af, #6b7280)'};">
+                  ${initials}
+                </div>
+                <div>
+                  <div style="font-weight: 600; font-size: 14px;">${exec.full_name}</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">${exec.email}</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                ${hasRoute ? `<span class="badge badge-success" style="font-size: 10px;">En Ruta</span>` : ''}
+                <span class="badge ${isActive ? 'badge-primary' : 'badge-secondary'}" style="font-size: 10px;">${isActive ? 'Activo' : 'Inactivo'}</span>
+                <i data-lucide="chevron-down" class="exec-chevron" style="width: 16px; height: 16px; color: var(--text-muted); transition: transform 0.2s;"></i>
+              </div>
             </div>
-            <span class="badge badge-active">Activo</span>
+            <div class="executive-details" id="exec-details-${exec.id}" style="display: none;">
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px;">
+                <div style="text-align: center; padding: 8px; background: var(--bg-hover); border-radius: 6px;">
+                  <div style="font-size: 18px; font-weight: 700; color: var(--primary);">${assignedClients}</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">Clientes</div>
+                </div>
+                <div style="text-align: center; padding: 8px; background: var(--bg-hover); border-radius: 6px;">
+                  <div style="font-size: 18px; font-weight: 700; color: ${hasRoute ? 'var(--success)' : 'var(--text-muted)'};">${hasRoute ? activeRoute.visits_count || 0 : '-'}</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">Visitas Hoy</div>
+                </div>
+                <div style="text-align: center; padding: 8px; background: var(--bg-hover); border-radius: 6px;">
+                  <div style="font-size: 18px; font-weight: 700; color: var(--warning);">${hasRoute ? (activeRoute.vehicle?.license_plate || '-') : '-'}</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">Vehículo</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-secondary" onclick="goToExecutiveRoutes('${exec.id}')" style="flex: 1; padding: 8px; font-size: 11px;">
+                  <i data-lucide="route" style="width: 14px; height: 14px;"></i> Ver Rutas
+                </button>
+                <button class="btn btn-primary" onclick="goToAssignClients('${exec.id}')" style="flex: 1; padding: 8px; font-size: 11px;">
+                  <i data-lucide="user-plus" style="width: 14px; height: 14px;"></i> Asignar
+                </button>
+                <button class="btn ${isActive ? 'btn-danger' : 'btn-success'}" onclick="toggleExecutiveStatus('${exec.id}', ${isActive})" style="padding: 8px; font-size: 11px;">
+                  <i data-lucide="${isActive ? 'user-minus' : 'user-check'}" style="width: 14px; height: 14px;"></i>
+                </button>
+              </div>
+            </div>
           </div>
         `;
       });
 
       container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function toggleExecutiveDetails(execId) {
+      const details = document.getElementById(`exec-details-${execId}`);
+      const item = details.closest('.executive-item');
+      const chevron = item.querySelector('.exec-chevron');
+
+      if (details.style.display === 'none') {
+        // Close all other details first
+        document.querySelectorAll('.executive-details').forEach(d => {
+          d.style.display = 'none';
+          d.closest('.executive-item')?.querySelector('.exec-chevron')?.style.setProperty('transform', 'rotate(0deg)');
+        });
+        details.style.display = 'block';
+        chevron.style.transform = 'rotate(180deg)';
+      } else {
+        details.style.display = 'none';
+        chevron.style.transform = 'rotate(0deg)';
+      }
+      lucide.createIcons();
+    }
+
+    function goToExecutiveRoutes(execId) {
+      // Switch to Routes panel and select executive
+      showPanel('routes');
+      document.getElementById('executive-filter').value = execId;
+      filterByExecutive();
+    }
+
+    function goToAssignClients(execId) {
+      // Switch to Routes panel, select executive and open assign modal
+      showPanel('routes');
+      document.getElementById('executive-filter').value = execId;
+      selectedExecutiveId = execId;
+      filterByExecutive();
+      setTimeout(() => openAssignClientsModal(), 300);
+    }
+
+    async function toggleExecutiveStatus(execId, currentlyActive) {
+      const newStatus = currentlyActive ? 'inactive' : 'active';
+      const action = currentlyActive ? 'desactivar' : 'activar';
+
+      if (!confirm(`¿Estás seguro de ${action} este ejecutivo?`)) return;
+
+      try {
+        // Update user status (we'll add a status field)
+        const exec = allUsers.find(u => u.id === execId);
+        if (exec) {
+          exec.status = newStatus;
+          renderExecutivesPanel(todayRoutesData);
+          showToast('success', 'Actualizado', `Ejecutivo ${newStatus === 'active' ? 'activado' : 'desactivado'}`);
+        }
+      } catch (e) {
+        console.error('Error toggling status:', e);
+        showToast('error', 'Error', 'No se pudo actualizar el estado');
+      }
     }
 
     // Render tables
@@ -2869,6 +4146,8 @@
       tbody.innerHTML = data.map(c => {
         const vendorName = c.assigned_user?.full_name || '-';
         const zoneName = c.zone || c.commune || '-';
+        const currentSegment = c.segment || 'C';
+        const isFoco = c.priority === 'FOCO';
         return `
           <tr>
             <td><code style="font-size: 11px; background: var(--bg-hover); padding: 2px 6px; border-radius: 4px;">${c.external_id || '-'}</code></td>
@@ -2879,8 +4158,17 @@
             <td><span class="badge" style="background: var(--bg-hover); color: var(--text-secondary);">${zoneName}</span></td>
             <td style="font-size: 13px;">${vendorName}</td>
             <td>
-              <span class="badge badge-${(c.segment || 'c').toLowerCase()}">${c.segment || '-'}</span>
-              ${c.priority === 'FOCO' ? '<span class="badge badge-foco">FOCO</span>' : ''}
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <select onchange="updateClientSegment('${c.id}', this.value)" class="form-control" style="width: 60px; padding: 4px 6px; font-size: 11px; font-weight: 600; border-radius: 4px; background: ${currentSegment === 'A' ? 'rgba(5,150,105,0.15)' : currentSegment === 'B' ? 'rgba(217,119,6,0.15)' : 'rgba(107,114,128,0.15)'}; color: ${currentSegment === 'A' ? '#059669' : currentSegment === 'B' ? '#d97706' : '#6b7280'}; border: 1px solid ${currentSegment === 'A' ? '#059669' : currentSegment === 'B' ? '#d97706' : '#9ca3af'};">
+                  <option value="A" ${currentSegment === 'A' ? 'selected' : ''}>A</option>
+                  <option value="B" ${currentSegment === 'B' ? 'selected' : ''}>B</option>
+                  <option value="C" ${currentSegment === 'C' ? 'selected' : ''}>C</option>
+                </select>
+                <label style="display: flex; align-items: center; gap: 3px; cursor: pointer; font-size: 10px;" title="Cliente prioritario">
+                  <input type="checkbox" ${isFoco ? 'checked' : ''} onchange="updateClientFoco('${c.id}', this.checked)" style="width: 14px; height: 14px;">
+                  <span style="color: ${isFoco ? '#ef4444' : 'var(--text-muted)'}; font-weight: ${isFoco ? '600' : '400'};">FOCO</span>
+                </label>
+              </div>
             </td>
             <td>
               <div style="display: flex; gap: 4px;">
@@ -2895,6 +4183,46 @@
           </tr>
         `;
       }).join('');
+    }
+
+    // Update client segment
+    async function updateClientSegment(clientId, segment) {
+      try {
+        const res = await fetch(`${API}/api/clients/${clientId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ segment })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const client = allClients.find(c => c.id === clientId);
+          if (client) client.segment = segment;
+          showToast('success', 'Actualizado', `Segmento cambiado a ${segment}`);
+          renderClientsTablePaginated();
+        }
+      } catch (e) {
+        showToast('error', 'Error', 'No se pudo actualizar el segmento');
+      }
+    }
+
+    // Update client FOCO priority
+    async function updateClientFoco(clientId, isFoco) {
+      try {
+        const res = await fetch(`${API}/api/clients/${clientId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ priority: isFoco ? 'FOCO' : 'Normal' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const client = allClients.find(c => c.id === clientId);
+          if (client) client.priority = isFoco ? 'FOCO' : 'Normal';
+          showToast('success', 'Actualizado', isFoco ? 'Cliente marcado como FOCO' : 'Cliente desmarcado');
+          renderClientsTablePaginated();
+        }
+      } catch (e) {
+        showToast('error', 'Error', 'No se pudo actualizar');
+      }
     }
 
     // Paginated clients render
@@ -2933,6 +4261,160 @@
         currentClientsPage++;
         renderClientsTablePaginated();
       }
+    }
+
+    // Filter clients in check-in form
+    function filterCheckinClients() {
+      const search = document.getElementById('checkin-client-search').value.toLowerCase().trim();
+      const resultsDiv = document.getElementById('client-search-results');
+
+      if (!allClients || allClients.length === 0) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+
+      if (search.length < 2) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+
+      const filtered = allClients.filter(c => {
+        const matchCode = c.external_id && c.external_id.toLowerCase().includes(search);
+        const matchName = c.name && c.name.toLowerCase().includes(search);
+        const matchFantasy = c.fantasy_name && c.fantasy_name.toLowerCase().includes(search);
+        return matchCode || matchName || matchFantasy;
+      }).slice(0, 20); // Limit to 20 results
+
+      if (filtered.length === 0) {
+        resultsDiv.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-muted);">No se encontraron clientes</div>';
+        resultsDiv.style.display = 'block';
+        return;
+      }
+
+      resultsDiv.innerHTML = filtered.map(c => `
+        <div class="client-search-item" onclick="selectCheckinClient('${c.id}')" style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.2s;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <div style="font-weight: 600; font-size: 13px;">${c.fantasy_name || c.name}</div>
+              ${c.fantasy_name && c.name !== c.fantasy_name ? `<div style="font-size: 11px; color: var(--text-muted);">${c.name}</div>` : ''}
+            </div>
+            <code style="font-size: 11px; background: var(--accent); color: white; padding: 2px 6px; border-radius: 4px;">${c.external_id}</code>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 4px; font-size: 11px; color: var(--text-secondary);">
+            <span><i data-lucide="map-pin" style="width: 10px; height: 10px; display: inline;"></i> ${c.commune || c.zone || 'Sin zona'}</span>
+            <span class="badge badge-${(c.segment || 'c').toLowerCase()}" style="font-size: 10px; padding: 1px 6px;">${c.segment || 'C'}</span>
+            ${c.priority === 'FOCO' ? '<span class="badge badge-foco" style="font-size: 10px; padding: 1px 6px;">FOCO</span>' : ''}
+          </div>
+        </div>
+      `).join('');
+
+      resultsDiv.style.display = 'block';
+      lucide.createIcons();
+
+      // Add hover effect
+      resultsDiv.querySelectorAll('.client-search-item').forEach(item => {
+        item.addEventListener('mouseenter', () => item.style.background = 'var(--bg-hover)');
+        item.addEventListener('mouseleave', () => item.style.background = 'transparent');
+      });
+    }
+
+    function selectCheckinClient(clientId) {
+      const client = allClients.find(c => c.id === clientId);
+      if (!client) return;
+
+      // Set hidden input value
+      document.getElementById('checkin-client').value = clientId;
+
+      // Hide results
+      document.getElementById('client-search-results').style.display = 'none';
+
+      // Update search input
+      document.getElementById('checkin-client-search').value = `${client.external_id} - ${client.fantasy_name || client.name}`;
+
+      // Show selected client card
+      const cardDiv = document.getElementById('selected-client-card');
+      cardDiv.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="font-weight: 600;">${client.fantasy_name || client.name}</div>
+            ${client.fantasy_name && client.name !== client.fantasy_name ? `<div style="font-size: 12px; color: var(--text-muted);">${client.name}</div>` : ''}
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+              <i data-lucide="map-pin" style="width: 12px; height: 12px; display: inline;"></i>
+              ${client.address || 'Sin dirección'}, ${client.commune || ''}
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <code style="font-size: 12px; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px;">${client.external_id}</code>
+            <div style="margin-top: 4px;">
+              <span class="badge badge-${(client.segment || 'c').toLowerCase()}">${client.segment || 'C'}</span>
+              ${client.priority === 'FOCO' ? '<span class="badge badge-foco">FOCO</span>' : ''}
+            </div>
+          </div>
+        </div>
+        <button type="button" onclick="clearSelectedClient()" style="position: absolute; top: 8px; right: 8px; background: none; border: none; cursor: pointer; color: var(--text-muted);">
+          <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+        </button>
+      `;
+      cardDiv.style.display = 'block';
+      cardDiv.style.position = 'relative';
+      lucide.createIcons();
+
+      // Trigger address verification
+      selectedClientData = client;
+      onClientSelectChange();
+    }
+
+    function clearSelectedClient() {
+      document.getElementById('checkin-client').value = '';
+      document.getElementById('checkin-client-search').value = '';
+      document.getElementById('selected-client-card').style.display = 'none';
+      document.getElementById('address-verification').style.display = 'none';
+      selectedClientData = null;
+    }
+
+    // Marketing config functions
+    function saveGaConfig() {
+      const measurementId = document.getElementById('ga-measurement-id').value.trim();
+      if (measurementId) {
+        localStorage.setItem('ga_measurement_id', measurementId);
+        showToast('success', 'Google Analytics', 'Configuración guardada: ' + measurementId);
+      } else {
+        showToast('warning', 'Campo vacío', 'Ingresa el Measurement ID');
+      }
+    }
+
+    function saveGadsConfig() {
+      const conversionId = document.getElementById('gads-conversion-id').value.trim();
+      const conversionLabel = document.getElementById('gads-conversion-label').value.trim();
+      if (conversionId) {
+        localStorage.setItem('gads_conversion_id', conversionId);
+        localStorage.setItem('gads_conversion_label', conversionLabel);
+        showToast('success', 'Google Ads', 'Configuración guardada: ' + conversionId);
+      } else {
+        showToast('warning', 'Campo vacío', 'Ingresa el Conversion ID');
+      }
+    }
+
+    function saveMetaConfig() {
+      const pixelId = document.getElementById('meta-pixel-id').value.trim();
+      if (pixelId) {
+        localStorage.setItem('meta_pixel_id', pixelId);
+        showToast('success', 'Meta Pixel', 'Configuración guardada: ' + pixelId);
+      } else {
+        showToast('warning', 'Campo vacío', 'Ingresa el Pixel ID');
+      }
+    }
+
+    function loadMarketingConfig() {
+      const gaId = localStorage.getItem('ga_measurement_id');
+      const gadsId = localStorage.getItem('gads_conversion_id');
+      const gadsLabel = localStorage.getItem('gads_conversion_label');
+      const metaId = localStorage.getItem('meta_pixel_id');
+
+      if (gaId) document.getElementById('ga-measurement-id').value = gaId;
+      if (gadsId) document.getElementById('gads-conversion-id').value = gadsId;
+      if (gadsLabel) document.getElementById('gads-conversion-label').value = gadsLabel;
+      if (metaId) document.getElementById('meta-pixel-id').value = metaId;
     }
 
     // Filter functions
@@ -3163,26 +4645,99 @@
     }
 
     function renderRoutesTable(data) {
+      renderTodayRoutesTable();
+    }
+
+    function renderTodayRoutesTable() {
       const tbody = document.querySelector('#table-routes tbody');
-      if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay rutas iniciadas</td></tr>';
+      const data = todayRoutesData;
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay rutas iniciadas hoy</td></tr>';
         return;
       }
-      tbody.innerHTML = data.map(r => `
-        <tr>
-          <td>${r.user?.full_name || '-'}</td>
-          <td>${r.vehicle?.license_plate || '-'}</td>
-          <td>${r.start_km.toLocaleString()} km</td>
-          <td>${r.visits_count}</td>
-          <td><span class="badge badge-${r.status}">${r.status}</span></td>
-          <td>
-            <button class="btn btn-sm btn-primary" onclick="viewRoute('${r.id}')">
-              <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
-            </button>
-          </td>
-        </tr>
-      `).join('');
+
+      // Filter by selected executive if any
+      let filteredData = data;
+      if (selectedExecutiveId) {
+        filteredData = data.filter(r => r.user_id === selectedExecutiveId);
+      }
+
+      if (filteredData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">Este ejecutivo no tiene rutas hoy</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filteredData.map(r => {
+        const assignedClients = allClients.filter(c => c.assigned_user_id === r.user_id).length;
+        const visits = r.visits?.length || r.visits_count || 0;
+        const progress = assignedClients > 0 ? Math.round((visits / assignedClients) * 100) : 0;
+        const startTime = r.created_at ? new Date(r.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '-';
+
+        return `
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">
+                  ${(r.user?.full_name || 'E')[0]}
+                </div>
+                <div>
+                  <div style="font-weight: 500;">${r.user?.full_name || '-'}</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">${assignedClients} clientes asignados</div>
+                </div>
+              </div>
+            </td>
+            <td><code style="font-size: 11px;">${r.vehicle?.license_plate || '-'}</code></td>
+            <td>${startTime}</td>
+            <td>${r.start_km?.toLocaleString() || 0} km</td>
+            <td style="font-weight: 600;">${visits}</td>
+            <td style="min-width: 120px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
+                  <div style="height: 100%; width: ${progress}%; background: ${progress >= 80 ? 'var(--success)' : progress >= 50 ? 'var(--warning)' : 'var(--primary)'}; border-radius: 3px; transition: width 0.3s;"></div>
+                </div>
+                <span style="font-size: 11px; font-weight: 600; color: ${progress >= 80 ? 'var(--success)' : progress >= 50 ? 'var(--warning)' : 'var(--text-muted)'};">${progress}%</span>
+              </div>
+            </td>
+            <td><span class="badge badge-${r.status === 'active' ? 'success' : r.status === 'completed' ? 'secondary' : 'warning'}">${r.status === 'active' ? 'En Ruta' : r.status === 'completed' ? 'Terminado' : r.status}</span></td>
+            <td>
+              <div style="display: flex; gap: 4px;">
+                <button class="btn btn-sm btn-primary" onclick="viewRoute('${r.id}')" title="Ver detalles">
+                  <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                </button>
+                ${r.status === 'active' ? `
+                  <button class="btn btn-sm btn-secondary" onclick="endRoute('${r.id}')" title="Finalizar ruta">
+                    <i data-lucide="flag" style="width: 14px; height: 14px;"></i>
+                  </button>
+                ` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
       lucide.createIcons();
+    }
+
+    async function endRoute(routeId) {
+      const endKm = prompt('Ingrese el kilometraje final:');
+      if (!endKm || isNaN(endKm)) return;
+
+      try {
+        const res = await fetch(`${API}/routes/end`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ routeId, endKm: parseInt(endKm) })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Ruta finalizada', 'La jornada ha sido completada');
+          loadData();
+        } else {
+          showToast('error', 'Error', data.error || 'No se pudo finalizar la ruta');
+        }
+      } catch (e) {
+        showToast('error', 'Error', 'Error al finalizar la ruta');
+      }
     }
 
     function renderPricesTable(data) {
