@@ -552,6 +552,105 @@
       border-color: var(--danger);
     }
 
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      animation: slideIn 0.3s ease;
+      min-width: 300px;
+      max-width: 450px;
+    }
+
+    .toast.success {
+      border-left: 4px solid var(--success);
+    }
+
+    .toast.error {
+      border-left: 4px solid var(--danger);
+    }
+
+    .toast.warning {
+      border-left: 4px solid var(--warning);
+    }
+
+    .toast-icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .toast.success .toast-icon { color: var(--success); }
+    .toast.error .toast-icon { color: var(--danger); }
+    .toast.warning .toast-icon { color: var(--warning); }
+
+    .toast-content {
+      flex: 1;
+    }
+
+    .toast-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .toast-message {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .toast-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .toast-close:hover {
+      color: var(--text-primary);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+
     /* Tables */
     .table-wrapper {
       overflow-x: auto;
@@ -1472,12 +1571,48 @@
     </div>
   </main>
 
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
     // Initialize Lucide icons
     lucide.createIcons();
+
+    // Toast Notification System
+    function showToast(type, title, message, duration = 4000) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const icons = {
+        success: 'check-circle',
+        error: 'x-circle',
+        warning: 'alert-triangle'
+      };
+
+      toast.innerHTML = `
+        <i data-lucide="${icons[type]}" class="toast-icon"></i>
+        <div class="toast-content">
+          <div class="toast-title">${title}</div>
+          ${message ? `<div class="toast-message">${message}</div>` : ''}
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+          <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+        </button>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      // Auto remove
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
 
     // Theme Management
     const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
@@ -1831,7 +1966,7 @@
     async function loadExecutiveRoute() {
       const userId = document.getElementById('select-route-executive').value;
       if (!userId) {
-        alert('Seleccione un ejecutivo');
+        showToast('warning', 'Atención', 'Seleccione un ejecutivo');
         return;
       }
 
@@ -1844,7 +1979,7 @@
           const activeRoute = data.data.find(r => r.status === 'active') || data.data[0];
           displayRouteOnMap(activeRoute);
         } else {
-          alert('No hay rutas para este ejecutivo');
+          showToast('warning', 'Sin rutas', 'No hay rutas activas para este ejecutivo');
           clearRouteFromMap();
         }
       } catch (error) {
@@ -2274,12 +2409,12 @@
         if (data.success) {
           document.getElementById('form-add-user').reset();
           loadData();
-          alert('Vendedor agregado correctamente');
+          showToast('success', 'Vendedor agregado', data.data?.full_name || 'Nuevo vendedor registrado');
         } else {
-          alert('Error: ' + data.error);
+          showToast('error', 'Error', data.error);
         }
       } catch (error) {
-        alert('Error: ' + error.message);
+        showToast('error', 'Error de conexión', error.message);
       }
     });
 
@@ -2290,11 +2425,12 @@
         const data = await res.json();
         if (data.success) {
           loadData();
+          showToast('success', 'Vendedor eliminado', 'El vendedor ha sido eliminado correctamente');
         } else {
-          alert('Error: ' + data.error);
+          showToast('error', 'Error', data.error);
         }
       } catch (error) {
-        alert('Error: ' + error.message);
+        showToast('error', 'Error de conexión', error.message);
       }
     }
 
@@ -2360,12 +2496,12 @@
           document.getElementById('form-add-vehicle').reset();
           document.getElementById('vehicle-efficiency').value = '12';
           loadData();
-          alert('Vehículo agregado correctamente');
+          showToast('success', 'Vehículo agregado', data.data?.license_plate || 'Nuevo vehículo registrado');
         } else {
-          alert('Error: ' + data.error);
+          showToast('error', 'Error', data.error);
         }
       } catch (error) {
-        alert('Error: ' + error.message);
+        showToast('error', 'Error de conexión', error.message);
       }
     });
 
@@ -2376,11 +2512,12 @@
         const data = await res.json();
         if (data.success) {
           loadData();
+          showToast('success', 'Vehículo eliminado', 'El vehículo ha sido eliminado correctamente');
         } else {
-          alert('Error: ' + data.error);
+          showToast('error', 'Error', data.error);
         }
       } catch (error) {
-        alert('Error: ' + error.message);
+        showToast('error', 'Error de conexión', error.message);
       }
     }
 
@@ -2392,12 +2529,14 @@
           body: JSON.stringify({ status })
         });
         const data = await res.json();
-        if (!data.success) {
-          alert('Error: ' + data.error);
+        if (data.success) {
+          showToast('success', 'Estado actualizado', `Vehículo ahora está ${status === 'active' ? 'activo' : status === 'maintenance' ? 'en mantención' : 'inactivo'}`);
+        } else {
+          showToast('error', 'Error', data.error);
           loadData();
         }
       } catch (error) {
-        alert('Error: ' + error.message);
+        showToast('error', 'Error de conexión', error.message);
       }
     }
 
