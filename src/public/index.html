@@ -605,6 +605,90 @@
       border-color: var(--danger);
     }
 
+    /* Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      position: relative;
+      background: var(--bg-card);
+      border-radius: 12px;
+      width: 90%;
+      max-height: 90vh;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      animation: modalSlide 0.2s ease-out;
+    }
+    @keyframes modalSlide {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    .btn-close:hover {
+      color: var(--text-primary);
+    }
+    .modal-body {
+      padding: 20px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+    }
+    .btn-icon {
+      background: none;
+      border: none;
+      padding: 6px;
+      cursor: pointer;
+      color: var(--text-muted);
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .btn-icon:hover {
+      background: var(--bg-hover);
+      color: var(--accent);
+    }
+
     /* Toast Notifications */
     .toast-container {
       position: fixed;
@@ -1427,9 +1511,13 @@
                     <option value="sale">Venta Realizada</option>
                   </select>
                 </div>
+                <div id="gps-status" style="padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; display: flex; align-items: center; gap: 8px; background: var(--bg-hover);">
+                  <i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px; color: var(--text-muted);"></i>
+                  <span>Obteniendo ubicación GPS...</span>
+                </div>
                 <button type="submit" class="btn btn-success btn-block">
-                  <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
-                  Registrar Check-in
+                  <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i>
+                  Registrar Check-in con GPS
                 </button>
               </form>
               <div class="response-box" id="response-checkin" style="display: none;"></div>
@@ -1689,7 +1777,12 @@
             <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h3><i data-lucide="building-2" style="width: 18px; height: 18px;"></i> Lista de Clientes</h3>
-                <span class="badge badge-active" id="clients-count">0</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <span class="badge badge-active" id="clients-count">0</span>
+                  <button class="btn btn-primary" onclick="openClientModal()" style="padding: 6px 12px; font-size: 13px;">
+                    <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Nuevo
+                  </button>
+                </div>
               </div>
               <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 <input type="text" id="search-clients" class="form-control" placeholder="Buscar por código o nombre..." oninput="filterClients()" style="flex: 1; min-width: 200px;">
@@ -1729,6 +1822,7 @@
                     <th>Zona</th>
                     <th>Vendedor</th>
                     <th>Segmento</th>
+                    <th style="width: 100px;">Acciones</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -1874,6 +1968,73 @@
       </div>
     </div>
   </main>
+
+  <!-- Modal Cliente -->
+  <div id="modal-client" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="closeClientModal()"></div>
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="modal-client-title">Nuevo Cliente</h3>
+        <button class="btn-close" onclick="closeClientModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="client-id">
+        <div class="form-group">
+          <label>Código *</label>
+          <input type="text" id="client-code" class="form-control" placeholder="Ej: 12345678-9">
+        </div>
+        <div class="form-group">
+          <label>Razón Social *</label>
+          <input type="text" id="client-name" class="form-control" placeholder="Nombre legal">
+        </div>
+        <div class="form-group">
+          <label>Nombre Fantasía</label>
+          <input type="text" id="client-fantasy" class="form-control" placeholder="Nombre comercial">
+        </div>
+        <div class="form-group">
+          <label>Dirección</label>
+          <input type="text" id="client-address" class="form-control" placeholder="Calle, número">
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Comuna</label>
+            <input type="text" id="client-commune" class="form-control" placeholder="Comuna">
+          </div>
+          <div class="form-group">
+            <label>Zona</label>
+            <input type="text" id="client-zone" class="form-control" placeholder="Zona de reparto">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Segmento</label>
+            <select id="client-segment" class="form-control">
+              <option value="C">C - Regular</option>
+              <option value="B">B - Medio</option>
+              <option value="A">A - Alto valor</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Prioridad</label>
+            <select id="client-priority" class="form-control">
+              <option value="Normal">Normal</option>
+              <option value="FOCO">FOCO (Prioritario)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Vendedor Asignado</label>
+          <select id="client-vendor" class="form-control">
+            <option value="">Sin asignar</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeClientModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveClient()">Guardar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
@@ -2245,11 +2406,45 @@
 
     document.getElementById('form-checkin').addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i> Obteniendo ubicación...';
+      submitBtn.disabled = true;
+      lucide.createIcons();
+
+      // Get geolocation
+      let lat = null, lng = null;
+      try {
+        const position = await new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error('Geolocalización no soportada'));
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+          });
+        });
+        lat = position.coords.latitude;
+        lng = position.coords.longitude;
+      } catch (geoError) {
+        console.warn('No se pudo obtener ubicación:', geoError.message);
+        showToast('warning', 'Sin GPS', 'Check-in sin geolocalización');
+      }
+
+      submitBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i> Registrando...';
+      lucide.createIcons();
+
       const body = {
         routeId: document.getElementById('checkin-route').value,
         clientId: document.getElementById('checkin-client').value,
-        outcome: document.getElementById('checkin-outcome').value
+        outcome: document.getElementById('checkin-outcome').value,
+        lat,
+        lng
       };
+
       try {
         const res = await fetch(`${API}/routes/checkin`, {
           method: 'POST',
@@ -2257,10 +2452,20 @@
           body: JSON.stringify(body)
         });
         const data = await res.json();
+
+        if (data.success) {
+          const locationMsg = lat && lng ? ` (GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)})` : ' (sin GPS)';
+          showToast('success', 'Check-in registrado', data.data.client.name + locationMsg);
+        }
+
         showResponse('response-checkin', data, data.success);
         loadData();
       } catch (error) {
         showResponse('response-checkin', { error: error.message }, false);
+      } finally {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        lucide.createIcons();
       }
     });
 
@@ -2584,11 +2789,11 @@
     function renderClientsTable(data) {
       const tbody = document.querySelector('#table-clients tbody');
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay clientes que coincidan</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay clientes que coincidan</td></tr>';
         return;
       }
       tbody.innerHTML = data.map(c => {
-        const vendorName = c.assigned_user?.full_name || c.zone || '-';
+        const vendorName = c.assigned_user?.full_name || '-';
         const zoneName = c.zone || c.commune || '-';
         return `
           <tr>
@@ -2602,6 +2807,16 @@
             <td>
               <span class="badge badge-${(c.segment || 'c').toLowerCase()}">${c.segment || '-'}</span>
               ${c.priority === 'FOCO' ? '<span class="badge badge-foco">FOCO</span>' : ''}
+            </td>
+            <td>
+              <div style="display: flex; gap: 4px;">
+                <button class="btn-icon" onclick="openClientModal('${c.id}')" title="Editar">
+                  <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+                </button>
+                <button class="btn-icon" onclick="assignVendorQuick('${c.id}')" title="Asignar vendedor">
+                  <i data-lucide="user-plus" style="width: 14px; height: 14px;"></i>
+                </button>
+              </div>
             </td>
           </tr>
         `;
@@ -2666,6 +2881,170 @@
 
       currentClientsPage = 1;
       renderClientsTablePaginated();
+    }
+
+    // Client Modal Functions
+    function openClientModal(clientId = null) {
+      const modal = document.getElementById('modal-client');
+      const title = document.getElementById('modal-client-title');
+      const vendorSelect = document.getElementById('client-vendor');
+
+      // Populate vendor dropdown
+      vendorSelect.innerHTML = '<option value="">Sin asignar</option>' +
+        allUsers.filter(u => u.role === 'executive').map(u =>
+          `<option value="${u.id}">${u.full_name}</option>`
+        ).join('');
+
+      if (clientId) {
+        // Edit mode
+        const client = allClients.find(c => c.id === clientId);
+        if (!client) return;
+
+        title.textContent = 'Editar Cliente';
+        document.getElementById('client-id').value = client.id;
+        document.getElementById('client-code').value = client.external_id || '';
+        document.getElementById('client-name').value = client.name || '';
+        document.getElementById('client-fantasy').value = client.fantasy_name || '';
+        document.getElementById('client-address').value = client.address || '';
+        document.getElementById('client-commune').value = client.commune || '';
+        document.getElementById('client-zone').value = client.zone || '';
+        document.getElementById('client-segment').value = client.segment || 'C';
+        document.getElementById('client-priority').value = client.priority || 'Normal';
+        document.getElementById('client-vendor').value = client.assigned_user_id || '';
+      } else {
+        // Create mode
+        title.textContent = 'Nuevo Cliente';
+        document.getElementById('client-id').value = '';
+        document.getElementById('client-code').value = '';
+        document.getElementById('client-name').value = '';
+        document.getElementById('client-fantasy').value = '';
+        document.getElementById('client-address').value = '';
+        document.getElementById('client-commune').value = '';
+        document.getElementById('client-zone').value = '';
+        document.getElementById('client-segment').value = 'C';
+        document.getElementById('client-priority').value = 'Normal';
+        document.getElementById('client-vendor').value = '';
+      }
+
+      modal.style.display = 'flex';
+      lucide.createIcons();
+    }
+
+    function closeClientModal() {
+      document.getElementById('modal-client').style.display = 'none';
+    }
+
+    async function saveClient() {
+      const id = document.getElementById('client-id').value;
+      const code = document.getElementById('client-code').value.trim();
+      const name = document.getElementById('client-name').value.trim();
+
+      if (!code || !name) {
+        showToast('warning', 'Campos requeridos', 'Código y Razón Social son obligatorios');
+        return;
+      }
+
+      const clientData = {
+        external_id: code,
+        name: name,
+        fantasy_name: document.getElementById('client-fantasy').value.trim() || null,
+        address: document.getElementById('client-address').value.trim() || null,
+        commune: document.getElementById('client-commune').value.trim() || null,
+        zone: document.getElementById('client-zone').value.trim() || null,
+        segment: document.getElementById('client-segment').value,
+        priority: document.getElementById('client-priority').value,
+        assigned_user_id: document.getElementById('client-vendor').value || null
+      };
+
+      try {
+        const url = id ? `${API}/api/clients/${id}` : `${API}/api/clients`;
+        const method = id ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(clientData)
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', id ? 'Cliente actualizado' : 'Cliente creado', name);
+          closeClientModal();
+          loadData();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (error) {
+        showToast('error', 'Error de conexión', error.message);
+      }
+    }
+
+    async function assignVendorQuick(clientId) {
+      const client = allClients.find(c => c.id === clientId);
+      if (!client) return;
+
+      const executives = allUsers.filter(u => u.role === 'executive');
+      const options = executives.map(u => `<option value="${u.id}" ${client.assigned_user_id === u.id ? 'selected' : ''}>${u.full_name}</option>`).join('');
+
+      const select = document.createElement('select');
+      select.innerHTML = `<option value="">Sin asignar</option>${options}`;
+      select.className = 'form-control';
+      select.style.cssText = 'width: 200px;';
+
+      const result = await new Promise(resolve => {
+        const modal = document.createElement('div');
+        modal.innerHTML = `
+          <div class="modal" style="display: flex;">
+            <div class="modal-backdrop" onclick="this.parentElement.remove()"></div>
+            <div class="modal-content" style="max-width: 350px;">
+              <div class="modal-header">
+                <h3>Asignar Vendedor</h3>
+                <button class="btn-close" onclick="this.closest('.modal').remove()">&times;</button>
+              </div>
+              <div class="modal-body">
+                <p style="margin-bottom: 12px; font-size: 13px; color: var(--text-muted);">${client.fantasy_name || client.name}</p>
+                <div class="form-group">
+                  <label>Vendedor</label>
+                  <select id="quick-vendor" class="form-control">
+                    <option value="">Sin asignar</option>
+                    ${options}
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancelar</button>
+                <button class="btn btn-primary" id="btn-assign-confirm">Asignar</button>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#btn-assign-confirm').onclick = async () => {
+          const vendorId = modal.querySelector('#quick-vendor').value;
+          modal.remove();
+
+          try {
+            const res = await fetch(`${API}/api/clients/${clientId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ assigned_user_id: vendorId || null })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+              const vendorName = vendorId ? executives.find(u => u.id === vendorId)?.full_name : 'ninguno';
+              showToast('success', 'Vendedor asignado', vendorName);
+              loadData();
+            } else {
+              showToast('error', 'Error', data.error);
+            }
+          } catch (error) {
+            showToast('error', 'Error', error.message);
+          }
+        };
+      });
     }
 
     function populateZoneFilter() {
@@ -3166,9 +3545,65 @@
       });
     });
 
+    // GPS Status monitoring
+    let currentGpsPosition = null;
+
+    function updateGpsStatus() {
+      const statusDiv = document.getElementById('gps-status');
+      if (!statusDiv) return;
+
+      if (!navigator.geolocation) {
+        statusDiv.innerHTML = `
+          <i data-lucide="x-circle" style="width: 16px; height: 16px; color: var(--danger);"></i>
+          <span style="color: var(--danger);">GPS no disponible en este dispositivo</span>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          currentGpsPosition = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy
+          };
+          statusDiv.style.background = 'rgba(16, 185, 129, 0.1)';
+          statusDiv.style.border = '1px solid var(--success)';
+          statusDiv.innerHTML = `
+            <i data-lucide="navigation" style="width: 16px; height: 16px; color: var(--success);"></i>
+            <span style="color: var(--success);">GPS activo</span>
+            <span style="color: var(--text-muted); font-size: 11px; margin-left: auto;">
+              ${currentGpsPosition.lat.toFixed(5)}, ${currentGpsPosition.lng.toFixed(5)}
+              (±${Math.round(currentGpsPosition.accuracy)}m)
+            </span>
+          `;
+          lucide.createIcons();
+        },
+        (error) => {
+          statusDiv.style.background = 'rgba(245, 158, 11, 0.1)';
+          statusDiv.style.border = '1px solid var(--warning)';
+          let errorMsg = 'Error de ubicación';
+          if (error.code === 1) errorMsg = 'Permiso denegado - habilita ubicación';
+          if (error.code === 2) errorMsg = 'Ubicación no disponible';
+          if (error.code === 3) errorMsg = 'Tiempo de espera agotado';
+          statusDiv.innerHTML = `
+            <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: var(--warning);"></i>
+            <span style="color: var(--warning);">${errorMsg}</span>
+            <button onclick="updateGpsStatus()" class="btn btn-secondary" style="margin-left: auto; padding: 4px 8px; font-size: 11px;">Reintentar</button>
+          `;
+          lucide.createIcons();
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       initMaps();
       loadData();
+      updateGpsStatus();
+      // Update GPS every 30 seconds
+      setInterval(updateGpsStatus, 30000);
     });
   </script>
 </body>

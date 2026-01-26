@@ -170,8 +170,50 @@ class RoutesService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23505') throw new Error('Ya existe un cliente con ese código');
+      throw error;
+    }
     return data;
+  }
+
+  async updateClient(clientId, clientData) {
+    // Remove id from update data if present
+    const { id, created_at, ...updateData } = clientData;
+
+    const { data, error } = await supabase
+      .from('clients')
+      .update(updateData)
+      .eq('id', clientId)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') throw new Error('Ya existe un cliente con ese código');
+      throw error;
+    }
+    return data;
+  }
+
+  async deleteClient(clientId) {
+    // Check if client has visits
+    const { data: visits } = await supabase
+      .from('visits')
+      .select('id')
+      .eq('client_id', clientId)
+      .limit(1);
+
+    if (visits && visits.length > 0) {
+      throw new Error('No se puede eliminar: el cliente tiene visitas registradas');
+    }
+
+    const { error } = await supabase
+      .from('clients')
+      .delete()
+      .eq('id', clientId);
+
+    if (error) throw error;
+    return true;
   }
 
   async upsertClients(clients) {
@@ -363,7 +405,7 @@ class RoutesService {
     };
   }
 
-  async checkIn({ routeId, clientId, outcome, audioUrl }) {
+  async checkIn({ routeId, clientId, outcome, audioUrl, lat, lng }) {
     const { data: route, error: routeError } = await supabase
       .from('daily_routes')
       .select('id, status')
@@ -375,7 +417,7 @@ class RoutesService {
 
     const { data: client, error: clientError } = await supabase
       .from('clients')
-      .select('id, name')
+      .select('id, name, lat, lng')
       .eq('id', clientId)
       .single();
 
@@ -388,21 +430,31 @@ class RoutesService {
         client_id: clientId,
         check_in: new Date().toISOString(),
         outcome: outcome || 'pending',
-        audio_url: audioUrl || null
+        audio_url: audioUrl || null,
+        check_in_lat: lat || null,
+        check_in_lng: lng || null
       }])
       .select()
       .single();
 
     if (visitError) throw visitError;
 
+    // Update client's last visit and coordinates if not set
+    const updateData = { last_visit_at: new Date().toISOString() };
+    if (lat && lng && (!client.lat || !client.lng)) {
+      updateData.lat = lat;
+      updateData.lng = lng;
+    }
+
     await supabase
       .from('clients')
-      .update({ last_visit_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', clientId);
 
     return {
       visit,
-      client: { id: client.id, name: client.name }
+      client: { id: client.id, name: client.name },
+      location: lat && lng ? { lat, lng } : null
     };
   }
 

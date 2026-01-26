@@ -60,6 +60,33 @@ app.get('/api/clients/count', async (req, res) => {
   }
 });
 
+app.post('/api/clients', async (req, res) => {
+  try {
+    const client = await routesService.createClient(req.body);
+    res.status(201).json({ success: true, message: 'Cliente creado', data: client });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/clients/:id', async (req, res) => {
+  try {
+    const client = await routesService.updateClient(req.params.id, req.body);
+    res.json({ success: true, message: 'Cliente actualizado', data: client });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+app.delete('/api/clients/:id', async (req, res) => {
+  try {
+    await routesService.deleteClient(req.params.id);
+    res.json({ success: true, message: 'Cliente eliminado' });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 app.get('/api/products', async (req, res) => {
   try {
     const data = await intelligenceService.getAllProducts();
@@ -466,8 +493,8 @@ app.post('/routes/start', async (req, res) => {
 
 app.post('/routes/checkin', async (req, res) => {
   try {
-    const { routeId, clientId, outcome, audioUrl } = req.body;
-    const result = await routesService.checkIn({ routeId, clientId, outcome, audioUrl });
+    const { routeId, clientId, outcome, audioUrl, lat, lng } = req.body;
+    const result = await routesService.checkIn({ routeId, clientId, outcome, audioUrl, lat, lng });
     res.status(201).json({
       success: true,
       message: 'Visita registrada correctamente',
