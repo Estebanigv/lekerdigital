@@ -45,7 +45,16 @@ app.get('/api/vehicles', async (req, res) => {
 app.get('/api/clients', async (req, res) => {
   try {
     const data = await routesService.getAllClients();
-    res.json({ success: true, data });
+    res.json({ success: true, data, total: data.length });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/clients/count', async (req, res) => {
+  try {
+    const count = await routesService.getClientCount();
+    res.json({ success: true, count });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -263,8 +272,11 @@ app.post('/api/upload/clients', upload.single('file'), async (req, res) => {
       clientsData.push(clientData);
     }
 
-    // Insert/Update in database
-    const imported = await routesService.upsertClients(clientsData);
+    // Insert/Update in database based on mode
+    const mode = req.body.mode || 'upsert';
+    const imported = mode === 'replace'
+      ? await routesService.replaceClients(clientsData)
+      : await routesService.upsertClients(clientsData);
 
     res.json({
       success: true,
@@ -272,12 +284,164 @@ app.post('/api/upload/clients', upload.single('file'), async (req, res) => {
       data: {
         sheet: sheetName,
         totalRows: clientsData.length,
+        mode,
         ...imported
       }
     });
 
   } catch (error) {
     console.error('Error uploading file:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Upload Users (Ejecutivos)
+app.post('/api/upload/users', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No se envió archivo' });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    // Find header row
+    let headerRow = 0;
+    for (let i = 0; i < Math.min(10, rawData.length); i++) {
+      const row = rawData[i] || [];
+      const rowStr = row.join(' ').toLowerCase();
+      if (rowStr.includes('nombre') || rowStr.includes('email') || rowStr.includes('correo')) {
+        headerRow = i;
+        break;
+      }
+    }
+
+    const headers = (rawData[headerRow] || []).map(h =>
+      String(h || '').toLowerCase().trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_')
+    );
+
+    const colMap = {
+      name: headers.findIndex(h => h.includes('nombre') || h.includes('name')),
+      email: headers.findIndex(h => h.includes('email') || h.includes('correo')),
+      role: headers.findIndex(h => h.includes('rol') || h.includes('role') || h.includes('cargo'))
+    };
+
+    const usersData = [];
+    for (let i = headerRow + 1; i < rawData.length; i++) {
+      const row = rawData[i];
+      if (!row || row.length === 0) continue;
+
+      const getValue = (idx) => idx >= 0 && row[idx] ? String(row[idx]).trim() : '';
+
+      const name = getValue(colMap.name);
+      const email = getValue(colMap.email);
+
+      if (!name && !email) continue;
+
+      usersData.push({
+        full_name: name || 'Sin nombre',
+        email: email || `${name.toLowerCase().replace(/\s+/g, '.')}@leker.cl`,
+        role: getValue(colMap.role) || 'executive'
+      });
+    }
+
+    const mode = req.body.mode || 'upsert';
+    const imported = mode === 'replace'
+      ? await routesService.replaceUsers(usersData)
+      : await routesService.upsertUsers(usersData);
+
+    res.json({
+      success: true,
+      message: `Importación completada`,
+      data: {
+        sheet: sheetName,
+        totalRows: usersData.length,
+        mode,
+        ...imported
+      }
+    });
+
+  } catch (error) {
+    console.error('Error uploading users:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Upload Vehicles (Vehículos)
+app.post('/api/upload/vehicles', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No se envió archivo' });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    // Find header row
+    let headerRow = 0;
+    for (let i = 0; i < Math.min(10, rawData.length); i++) {
+      const row = rawData[i] || [];
+      const rowStr = row.join(' ').toLowerCase();
+      if (rowStr.includes('patente') || rowStr.includes('placa') || rowStr.includes('modelo')) {
+        headerRow = i;
+        break;
+      }
+    }
+
+    const headers = (rawData[headerRow] || []).map(h =>
+      String(h || '').toLowerCase().trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_')
+    );
+
+    const colMap = {
+      plate: headers.findIndex(h => h.includes('patente') || h.includes('placa') || h.includes('plate')),
+      model: headers.findIndex(h => h.includes('modelo') || h.includes('model')),
+      efficiency: headers.findIndex(h => h.includes('rendimiento') || h.includes('efficiency') || h.includes('km/l'))
+    };
+
+    const vehiclesData = [];
+    for (let i = headerRow + 1; i < rawData.length; i++) {
+      const row = rawData[i];
+      if (!row || row.length === 0) continue;
+
+      const getValue = (idx) => idx >= 0 && row[idx] ? String(row[idx]).trim() : '';
+
+      const plate = getValue(colMap.plate);
+      if (!plate) continue;
+
+      vehiclesData.push({
+        license_plate: plate.toUpperCase(),
+        model: getValue(colMap.model) || 'Sin modelo',
+        fuel_efficiency_kml: parseFloat(getValue(colMap.efficiency)) || 12,
+        status: 'active'
+      });
+    }
+
+    const mode = req.body.mode || 'upsert';
+    const imported = mode === 'replace'
+      ? await routesService.replaceVehicles(vehiclesData)
+      : await routesService.upsertVehicles(vehiclesData);
+
+    res.json({
+      success: true,
+      message: `Importación completada`,
+      data: {
+        sheet: sheetName,
+        totalRows: vehiclesData.length,
+        mode,
+        ...imported
+      }
+    });
+
+  } catch (error) {
+    console.error('Error uploading vehicles:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

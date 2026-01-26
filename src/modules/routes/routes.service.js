@@ -127,16 +127,40 @@ class RoutesService {
   // =============================================
 
   async getAllClients() {
-    const { data, error } = await supabase
+    // Get all clients using pagination to bypass Supabase default limit
+    let allClients = [];
+    let from = 0;
+    const batchSize = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      let { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('name')
+        .range(from, from + batchSize - 1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        allClients = allClients.concat(data);
+        from += batchSize;
+        hasMore = data.length === batchSize;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    return allClients;
+  }
+
+  async getClientCount() {
+    const { count, error } = await supabase
       .from('clients')
-      .select(`
-        *,
-        assigned_user:users!clients_assigned_user_id_fkey(id, full_name, email)
-      `)
-      .order('name');
+      .select('*', { count: 'exact', head: true });
 
     if (error) throw error;
-    return data || [];
+    return count;
   }
 
   async createClient(clientData) {
@@ -174,6 +198,115 @@ class RoutesService {
     }
 
     return results;
+  }
+
+  async upsertUsers(users) {
+    const results = { inserted: 0, updated: 0, errors: [] };
+
+    for (const user of users) {
+      const { data, error } = await supabase
+        .from('users')
+        .upsert(user, {
+          onConflict: 'email',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === '23505') {
+          results.updated++;
+        } else {
+          results.errors.push({ email: user.email, error: error.message });
+        }
+      } else {
+        results.inserted++;
+      }
+    }
+
+    return results;
+  }
+
+  async upsertVehicles(vehicles) {
+    const results = { inserted: 0, updated: 0, errors: [] };
+
+    for (const vehicle of vehicles) {
+      const { data, error } = await supabase
+        .from('vehicles')
+        .upsert(vehicle, {
+          onConflict: 'license_plate',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === '23505') {
+          results.updated++;
+        } else {
+          results.errors.push({ plate: vehicle.license_plate, error: error.message });
+        }
+      } else {
+        results.inserted++;
+      }
+    }
+
+    return results;
+  }
+
+  async replaceClients(clients) {
+    // Delete all existing clients then insert new ones
+    const { error: deleteError } = await supabase
+      .from('clients')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+    if (deleteError) throw deleteError;
+
+    return await this.upsertClients(clients);
+  }
+
+  async replaceUsers(users) {
+    // Delete all users without active routes
+    const { data: usersWithRoutes } = await supabase
+      .from('daily_routes')
+      .select('user_id')
+      .eq('status', 'active');
+
+    const activeUserIds = usersWithRoutes?.map(r => r.user_id) || [];
+
+    // Only delete users that don't have active routes
+    const { error: deleteError } = await supabase
+      .from('users')
+      .delete()
+      .not('id', 'in', `(${activeUserIds.length > 0 ? activeUserIds.join(',') : '00000000-0000-0000-0000-000000000000'})`);
+
+    if (deleteError && !deleteError.message.includes('empty')) {
+      console.warn('Delete warning:', deleteError.message);
+    }
+
+    return await this.upsertUsers(users);
+  }
+
+  async replaceVehicles(vehicles) {
+    // Delete all vehicles not in use
+    const { data: vehiclesInUse } = await supabase
+      .from('daily_routes')
+      .select('vehicle_id')
+      .eq('status', 'active');
+
+    const activeVehicleIds = vehiclesInUse?.map(r => r.vehicle_id) || [];
+
+    const { error: deleteError } = await supabase
+      .from('vehicles')
+      .delete()
+      .not('id', 'in', `(${activeVehicleIds.length > 0 ? activeVehicleIds.join(',') : '00000000-0000-0000-0000-000000000000'})`);
+
+    if (deleteError && !deleteError.message.includes('empty')) {
+      console.warn('Delete warning:', deleteError.message);
+    }
+
+    return await this.upsertVehicles(vehicles);
   }
 
   // =============================================

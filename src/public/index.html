@@ -42,8 +42,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Google Maps will load its own styles -->
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
@@ -182,6 +181,60 @@
     .nav-item i {
       width: 20px;
       height: 20px;
+    }
+
+    /* Expandable Submenu */
+    .nav-item-expandable {
+      margin-bottom: 4px;
+    }
+
+    .nav-item-parent {
+      justify-content: flex-start;
+    }
+
+    .nav-item-parent .submenu-arrow {
+      margin-left: auto;
+      width: 16px;
+      height: 16px;
+      transition: transform 0.2s;
+    }
+
+    .nav-item-expandable.open .submenu-arrow {
+      transform: rotate(180deg);
+    }
+
+    .nav-submenu {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      padding-left: 16px;
+    }
+
+    .nav-item-expandable.open .nav-submenu {
+      max-height: 300px;
+    }
+
+    .nav-subitem {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .nav-subitem:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .nav-subitem.active {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--accent);
     }
 
     .sidebar-footer {
@@ -1123,9 +1176,34 @@
 
       <div class="nav-section">
         <div class="nav-section-title">Configuración</div>
-        <div class="nav-item" data-tab="data">
-          <i data-lucide="database"></i>
-          <span>Datos Base</span>
+        <div class="nav-item-expandable open">
+          <div class="nav-item nav-item-parent" onclick="toggleSubmenu(this)">
+            <i data-lucide="database"></i>
+            <span>Datos Base</span>
+            <i data-lucide="chevron-down" class="submenu-arrow"></i>
+          </div>
+          <div class="nav-submenu">
+            <div class="nav-subitem" data-tab="data" data-subtab="ejecutivos">
+              <i data-lucide="users" style="width: 16px; height: 16px;"></i>
+              <span>Ejecutivos</span>
+            </div>
+            <div class="nav-subitem" data-tab="data" data-subtab="vehiculos">
+              <i data-lucide="truck" style="width: 16px; height: 16px;"></i>
+              <span>Vehículos</span>
+            </div>
+            <div class="nav-subitem" data-tab="data" data-subtab="clientes">
+              <i data-lucide="building-2" style="width: 16px; height: 16px;"></i>
+              <span>Clientes</span>
+            </div>
+            <div class="nav-subitem" data-tab="data" data-subtab="productos">
+              <i data-lucide="package" style="width: 16px; height: 16px;"></i>
+              <span>Productos</span>
+            </div>
+            <div class="nav-subitem" data-tab="data" data-subtab="importar">
+              <i data-lucide="upload" style="width: 16px; height: 16px;"></i>
+              <span>Importar Excel</span>
+            </div>
+          </div>
         </div>
       </div>
     </nav>
@@ -1681,6 +1759,118 @@
             </div>
           </div>
         </div>
+
+        <!-- ==================== IMPORTAR EXCEL ==================== -->
+        <div class="data-subpanel" id="subpanel-importar">
+          <div class="grid-2">
+            <!-- Instrucciones -->
+            <div class="card">
+              <div class="card-header">
+                <h3><i data-lucide="info" style="width: 18px; height: 18px;"></i> Instrucciones de Importación</h3>
+              </div>
+              <div class="card-body">
+                <div style="font-size: 14px; line-height: 1.8;">
+                  <p style="margin-bottom: 16px;"><strong>Tipos de importación:</strong></p>
+                  <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 12px; display: flex; align-items: flex-start; gap: 8px;">
+                      <span class="badge badge-a">1</span>
+                      <div>
+                        <strong>Incremental (Recomendado)</strong><br>
+                        <span style="color: var(--text-muted); font-size: 13px;">Agrega nuevos registros y actualiza existentes. Ideal para actualizaciones diarias o semanales.</span>
+                      </div>
+                    </li>
+                    <li style="margin-bottom: 12px; display: flex; align-items: flex-start; gap: 8px;">
+                      <span class="badge badge-b">2</span>
+                      <div>
+                        <strong>Reemplazo Total</strong><br>
+                        <span style="color: var(--text-muted); font-size: 13px;">Elimina todos los registros y carga los nuevos. Usar solo para carga inicial o correcciones masivas.</span>
+                      </div>
+                    </li>
+                  </ul>
+                  <div style="margin-top: 16px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; font-size: 13px;">
+                    <strong>Tip:</strong> Puedes subir datos de cualquier período (día, semana, mes, año). El sistema detecta duplicados por código y los actualiza.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Formato esperado -->
+            <div class="card">
+              <div class="card-header">
+                <h3><i data-lucide="file-text" style="width: 18px; height: 18px;"></i> Formato de Archivo</h3>
+              </div>
+              <div class="card-body">
+                <div style="font-size: 13px;">
+                  <p style="margin-bottom: 12px;"><strong>Clientes:</strong></p>
+                  <code style="display: block; padding: 12px; background: var(--bg-hover); border-radius: 6px; margin-bottom: 16px;">
+                    Código | Razón Social | Nombre Fantasía | Dirección | Comuna | Zona | Segmento | Prioridad
+                  </code>
+
+                  <p style="margin-bottom: 12px;"><strong>Ejecutivos:</strong></p>
+                  <code style="display: block; padding: 12px; background: var(--bg-hover); border-radius: 6px; margin-bottom: 16px;">
+                    Nombre | Email | Rol | Zona
+                  </code>
+
+                  <p style="margin-bottom: 12px;"><strong>Vehículos:</strong></p>
+                  <code style="display: block; padding: 12px; background: var(--bg-hover); border-radius: 6px;">
+                    Patente | Modelo | Rendimiento (Km/L) | Estado
+                  </code>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Importar por categoría -->
+          <div class="card" style="margin-top: 24px;">
+            <div class="card-header">
+              <h3><i data-lucide="upload" style="width: 18px; height: 18px;"></i> Cargar Archivo Excel</h3>
+            </div>
+            <div class="card-body">
+              <div class="grid-2" style="gap: 24px;">
+                <div>
+                  <div class="form-group">
+                    <label>Categoría a importar</label>
+                    <select id="import-category" class="form-control">
+                      <option value="clients">Clientes</option>
+                      <option value="users">Ejecutivos</option>
+                      <option value="vehicles">Vehículos</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Modo de importación</label>
+                    <select id="import-mode" class="form-control">
+                      <option value="upsert">Incremental (Agrega/Actualiza)</option>
+                      <option value="replace">Reemplazo Total (Elimina y carga)</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <div class="form-group">
+                    <label>Archivo Excel (.xlsx, .xls)</label>
+                    <input type="file" id="import-file" class="form-control" accept=".xlsx,.xls" style="padding: 10px;">
+                  </div>
+                  <button class="btn btn-primary btn-block" onclick="importExcelFile()" style="margin-top: 8px;">
+                    <i data-lucide="upload" style="width: 16px; height: 16px;"></i>
+                    Importar Archivo
+                  </button>
+                </div>
+              </div>
+              <div id="import-result" style="margin-top: 20px; display: none;"></div>
+            </div>
+          </div>
+
+          <!-- Historial de importaciones -->
+          <div class="card" style="margin-top: 24px;">
+            <div class="card-header">
+              <h3><i data-lucide="history" style="width: 18px; height: 18px;"></i> Últimas Importaciones</h3>
+            </div>
+            <div class="card-body" id="import-history">
+              <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+                No hay importaciones recientes
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -1688,8 +1878,8 @@
   <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Google Maps JS -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7s1MSGD_1AXZgRHue38c1TteTFiwnt4Q&libraries=places,geometry"></script>
 
   <script>
     // Initialize Lucide icons
@@ -1729,10 +1919,22 @@
     }
 
     // Theme Management
-    const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-    const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-    let currentTileLayer = null;
-    let currentTileLayerRoute = null;
+    // Google Maps styles for dark/light mode
+    const LIGHT_MAP_STYLES = [];
+    const DARK_MAP_STYLES = [
+      { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+      { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+      { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+      { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+      { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
+      { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+      { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
+      { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
+      { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
+      { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] }
+    ];
+    // Google Maps handles styles internally
 
     function getStoredTheme() {
       return localStorage.getItem('leker-theme') || 'light';
@@ -1752,21 +1954,14 @@
     }
 
     function updateMapTiles(theme) {
-      const tilesUrl = theme === 'dark' ? DARK_TILES : LIGHT_TILES;
+      const styles = theme === 'dark' ? DARK_MAP_STYLES : LIGHT_MAP_STYLES;
 
       // Only update if maps are initialized
-      if (typeof mainMap !== 'undefined' && mainMap && currentTileLayer) {
-        mainMap.removeLayer(currentTileLayer);
-        currentTileLayer = L.tileLayer(tilesUrl, {
-          attribution: '© <a href="https://carto.com/">CARTO</a>'
-        }).addTo(mainMap);
+      if (typeof mainMap !== 'undefined' && mainMap) {
+        mainMap.setOptions({ styles: styles });
       }
-
-      if (typeof routeMap !== 'undefined' && routeMap && currentTileLayerRoute) {
-        routeMap.removeLayer(currentTileLayerRoute);
-        currentTileLayerRoute = L.tileLayer(tilesUrl, {
-          attribution: '© <a href="https://carto.com/">CARTO</a>'
-        }).addTo(routeMap);
+      if (typeof routeMap !== 'undefined' && routeMap) {
+        routeMap.setOptions({ styles: styles });
       }
     }
 
@@ -1775,6 +1970,9 @@
 
     const API = '';
     let mainMap, routeMap;
+    let mainMapMarkers = [];
+    let routeMapMarkers = [];
+    let mainInfoWindow, routeInfoWindow;
     let clientMarkers = [];
 
     // Global data storage for filtering
@@ -1791,12 +1989,20 @@
     const REGION_CENTER = [-34.35, -71.0];
     const REGION_ZOOM = 9;
 
+    // Submenu Toggle
+    function toggleSubmenu(element) {
+      const parent = element.closest('.nav-item-expandable');
+      parent.classList.toggle('open');
+    }
+
     // Tab Navigation
-    document.querySelectorAll('.nav-item').forEach(item => {
+    document.querySelectorAll('.nav-item:not(.nav-item-parent)').forEach(item => {
       item.addEventListener('click', () => {
         const tab = item.dataset.tab;
+        if (!tab) return;
 
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.nav-subitem').forEach(i => i.classList.remove('active'));
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
 
         item.classList.add('active');
@@ -1814,9 +2020,9 @@
 
         // Refresh maps when switching tabs
         setTimeout(() => {
-          if (mainMap) mainMap.invalidateSize();
+          if (mainMap) google.maps.event.trigger(mainMap, 'resize');
           if (routeMap) {
-            routeMap.invalidateSize();
+            google.maps.event.trigger(routeMap, 'resize');
             // Load route on first view of routes tab
             if (tab === 'routes' && routeMarkers.length === 0) {
               loadTodayRoutes();
@@ -1826,71 +2032,90 @@
       });
     });
 
-    // Initialize Maps - Centered on Region O'Higgins
+    // Initialize Maps - Centered on Chile
     function initMaps() {
       const theme = getStoredTheme();
-      const tilesUrl = theme === 'dark' ? DARK_TILES : LIGHT_TILES;
+      const styles = theme === 'dark' ? DARK_MAP_STYLES : LIGHT_MAP_STYLES;
+
+      const mapOptions = {
+        center: { lat: REGION_CENTER[0], lng: REGION_CENTER[1] },
+        zoom: REGION_ZOOM,
+        styles: styles,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: true
+      };
 
       // Main dashboard map
-      mainMap = L.map('map').setView(REGION_CENTER, REGION_ZOOM);
-      currentTileLayer = L.tileLayer(tilesUrl, {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-        subdomains: 'abcd',
-        maxZoom: 19
-      }).addTo(mainMap);
+      mainMap = new google.maps.Map(document.getElementById('map'), mapOptions);
+      mainInfoWindow = new google.maps.InfoWindow();
 
       // Route map
-      routeMap = L.map('map-route').setView(REGION_CENTER, REGION_ZOOM);
-      currentTileLayerRoute = L.tileLayer(tilesUrl, {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-        subdomains: 'abcd',
-        maxZoom: 19
-      }).addTo(routeMap);
+      routeMap = new google.maps.Map(document.getElementById('map-route'), mapOptions);
+      routeInfoWindow = new google.maps.InfoWindow();
     }
 
     // Add client markers to map using lat/lng from client data
     function addClientMarkers(clients) {
+      // Clear existing markers
+      mainMapMarkers.forEach(m => m.setMap(null));
+      mainMapMarkers = [];
+
+      const bounds = new google.maps.LatLngBounds();
+      let hasMarkers = false;
+
       clients.forEach(client => {
         // Use lat/lng from client object
         if (!client.lat || !client.lng) return;
-        const coords = [client.lat, client.lng];
 
-        const priorityClass = client.priority === 'FOCO' ? 'foco' : '';
+        const position = { lat: parseFloat(client.lat), lng: parseFloat(client.lng) };
+        bounds.extend(position);
+        hasMarkers = true;
 
-        const icon = L.divIcon({
-          className: 'custom-marker',
-          html: `<div class="marker-pin segment-${client.segment.toLowerCase()} ${priorityClass}"></div>`,
-          iconSize: [30, 42],
-          iconAnchor: [15, 42]
+        // Marker colors by segment
+        const colors = { A: '#059669', B: '#d97706', C: '#6b7280' };
+        const color = colors[client.segment] || colors.C;
+        const isFoco = client.priority === 'FOCO';
+
+        const marker = new google.maps.Marker({
+          position: position,
+          map: mainMap,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: color,
+            fillOpacity: 1,
+            strokeColor: isFoco ? '#ef4444' : '#fff',
+            strokeWeight: isFoco ? 3 : 2,
+            scale: isFoco ? 12 : 10
+          },
+          title: client.name
         });
 
-        const popupContent = `
-          <div class="popup-content">
-            <strong class="popup-title">${client.name}</strong>
-            ${client.fantasy_name ? `<em class="popup-subtitle">${client.fantasy_name}</em>` : ''}
-            <small class="popup-address">${client.address}</small>
-            <small class="popup-address">${client.commune}</small>
-            <div class="popup-badges">
-              <span class="badge badge-${client.segment.toLowerCase()}">${client.segment}</span>
-              ${client.priority === 'FOCO' ? '<span class="badge badge-foco">FOCO</span>' : ''}
+        const infoContent = `
+          <div style="min-width: 200px; padding: 8px;">
+            <strong style="font-size: 14px; color: #1f2937;">${client.name}</strong>
+            ${client.fantasy_name ? `<div style="font-style: italic; color: #6b7280; font-size: 12px;">${client.fantasy_name}</div>` : ''}
+            <div style="margin-top: 8px; font-size: 12px; color: #374151;">${client.address || ''}</div>
+            <div style="font-size: 12px; color: #6b7280;">${client.commune || ''}</div>
+            <div style="margin-top: 8px;">
+              <span style="background: ${color}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${client.segment}</span>
+              ${isFoco ? '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 4px;">FOCO</span>' : ''}
             </div>
           </div>
         `;
 
-        const marker = L.marker(coords, { icon })
-          .addTo(mainMap)
-          .bindPopup(popupContent);
+        marker.addListener('click', () => {
+          mainInfoWindow.setContent(infoContent);
+          mainInfoWindow.open(mainMap, marker);
+        });
 
-        // Also add to route map
-        L.marker(coords, { icon }).addTo(routeMap).bindPopup(popupContent);
-
+        mainMapMarkers.push(marker);
         clientMarkers.push(marker);
       });
 
       // Fit bounds to show all markers
-      if (clientMarkers.length > 0) {
-        const group = new L.featureGroup(clientMarkers);
-        mainMap.fitBounds(group.getBounds().pad(0.1));
+      if (hasMarkers) {
+        mainMap.fitBounds(bounds);
       }
     }
 
@@ -2109,10 +2334,10 @@
 
     function clearRouteFromMap() {
       if (routePolyline) {
-        routeMap.removeLayer(routePolyline);
+        routePolyline.setMap(null);
         routePolyline = null;
       }
-      routeMarkers.forEach(m => routeMap.removeLayer(m));
+      routeMarkers.forEach(m => m.setMap(null));
       routeMarkers = [];
     }
 
@@ -2126,13 +2351,25 @@
 
       const coordinates = [];
       const visits = route.visits;
+      const bounds = new google.maps.LatLngBounds();
+
+      // Status colors
+      const statusColors = {
+        pending: '#9ca3af',
+        current: '#3b82f6',
+        visited: '#10b981',
+        sold: '#059669',
+        no_sale: '#f59e0b',
+        closed: '#ef4444'
+      };
 
       // Add visit markers
       visits.forEach((visit, index) => {
         if (!visit.client || !visit.client.lat || !visit.client.lng) return;
 
-        const coords = [visit.client.lat, visit.client.lng];
-        coordinates.push(coords);
+        const position = { lat: parseFloat(visit.client.lat), lng: parseFloat(visit.client.lng) };
+        coordinates.push(position);
+        bounds.extend(position);
 
         // Determine marker status
         let statusClass = 'pending';
@@ -2145,46 +2382,65 @@
           statusLabel = 'En visita';
         }
 
-        const icon = L.divIcon({
-          className: 'custom-marker',
-          html: `<div class="visit-marker ${statusClass}">${index + 1}</div>`,
-          iconSize: [28, 28],
-          iconAnchor: [14, 14]
+        const color = statusColors[statusClass] || statusColors.pending;
+
+        const marker = new google.maps.Marker({
+          position: position,
+          map: routeMap,
+          label: {
+            text: String(index + 1),
+            color: 'white',
+            fontSize: '12px',
+            fontWeight: 'bold'
+          },
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: color,
+            fillOpacity: 1,
+            strokeColor: '#fff',
+            strokeWeight: 2,
+            scale: 14
+          },
+          title: visit.client.name
         });
 
-        const marker = L.marker(coords, { icon })
-          .addTo(routeMap)
-          .bindPopup(`
-            <div style="min-width: 200px;">
-              <strong style="font-size: 14px;">${index + 1}. ${visit.client.name}</strong>
-              <p style="margin: 4px 0; color: var(--text-secondary); font-size: 12px;">
-                ${visit.client.address}<br>
-                <span style="color: var(--text-muted);">${visit.client.commune}</span>
-              </p>
-              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                <span class="badge badge-${getBadgeColor(statusClass)}">${statusLabel}</span>
-                ${visit.ai_summary ? `<p style="margin-top: 6px; font-size: 11px; color: var(--text-muted);">${visit.ai_summary}</p>` : ''}
-              </div>
+        const infoContent = `
+          <div style="min-width: 200px; padding: 8px;">
+            <strong style="font-size: 14px; color: #1f2937;">${index + 1}. ${visit.client.name}</strong>
+            <div style="margin: 4px 0; color: #6b7280; font-size: 12px;">
+              ${visit.client.address || ''}<br>
+              ${visit.client.commune || ''}
             </div>
-          `);
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+              <span style="background: ${color}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${statusLabel}</span>
+              ${visit.ai_summary ? `<p style="margin-top: 6px; font-size: 11px; color: #9ca3af;">${visit.ai_summary}</p>` : ''}
+            </div>
+          </div>
+        `;
+
+        marker.addListener('click', () => {
+          routeInfoWindow.setContent(infoContent);
+          routeInfoWindow.open(routeMap, marker);
+        });
 
         routeMarkers.push(marker);
       });
 
       // Draw route polyline
       if (coordinates.length > 1) {
-        routePolyline = L.polyline(coordinates, {
-          color: '#3b82f6',
-          weight: 4,
-          opacity: 0.8,
-          dashArray: '10, 10'
-        }).addTo(routeMap);
+        routePolyline = new google.maps.Polyline({
+          path: coordinates,
+          geodesic: true,
+          strokeColor: '#3b82f6',
+          strokeOpacity: 0.8,
+          strokeWeight: 4
+        });
+        routePolyline.setMap(routeMap);
       }
 
       // Fit map to route bounds
       if (coordinates.length > 0) {
-        const group = L.featureGroup(routeMarkers);
-        routeMap.fitBounds(group.getBounds().pad(0.1));
+        routeMap.fitBounds(bounds);
       }
 
       // Update legend
@@ -2764,7 +3020,152 @@
       }
     }
 
+    // Import Excel by category
+    async function importExcelFile() {
+      const fileInput = document.getElementById('import-file');
+      const category = document.getElementById('import-category').value;
+      const mode = document.getElementById('import-mode').value;
+      const resultDiv = document.getElementById('import-result');
+
+      if (!fileInput.files.length) {
+        showToast('warning', 'Sin archivo', 'Selecciona un archivo Excel');
+        return;
+      }
+
+      const categoryNames = { clients: 'Clientes', users: 'Ejecutivos', vehicles: 'Vehículos' };
+      const modeNames = { upsert: 'Incremental', replace: 'Reemplazo Total' };
+
+      if (mode === 'replace' && !confirm(`¿Estás seguro de hacer un REEMPLAZO TOTAL de ${categoryNames[category]}?\n\nEsto eliminará todos los registros existentes.`)) {
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', category);
+      formData.append('mode', mode);
+
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = `<div style="color: var(--accent); display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i>
+        Procesando ${categoryNames[category]}...
+      </div>`;
+      lucide.createIcons();
+
+      try {
+        const res = await fetch(`${API}/api/upload/${category}`, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          resultDiv.innerHTML = `
+            <div style="padding: 16px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid var(--success);">
+              <strong style="color: var(--success); display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
+                Importación Exitosa
+              </strong>
+              <div style="margin-top: 12px; font-size: 13px; color: var(--text-secondary);">
+                <div>Categoría: <strong>${categoryNames[category]}</strong></div>
+                <div>Modo: <strong>${modeNames[mode]}</strong></div>
+                <div>Registros procesados: <strong>${data.data.totalRows || 0}</strong></div>
+                <div>Insertados/Actualizados: <strong>${data.data.inserted || 0}</strong></div>
+                ${data.data.errors?.length > 0 ? `<div style="color: var(--warning);">Errores: ${data.data.errors.length}</div>` : ''}
+              </div>
+            </div>
+          `;
+          showToast('success', 'Importación completada', `${data.data.inserted || data.data.totalRows} ${categoryNames[category].toLowerCase()} importados`);
+          fileInput.value = '';
+          loadData();
+          addImportHistory(categoryNames[category], modeNames[mode], data.data.inserted || data.data.totalRows);
+        } else {
+          resultDiv.innerHTML = `
+            <div style="padding: 16px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid var(--danger);">
+              <strong style="color: var(--danger);">Error en importación</strong>
+              <div style="margin-top: 8px; font-size: 13px;">${data.error}</div>
+            </div>
+          `;
+          showToast('error', 'Error en importación', data.error);
+        }
+        lucide.createIcons();
+      } catch (error) {
+        resultDiv.innerHTML = `<div style="color: var(--danger);">Error: ${error.message}</div>`;
+        showToast('error', 'Error de conexión', error.message);
+      }
+    }
+
+    // Add to import history (stored in localStorage)
+    function addImportHistory(category, mode, count) {
+      const history = JSON.parse(localStorage.getItem('importHistory') || '[]');
+      history.unshift({
+        date: new Date().toLocaleString('es-CL'),
+        category,
+        mode,
+        count
+      });
+      // Keep only last 10
+      localStorage.setItem('importHistory', JSON.stringify(history.slice(0, 10)));
+      renderImportHistory();
+    }
+
+    function renderImportHistory() {
+      const container = document.getElementById('import-history');
+      const history = JSON.parse(localStorage.getItem('importHistory') || '[]');
+
+      if (history.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No hay importaciones recientes</div>';
+        return;
+      }
+
+      container.innerHTML = history.map(h => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border);">
+          <div>
+            <strong>${h.category}</strong>
+            <span class="badge" style="margin-left: 8px; background: var(--bg-hover);">${h.mode}</span>
+          </div>
+          <div style="text-align: right; font-size: 12px; color: var(--text-muted);">
+            <div>${h.count} registros</div>
+            <div>${h.date}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
     // Initialize
+    // Submenu navigation
+    document.querySelectorAll('.nav-subitem').forEach(item => {
+      item.addEventListener('click', () => {
+        const tab = item.dataset.tab;
+        const subtab = item.dataset.subtab;
+
+        // Update nav items
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.nav-subitem').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+
+        item.classList.add('active');
+        document.getElementById(`panel-${tab}`).classList.add('active');
+
+        // Switch to subtab
+        if (subtab) {
+          switchDataTab(subtab);
+        }
+
+        // Update page title
+        const subtabTitles = {
+          ejecutivos: 'Ejecutivos',
+          vehiculos: 'Vehículos',
+          clientes: 'Clientes',
+          productos: 'Productos',
+          importar: 'Importar Excel'
+        };
+        document.getElementById('page-title').textContent = subtabTitles[subtab] || 'Datos del Sistema';
+
+        lucide.createIcons();
+      });
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
       initMaps();
       loadData();
