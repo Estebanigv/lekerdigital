@@ -1353,10 +1353,14 @@
         <!-- Tablas de Vendedores y Vehículos -->
         <div class="grid-2" style="margin-top: 24px;">
           <div class="card">
-            <div class="card-header">
-              <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Vendedores</h3>
+            <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Vendedores</h3>
+                <span class="badge badge-active" id="users-count">0</span>
+              </div>
+              <input type="text" id="search-users" class="form-control" placeholder="Buscar vendedor..." oninput="filterUsers()" style="margin-top: 8px;">
             </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper" style="max-height: 350px; overflow-y: auto;">
               <table id="table-users">
                 <thead>
                   <tr>
@@ -1372,10 +1376,14 @@
           </div>
 
           <div class="card">
-            <div class="card-header">
-              <h3><i data-lucide="truck" style="width: 18px; height: 18px;"></i> Vehículos</h3>
+            <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3><i data-lucide="truck" style="width: 18px; height: 18px;"></i> Vehículos</h3>
+                <span class="badge badge-active" id="vehicles-count">0</span>
+              </div>
+              <input type="text" id="search-vehicles" class="form-control" placeholder="Buscar vehículo..." oninput="filterVehicles()" style="margin-top: 8px;">
             </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper" style="max-height: 350px; overflow-y: auto;">
               <table id="table-vehicles">
                 <thead>
                   <tr>
@@ -1392,45 +1400,72 @@
           </div>
         </div>
 
-        <!-- Clientes y Productos -->
-        <div class="grid-2" style="margin-top: 24px;">
-          <div class="card">
-            <div class="card-header">
+        <!-- Clientes (Vista mejorada) -->
+        <div class="card" style="margin-top: 24px;">
+          <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
               <h3><i data-lucide="building-2" style="width: 18px; height: 18px;"></i> Clientes</h3>
               <span class="badge badge-active" id="clients-count">0</span>
             </div>
-            <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
-              <table id="table-clients">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Dirección</th>
-                    <th>Comuna</th>
-                    <th>Segmento</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <input type="text" id="search-clients" class="form-control" placeholder="Buscar cliente por nombre, dirección o comuna..." oninput="filterClients()" style="flex: 1; min-width: 250px;">
+              <select id="filter-segment" class="form-control" onchange="filterClients()" style="width: 150px;">
+                <option value="">Todos los segmentos</option>
+                <option value="A">Segmento A</option>
+                <option value="B">Segmento B</option>
+                <option value="C">Segmento C</option>
+              </select>
+              <select id="filter-priority" class="form-control" onchange="filterClients()" style="width: 130px;">
+                <option value="">Todos</option>
+                <option value="FOCO">Solo FOCO</option>
+              </select>
+            </div>
+            <div id="clients-pagination" style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--border);">
+              <span id="clients-showing" style="font-size: 13px; color: var(--text-muted);">Mostrando 0 de 0</span>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" onclick="prevClientsPage()" id="btn-prev-clients" disabled style="padding: 6px 12px;">
+                  <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
+                </button>
+                <span id="clients-page-info" style="padding: 6px 12px; font-size: 13px;">Página 1</span>
+                <button class="btn btn-secondary" onclick="nextClientsPage()" id="btn-next-clients" style="padding: 6px 12px;">
+                  <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+                </button>
+              </div>
             </div>
           </div>
+          <div class="table-wrapper" style="max-height: 450px; overflow-y: auto;">
+            <table id="table-clients">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Dirección</th>
+                  <th>Comuna</th>
+                  <th>Segmento</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
 
-          <div class="card">
-            <div class="card-header">
-              <h3><i data-lucide="package" style="width: 18px; height: 18px;"></i> Productos</h3>
-            </div>
-            <div class="table-wrapper">
-              <table id="table-products">
-                <thead>
-                  <tr>
-                    <th>SKU</th>
-                    <th>Nombre</th>
-                    <th>Costo</th>
-                    <th>Precio Lista</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
+        <!-- Productos -->
+        <div class="card" style="margin-top: 24px;">
+          <div class="card-header">
+            <h3><i data-lucide="package" style="width: 18px; height: 18px;"></i> Productos</h3>
+            <span class="badge badge-active" id="products-count">0</span>
+          </div>
+          <div class="table-wrapper" style="max-height: 300px; overflow-y: auto;">
+            <table id="table-products">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Nombre</th>
+                  <th>Costo</th>
+                  <th>Precio Lista</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -1492,6 +1527,16 @@
     const API = '';
     let mainMap, routeMap;
     let clientMarkers = [];
+
+    // Global data storage for filtering
+    let allUsers = [];
+    let allVehicles = [];
+    let allClients = [];
+    let filteredClients = [];
+
+    // Pagination for clients
+    const CLIENTS_PER_PAGE = 50;
+    let currentClientsPage = 1;
 
     // Region O'Higgins center coordinates
     const REGION_CENTER = [-34.35, -71.0];
@@ -1629,17 +1674,26 @@
         const executives = users.data.filter(u => u.role === 'executive');
         populateSelect('select-route-executive', executives, 'id', 'full_name');
 
+        // Store data globally for filtering
+        allUsers = users.data;
+        allVehicles = vehicles.data;
+        allClients = clients.data;
+        filteredClients = [...allClients];
+        currentClientsPage = 1;
+
+        // Update counts
+        document.getElementById('users-count').textContent = allUsers.length;
+        document.getElementById('vehicles-count').textContent = allVehicles.length;
+        document.getElementById('clients-count').textContent = allClients.length;
+        document.getElementById('products-count').textContent = products.data.length;
+
         // Render tables
-        renderUsersTable(users.data);
-        renderVehiclesTable(vehicles.data);
-        renderClientsTable(clients.data);
+        renderUsersTable(allUsers);
+        renderVehiclesTable(allVehicles);
+        renderClientsTablePaginated();
         renderProductsTable(products.data);
         renderRoutesTable(routes.data);
         renderPricesTable(prices.data);
-
-        // Update clients count badge
-        const clientsCountEl = document.getElementById('clients-count');
-        if (clientsCountEl) clientsCountEl.textContent = clients.data.length;
 
         // Add markers to map
         addClientMarkers(clients.data);
@@ -2018,6 +2072,10 @@
     // Render tables
     function renderClientsTable(data) {
       const tbody = document.querySelector('#table-clients tbody');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay clientes que coincidan</td></tr>';
+        return;
+      }
       tbody.innerHTML = data.map(c => `
         <tr>
           <td>
@@ -2025,13 +2083,92 @@
             ${c.fantasy_name ? `<div style="font-size: 11px; color: var(--text-muted);">${c.fantasy_name}</div>` : ''}
           </td>
           <td style="font-size: 13px;">${c.address || '-'}</td>
-          <td>${c.commune}</td>
+          <td>${c.commune || '-'}</td>
           <td>
-            <span class="badge badge-${c.segment.toLowerCase()}">${c.segment}</span>
+            <span class="badge badge-${(c.segment || 'c').toLowerCase()}">${c.segment || '-'}</span>
             ${c.priority === 'FOCO' ? '<span class="badge badge-foco">FOCO</span>' : ''}
           </td>
         </tr>
       `).join('');
+    }
+
+    // Paginated clients render
+    function renderClientsTablePaginated() {
+      const totalPages = Math.ceil(filteredClients.length / CLIENTS_PER_PAGE);
+      const start = (currentClientsPage - 1) * CLIENTS_PER_PAGE;
+      const end = start + CLIENTS_PER_PAGE;
+      const pageData = filteredClients.slice(start, end);
+
+      renderClientsTable(pageData);
+
+      // Update pagination info
+      document.getElementById('clients-showing').textContent =
+        `Mostrando ${start + 1}-${Math.min(end, filteredClients.length)} de ${filteredClients.length}`;
+      document.getElementById('clients-page-info').textContent =
+        `Página ${currentClientsPage} de ${totalPages || 1}`;
+      document.getElementById('clients-count').textContent = filteredClients.length;
+
+      // Update buttons
+      document.getElementById('btn-prev-clients').disabled = currentClientsPage <= 1;
+      document.getElementById('btn-next-clients').disabled = currentClientsPage >= totalPages;
+
+      lucide.createIcons();
+    }
+
+    function prevClientsPage() {
+      if (currentClientsPage > 1) {
+        currentClientsPage--;
+        renderClientsTablePaginated();
+      }
+    }
+
+    function nextClientsPage() {
+      const totalPages = Math.ceil(filteredClients.length / CLIENTS_PER_PAGE);
+      if (currentClientsPage < totalPages) {
+        currentClientsPage++;
+        renderClientsTablePaginated();
+      }
+    }
+
+    // Filter functions
+    function filterClients() {
+      const search = document.getElementById('search-clients').value.toLowerCase();
+      const segment = document.getElementById('filter-segment').value;
+      const priority = document.getElementById('filter-priority').value;
+
+      filteredClients = allClients.filter(c => {
+        const matchSearch = !search ||
+          (c.name && c.name.toLowerCase().includes(search)) ||
+          (c.fantasy_name && c.fantasy_name.toLowerCase().includes(search)) ||
+          (c.address && c.address.toLowerCase().includes(search)) ||
+          (c.commune && c.commune.toLowerCase().includes(search));
+        const matchSegment = !segment || c.segment === segment;
+        const matchPriority = !priority || c.priority === priority;
+        return matchSearch && matchSegment && matchPriority;
+      });
+
+      currentClientsPage = 1;
+      renderClientsTablePaginated();
+    }
+
+    function filterUsers() {
+      const search = document.getElementById('search-users').value.toLowerCase();
+      const filtered = allUsers.filter(u =>
+        u.full_name.toLowerCase().includes(search) ||
+        u.email.toLowerCase().includes(search)
+      );
+      renderUsersTable(filtered);
+      document.getElementById('users-count').textContent = filtered.length;
+    }
+
+    function filterVehicles() {
+      const search = document.getElementById('search-vehicles').value.toLowerCase();
+      const filtered = allVehicles.filter(v =>
+        v.license_plate.toLowerCase().includes(search) ||
+        v.model.toLowerCase().includes(search)
+      );
+      renderVehiclesTable(filtered);
+      document.getElementById('vehicles-count').textContent = filtered.length;
     }
 
     function renderProductsTable(data) {
