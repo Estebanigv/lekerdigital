@@ -129,11 +129,14 @@ class RoutesService {
   async getAllClients() {
     const { data, error } = await supabase
       .from('clients')
-      .select('*')
+      .select(`
+        *,
+        assigned_user:users!clients_assigned_user_id_fkey(id, full_name, email)
+      `)
       .order('name');
 
     if (error) throw error;
-    return data;
+    return data || [];
   }
 
   async createClient(clientData) {

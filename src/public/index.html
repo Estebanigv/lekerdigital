@@ -1614,14 +1614,17 @@
                 <span class="badge badge-active" id="clients-count">0</span>
               </div>
               <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <input type="text" id="search-clients" class="form-control" placeholder="Buscar por nombre, dirección o comuna..." oninput="filterClients()" style="flex: 1; min-width: 200px;">
-                <select id="filter-segment" class="form-control" onchange="filterClients()" style="width: 140px;">
-                  <option value="">Todos</option>
+                <input type="text" id="search-clients" class="form-control" placeholder="Buscar por código o nombre..." oninput="filterClients()" style="flex: 1; min-width: 200px;">
+                <select id="filter-zone" class="form-control" onchange="filterClients()" style="width: 160px;">
+                  <option value="">Todas las zonas</option>
+                </select>
+                <select id="filter-segment" class="form-control" onchange="filterClients()" style="width: 130px;">
+                  <option value="">Segmento</option>
                   <option value="A">Segmento A</option>
                   <option value="B">Segmento B</option>
                   <option value="C">Segmento C</option>
                 </select>
-                <select id="filter-priority" class="form-control" onchange="filterClients()" style="width: 120px;">
+                <select id="filter-priority" class="form-control" onchange="filterClients()" style="width: 100px;">
                   <option value="">Todos</option>
                   <option value="FOCO">FOCO</option>
                 </select>
@@ -1644,9 +1647,9 @@
                 <thead>
                   <tr>
                     <th>Código</th>
-                    <th>Nombre</th>
-                    <th>Dirección</th>
-                    <th>Comuna</th>
+                    <th>Nombre Fantasía</th>
+                    <th>Zona</th>
+                    <th>Vendedor</th>
                     <th>Segmento</th>
                   </tr>
                 </thead>
@@ -1941,6 +1944,7 @@
         // Render tables
         renderUsersTable(allUsers);
         renderVehiclesTable(allVehicles);
+        populateZoneFilter();
         renderClientsTablePaginated();
         renderProductsTable(products.data);
         renderRoutesTable(routes.data);
@@ -2327,21 +2331,25 @@
         tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay clientes que coincidan</td></tr>';
         return;
       }
-      tbody.innerHTML = data.map(c => `
-        <tr>
-          <td><code style="font-size: 11px; background: var(--bg-hover); padding: 2px 6px; border-radius: 4px;">${c.external_id || '-'}</code></td>
-          <td>
-            <div style="font-weight: 500;">${c.name || '-'}</div>
-            ${c.fantasy_name ? `<div style="font-size: 11px; color: var(--text-muted);">${c.fantasy_name}</div>` : ''}
-          </td>
-          <td style="font-size: 13px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.address || '-'}</td>
-          <td>${c.commune || '-'}</td>
-          <td>
-            <span class="badge badge-${(c.segment || 'c').toLowerCase()}">${c.segment || '-'}</span>
-            ${c.priority === 'FOCO' ? '<span class="badge badge-foco">FOCO</span>' : ''}
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = data.map(c => {
+        const vendorName = c.assigned_user?.full_name || c.zone || '-';
+        const zoneName = c.zone || c.commune || '-';
+        return `
+          <tr>
+            <td><code style="font-size: 11px; background: var(--bg-hover); padding: 2px 6px; border-radius: 4px;">${c.external_id || '-'}</code></td>
+            <td>
+              <div style="font-weight: 500;">${c.fantasy_name || c.name || '-'}</div>
+              ${c.fantasy_name && c.name ? `<div style="font-size: 11px; color: var(--text-muted);">${c.name}</div>` : ''}
+            </td>
+            <td><span class="badge" style="background: var(--bg-hover); color: var(--text-secondary);">${zoneName}</span></td>
+            <td style="font-size: 13px;">${vendorName}</td>
+            <td>
+              <span class="badge badge-${(c.segment || 'c').toLowerCase()}">${c.segment || '-'}</span>
+              ${c.priority === 'FOCO' ? '<span class="badge badge-foco">FOCO</span>' : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     // Paginated clients render
@@ -2385,22 +2393,32 @@
     // Filter functions
     function filterClients() {
       const search = document.getElementById('search-clients').value.toLowerCase();
+      const zone = document.getElementById('filter-zone').value;
       const segment = document.getElementById('filter-segment').value;
       const priority = document.getElementById('filter-priority').value;
 
       filteredClients = allClients.filter(c => {
         const matchSearch = !search ||
+          (c.external_id && c.external_id.toLowerCase().includes(search)) ||
           (c.name && c.name.toLowerCase().includes(search)) ||
-          (c.fantasy_name && c.fantasy_name.toLowerCase().includes(search)) ||
-          (c.address && c.address.toLowerCase().includes(search)) ||
-          (c.commune && c.commune.toLowerCase().includes(search));
+          (c.fantasy_name && c.fantasy_name.toLowerCase().includes(search));
+        const matchZone = !zone || c.zone === zone || c.commune === zone;
         const matchSegment = !segment || c.segment === segment;
         const matchPriority = !priority || c.priority === priority;
-        return matchSearch && matchSegment && matchPriority;
+        return matchSearch && matchZone && matchSegment && matchPriority;
       });
 
       currentClientsPage = 1;
       renderClientsTablePaginated();
+    }
+
+    function populateZoneFilter() {
+      const zones = [...new Set(allClients.map(c => c.zone || c.commune).filter(Boolean))].sort();
+      const select = document.getElementById('filter-zone');
+      select.innerHTML = '<option value="">Todas las zonas</option>';
+      zones.forEach(zone => {
+        select.innerHTML += `<option value="${zone}">${zone}</option>`;
+      });
     }
 
     function filterUsers() {
