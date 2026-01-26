@@ -4119,20 +4119,48 @@
       lucide.createIcons();
     }
 
+    function showPanel(tabName) {
+      // Find and click the nav item for this tab
+      const navItem = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
+      if (navItem) {
+        navItem.click();
+      } else {
+        // Fallback: manually switch panels
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        const panel = document.getElementById(`panel-${tabName}`);
+        if (panel) panel.classList.add('active');
+
+        const titles = {
+          dashboard: 'Dashboard',
+          routes: 'Rutas y Mapa',
+          visits: 'Gestión de Visitas',
+          intelligence: 'Inteligencia de Mercado',
+          data: 'Datos del Sistema',
+          marketing: 'Marketing Digital'
+        };
+        document.getElementById('page-title').textContent = titles[tabName] || 'Dashboard';
+      }
+    }
+
     function goToExecutiveRoutes(execId) {
       // Switch to Routes panel and select executive
       showPanel('routes');
-      document.getElementById('executive-filter').value = execId;
-      filterByExecutive();
+      setTimeout(() => {
+        document.getElementById('executive-filter').value = execId;
+        filterByExecutive();
+      }, 100);
     }
 
     function goToAssignClients(execId) {
       // Switch to Routes panel, select executive and open assign modal
       showPanel('routes');
-      document.getElementById('executive-filter').value = execId;
-      selectedExecutiveId = execId;
-      filterByExecutive();
-      setTimeout(() => openAssignClientsModal(), 300);
+      setTimeout(() => {
+        document.getElementById('executive-filter').value = execId;
+        selectedExecutiveId = execId;
+        filterByExecutive();
+        setTimeout(() => openAssignClientsModal(), 200);
+      }, 100);
     }
 
     async function toggleExecutiveStatus(execId, currentlyActive) {
