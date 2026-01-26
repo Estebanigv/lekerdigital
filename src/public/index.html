@@ -1,0 +1,2241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LEKER - Sistema de Gestión Logística</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --bg-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --text-primary: #1e293b;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --purple: #8b5cf6;
+      --bg-overlay: rgba(255, 255, 255, 0.95);
+      --input-bg: #ffffff;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --bg-hover: #334155;
+      --border: #334155;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #64748b;
+      --bg-overlay: rgba(30, 41, 59, 0.95);
+      --input-bg: #334155;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-text {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text span {
+      color: var(--accent);
+    }
+
+    .nav {
+      padding: 16px 12px;
+      flex: 1;
+    }
+
+    .nav-section {
+      margin-bottom: 24px;
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 0 12px;
+      margin-bottom: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .nav-item i {
+      width: 20px;
+      height: 20px;
+    }
+
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .demo-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--warning);
+    }
+
+    /* Main Content */
+    .main {
+      flex: 1;
+      margin-left: 260px;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      height: 64px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .theme-toggle {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .theme-toggle:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .theme-toggle .icon-sun,
+    .theme-toggle .icon-moon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .theme-toggle .icon-sun { display: none; }
+    .theme-toggle .icon-moon { display: block; }
+
+    [data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+    [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
+    .content {
+      padding: 32px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: var(--accent); }
+    .stat-icon.green { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .stat-icon.purple { background: rgba(139, 92, 246, 0.15); color: var(--purple); }
+    .stat-icon.orange { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+
+    .stat-info h3 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .stat-info p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Panels */
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    /* Grid Layout */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .grid-3-1 {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-body {
+      padding: 24px;
+    }
+
+    /* Map */
+    .map-container {
+      height: 500px;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #map {
+      height: 100%;
+      width: 100%;
+      z-index: 1;
+    }
+
+    .map-overlay {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 1000;
+      background: var(--bg-overlay);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .map-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .legend-dot.a { background: #059669; }
+    .legend-dot.b { background: #d97706; }
+    .legend-dot.c { background: #6b7280; }
+    .legend-dot.route { background: var(--accent); }
+
+    /* Forms */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .btn-purple {
+      background: var(--purple);
+      color: white;
+    }
+
+    .btn-purple:hover {
+      background: #7c3aed;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-secondary {
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .btn-block {
+      width: 100%;
+    }
+
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 13px;
+    }
+
+    /* Response Box */
+    .response-box {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .response-box pre {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      color: var(--text-secondary);
+    }
+
+    .response-box.success {
+      border-color: var(--success);
+    }
+
+    .response-box.error {
+      border-color: var(--danger);
+    }
+
+    /* Tables */
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 14px 16px;
+      text-align: left;
+    }
+
+    th {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:hover td {
+      background: var(--bg-hover);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-a { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .badge-b { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .badge-c { background: rgba(100, 116, 139, 0.15); color: var(--text-muted); }
+    .badge-foco { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    .badge-active { background: rgba(59, 130, 246, 0.15); color: var(--accent); }
+    .badge-sale, .badge-success { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .badge-pending, .badge-secondary { background: rgba(100, 116, 139, 0.15); color: var(--text-muted); }
+    .badge-contacted { background: rgba(139, 92, 246, 0.15); color: var(--purple); }
+    .badge-warning { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .badge-primary { background: rgba(59, 130, 246, 0.15); color: var(--accent); }
+
+    /* Price Comparison */
+    .price-card {
+      padding: 16px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .price-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .price-card-title {
+      font-weight: 500;
+    }
+
+    .price-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .price-value.leker {
+      color: var(--success);
+    }
+
+    .price-diff {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .price-diff.positive {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .price-diff.negative {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+    }
+
+    /* Visit Cards */
+    .visit-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .visit-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .visit-item:last-child {
+      border-bottom: none;
+    }
+
+    .visit-number {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .visit-info {
+      flex: 1;
+    }
+
+    .visit-client {
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .visit-time {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+
+    .empty-state i {
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .grid-2, .grid-3-1 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .main {
+        margin-left: 0;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* Leaflet custom markers */
+    .custom-marker {
+      background: none;
+      border: none;
+    }
+
+    .marker-pin {
+      width: 30px;
+      height: 30px;
+      border-radius: 50% 50% 50% 0;
+      position: absolute;
+      transform: rotate(-45deg);
+      left: 50%;
+      top: 50%;
+      margin: -15px 0 0 -15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .marker-pin::after {
+      content: '';
+      width: 14px;
+      height: 14px;
+      background: white;
+      position: absolute;
+      border-radius: 50%;
+    }
+
+    .marker-pin.segment-a { background: #059669; }
+    .marker-pin.segment-b { background: #d97706; }
+    .marker-pin.segment-c { background: #6b7280; }
+    .marker-pin.foco {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5), 0 0 10px rgba(239, 68, 68, 0.3);
+      animation: pulse-foco 2s infinite;
+    }
+    @keyframes pulse-foco {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5); }
+      50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.3); }
+    }
+
+    /* Route legend */
+    .route-legend {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      z-index: 1000;
+      min-width: 200px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .route-legend .legend-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    .route-legend .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .route-legend .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .route-legend .legend-dot.visited { background: var(--success); }
+    .route-legend .legend-dot.current { background: var(--accent); }
+    .route-legend .legend-dot.pending { background: var(--text-muted); }
+
+    /* Visit markers */
+    .visit-marker {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      color: white;
+      border: 3px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .visit-marker.visited { background: var(--success); }
+    .visit-marker.current { background: var(--accent); animation: pulse-current 1.5s infinite; }
+    .visit-marker.pending { background: var(--text-muted); }
+    .visit-marker.sale { background: var(--success); }
+    .visit-marker.no_stock { background: var(--warning); }
+    .visit-marker.not_interested { background: var(--danger); }
+
+    @keyframes pulse-current {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    /* Leaflet popup custom styles */
+    .leaflet-popup-content-wrapper {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .leaflet-popup-tip {
+      background: var(--bg-card);
+    }
+
+    /* Popup content styles */
+    .popup-content {
+      min-width: 180px;
+    }
+    .popup-title {
+      font-size: 13px;
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .popup-subtitle {
+      color: var(--text-secondary);
+      font-size: 12px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .popup-address {
+      color: var(--text-muted);
+      display: block;
+      font-size: 12px;
+    }
+    .popup-badges {
+      margin-top: 8px;
+      display: flex;
+      gap: 4px;
+    }
+
+    /* Card shadows for light mode */
+    .card {
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    .stat-card {
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    /* Sidebar light adjustments */
+    .sidebar {
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .nav-item.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Form inputs light mode */
+    .form-control {
+      background: var(--input-bg);
+    }
+
+    /* Response box */
+    .response-box {
+      background: var(--bg-hover);
+    }
+
+    /* Price card light */
+    .price-card {
+      background: #f8fafc;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">
+          <i data-lucide="truck" style="width: 22px; height: 22px; color: white;"></i>
+        </div>
+        <div class="logo-text">LEKER<span>.</span></div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Principal</div>
+        <div class="nav-item active" data-tab="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Logística</div>
+        <div class="nav-item" data-tab="routes">
+          <i data-lucide="map-pin"></i>
+          <span>Rutas y Mapa</span>
+        </div>
+        <div class="nav-item" data-tab="visits">
+          <i data-lucide="clipboard-check"></i>
+          <span>Visitas</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Inteligencia</div>
+        <div class="nav-item" data-tab="intelligence">
+          <i data-lucide="trending-up"></i>
+          <span>Precios Mercado</span>
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Configuración</div>
+        <div class="nav-item" data-tab="data">
+          <i data-lucide="database"></i>
+          <span>Datos Base</span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="demo-badge">
+        <i data-lucide="flask-conical" style="width: 16px; height: 16px;"></i>
+        <span>Modo Demostración</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <header class="topbar">
+      <h1 class="page-title" id="page-title">Dashboard</h1>
+      <div class="topbar-actions">
+        <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+          <i data-lucide="sun" class="icon-sun"></i>
+          <i data-lucide="moon" class="icon-moon"></i>
+        </button>
+        <div class="user-avatar">AD</div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- Dashboard Panel -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i data-lucide="users"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="stat-users">0</h3>
+              <p>Vendedores Activos</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i data-lucide="building-2"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="stat-clients">0</h3>
+              <p>Clientes Registrados</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">
+              <i data-lucide="route"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="stat-routes">0</h3>
+              <p>Rutas Hoy</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">
+              <i data-lucide="package"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="stat-products">0</h3>
+              <p>Productos</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-3-1">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="map" style="width: 18px; height: 18px;"></i> Mapa de Clientes</h3>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="map-container">
+                <div id="map"></div>
+                <div class="map-overlay">
+                  <div class="map-legend">
+                    <div style="font-weight: 600; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Ruta VI - O'Higgins</div>
+                    <div class="legend-item">
+                      <div class="legend-dot a"></div>
+                      <span>Segmento A</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-dot b"></div>
+                      <span>Segmento B</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-dot c"></div>
+                      <span>Segmento C</span>
+                    </div>
+                    <div class="legend-item" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+                      <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.4);"></div>
+                      <span>Cliente FOCO</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="activity" style="width: 18px; height: 18px;"></i> Actividad Reciente</h3>
+            </div>
+            <div class="card-body">
+              <div class="visit-list" id="recent-activity">
+                <div class="empty-state">
+                  <i data-lucide="inbox" style="width: 48px; height: 48px;"></i>
+                  <p>Inicia una ruta para ver la actividad</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Routes Panel -->
+      <div class="panel" id="panel-routes">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="play-circle" style="width: 18px; height: 18px;"></i> Iniciar Jornada</h3>
+            </div>
+            <div class="card-body">
+              <form id="form-start-day">
+                <div class="form-group">
+                  <label>Vendedor</label>
+                  <select id="start-user" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                  <label>Vehículo</label>
+                  <select id="start-vehicle" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                  <label>Kilometraje Inicial</label>
+                  <input type="number" id="start-km" class="form-control" value="45000" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                  <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+                  Iniciar Día
+                </button>
+              </form>
+              <div class="response-box" id="response-start" style="display: none;"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <h3><i data-lucide="map-pin" style="width: 18px; height: 18px;"></i> Mapa de Ruta</h3>
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <select id="select-route-executive" class="form-control" style="width: 200px;">
+                  <option value="">Seleccionar Ejecutivo...</option>
+                </select>
+                <button class="btn btn-primary" onclick="loadExecutiveRoute()" style="padding: 8px 16px;">
+                  <i data-lucide="route" style="width: 16px; height: 16px;"></i> Ver Ruta
+                </button>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="map-container" style="height: 380px; position: relative;">
+                <div id="map-route"></div>
+                <div id="route-legend" class="route-legend" style="display: none;">
+                  <div class="legend-title">Ruta del día</div>
+                  <div id="route-info"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3><i data-lucide="list" style="width: 18px; height: 18px;"></i> Rutas Activas</h3>
+            <button class="btn btn-secondary" onclick="loadTodayRoutes()" style="padding: 8px 16px;">
+              <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Actualizar
+            </button>
+          </div>
+          <div class="table-wrapper">
+            <table id="table-routes">
+              <thead>
+                <tr>
+                  <th>Vendedor</th>
+                  <th>Vehículo</th>
+                  <th>Km Inicial</th>
+                  <th>Visitas</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visits Panel -->
+      <div class="panel" id="panel-visits">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="user-check" style="width: 18px; height: 18px;"></i> Registrar Visita</h3>
+            </div>
+            <div class="card-body">
+              <form id="form-checkin">
+                <div class="form-group">
+                  <label>Ruta Activa</label>
+                  <select id="checkin-route" class="form-control" required>
+                    <option value="">-- Primero inicia una jornada --</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Cliente</label>
+                  <select id="checkin-client" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                  <label>Resultado de Visita</label>
+                  <select id="checkin-outcome" class="form-control">
+                    <option value="pending">Pendiente</option>
+                    <option value="contacted">Contactado</option>
+                    <option value="no_contact">Sin Contacto</option>
+                    <option value="sale">Venta Realizada</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-success btn-block">
+                  <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+                  Registrar Check-in
+                </button>
+              </form>
+              <div class="response-box" id="response-checkin" style="display: none;"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="clock" style="width: 18px; height: 18px;"></i> Visitas de Hoy</h3>
+            </div>
+            <div class="card-body">
+              <div class="visit-list" id="today-visits">
+                <div class="empty-state">
+                  <i data-lucide="clipboard" style="width: 48px; height: 48px;"></i>
+                  <p>No hay visitas registradas hoy</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Intelligence Panel -->
+      <div class="panel" id="panel-intelligence">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="webhook" style="width: 18px; height: 18px;"></i> Simular Webhook n8n</h3>
+            </div>
+            <div class="card-body">
+              <form id="form-webhook">
+                <div class="form-group">
+                  <label>Producto (SKU)</label>
+                  <select id="webhook-product" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                  <label>Competidor</label>
+                  <input type="text" id="webhook-competitor" class="form-control" value="Sodimac" required>
+                </div>
+                <div class="form-group">
+                  <label>Precio Detectado ($)</label>
+                  <input type="number" id="webhook-price" class="form-control" value="39990" required>
+                </div>
+                <button type="submit" class="btn btn-purple btn-block">
+                  <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                  Enviar Precio
+                </button>
+              </form>
+              <div class="response-box" id="response-webhook" style="display: none;"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i> Comparativa de Precios</h3>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>Seleccionar Producto</label>
+                <select id="compare-product" class="form-control" onchange="loadComparison()"></select>
+              </div>
+              <div id="comparison-result"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 24px;">
+          <div class="card-header">
+            <h3><i data-lucide="history" style="width: 18px; height: 18px;"></i> Historial de Precios</h3>
+          </div>
+          <div class="table-wrapper">
+            <table id="table-prices">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Competidor</th>
+                  <th>Precio</th>
+                  <th>Fuente</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Panel -->
+      <div class="panel" id="panel-data">
+        <!-- Vendedores y Vehículos -->
+        <div class="grid-2">
+          <!-- Vendedores -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Agregar Vendedor</h3>
+            </div>
+            <div class="card-body">
+              <form id="form-add-user">
+                <div class="form-group">
+                  <label>Nombre Completo</label>
+                  <input type="text" id="user-name" class="form-control" placeholder="Ej: Juan Pérez" required>
+                </div>
+                <div class="form-group">
+                  <label>Email</label>
+                  <input type="email" id="user-email" class="form-control" placeholder="Ej: juan.perez@leker.cl" required>
+                </div>
+                <div class="form-group">
+                  <label>Rol</label>
+                  <select id="user-role" class="form-control">
+                    <option value="executive">Ejecutivo/Vendedor</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                  <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                  Agregar Vendedor
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Vehículos -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="car" style="width: 18px; height: 18px;"></i> Agregar Vehículo</h3>
+            </div>
+            <div class="card-body">
+              <form id="form-add-vehicle">
+                <div class="form-group">
+                  <label>Patente</label>
+                  <input type="text" id="vehicle-plate" class="form-control" placeholder="Ej: ABCD-12" required>
+                </div>
+                <div class="form-group">
+                  <label>Modelo</label>
+                  <input type="text" id="vehicle-model" class="form-control" placeholder="Ej: Fiat Fiorino 2024" required>
+                </div>
+                <div class="form-group">
+                  <label>Rendimiento (Km/L)</label>
+                  <input type="number" id="vehicle-efficiency" class="form-control" value="12" step="0.1" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                  <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                  Agregar Vehículo
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tablas de Vendedores y Vehículos -->
+        <div class="grid-2" style="margin-top: 24px;">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Vendedores</h3>
+            </div>
+            <div class="table-wrapper">
+              <table id="table-users">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="truck" style="width: 18px; height: 18px;"></i> Vehículos</h3>
+            </div>
+            <div class="table-wrapper">
+              <table id="table-vehicles">
+                <thead>
+                  <tr>
+                    <th>Patente</th>
+                    <th>Modelo</th>
+                    <th>Km/L</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clientes y Productos -->
+        <div class="grid-2" style="margin-top: 24px;">
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="building-2" style="width: 18px; height: 18px;"></i> Clientes</h3>
+              <span class="badge badge-active" id="clients-count">0</span>
+            </div>
+            <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
+              <table id="table-clients">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Dirección</th>
+                    <th>Comuna</th>
+                    <th>Segmento</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3><i data-lucide="package" style="width: 18px; height: 18px;"></i> Productos</h3>
+            </div>
+            <div class="table-wrapper">
+              <table id="table-products">
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Nombre</th>
+                    <th>Costo</th>
+                    <th>Precio Lista</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme Management
+    const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+    const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    let currentTileLayer = null;
+    let currentTileLayerRoute = null;
+
+    function getStoredTheme() {
+      return localStorage.getItem('leker-theme') || 'light';
+    }
+
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('leker-theme', theme);
+      updateMapTiles(theme);
+      lucide.createIcons();
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      const newTheme = current === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+    }
+
+    function updateMapTiles(theme) {
+      const tilesUrl = theme === 'dark' ? DARK_TILES : LIGHT_TILES;
+
+      // Only update if maps are initialized
+      if (typeof mainMap !== 'undefined' && mainMap && currentTileLayer) {
+        mainMap.removeLayer(currentTileLayer);
+        currentTileLayer = L.tileLayer(tilesUrl, {
+          attribution: '© <a href="https://carto.com/">CARTO</a>'
+        }).addTo(mainMap);
+      }
+
+      if (typeof routeMap !== 'undefined' && routeMap && currentTileLayerRoute) {
+        routeMap.removeLayer(currentTileLayerRoute);
+        currentTileLayerRoute = L.tileLayer(tilesUrl, {
+          attribution: '© <a href="https://carto.com/">CARTO</a>'
+        }).addTo(routeMap);
+      }
+    }
+
+    // Apply stored theme on load (only set attribute, maps will use theme when initialized)
+    document.documentElement.setAttribute('data-theme', getStoredTheme());
+
+    const API = '';
+    let mainMap, routeMap;
+    let clientMarkers = [];
+
+    // Region O'Higgins center coordinates
+    const REGION_CENTER = [-34.35, -71.0];
+    const REGION_ZOOM = 9;
+
+    // Tab Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const tab = item.dataset.tab;
+
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+
+        item.classList.add('active');
+        document.getElementById(`panel-${tab}`).classList.add('active');
+
+        // Update page title
+        const titles = {
+          dashboard: 'Dashboard',
+          routes: 'Rutas y Mapa',
+          visits: 'Gestión de Visitas',
+          intelligence: 'Inteligencia de Mercado',
+          data: 'Datos del Sistema'
+        };
+        document.getElementById('page-title').textContent = titles[tab] || 'Dashboard';
+
+        // Refresh maps when switching tabs
+        setTimeout(() => {
+          if (mainMap) mainMap.invalidateSize();
+          if (routeMap) {
+            routeMap.invalidateSize();
+            // Load route on first view of routes tab
+            if (tab === 'routes' && routeMarkers.length === 0) {
+              loadTodayRoutes();
+            }
+          }
+        }, 150);
+      });
+    });
+
+    // Initialize Maps - Centered on Region O'Higgins
+    function initMaps() {
+      const theme = getStoredTheme();
+      const tilesUrl = theme === 'dark' ? DARK_TILES : LIGHT_TILES;
+
+      // Main dashboard map
+      mainMap = L.map('map').setView(REGION_CENTER, REGION_ZOOM);
+      currentTileLayer = L.tileLayer(tilesUrl, {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(mainMap);
+
+      // Route map
+      routeMap = L.map('map-route').setView(REGION_CENTER, REGION_ZOOM);
+      currentTileLayerRoute = L.tileLayer(tilesUrl, {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19
+      }).addTo(routeMap);
+    }
+
+    // Add client markers to map using lat/lng from client data
+    function addClientMarkers(clients) {
+      clients.forEach(client => {
+        // Use lat/lng from client object
+        if (!client.lat || !client.lng) return;
+        const coords = [client.lat, client.lng];
+
+        const priorityClass = client.priority === 'FOCO' ? 'foco' : '';
+
+        const icon = L.divIcon({
+          className: 'custom-marker',
+          html: `<div class="marker-pin segment-${client.segment.toLowerCase()} ${priorityClass}"></div>`,
+          iconSize: [30, 42],
+          iconAnchor: [15, 42]
+        });
+
+        const popupContent = `
+          <div class="popup-content">
+            <strong class="popup-title">${client.name}</strong>
+            ${client.fantasy_name ? `<em class="popup-subtitle">${client.fantasy_name}</em>` : ''}
+            <small class="popup-address">${client.address}</small>
+            <small class="popup-address">${client.commune}</small>
+            <div class="popup-badges">
+              <span class="badge badge-${client.segment.toLowerCase()}">${client.segment}</span>
+              ${client.priority === 'FOCO' ? '<span class="badge badge-foco">FOCO</span>' : ''}
+            </div>
+          </div>
+        `;
+
+        const marker = L.marker(coords, { icon })
+          .addTo(mainMap)
+          .bindPopup(popupContent);
+
+        // Also add to route map
+        L.marker(coords, { icon }).addTo(routeMap).bindPopup(popupContent);
+
+        clientMarkers.push(marker);
+      });
+
+      // Fit bounds to show all markers
+      if (clientMarkers.length > 0) {
+        const group = new L.featureGroup(clientMarkers);
+        mainMap.fitBounds(group.getBounds().pad(0.1));
+      }
+    }
+
+    // Load all data
+    async function loadData() {
+      try {
+        const [users, vehicles, clients, products, routes, prices] = await Promise.all([
+          fetch(`${API}/api/users`).then(r => r.json()),
+          fetch(`${API}/api/vehicles`).then(r => r.json()),
+          fetch(`${API}/api/clients`).then(r => r.json()),
+          fetch(`${API}/api/products`).then(r => r.json()),
+          fetch(`${API}/api/daily-routes`).then(r => r.json()),
+          fetch(`${API}/api/price-intelligence`).then(r => r.json())
+        ]);
+
+        // Update stats
+        document.getElementById('stat-users').textContent = users.data.length;
+        document.getElementById('stat-clients').textContent = clients.data.length;
+        document.getElementById('stat-products').textContent = products.data.length;
+        document.getElementById('stat-routes').textContent = routes.data.length;
+
+        // Populate selects (only active vehicles)
+        populateSelect('start-user', users.data, 'id', 'full_name');
+        populateSelect('start-vehicle', vehicles.data.filter(v => v.status === 'active'), 'id', d => `${d.license_plate} - ${d.model}`);
+        populateSelect('checkin-client', clients.data, 'id', d => `${d.name} (${d.segment})`);
+        populateSelect('webhook-product', products.data, 'sku', d => `${d.sku} - ${d.name}`);
+        populateSelect('compare-product', products.data, 'id', d => `${d.sku} - ${d.name}`);
+
+        // Populate route executive select
+        const executives = users.data.filter(u => u.role === 'executive');
+        populateSelect('select-route-executive', executives, 'id', 'full_name');
+
+        // Render tables
+        renderUsersTable(users.data);
+        renderVehiclesTable(vehicles.data);
+        renderClientsTable(clients.data);
+        renderProductsTable(products.data);
+        renderRoutesTable(routes.data);
+        renderPricesTable(prices.data);
+
+        // Update clients count badge
+        const clientsCountEl = document.getElementById('clients-count');
+        if (clientsCountEl) clientsCountEl.textContent = clients.data.length;
+
+        // Add markers to map
+        addClientMarkers(clients.data);
+
+        // Update routes select
+        const activeRoutes = routes.data.filter(r => r.status === 'active');
+        if (activeRoutes.length > 0) {
+          populateSelect('checkin-route', activeRoutes, 'id', d => `${d.user?.full_name} - ${d.date}`);
+        }
+
+        // Load comparison
+        if (products.data.length > 0) {
+          loadComparison();
+        }
+
+        // Update recent activity
+        updateRecentActivity(routes.data);
+
+        // Re-init icons
+        lucide.createIcons();
+
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    }
+
+    function populateSelect(id, data, valueKey, labelFn) {
+      const select = document.getElementById(id);
+      if (!select) return;
+      const currentValue = select.value;
+      select.innerHTML = '<option value="">-- Seleccionar --</option>';
+      data.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item[valueKey];
+        option.textContent = typeof labelFn === 'function' ? labelFn(item) : item[labelFn];
+        select.appendChild(option);
+      });
+      if (currentValue) select.value = currentValue;
+    }
+
+    function showResponse(elementId, data, success) {
+      const box = document.getElementById(elementId);
+      box.style.display = 'block';
+      box.className = `response-box ${success ? 'success' : 'error'}`;
+      box.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    }
+
+    // Form handlers
+    document.getElementById('form-start-day').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        userId: document.getElementById('start-user').value,
+        vehicleId: document.getElementById('start-vehicle').value,
+        startKm: parseFloat(document.getElementById('start-km').value)
+      };
+      try {
+        const res = await fetch(`${API}/routes/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        showResponse('response-start', data, data.success);
+        loadData();
+      } catch (error) {
+        showResponse('response-start', { error: error.message }, false);
+      }
+    });
+
+    document.getElementById('form-checkin').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        routeId: document.getElementById('checkin-route').value,
+        clientId: document.getElementById('checkin-client').value,
+        outcome: document.getElementById('checkin-outcome').value
+      };
+      try {
+        const res = await fetch(`${API}/routes/checkin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        showResponse('response-checkin', data, data.success);
+        loadData();
+      } catch (error) {
+        showResponse('response-checkin', { error: error.message }, false);
+      }
+    });
+
+    document.getElementById('form-webhook').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        productSku: document.getElementById('webhook-product').value,
+        competitorName: document.getElementById('webhook-competitor').value,
+        detectedPrice: parseFloat(document.getElementById('webhook-price').value),
+        source: 'n8n_scraper'
+      };
+      try {
+        const res = await fetch(`${API}/webhooks/n8n-price-update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        showResponse('response-webhook', data, data.success);
+        loadData();
+      } catch (error) {
+        showResponse('response-webhook', { error: error.message }, false);
+      }
+    });
+
+    // Route Map Functions
+    let routePolyline = null;
+    let routeMarkers = [];
+
+    async function loadTodayRoutes() {
+      try {
+        const res = await fetch(`${API}/api/daily-routes/today`);
+        const data = await res.json();
+
+        if (data.success && data.data.length > 0) {
+          // Load first route by default
+          displayRouteOnMap(data.data[0]);
+        } else {
+          // No routes today, show all clients
+          clearRouteFromMap();
+          document.getElementById('route-legend').style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error loading today routes:', error);
+      }
+    }
+
+    async function loadExecutiveRoute() {
+      const userId = document.getElementById('select-route-executive').value;
+      if (!userId) {
+        alert('Seleccione un ejecutivo');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/api/users/${userId}/routes`);
+        const data = await res.json();
+
+        if (data.success && data.data.length > 0) {
+          // Get most recent/active route
+          const activeRoute = data.data.find(r => r.status === 'active') || data.data[0];
+          displayRouteOnMap(activeRoute);
+        } else {
+          alert('No hay rutas para este ejecutivo');
+          clearRouteFromMap();
+        }
+      } catch (error) {
+        console.error('Error loading executive route:', error);
+      }
+    }
+
+    function clearRouteFromMap() {
+      if (routePolyline) {
+        routeMap.removeLayer(routePolyline);
+        routePolyline = null;
+      }
+      routeMarkers.forEach(m => routeMap.removeLayer(m));
+      routeMarkers = [];
+    }
+
+    function displayRouteOnMap(route) {
+      clearRouteFromMap();
+
+      if (!route || !route.visits || route.visits.length === 0) {
+        document.getElementById('route-legend').style.display = 'none';
+        return;
+      }
+
+      const coordinates = [];
+      const visits = route.visits;
+
+      // Add visit markers
+      visits.forEach((visit, index) => {
+        if (!visit.client || !visit.client.lat || !visit.client.lng) return;
+
+        const coords = [visit.client.lat, visit.client.lng];
+        coordinates.push(coords);
+
+        // Determine marker status
+        let statusClass = 'pending';
+        let statusLabel = 'Pendiente';
+        if (visit.check_out) {
+          statusClass = visit.outcome || 'visited';
+          statusLabel = getOutcomeLabel(visit.outcome);
+        } else if (visit.check_in) {
+          statusClass = 'current';
+          statusLabel = 'En visita';
+        }
+
+        const icon = L.divIcon({
+          className: 'custom-marker',
+          html: `<div class="visit-marker ${statusClass}">${index + 1}</div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+
+        const marker = L.marker(coords, { icon })
+          .addTo(routeMap)
+          .bindPopup(`
+            <div style="min-width: 200px;">
+              <strong style="font-size: 14px;">${index + 1}. ${visit.client.name}</strong>
+              <p style="margin: 4px 0; color: var(--text-secondary); font-size: 12px;">
+                ${visit.client.address}<br>
+                <span style="color: var(--text-muted);">${visit.client.commune}</span>
+              </p>
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+                <span class="badge badge-${getBadgeColor(statusClass)}">${statusLabel}</span>
+                ${visit.ai_summary ? `<p style="margin-top: 6px; font-size: 11px; color: var(--text-muted);">${visit.ai_summary}</p>` : ''}
+              </div>
+            </div>
+          `);
+
+        routeMarkers.push(marker);
+      });
+
+      // Draw route polyline
+      if (coordinates.length > 1) {
+        routePolyline = L.polyline(coordinates, {
+          color: '#3b82f6',
+          weight: 4,
+          opacity: 0.8,
+          dashArray: '10, 10'
+        }).addTo(routeMap);
+      }
+
+      // Fit map to route bounds
+      if (coordinates.length > 0) {
+        const group = L.featureGroup(routeMarkers);
+        routeMap.fitBounds(group.getBounds().pad(0.1));
+      }
+
+      // Update legend
+      updateRouteLegend(route);
+      document.getElementById('route-legend').style.display = 'block';
+
+      // Refresh icons
+      lucide.createIcons();
+    }
+
+    function getOutcomeLabel(outcome) {
+      const labels = {
+        'sale': 'Venta',
+        'no_stock': 'Sin Stock',
+        'not_interested': 'No Interesado',
+        'pending': 'Pendiente',
+        'visited': 'Visitado'
+      };
+      return labels[outcome] || outcome || 'Pendiente';
+    }
+
+    function getBadgeColor(status) {
+      const colors = {
+        'sale': 'success',
+        'visited': 'success',
+        'current': 'primary',
+        'no_stock': 'warning',
+        'not_interested': 'danger',
+        'pending': 'secondary'
+      };
+      return colors[status] || 'secondary';
+    }
+
+    function updateRouteLegend(route) {
+      const info = document.getElementById('route-info');
+      const visits = route.visits || [];
+
+      const completed = visits.filter(v => v.check_out).length;
+      const inProgress = visits.filter(v => v.check_in && !v.check_out).length;
+      const pending = visits.length - completed - inProgress;
+      const sales = visits.filter(v => v.outcome === 'sale').length;
+
+      info.innerHTML = `
+        <div style="margin-bottom: 8px;">
+          <strong>${route.user?.full_name || 'Ejecutivo'}</strong><br>
+          <span style="font-size: 12px; color: var(--text-muted);">${route.vehicle?.license_plate || ''} - ${route.date}</span>
+        </div>
+        <div class="legend-item"><div class="legend-dot visited"></div> Completadas: ${completed}</div>
+        <div class="legend-item"><div class="legend-dot current"></div> En curso: ${inProgress}</div>
+        <div class="legend-item"><div class="legend-dot pending"></div> Pendientes: ${pending}</div>
+        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+          <span style="color: var(--success); font-weight: 600;">Ventas: ${sales}</span>
+        </div>
+      `;
+    }
+
+    // Load Comparison
+    async function loadComparison() {
+      const productId = document.getElementById('compare-product').value;
+      if (!productId) return;
+      try {
+        const res = await fetch(`${API}/intelligence/product/${productId}/comparison`);
+        const data = await res.json();
+        if (data.success) {
+          renderComparison(data.data);
+        }
+      } catch (error) {
+        console.error('Error loading comparison:', error);
+      }
+    }
+
+    function renderComparison(data) {
+      const container = document.getElementById('comparison-result');
+      const lekerPrice = data.product.list_price;
+
+      let html = `
+        <div class="price-card">
+          <div class="price-card-header">
+            <span class="price-card-title">Precio LEKER</span>
+          </div>
+          <div class="price-value leker">$${lekerPrice.toLocaleString()}</div>
+        </div>
+      `;
+
+      if (data.competitors.length === 0) {
+        html += '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No hay precios de competidores registrados</p>';
+      } else {
+        data.competitors.forEach(c => {
+          const diff = lekerPrice - c.detected_price;
+          const diffPercent = ((diff / c.detected_price) * 100).toFixed(1);
+          const diffClass = diff > 0 ? 'negative' : 'positive';
+          const diffText = diff > 0 ? `+$${diff.toLocaleString()}` : `-$${Math.abs(diff).toLocaleString()}`;
+
+          html += `
+            <div class="price-card">
+              <div class="price-card-header">
+                <span class="price-card-title">${c.competitor.name}</span>
+                <span class="price-diff ${diffClass}">${diffText}</span>
+              </div>
+              <div class="price-value">$${c.detected_price.toLocaleString()}</div>
+            </div>
+          `;
+        });
+      }
+
+      container.innerHTML = html;
+    }
+
+    function updateRecentActivity(routes) {
+      const container = document.getElementById('recent-activity');
+      const activeRoutes = routes.filter(r => r.status === 'active');
+
+      if (activeRoutes.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i data-lucide="inbox" style="width: 48px; height: 48px;"></i>
+            <p>Inicia una ruta para ver la actividad</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      activeRoutes.forEach((route, index) => {
+        html += `
+          <div class="visit-item">
+            <div class="visit-number">${index + 1}</div>
+            <div class="visit-info">
+              <div class="visit-client">${route.user?.full_name || 'Vendedor'}</div>
+              <div class="visit-time">${route.vehicle?.license_plate} - ${route.visits_count} visitas</div>
+            </div>
+            <span class="badge badge-active">Activo</span>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // Render tables
+    function renderClientsTable(data) {
+      const tbody = document.querySelector('#table-clients tbody');
+      tbody.innerHTML = data.map(c => `
+        <tr>
+          <td>
+            <div style="font-weight: 500;">${c.name}</div>
+            ${c.fantasy_name ? `<div style="font-size: 11px; color: var(--text-muted);">${c.fantasy_name}</div>` : ''}
+          </td>
+          <td style="font-size: 13px;">${c.address || '-'}</td>
+          <td>${c.commune}</td>
+          <td>
+            <span class="badge badge-${c.segment.toLowerCase()}">${c.segment}</span>
+            ${c.priority === 'FOCO' ? '<span class="badge badge-foco">FOCO</span>' : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderProductsTable(data) {
+      const tbody = document.querySelector('#table-products tbody');
+      tbody.innerHTML = data.map(p => `
+        <tr>
+          <td><code>${p.sku}</code></td>
+          <td>${p.name}</td>
+          <td>$${p.base_cost.toLocaleString()}</td>
+          <td>$${p.list_price.toLocaleString()}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderRoutesTable(data) {
+      const tbody = document.querySelector('#table-routes tbody');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay rutas iniciadas</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(r => `
+        <tr>
+          <td>${r.user?.full_name || '-'}</td>
+          <td>${r.vehicle?.license_plate || '-'}</td>
+          <td>${r.start_km.toLocaleString()} km</td>
+          <td>${r.visits_count}</td>
+          <td><span class="badge badge-${r.status}">${r.status}</span></td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="viewRoute('${r.id}')">
+              <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function renderPricesTable(data) {
+      const tbody = document.querySelector('#table-prices tbody');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay precios registrados</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(p => `
+        <tr>
+          <td>${p.product?.name || '-'}</td>
+          <td>${p.competitor?.name || '-'}</td>
+          <td><strong>$${p.detected_price.toLocaleString()}</strong></td>
+          <td><span class="badge badge-${p.source === 'n8n_scraper' ? 'active' : 'pending'}">${p.source}</span></td>
+          <td>${new Date(p.captured_at).toLocaleString('es-CL')}</td>
+        </tr>
+      `).join('');
+    }
+
+    function viewRoute(routeId) {
+      // Switch to routes tab
+      document.querySelector('[data-tab="routes"]').click();
+    }
+
+    // =============================================
+    // GESTIÓN DE VENDEDORES
+    // =============================================
+
+    function renderUsersTable(data) {
+      const tbody = document.querySelector('#table-users tbody');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay vendedores</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(u => `
+        <tr>
+          <td>
+            <div style="font-weight: 500;">${u.full_name}</div>
+          </td>
+          <td style="font-size: 13px; color: var(--text-secondary);">${u.email}</td>
+          <td>
+            <span class="badge ${u.role === 'admin' ? 'badge-a' : 'badge-b'}">${u.role === 'admin' ? 'Admin' : 'Ejecutivo'}</span>
+          </td>
+          <td>
+            <button class="btn btn-sm" class="btn-danger" onclick="deleteUser('${u.id}')">
+              <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    document.getElementById('form-add-user').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        fullName: document.getElementById('user-name').value,
+        email: document.getElementById('user-email').value,
+        role: document.getElementById('user-role').value
+      };
+      try {
+        const res = await fetch(`${API}/api/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('form-add-user').reset();
+          loadData();
+          alert('Vendedor agregado correctamente');
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function deleteUser(userId) {
+      if (!confirm('¿Estás seguro de eliminar este vendedor?')) return;
+      try {
+        const res = await fetch(`${API}/api/users/${userId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          loadData();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // =============================================
+    // GESTIÓN DE VEHÍCULOS
+    // =============================================
+
+    function renderVehiclesTable(data) {
+      const tbody = document.querySelector('#table-vehicles tbody');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay vehículos</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(v => {
+        const statusColors = {
+          active: 'badge-a',
+          maintenance: 'badge-b',
+          inactive: 'badge-c'
+        };
+        const statusLabels = {
+          active: 'Activo',
+          maintenance: 'Mantención',
+          inactive: 'Inactivo'
+        };
+        return `
+          <tr>
+            <td><strong>${v.license_plate}</strong></td>
+            <td>${v.model}</td>
+            <td>${v.fuel_efficiency_kml} km/L</td>
+            <td>
+              <select class="form-control" style="padding: 6px 10px; font-size: 12px; width: auto;" onchange="updateVehicleStatus('${v.id}', this.value)">
+                <option value="active" ${v.status === 'active' ? 'selected' : ''}>Activo</option>
+                <option value="maintenance" ${v.status === 'maintenance' ? 'selected' : ''}>Mantención</option>
+                <option value="inactive" ${v.status === 'inactive' ? 'selected' : ''}>Inactivo</option>
+              </select>
+            </td>
+            <td>
+              <button class="btn btn-sm" class="btn-danger" onclick="deleteVehicle('${v.id}')">
+                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    document.getElementById('form-add-vehicle').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        licensePlate: document.getElementById('vehicle-plate').value,
+        model: document.getElementById('vehicle-model').value,
+        fuelEfficiency: document.getElementById('vehicle-efficiency').value
+      };
+      try {
+        const res = await fetch(`${API}/api/vehicles`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('form-add-vehicle').reset();
+          document.getElementById('vehicle-efficiency').value = '12';
+          loadData();
+          alert('Vehículo agregado correctamente');
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function deleteVehicle(vehicleId) {
+      if (!confirm('¿Estás seguro de eliminar este vehículo?')) return;
+      try {
+        const res = await fetch(`${API}/api/vehicles/${vehicleId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          loadData();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function updateVehicleStatus(vehicleId, status) {
+      try {
+        const res = await fetch(`${API}/api/vehicles/${vehicleId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          alert('Error: ' + data.error);
+          loadData();
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      initMaps();
+      loadData();
+    });
+  </script>
+</body>
+</html>
