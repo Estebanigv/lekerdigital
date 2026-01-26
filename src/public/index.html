@@ -1500,8 +1500,57 @@
                 </div>
                 <div class="form-group">
                   <label>Cliente</label>
-                  <select id="checkin-client" class="form-control" required></select>
+                  <select id="checkin-client" class="form-control" required onchange="onClientSelectChange()"></select>
                 </div>
+
+                <!-- Verificación de dirección -->
+                <div id="address-verification" style="display: none; margin-bottom: 16px;">
+                  <div style="padding: 12px; border-radius: 8px; background: var(--bg-hover); border: 1px solid var(--border);">
+                    <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                      <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                      Verificar Dirección
+                    </div>
+
+                    <!-- Dirección actual del cliente -->
+                    <div id="client-current-address" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+                      <strong>Dirección registrada:</strong>
+                      <span id="client-address-text">-</span>
+                    </div>
+
+                    <!-- Comparación de distancia -->
+                    <div id="distance-check" style="display: none; padding: 8px; border-radius: 6px; margin-bottom: 10px; font-size: 12px;">
+                    </div>
+
+                    <!-- Checkbox para corregir -->
+                    <div style="margin-bottom: 10px;">
+                      <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                        <input type="checkbox" id="correct-address-check" onchange="toggleAddressCorrection()">
+                        <span>La dirección es incorrecta, quiero corregirla</span>
+                      </label>
+                    </div>
+
+                    <!-- Campo de corrección de dirección -->
+                    <div id="address-correction-fields" style="display: none;">
+                      <div class="form-group" style="margin-bottom: 8px;">
+                        <label style="font-size: 12px;">Buscar dirección correcta</label>
+                        <input type="text" id="address-search" class="form-control" placeholder="Escribe la dirección..." style="font-size: 13px;">
+                      </div>
+                      <div class="form-group" style="margin-bottom: 8px;">
+                        <label style="font-size: 12px;">Comuna</label>
+                        <input type="text" id="address-commune" class="form-control" placeholder="Comuna" style="font-size: 13px;">
+                      </div>
+                      <div style="display: flex; gap: 8px; font-size: 11px; color: var(--text-muted);">
+                        <span>Lat: <span id="new-lat">-</span></span>
+                        <span>Lng: <span id="new-lng">-</span></span>
+                      </div>
+                      <button type="button" class="btn btn-secondary" onclick="useCurrentGpsLocation()" style="margin-top: 8px; font-size: 12px; padding: 6px 12px;">
+                        <i data-lucide="crosshair" style="width: 12px; height: 12px;"></i>
+                        Usar mi ubicación actual
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="form-group">
                   <label>Resultado de Visita</label>
                   <select id="checkin-outcome" class="form-control">
@@ -2437,12 +2486,28 @@
       submitBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i> Registrando...';
       lucide.createIcons();
 
+      const clientId = document.getElementById('checkin-client').value;
+
+      // Check if address needs correction
+      const correctAddress = document.getElementById('correct-address-check').checked;
+      let addressUpdate = null;
+
+      if (correctAddress && correctedAddress) {
+        addressUpdate = {
+          address: correctedAddress.address || document.getElementById('address-search').value,
+          commune: correctedAddress.commune || document.getElementById('address-commune').value,
+          lat: correctedAddress.lat,
+          lng: correctedAddress.lng
+        };
+      }
+
       const body = {
         routeId: document.getElementById('checkin-route').value,
-        clientId: document.getElementById('checkin-client').value,
+        clientId,
         outcome: document.getElementById('checkin-outcome').value,
         lat,
-        lng
+        lng,
+        addressUpdate
       };
 
       try {
@@ -2455,7 +2520,16 @@
 
         if (data.success) {
           const locationMsg = lat && lng ? ` (GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)})` : ' (sin GPS)';
-          showToast('success', 'Check-in registrado', data.data.client.name + locationMsg);
+          let successMsg = data.data.client.name + locationMsg;
+          if (addressUpdate) {
+            successMsg += ' - Dirección actualizada';
+          }
+          showToast('success', 'Check-in registrado', successMsg);
+
+          // Reset address verification
+          document.getElementById('address-verification').style.display = 'none';
+          document.getElementById('correct-address-check').checked = false;
+          correctedAddress = null;
         }
 
         showResponse('response-checkin', data, data.success);
@@ -3545,6 +3619,207 @@
       });
     });
 
+    // Address verification variables
+    let selectedClientData = null;
+    let addressAutocomplete = null;
+    let correctedAddress = null;
+
+    // Initialize Google Places Autocomplete
+    function initAddressAutocomplete() {
+      const input = document.getElementById('address-search');
+      if (!input || !google.maps.places) return;
+
+      addressAutocomplete = new google.maps.places.Autocomplete(input, {
+        componentRestrictions: { country: 'cl' },
+        fields: ['formatted_address', 'geometry', 'address_components']
+      });
+
+      addressAutocomplete.addListener('place_changed', () => {
+        const place = addressAutocomplete.getPlace();
+        if (place.geometry) {
+          correctedAddress = {
+            address: place.formatted_address,
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng()
+          };
+
+          // Extract commune from address components
+          const communeComponent = place.address_components?.find(c =>
+            c.types.includes('locality') || c.types.includes('administrative_area_level_3')
+          );
+          if (communeComponent) {
+            document.getElementById('address-commune').value = communeComponent.long_name;
+            correctedAddress.commune = communeComponent.long_name;
+          }
+
+          document.getElementById('new-lat').textContent = correctedAddress.lat.toFixed(6);
+          document.getElementById('new-lng').textContent = correctedAddress.lng.toFixed(6);
+        }
+      });
+    }
+
+    // When client is selected, show address verification
+    function onClientSelectChange() {
+      const clientId = document.getElementById('checkin-client').value;
+      const verificationDiv = document.getElementById('address-verification');
+      const distanceDiv = document.getElementById('distance-check');
+
+      if (!clientId) {
+        verificationDiv.style.display = 'none';
+        selectedClientData = null;
+        return;
+      }
+
+      selectedClientData = allClients.find(c => c.id === clientId);
+      if (!selectedClientData) {
+        verificationDiv.style.display = 'none';
+        return;
+      }
+
+      // Show verification section
+      verificationDiv.style.display = 'block';
+
+      // Show current address
+      const addressText = [
+        selectedClientData.address,
+        selectedClientData.commune
+      ].filter(Boolean).join(', ') || 'Sin dirección registrada';
+
+      document.getElementById('client-address-text').textContent = addressText;
+
+      // Reset correction fields
+      document.getElementById('correct-address-check').checked = false;
+      document.getElementById('address-correction-fields').style.display = 'none';
+      document.getElementById('address-search').value = '';
+      document.getElementById('address-commune').value = '';
+      correctedAddress = null;
+
+      // Check distance if we have both locations
+      checkDistanceToClient();
+
+      lucide.createIcons();
+    }
+
+    // Calculate distance between current GPS and client location
+    function checkDistanceToClient() {
+      const distanceDiv = document.getElementById('distance-check');
+
+      if (!currentGpsPosition || !selectedClientData) {
+        distanceDiv.style.display = 'none';
+        return;
+      }
+
+      if (!selectedClientData.lat || !selectedClientData.lng) {
+        distanceDiv.style.display = 'block';
+        distanceDiv.style.background = 'rgba(245, 158, 11, 0.1)';
+        distanceDiv.style.border = '1px solid var(--warning)';
+        distanceDiv.innerHTML = `
+          <i data-lucide="alert-triangle" style="width: 14px; height: 14px; color: var(--warning);"></i>
+          <span style="color: var(--warning);">Cliente sin coordenadas GPS. Se usará tu ubicación actual.</span>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      // Calculate distance using Haversine formula
+      const distance = calculateDistance(
+        currentGpsPosition.lat, currentGpsPosition.lng,
+        parseFloat(selectedClientData.lat), parseFloat(selectedClientData.lng)
+      );
+
+      distanceDiv.style.display = 'flex';
+      distanceDiv.style.alignItems = 'center';
+      distanceDiv.style.gap = '8px';
+
+      if (distance < 100) {
+        // Within 100m - good
+        distanceDiv.style.background = 'rgba(16, 185, 129, 0.1)';
+        distanceDiv.style.border = '1px solid var(--success)';
+        distanceDiv.innerHTML = `
+          <i data-lucide="check-circle" style="width: 14px; height: 14px; color: var(--success);"></i>
+          <span style="color: var(--success);">Estás a ${Math.round(distance)}m del cliente - Ubicación correcta</span>
+        `;
+      } else if (distance < 500) {
+        // Between 100m and 500m - warning
+        distanceDiv.style.background = 'rgba(245, 158, 11, 0.1)';
+        distanceDiv.style.border = '1px solid var(--warning)';
+        distanceDiv.innerHTML = `
+          <i data-lucide="alert-triangle" style="width: 14px; height: 14px; color: var(--warning);"></i>
+          <span style="color: var(--warning);">Estás a ${Math.round(distance)}m del cliente - Verifica la dirección</span>
+        `;
+      } else {
+        // More than 500m - error
+        distanceDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+        distanceDiv.style.border = '1px solid var(--danger)';
+        distanceDiv.innerHTML = `
+          <i data-lucide="x-circle" style="width: 14px; height: 14px; color: var(--danger);"></i>
+          <span style="color: var(--danger);">Estás a ${distance >= 1000 ? (distance/1000).toFixed(1) + 'km' : Math.round(distance) + 'm'} del cliente - Dirección posiblemente incorrecta</span>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    // Haversine formula to calculate distance between two points
+    function calculateDistance(lat1, lng1, lat2, lng2) {
+      const R = 6371000; // Earth's radius in meters
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    // Toggle address correction fields
+    function toggleAddressCorrection() {
+      const checked = document.getElementById('correct-address-check').checked;
+      const fieldsDiv = document.getElementById('address-correction-fields');
+      fieldsDiv.style.display = checked ? 'block' : 'none';
+
+      if (checked && !addressAutocomplete) {
+        setTimeout(initAddressAutocomplete, 100);
+      }
+    }
+
+    // Use current GPS location as new address
+    function useCurrentGpsLocation() {
+      if (!currentGpsPosition) {
+        showToast('warning', 'Sin GPS', 'No hay ubicación GPS disponible');
+        return;
+      }
+
+      correctedAddress = {
+        lat: currentGpsPosition.lat,
+        lng: currentGpsPosition.lng,
+        address: null,
+        commune: null
+      };
+
+      document.getElementById('new-lat').textContent = correctedAddress.lat.toFixed(6);
+      document.getElementById('new-lng').textContent = correctedAddress.lng.toFixed(6);
+
+      // Reverse geocode to get address
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ location: { lat: correctedAddress.lat, lng: correctedAddress.lng } }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+          document.getElementById('address-search').value = results[0].formatted_address;
+          correctedAddress.address = results[0].formatted_address;
+
+          const communeComponent = results[0].address_components?.find(c =>
+            c.types.includes('locality') || c.types.includes('administrative_area_level_3')
+          );
+          if (communeComponent) {
+            document.getElementById('address-commune').value = communeComponent.long_name;
+            correctedAddress.commune = communeComponent.long_name;
+          }
+        }
+      });
+
+      showToast('success', 'Ubicación capturada', `${correctedAddress.lat.toFixed(4)}, ${correctedAddress.lng.toFixed(4)}`);
+    }
+
     // GPS Status monitoring
     let currentGpsPosition = null;
 
@@ -3579,6 +3854,8 @@
             </span>
           `;
           lucide.createIcons();
+          // Update distance check if client is selected
+          checkDistanceToClient();
         },
         (error) => {
           statusDiv.style.background = 'rgba(245, 158, 11, 0.1)';

@@ -493,11 +493,11 @@ app.post('/routes/start', async (req, res) => {
 
 app.post('/routes/checkin', async (req, res) => {
   try {
-    const { routeId, clientId, outcome, audioUrl, lat, lng } = req.body;
-    const result = await routesService.checkIn({ routeId, clientId, outcome, audioUrl, lat, lng });
+    const { routeId, clientId, outcome, audioUrl, lat, lng, addressUpdate } = req.body;
+    const result = await routesService.checkIn({ routeId, clientId, outcome, audioUrl, lat, lng, addressUpdate });
     res.status(201).json({
       success: true,
-      message: 'Visita registrada correctamente',
+      message: result.addressUpdated ? 'Visita registrada y dirección actualizada' : 'Visita registrada correctamente',
       data: result
     });
   } catch (error) {

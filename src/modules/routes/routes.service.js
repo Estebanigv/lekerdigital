@@ -405,7 +405,7 @@ class RoutesService {
     };
   }
 
-  async checkIn({ routeId, clientId, outcome, audioUrl, lat, lng }) {
+  async checkIn({ routeId, clientId, outcome, audioUrl, lat, lng, addressUpdate }) {
     const { data: route, error: routeError } = await supabase
       .from('daily_routes')
       .select('id, status')
@@ -439,9 +439,17 @@ class RoutesService {
 
     if (visitError) throw visitError;
 
-    // Update client's last visit and coordinates if not set
+    // Update client's last visit and potentially coordinates/address
     const updateData = { last_visit_at: new Date().toISOString() };
-    if (lat && lng && (!client.lat || !client.lng)) {
+
+    // If address correction was provided, use that
+    if (addressUpdate) {
+      if (addressUpdate.address) updateData.address = addressUpdate.address;
+      if (addressUpdate.commune) updateData.commune = addressUpdate.commune;
+      if (addressUpdate.lat) updateData.lat = addressUpdate.lat;
+      if (addressUpdate.lng) updateData.lng = addressUpdate.lng;
+    } else if (lat && lng && (!client.lat || !client.lng)) {
+      // Otherwise, if client has no coords and we have GPS, use that
       updateData.lat = lat;
       updateData.lng = lng;
     }
@@ -454,7 +462,8 @@ class RoutesService {
     return {
       visit,
       client: { id: client.id, name: client.name },
-      location: lat && lng ? { lat, lng } : null
+      location: lat && lng ? { lat, lng } : null,
+      addressUpdated: !!addressUpdate
     };
   }
 
