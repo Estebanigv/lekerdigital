@@ -1549,13 +1549,16 @@
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="card" id="card-executives">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleExecutivesCard()">
               <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Ejecutivos</h3>
-              <span id="executives-count" style="font-size: 12px; color: var(--text-muted);"></span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="executives-count" style="font-size: 12px; color: var(--text-muted);"></span>
+                <i data-lucide="chevron-down" id="executives-chevron" style="width: 18px; height: 18px; color: var(--text-muted); transition: transform 0.3s;"></i>
+              </div>
             </div>
-            <div class="card-body" style="padding: 0;">
-              <div id="executives-panel">
+            <div class="card-body" id="executives-body" style="padding: 0; max-height: 400px; overflow: hidden; transition: max-height 0.3s ease;">
+              <div id="executives-panel" style="max-height: 400px; overflow-y: auto;">
                 <div class="empty-state" style="padding: 24px;">
                   <i data-lucide="users" style="width: 48px; height: 48px;"></i>
                   <p>Cargando ejecutivos...</p>
@@ -4078,6 +4081,22 @@
 
       container.innerHTML = html;
       lucide.createIcons();
+    }
+
+    let executivesCardOpen = true;
+    function toggleExecutivesCard() {
+      const body = document.getElementById('executives-body');
+      const chevron = document.getElementById('executives-chevron');
+
+      executivesCardOpen = !executivesCardOpen;
+
+      if (executivesCardOpen) {
+        body.style.maxHeight = '400px';
+        chevron.style.transform = 'rotate(0deg)';
+      } else {
+        body.style.maxHeight = '0px';
+        chevron.style.transform = 'rotate(-90deg)';
+      }
     }
 
     function toggleExecutiveDetails(execId) {
