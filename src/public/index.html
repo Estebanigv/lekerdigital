@@ -1389,6 +1389,29 @@
 
       <!-- Data Panel -->
       <div class="panel" id="panel-data">
+        <!-- Importar Excel -->
+        <div class="card" style="margin-bottom: 24px; border: 2px dashed var(--border);">
+          <div class="card-header">
+            <h3><i data-lucide="file-spreadsheet" style="width: 18px; height: 18px;"></i> Importar Clientes desde Excel</h3>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+              <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+                <label>Archivo Excel (.xlsx, .xls)</label>
+                <input type="file" id="file-clients" class="form-control" accept=".xlsx,.xls" style="padding: 10px;">
+              </div>
+              <button class="btn btn-primary" onclick="uploadClientsExcel()" style="height: 48px; padding: 0 24px;">
+                <i data-lucide="upload" style="width: 16px; height: 16px;"></i>
+                Importar Clientes
+              </button>
+            </div>
+            <div id="upload-result" style="margin-top: 16px; display: none;"></div>
+            <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+              <strong>Formato esperado:</strong> Columnas: Código, Razón Social, Nombre Fantasía, Dirección, Comuna, Segmento (A/B/C), Prioridad (FOCO/Normal)
+            </div>
+          </div>
+        </div>
+
         <!-- Vendedores y Vehículos -->
         <div class="grid-2">
           <!-- Vendedores -->
@@ -2536,6 +2559,58 @@
           loadData();
         }
       } catch (error) {
+        showToast('error', 'Error de conexión', error.message);
+      }
+    }
+
+    // =============================================
+    // IMPORTACIÓN DE EXCEL
+    // =============================================
+
+    async function uploadClientsExcel() {
+      const fileInput = document.getElementById('file-clients');
+      const resultDiv = document.getElementById('upload-result');
+
+      if (!fileInput.files.length) {
+        showToast('warning', 'Sin archivo', 'Selecciona un archivo Excel');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = '<div style="color: var(--accent);"><i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i> Procesando archivo...</div>';
+      lucide.createIcons();
+
+      try {
+        const res = await fetch(`${API}/api/upload/clients`, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          resultDiv.innerHTML = `
+            <div style="padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid var(--success);">
+              <strong style="color: var(--success);">Importación exitosa</strong><br>
+              <span style="font-size: 13px; color: var(--text-secondary);">
+                Hoja: ${data.data.sheet}<br>
+                Registros procesados: ${data.data.totalRows}<br>
+                Insertados/Actualizados: ${data.data.inserted}
+              </span>
+            </div>
+          `;
+          showToast('success', 'Importación completada', `${data.data.inserted} clientes importados`);
+          fileInput.value = '';
+          loadData();
+        } else {
+          resultDiv.innerHTML = `<div style="color: var(--danger);">Error: ${data.error}</div>`;
+          showToast('error', 'Error en importación', data.error);
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div style="color: var(--danger);">Error: ${error.message}</div>`;
         showToast('error', 'Error de conexión', error.message);
       }
     }

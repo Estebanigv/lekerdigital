@@ -147,6 +147,32 @@ class RoutesService {
     return data;
   }
 
+  async upsertClients(clients) {
+    const results = { inserted: 0, updated: 0, errors: [] };
+
+    // Process in batches of 100
+    const batchSize = 100;
+    for (let i = 0; i < clients.length; i += batchSize) {
+      const batch = clients.slice(i, i + batchSize);
+
+      const { data, error } = await supabase
+        .from('clients')
+        .upsert(batch, {
+          onConflict: 'external_id',
+          ignoreDuplicates: false
+        })
+        .select();
+
+      if (error) {
+        results.errors.push({ batch: i / batchSize, error: error.message });
+      } else {
+        results.inserted += data ? data.length : 0;
+      }
+    }
+
+    return results;
+  }
+
   // =============================================
   // RUTAS DIARIAS
   // =============================================

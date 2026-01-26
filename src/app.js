@@ -1,12 +1,20 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
+const XLSX = require('xlsx');
 
 // Import services
 const routesService = require('./modules/routes/routes.service');
 const intelligenceService = require('./modules/market-intelligence/intelligence.service');
 
 const app = express();
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
+});
 
 app.use(cors());
 app.use(express.json());
@@ -168,6 +176,109 @@ app.patch('/api/vehicles/:id/status', async (req, res) => {
     res.json({ success: true, message: 'Estado actualizado', data: vehicle });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// =============================================
+// IMPORTACIÓN DE EXCEL
+// =============================================
+
+app.post('/api/upload/clients', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No se envió archivo' });
+    }
+
+    // Parse Excel file
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+
+    // Get sheet names
+    const sheetNames = workbook.SheetNames;
+
+    // Try to find clients data
+    let clientsData = [];
+
+    // Check for 'Direcciones' sheet or first sheet
+    const sheetName = sheetNames.includes('Direcciones') ? 'Direcciones' : sheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    // Find header row (look for common column names)
+    let headerRow = 0;
+    for (let i = 0; i < Math.min(10, rawData.length); i++) {
+      const row = rawData[i] || [];
+      const rowStr = row.join(' ').toLowerCase();
+      if (rowStr.includes('codigo') || rowStr.includes('código') || rowStr.includes('rut') || rowStr.includes('nombre')) {
+        headerRow = i;
+        break;
+      }
+    }
+
+    const headers = (rawData[headerRow] || []).map(h =>
+      String(h || '').toLowerCase().trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_')
+    );
+
+    // Map common column names
+    const colMap = {
+      codigo: headers.findIndex(h => h.includes('codigo') || h.includes('external')),
+      name: headers.findIndex(h => h.includes('razon') || h.includes('nombre') || h.includes('name')),
+      fantasy: headers.findIndex(h => h.includes('fantasia') || h.includes('fantasy')),
+      address: headers.findIndex(h => h.includes('direccion') || h.includes('address')),
+      commune: headers.findIndex(h => h.includes('comuna') || h.includes('commune')),
+      segment: headers.findIndex(h => h.includes('segmento') || h.includes('segment')),
+      priority: headers.findIndex(h => h.includes('prioridad') || h.includes('priority') || h.includes('foco'))
+    };
+
+    // Process rows
+    const results = { inserted: 0, updated: 0, errors: [] };
+
+    for (let i = headerRow + 1; i < rawData.length; i++) {
+      const row = rawData[i];
+      if (!row || row.length === 0) continue;
+
+      const getValue = (idx) => idx >= 0 && row[idx] ? String(row[idx]).trim() : '';
+
+      const codigo = getValue(colMap.codigo);
+      if (!codigo) continue;
+
+      const clientData = {
+        external_id: codigo,
+        name: getValue(colMap.name) || `Cliente ${codigo}`,
+        fantasy_name: getValue(colMap.fantasy),
+        address: getValue(colMap.address),
+        commune: getValue(colMap.commune),
+        segment: getValue(colMap.segment) || 'C',
+        priority: getValue(colMap.priority) || 'Normal'
+      };
+
+      // Validate segment
+      if (!['A', 'B', 'C'].includes(clientData.segment.toUpperCase())) {
+        clientData.segment = 'C';
+      } else {
+        clientData.segment = clientData.segment.toUpperCase();
+      }
+
+      clientsData.push(clientData);
+    }
+
+    // Insert/Update in database
+    const imported = await routesService.upsertClients(clientsData);
+
+    res.json({
+      success: true,
+      message: `Importación completada`,
+      data: {
+        sheet: sheetName,
+        totalRows: clientsData.length,
+        ...imported
+      }
+    });
+
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
