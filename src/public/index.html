@@ -651,6 +651,58 @@
       }
     }
 
+    /* Data Panel Tabs */
+    .data-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .data-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .data-tab:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .data-tab.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .data-tab.active .badge {
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+
+    .data-tab .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+    }
+
+    .data-subpanel {
+      display: none;
+    }
+
+    .data-subpanel.active {
+      display: block;
+    }
+
     /* Tables */
     .table-wrapper {
       overflow-x: auto;
@@ -1389,205 +1441,241 @@
 
       <!-- Data Panel -->
       <div class="panel" id="panel-data">
-        <!-- Importar Excel -->
-        <div class="card" style="margin-bottom: 24px; border: 2px dashed var(--border);">
-          <div class="card-header">
-            <h3><i data-lucide="file-spreadsheet" style="width: 18px; height: 18px;"></i> Importar Clientes desde Excel</h3>
-          </div>
-          <div class="card-body">
-            <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
-              <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
-                <label>Archivo Excel (.xlsx, .xls)</label>
-                <input type="file" id="file-clients" class="form-control" accept=".xlsx,.xls" style="padding: 10px;">
+        <!-- Sub-navigation tabs -->
+        <div class="data-tabs" style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid var(--border); padding-bottom: 12px;">
+          <button class="data-tab active" data-subtab="ejecutivos" onclick="switchDataTab('ejecutivos')">
+            <i data-lucide="users" style="width: 16px; height: 16px;"></i>
+            Ejecutivos
+            <span class="badge badge-active" id="tab-users-count">0</span>
+          </button>
+          <button class="data-tab" data-subtab="vehiculos" onclick="switchDataTab('vehiculos')">
+            <i data-lucide="truck" style="width: 16px; height: 16px;"></i>
+            Vehículos
+            <span class="badge badge-active" id="tab-vehicles-count">0</span>
+          </button>
+          <button class="data-tab" data-subtab="clientes" onclick="switchDataTab('clientes')">
+            <i data-lucide="building-2" style="width: 16px; height: 16px;"></i>
+            Clientes
+            <span class="badge badge-active" id="tab-clients-count">0</span>
+          </button>
+          <button class="data-tab" data-subtab="productos" onclick="switchDataTab('productos')">
+            <i data-lucide="package" style="width: 16px; height: 16px;"></i>
+            Productos
+            <span class="badge badge-active" id="tab-products-count">0</span>
+          </button>
+        </div>
+
+        <!-- ==================== EJECUTIVOS ==================== -->
+        <div class="data-subpanel active" id="subpanel-ejecutivos">
+          <div class="grid-2">
+            <!-- Agregar Ejecutivo -->
+            <div class="card">
+              <div class="card-header">
+                <h3><i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Agregar Ejecutivo</h3>
               </div>
-              <button class="btn btn-primary" onclick="uploadClientsExcel()" style="height: 48px; padding: 0 24px;">
-                <i data-lucide="upload" style="width: 16px; height: 16px;"></i>
-                Importar Clientes
-              </button>
+              <div class="card-body">
+                <form id="form-add-user">
+                  <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="user-name" class="form-control" placeholder="Ej: Juan Pérez" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="user-email" class="form-control" placeholder="Ej: juan.perez@leker.cl" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Rol</label>
+                    <select id="user-role" class="form-control">
+                      <option value="executive">Ejecutivo/Vendedor</option>
+                      <option value="admin">Administrador</option>
+                    </select>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-block">
+                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                    Agregar Ejecutivo
+                  </button>
+                </form>
+              </div>
             </div>
-            <div id="upload-result" style="margin-top: 16px; display: none;"></div>
-            <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
-              <strong>Formato esperado:</strong> Columnas: Código, Razón Social, Nombre Fantasía, Dirección, Comuna, Segmento (A/B/C), Prioridad (FOCO/Normal)
+
+            <!-- Lista de Ejecutivos -->
+            <div class="card">
+              <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Lista de Ejecutivos</h3>
+                  <span class="badge badge-active" id="users-count">0</span>
+                </div>
+                <input type="text" id="search-users" class="form-control" placeholder="Buscar por nombre o email..." oninput="filterUsers()">
+              </div>
+              <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
+                <table id="table-users">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Email</th>
+                      <th>Rol</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Vendedores y Vehículos -->
-        <div class="grid-2">
-          <!-- Vendedores -->
-          <div class="card">
-            <div class="card-header">
-              <h3><i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Agregar Vendedor</h3>
+        <!-- ==================== VEHÍCULOS ==================== -->
+        <div class="data-subpanel" id="subpanel-vehiculos">
+          <div class="grid-2">
+            <!-- Agregar Vehículo -->
+            <div class="card">
+              <div class="card-header">
+                <h3><i data-lucide="car" style="width: 18px; height: 18px;"></i> Agregar Vehículo</h3>
+              </div>
+              <div class="card-body">
+                <form id="form-add-vehicle">
+                  <div class="form-group">
+                    <label>Patente</label>
+                    <input type="text" id="vehicle-plate" class="form-control" placeholder="Ej: ABCD-12" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Modelo</label>
+                    <input type="text" id="vehicle-model" class="form-control" placeholder="Ej: Fiat Fiorino 2024" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Rendimiento (Km/L)</label>
+                    <input type="number" id="vehicle-efficiency" class="form-control" value="12" step="0.1" required>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-block">
+                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                    Agregar Vehículo
+                  </button>
+                </form>
+              </div>
             </div>
-            <div class="card-body">
-              <form id="form-add-user">
-                <div class="form-group">
-                  <label>Nombre Completo</label>
-                  <input type="text" id="user-name" class="form-control" placeholder="Ej: Juan Pérez" required>
-                </div>
-                <div class="form-group">
-                  <label>Email</label>
-                  <input type="email" id="user-email" class="form-control" placeholder="Ej: juan.perez@leker.cl" required>
-                </div>
-                <div class="form-group">
-                  <label>Rol</label>
-                  <select id="user-role" class="form-control">
-                    <option value="executive">Ejecutivo/Vendedor</option>
-                    <option value="admin">Administrador</option>
-                  </select>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">
-                  <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-                  Agregar Vendedor
-                </button>
-              </form>
-            </div>
-          </div>
 
-          <!-- Vehículos -->
-          <div class="card">
-            <div class="card-header">
-              <h3><i data-lucide="car" style="width: 18px; height: 18px;"></i> Agregar Vehículo</h3>
-            </div>
-            <div class="card-body">
-              <form id="form-add-vehicle">
-                <div class="form-group">
-                  <label>Patente</label>
-                  <input type="text" id="vehicle-plate" class="form-control" placeholder="Ej: ABCD-12" required>
+            <!-- Lista de Vehículos -->
+            <div class="card">
+              <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <h3><i data-lucide="truck" style="width: 18px; height: 18px;"></i> Lista de Vehículos</h3>
+                  <span class="badge badge-active" id="vehicles-count">0</span>
                 </div>
-                <div class="form-group">
-                  <label>Modelo</label>
-                  <input type="text" id="vehicle-model" class="form-control" placeholder="Ej: Fiat Fiorino 2024" required>
-                </div>
-                <div class="form-group">
-                  <label>Rendimiento (Km/L)</label>
-                  <input type="number" id="vehicle-efficiency" class="form-control" value="12" step="0.1" required>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">
-                  <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-                  Agregar Vehículo
-                </button>
-              </form>
+                <input type="text" id="search-vehicles" class="form-control" placeholder="Buscar por patente o modelo..." oninput="filterVehicles()">
+              </div>
+              <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
+                <table id="table-vehicles">
+                  <thead>
+                    <tr>
+                      <th>Patente</th>
+                      <th>Modelo</th>
+                      <th>Km/L</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Tablas de Vendedores y Vehículos -->
-        <div class="grid-2" style="margin-top: 24px;">
+        <!-- ==================== CLIENTES ==================== -->
+        <div class="data-subpanel" id="subpanel-clientes">
+          <!-- Importar Excel -->
+          <div class="card" style="margin-bottom: 24px; border: 2px dashed var(--accent); background: rgba(59, 130, 246, 0.03);">
+            <div class="card-header">
+              <h3><i data-lucide="file-spreadsheet" style="width: 18px; height: 18px;"></i> Importar desde Excel</h3>
+            </div>
+            <div class="card-body">
+              <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+                  <label>Archivo Excel (.xlsx, .xls)</label>
+                  <input type="file" id="file-clients" class="form-control" accept=".xlsx,.xls" style="padding: 10px;">
+                </div>
+                <button class="btn btn-primary" onclick="uploadClientsExcel()" style="height: 48px; padding: 0 24px;">
+                  <i data-lucide="upload" style="width: 16px; height: 16px;"></i>
+                  Importar Clientes
+                </button>
+              </div>
+              <div id="upload-result" style="margin-top: 16px; display: none;"></div>
+              <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+                <strong>Columnas:</strong> Código, Razón Social, Nombre Fantasía, Dirección, Comuna, Segmento (A/B/C), Prioridad (FOCO/Normal)
+              </div>
+            </div>
+          </div>
+
+          <!-- Lista de Clientes -->
           <div class="card">
             <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Vendedores</h3>
-                <span class="badge badge-active" id="users-count">0</span>
+                <h3><i data-lucide="building-2" style="width: 18px; height: 18px;"></i> Lista de Clientes</h3>
+                <span class="badge badge-active" id="clients-count">0</span>
               </div>
-              <input type="text" id="search-users" class="form-control" placeholder="Buscar vendedor..." oninput="filterUsers()" style="margin-top: 8px;">
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <input type="text" id="search-clients" class="form-control" placeholder="Buscar por nombre, dirección o comuna..." oninput="filterClients()" style="flex: 1; min-width: 200px;">
+                <select id="filter-segment" class="form-control" onchange="filterClients()" style="width: 140px;">
+                  <option value="">Todos</option>
+                  <option value="A">Segmento A</option>
+                  <option value="B">Segmento B</option>
+                  <option value="C">Segmento C</option>
+                </select>
+                <select id="filter-priority" class="form-control" onchange="filterClients()" style="width: 120px;">
+                  <option value="">Todos</option>
+                  <option value="FOCO">FOCO</option>
+                </select>
+              </div>
+              <div id="clients-pagination" style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--border);">
+                <span id="clients-showing" style="font-size: 13px; color: var(--text-muted);">Mostrando 0 de 0</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <button class="btn btn-secondary" onclick="prevClientsPage()" id="btn-prev-clients" disabled style="padding: 6px 12px;">
+                    <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
+                  </button>
+                  <span id="clients-page-info" style="padding: 6px 12px; font-size: 13px;">Página 1</span>
+                  <button class="btn btn-secondary" onclick="nextClientsPage()" id="btn-next-clients" style="padding: 6px 12px;">
+                    <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+                  </button>
+                </div>
+              </div>
             </div>
-            <div class="table-wrapper" style="max-height: 350px; overflow-y: auto;">
-              <table id="table-users">
+            <div class="table-wrapper" style="max-height: 500px; overflow-y: auto;">
+              <table id="table-clients">
                 <thead>
                   <tr>
+                    <th>Código</th>
                     <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Rol</th>
-                    <th>Acciones</th>
+                    <th>Dirección</th>
+                    <th>Comuna</th>
+                    <th>Segmento</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
               </table>
             </div>
           </div>
+        </div>
 
+        <!-- ==================== PRODUCTOS ==================== -->
+        <div class="data-subpanel" id="subpanel-productos">
           <div class="card">
-            <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3><i data-lucide="truck" style="width: 18px; height: 18px;"></i> Vehículos</h3>
-                <span class="badge badge-active" id="vehicles-count">0</span>
-              </div>
-              <input type="text" id="search-vehicles" class="form-control" placeholder="Buscar vehículo..." oninput="filterVehicles()" style="margin-top: 8px;">
+            <div class="card-header">
+              <h3><i data-lucide="package" style="width: 18px; height: 18px;"></i> Lista de Productos</h3>
+              <span class="badge badge-active" id="products-count">0</span>
             </div>
-            <div class="table-wrapper" style="max-height: 350px; overflow-y: auto;">
-              <table id="table-vehicles">
+            <div class="table-wrapper" style="max-height: 500px; overflow-y: auto;">
+              <table id="table-products">
                 <thead>
                   <tr>
-                    <th>Patente</th>
-                    <th>Modelo</th>
-                    <th>Km/L</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+                    <th>SKU</th>
+                    <th>Nombre</th>
+                    <th>Costo Base</th>
+                    <th>Precio Lista</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
               </table>
             </div>
-          </div>
-        </div>
-
-        <!-- Clientes (Vista mejorada) -->
-        <div class="card" style="margin-top: 24px;">
-          <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <h3><i data-lucide="building-2" style="width: 18px; height: 18px;"></i> Clientes</h3>
-              <span class="badge badge-active" id="clients-count">0</span>
-            </div>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-              <input type="text" id="search-clients" class="form-control" placeholder="Buscar cliente por nombre, dirección o comuna..." oninput="filterClients()" style="flex: 1; min-width: 250px;">
-              <select id="filter-segment" class="form-control" onchange="filterClients()" style="width: 150px;">
-                <option value="">Todos los segmentos</option>
-                <option value="A">Segmento A</option>
-                <option value="B">Segmento B</option>
-                <option value="C">Segmento C</option>
-              </select>
-              <select id="filter-priority" class="form-control" onchange="filterClients()" style="width: 130px;">
-                <option value="">Todos</option>
-                <option value="FOCO">Solo FOCO</option>
-              </select>
-            </div>
-            <div id="clients-pagination" style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid var(--border);">
-              <span id="clients-showing" style="font-size: 13px; color: var(--text-muted);">Mostrando 0 de 0</span>
-              <div style="display: flex; gap: 8px;">
-                <button class="btn btn-secondary" onclick="prevClientsPage()" id="btn-prev-clients" disabled style="padding: 6px 12px;">
-                  <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
-                </button>
-                <span id="clients-page-info" style="padding: 6px 12px; font-size: 13px;">Página 1</span>
-                <button class="btn btn-secondary" onclick="nextClientsPage()" id="btn-next-clients" style="padding: 6px 12px;">
-                  <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-          <div class="table-wrapper" style="max-height: 450px; overflow-y: auto;">
-            <table id="table-clients">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Dirección</th>
-                  <th>Comuna</th>
-                  <th>Segmento</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Productos -->
-        <div class="card" style="margin-top: 24px;">
-          <div class="card-header">
-            <h3><i data-lucide="package" style="width: 18px; height: 18px;"></i> Productos</h3>
-            <span class="badge badge-active" id="products-count">0</span>
-          </div>
-          <div class="table-wrapper" style="max-height: 300px; overflow-y: auto;">
-            <table id="table-products">
-              <thead>
-                <tr>
-                  <th>SKU</th>
-                  <th>Nombre</th>
-                  <th>Costo</th>
-                  <th>Precio Lista</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
           </div>
         </div>
       </div>
@@ -1844,6 +1932,11 @@
         document.getElementById('vehicles-count').textContent = allVehicles.length;
         document.getElementById('clients-count').textContent = allClients.length;
         document.getElementById('products-count').textContent = products.data.length;
+
+        // Update tab counts
+        const tabProductsCount = document.getElementById('tab-products-count');
+        if (tabProductsCount) tabProductsCount.textContent = products.data.length;
+        updateDataTabCounts();
 
         // Render tables
         renderUsersTable(allUsers);
@@ -2231,16 +2324,17 @@
     function renderClientsTable(data) {
       const tbody = document.querySelector('#table-clients tbody');
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay clientes que coincidan</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay clientes que coincidan</td></tr>';
         return;
       }
       tbody.innerHTML = data.map(c => `
         <tr>
+          <td><code style="font-size: 11px; background: var(--bg-hover); padding: 2px 6px; border-radius: 4px;">${c.external_id || '-'}</code></td>
           <td>
-            <div style="font-weight: 500;">${c.name}</div>
+            <div style="font-weight: 500;">${c.name || '-'}</div>
             ${c.fantasy_name ? `<div style="font-size: 11px; color: var(--text-muted);">${c.fantasy_name}</div>` : ''}
           </td>
-          <td style="font-size: 13px;">${c.address || '-'}</td>
+          <td style="font-size: 13px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.address || '-'}</td>
           <td>${c.commune || '-'}</td>
           <td>
             <span class="badge badge-${(c.segment || 'c').toLowerCase()}">${c.segment || '-'}</span>
@@ -2561,6 +2655,43 @@
       } catch (error) {
         showToast('error', 'Error de conexión', error.message);
       }
+    }
+
+    // =============================================
+    // DATA PANEL TABS
+    // =============================================
+
+    function switchDataTab(tabName) {
+      // Update tab buttons
+      document.querySelectorAll('.data-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.subtab === tabName) {
+          tab.classList.add('active');
+        }
+      });
+
+      // Update subpanels
+      document.querySelectorAll('.data-subpanel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+      document.getElementById(`subpanel-${tabName}`).classList.add('active');
+
+      lucide.createIcons();
+    }
+
+    function updateDataTabCounts() {
+      const usersCount = allUsers.length;
+      const vehiclesCount = allVehicles.length;
+      const clientsCount = allClients.length;
+
+      // Update tab badges
+      const tabUsersCount = document.getElementById('tab-users-count');
+      const tabVehiclesCount = document.getElementById('tab-vehicles-count');
+      const tabClientsCount = document.getElementById('tab-clients-count');
+
+      if (tabUsersCount) tabUsersCount.textContent = usersCount;
+      if (tabVehiclesCount) tabVehiclesCount.textContent = vehiclesCount;
+      if (tabClientsCount) tabClientsCount.textContent = clientsCount;
     }
 
     // =============================================
