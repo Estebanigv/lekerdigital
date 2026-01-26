@@ -1942,59 +1942,87 @@
 
         <!-- ==================== EJECUTIVOS ==================== -->
         <div class="data-subpanel active" id="subpanel-ejecutivos">
-          <div class="grid-2">
-            <!-- Agregar Ejecutivo -->
-            <div class="card">
-              <div class="card-header">
-                <h3><i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Agregar Ejecutivo</h3>
-              </div>
-              <div class="card-body">
-                <form id="form-add-user">
-                  <div class="form-group">
-                    <label>Nombre Completo</label>
-                    <input type="text" id="user-name" class="form-control" placeholder="Ej: Juan Pérez" required>
-                  </div>
-                  <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="user-email" class="form-control" placeholder="Ej: juan.perez@leker.cl" required>
-                  </div>
-                  <div class="form-group">
-                    <label>Rol</label>
-                    <select id="user-role" class="form-control">
-                      <option value="executive">Ejecutivo/Vendedor</option>
-                      <option value="admin">Administrador</option>
-                    </select>
-                  </div>
-                  <button type="submit" class="btn btn-primary btn-block">
-                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-                    Agregar Ejecutivo
-                  </button>
-                </form>
-              </div>
+          <!-- Header con stats -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+            <div class="card" style="text-align: center; padding: 16px;">
+              <div style="font-size: 24px; font-weight: 700; color: var(--primary);" id="stat-exec-total">0</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Total Ejecutivos</div>
             </div>
+            <div class="card" style="text-align: center; padding: 16px;">
+              <div style="font-size: 24px; font-weight: 700; color: var(--success);" id="stat-exec-active">0</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Activos Hoy</div>
+            </div>
+            <div class="card" style="text-align: center; padding: 16px;">
+              <div style="font-size: 24px; font-weight: 700; color: var(--warning);" id="stat-exec-clients">0</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Clientes Asignados</div>
+            </div>
+            <div class="card" style="text-align: center; padding: 16px;">
+              <div style="font-size: 24px; font-weight: 700; color: var(--accent);" id="stat-exec-unassigned">0</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Sin Asignar</div>
+            </div>
+          </div>
 
-            <!-- Lista de Ejecutivos -->
-            <div class="card">
-              <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Lista de Ejecutivos</h3>
+          <!-- Agregar Ejecutivo (colapsable) -->
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header" style="cursor: pointer;" onclick="toggleAddUserForm()">
+              <h3><i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Agregar Nuevo Ejecutivo</h3>
+              <i data-lucide="chevron-down" id="add-user-chevron" style="width: 18px; height: 18px; transition: transform 0.2s;"></i>
+            </div>
+            <div class="card-body" id="add-user-form-body" style="display: none;">
+              <form id="form-add-user" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: end;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label>Nombre Completo</label>
+                  <input type="text" id="user-name" class="form-control" placeholder="Ej: Juan Pérez" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label>Email</label>
+                  <input type="email" id="user-email" class="form-control" placeholder="juan.perez@leker.cl" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label>Rol</label>
+                  <select id="user-role" class="form-control">
+                    <option value="executive">Ejecutivo</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                  <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                  Agregar
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Lista de Ejecutivos -->
+          <div class="card">
+            <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Lista de Ejecutivos</h3>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <select id="filter-user-role" class="form-control" style="width: 150px; padding: 6px 10px; font-size: 12px;" onchange="filterUsers()">
+                    <option value="">Todos los roles</option>
+                    <option value="executive">Solo Ejecutivos</option>
+                    <option value="admin">Solo Admins</option>
+                  </select>
                   <span class="badge badge-active" id="users-count">0</span>
                 </div>
-                <input type="text" id="search-users" class="form-control" placeholder="Buscar por nombre o email..." oninput="filterUsers()">
               </div>
-              <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
-                <table id="table-users">
-                  <thead>
-                    <tr>
-                      <th>Nombre</th>
-                      <th>Email</th>
-                      <th>Rol</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody></tbody>
-                </table>
-              </div>
+              <input type="text" id="search-users" class="form-control" placeholder="Buscar por nombre o email..." oninput="filterUsers()">
+            </div>
+            <div class="table-wrapper" style="max-height: 500px; overflow-y: auto;">
+              <table id="table-users">
+                <thead>
+                  <tr>
+                    <th>Ejecutivo</th>
+                    <th>Contacto</th>
+                    <th>Clientes</th>
+                    <th>Hoy</th>
+                    <th>Estado</th>
+                    <th style="text-align: center;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -4713,10 +4741,17 @@
 
     function filterUsers() {
       const search = document.getElementById('search-users').value.toLowerCase();
-      const filtered = allUsers.filter(u =>
+      const roleFilter = document.getElementById('filter-user-role')?.value || '';
+
+      let filtered = allUsers.filter(u =>
         u.full_name.toLowerCase().includes(search) ||
         u.email.toLowerCase().includes(search)
       );
+
+      if (roleFilter) {
+        filtered = filtered.filter(u => u.role === roleFilter);
+      }
+
       renderUsersTable(filtered);
       document.getElementById('users-count').textContent = filtered.length;
     }
@@ -4865,29 +4900,142 @@
     // GESTIÓN DE VENDEDORES
     // =============================================
 
+    let addUserFormOpen = false;
+    function toggleAddUserForm() {
+      addUserFormOpen = !addUserFormOpen;
+      const body = document.getElementById('add-user-form-body');
+      const chevron = document.getElementById('add-user-chevron');
+      body.style.display = addUserFormOpen ? 'block' : 'none';
+      chevron.style.transform = addUserFormOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+
+    function updateExecutivesStats() {
+      const executives = allUsers.filter(u => u.role === 'executive');
+      const activeToday = todayRoutesData.filter(r => r.status === 'active').length;
+      const assignedClientsCount = allClients.filter(c => c.assigned_user_id).length;
+      const unassignedClientsCount = allClients.filter(c => !c.assigned_user_id).length;
+
+      document.getElementById('stat-exec-total').textContent = executives.length;
+      document.getElementById('stat-exec-active').textContent = activeToday;
+      document.getElementById('stat-exec-clients').textContent = assignedClientsCount;
+      document.getElementById('stat-exec-unassigned').textContent = unassignedClientsCount;
+    }
+
     function renderUsersTable(data) {
       const tbody = document.querySelector('#table-users tbody');
+      updateExecutivesStats();
+
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay vendedores</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay usuarios que coincidan</td></tr>';
         return;
       }
-      tbody.innerHTML = data.map(u => `
+
+      tbody.innerHTML = data.map(u => {
+        const assignedClients = allClients.filter(c => c.assigned_user_id === u.id).length;
+        const todayRoute = todayRoutesData.find(r => r.user_id === u.id);
+        const hasActiveRoute = todayRoute?.status === 'active';
+        const todayVisits = todayRoute?.visits_count || todayRoute?.visits?.length || 0;
+        const isActive = u.status !== 'inactive';
+        const initials = getInitials(u.full_name);
+
+        return `
         <tr>
           <td>
-            <div style="font-weight: 500;">${u.full_name}</div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: ${u.role === 'admin' ? '#6b7280' : '#1e40af'}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">
+                ${initials}
+              </div>
+              <div>
+                <div style="font-weight: 600;">${u.full_name}</div>
+                <span class="badge ${u.role === 'admin' ? 'badge-secondary' : 'badge-primary'}" style="font-size: 9px;">${u.role === 'admin' ? 'Admin' : 'Ejecutivo'}</span>
+              </div>
+            </div>
           </td>
-          <td style="font-size: 13px; color: var(--text-secondary);">${u.email}</td>
+          <td style="font-size: 12px; color: var(--text-secondary);">${u.email}</td>
           <td>
-            <span class="badge ${u.role === 'admin' ? 'badge-a' : 'badge-b'}">${u.role === 'admin' ? 'Admin' : 'Ejecutivo'}</span>
+            ${u.role === 'executive' ? `
+              <div style="font-size: 13px; font-weight: 600; color: var(--primary);">${assignedClients}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">clientes</div>
+            ` : '<span style="color: var(--text-muted);">-</span>'}
           </td>
           <td>
-            <button class="btn btn-sm" class="btn-danger" onclick="deleteUser('${u.id}')">
-              <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-            </button>
+            ${u.role === 'executive' ? `
+              ${hasActiveRoute ? `
+                <span class="badge badge-success" style="font-size: 10px;">En Ruta</span>
+                <div style="font-size: 10px; color: var(--text-muted);">${todayVisits} visitas</div>
+              ` : todayRoute ? `
+                <span class="badge badge-secondary" style="font-size: 10px;">Completada</span>
+              ` : `
+                <span class="badge badge-warning" style="font-size: 10px;">Sin iniciar</span>
+              `}
+            ` : '<span style="color: var(--text-muted);">-</span>'}
+          </td>
+          <td>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleUserStatus('${u.id}', this.checked)" style="width: 16px; height: 16px;">
+              <span style="font-size: 11px; color: ${isActive ? 'var(--success)' : 'var(--text-muted)'};">${isActive ? 'Activo' : 'Inactivo'}</span>
+            </label>
+          </td>
+          <td>
+            <div style="display: flex; gap: 4px; justify-content: center;">
+              ${u.role === 'executive' ? `
+                <button class="btn-icon" onclick="quickAssignToUser('${u.id}')" title="Asignar clientes">
+                  <i data-lucide="user-plus" style="width: 14px; height: 14px;"></i>
+                </button>
+                <button class="btn-icon" onclick="viewUserRoutes('${u.id}')" title="Ver rutas">
+                  <i data-lucide="route" style="width: 14px; height: 14px;"></i>
+                </button>
+              ` : ''}
+              <button class="btn-icon" onclick="editUser('${u.id}')" title="Editar">
+                <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+              </button>
+              <button class="btn-icon" style="color: var(--danger);" onclick="deleteUser('${u.id}')" title="Eliminar">
+                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+              </button>
+            </div>
           </td>
         </tr>
-      `).join('');
+      `}).join('');
       lucide.createIcons();
+    }
+
+    async function toggleUserStatus(userId, isActive) {
+      const user = allUsers.find(u => u.id === userId);
+      if (user) {
+        user.status = isActive ? 'active' : 'inactive';
+        showToast('success', 'Estado actualizado', `${user.full_name} ahora está ${isActive ? 'activo' : 'inactivo'}`);
+        // Note: This only updates locally. To persist, we'd need to add status column to users table
+      }
+    }
+
+    function quickAssignToUser(userId) {
+      showPanel('routes');
+      setTimeout(() => {
+        document.getElementById('executive-filter').value = userId;
+        selectedExecutiveId = userId;
+        filterByExecutive();
+        setTimeout(() => openAssignClientsModal(), 200);
+      }, 100);
+    }
+
+    function viewUserRoutes(userId) {
+      showPanel('routes');
+      setTimeout(() => {
+        document.getElementById('executive-filter').value = userId;
+        selectedExecutiveId = userId;
+        filterByExecutive();
+      }, 100);
+    }
+
+    function editUser(userId) {
+      const user = allUsers.find(u => u.id === userId);
+      if (!user) return;
+
+      const newName = prompt('Nombre completo:', user.full_name);
+      if (newName && newName !== user.full_name) {
+        // For now, just show a message. Full edit would require API endpoint
+        showToast('info', 'Edición', 'Función de edición próximamente');
+      }
     }
 
     document.getElementById('form-add-user').addEventListener('submit', async (e) => {
