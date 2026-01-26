@@ -4977,13 +4977,15 @@
             </label>
           </td>
           <td>
-            <div style="display: flex; gap: 4px; justify-content: center;">
+            <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
               ${u.role === 'executive' ? `
-                <button class="btn-icon" onclick="quickAssignToUser('${u.id}')" title="Asignar clientes">
-                  <i data-lucide="user-plus" style="width: 14px; height: 14px;"></i>
+                <button class="btn btn-primary" onclick="quickAssignToUser('${u.id}')" style="padding: 4px 10px; font-size: 11px;">
+                  <i data-lucide="user-plus" style="width: 12px; height: 12px;"></i>
+                  Asignar
                 </button>
-                <button class="btn-icon" onclick="viewUserRoutes('${u.id}')" title="Ver rutas">
-                  <i data-lucide="route" style="width: 14px; height: 14px;"></i>
+                <button class="btn btn-secondary" onclick="viewUserRoutes('${u.id}')" style="padding: 4px 10px; font-size: 11px;">
+                  <i data-lucide="route" style="width: 12px; height: 12px;"></i>
+                  Rutas
                 </button>
               ` : ''}
               <button class="btn-icon" onclick="editUser('${u.id}')" title="Editar">
