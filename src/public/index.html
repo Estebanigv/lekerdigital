@@ -3632,20 +3632,66 @@
           console.error('Error loading route:', e);
         }
       } else {
-        // Show assigned clients on map
+        // Show assigned clients on map (all clients, function handles GPS check)
         clearRouteFromMap();
-        const clients = allClients.filter(c => c.assigned_user_id === selectedExecutiveId && c.lat && c.lng);
+        const clients = allClients.filter(c => c.assigned_user_id === selectedExecutiveId);
         displayClientsOnRouteMap(clients);
       }
     }
 
     function displayClientsOnRouteMap(clients) {
       clearRouteFromMap();
-      if (!clients || clients.length === 0) return;
+
+      // Get legend/info element
+      const legendEl = document.getElementById('route-legend');
+      const infoEl = document.getElementById('route-info');
+
+      if (!clients || clients.length === 0) {
+        if (legendEl) {
+          legendEl.style.display = 'block';
+          infoEl.innerHTML = `
+            <div style="text-align: center; padding: 10px; color: var(--text-muted);">
+              <i data-lucide="user-x" style="width: 24px; height: 24px; margin-bottom: 8px;"></i>
+              <div style="font-size: 12px;">Sin clientes asignados</div>
+            </div>
+          `;
+          lucide.createIcons();
+        }
+        return;
+      }
+
+      // Separate clients with and without GPS
+      const clientsWithGPS = clients.filter(c => c.lat && c.lng);
+      const clientsWithoutGPS = clients.filter(c => !c.lat || !c.lng);
+
+      // Show info in legend
+      if (legendEl) {
+        legendEl.style.display = 'block';
+        let infoHtml = `<div style="font-size: 11px;">`;
+        infoHtml += `<div style="margin-bottom: 6px;"><strong>${clients.length}</strong> clientes asignados</div>`;
+        if (clientsWithGPS.length > 0) {
+          infoHtml += `<div style="color: var(--success);">✓ ${clientsWithGPS.length} con ubicación</div>`;
+        }
+        if (clientsWithoutGPS.length > 0) {
+          infoHtml += `<div style="color: var(--warning);">⚠ ${clientsWithoutGPS.length} sin GPS</div>`;
+          infoHtml += `<div style="margin-top: 8px; font-size: 10px; color: var(--text-muted);">`;
+          clientsWithoutGPS.slice(0, 5).forEach(c => {
+            infoHtml += `<div>• ${c.fantasy_name || c.name}</div>`;
+          });
+          if (clientsWithoutGPS.length > 5) {
+            infoHtml += `<div>... y ${clientsWithoutGPS.length - 5} más</div>`;
+          }
+          infoHtml += `</div>`;
+        }
+        infoHtml += `</div>`;
+        infoEl.innerHTML = infoHtml;
+      }
+
+      if (clientsWithGPS.length === 0) return;
 
       const bounds = new google.maps.LatLngBounds();
 
-      clients.forEach((client, index) => {
+      clientsWithGPS.forEach((client, index) => {
         const position = { lat: parseFloat(client.lat), lng: parseFloat(client.lng) };
         bounds.extend(position);
 
@@ -3676,7 +3722,7 @@
         routeMarkers.push(marker);
       });
 
-      if (clients.length > 0) {
+      if (clientsWithGPS.length > 0) {
         routeMap.fitBounds(bounds);
       }
     }
