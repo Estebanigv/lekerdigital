@@ -120,7 +120,7 @@
     .logo-icon {
       width: 40px;
       height: 40px;
-      background: linear-gradient(135deg, var(--accent), var(--purple));
+      background: var(--accent);
       border-radius: 10px;
       display: flex;
       align-items: center;
@@ -288,7 +288,7 @@
     .user-avatar {
       width: 36px;
       height: 36px;
-      background: linear-gradient(135deg, var(--accent), var(--purple));
+      background: var(--accent);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -1572,12 +1572,12 @@
       <!-- Routes Panel -->
       <div class="panel" id="panel-routes">
         <!-- Executive Selector Header -->
-        <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);">
+        <div class="card" style="margin-bottom: 20px; background: #1e40af;">
           <div class="card-body" style="padding: 16px 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
               <div style="display: flex; align-items: center; gap: 16px;">
                 <div style="color: white;">
-                  <div style="font-size: 12px; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px;">Panel de Logística</div>
+                  <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Panel de Logística</div>
                   <div style="font-size: 20px; font-weight: 700;">Gestión por Ejecutivo</div>
                 </div>
               </div>
@@ -1719,11 +1719,11 @@
       <!-- Visits Panel -->
       <div class="panel" id="panel-visits">
         <!-- Executive Header for Visits -->
-        <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, var(--success) 0%, #059669 100%);">
+        <div class="card" style="margin-bottom: 20px; background: #059669;">
           <div class="card-body" style="padding: 16px 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
               <div style="color: white;">
-                <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px;">Panel de Visitas</div>
+                <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Panel de Visitas</div>
                 <div style="font-size: 20px; font-weight: 700;">Registro de Check-in</div>
               </div>
               <div style="display: flex; gap: 12px; align-items: center;">
@@ -2292,7 +2292,7 @@
             </div>
             <div class="card-body">
               <div style="text-align: center; padding: 40px;">
-                <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #F9AB00, #E37400); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: #F9AB00; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
                   <i data-lucide="bar-chart-2" style="width: 40px; height: 40px; color: white;"></i>
                 </div>
                 <h3 style="margin-bottom: 8px;">Google Analytics 4</h3>
@@ -2324,7 +2324,7 @@
             </div>
             <div class="card-body">
               <div style="text-align: center; padding: 40px;">
-                <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #4285F4, #34A853, #FBBC05, #EA4335); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: #4285F4; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
                   <i data-lucide="target" style="width: 40px; height: 40px; color: white;"></i>
                 </div>
                 <h3 style="margin-bottom: 8px;">Google Ads</h3>
@@ -2360,7 +2360,7 @@
             </div>
             <div class="card-body">
               <div style="text-align: center; padding: 40px;">
-                <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #0081FB, #00C6FF); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: #0081FB; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
                   <i data-lucide="facebook" style="width: 40px; height: 40px; color: white;"></i>
                 </div>
                 <h3 style="margin-bottom: 8px;">Meta Pixel</h3>
@@ -3498,10 +3498,16 @@
       loadExecutiveClients();
       loadExecutiveRouteOnMap();
 
-      // Also sync with visits panel
+      // Sync with visits panel
       const visitFilter = document.getElementById('visit-executive-filter');
       if (visitFilter) visitFilter.value = selectedExecutiveId;
       filterVisitsByExecutive();
+
+      // Sync with "Iniciar Jornada" form
+      const startUserSelect = document.getElementById('start-user');
+      if (startUserSelect && selectedExecutiveId) {
+        startUserSelect.value = selectedExecutiveId;
+      }
     }
 
     function filterVisitsByExecutive() {
@@ -4034,7 +4040,7 @@
           <div class="executive-item" data-exec-id="${exec.id}">
             <div class="executive-header" onclick="toggleExecutiveDetails('${exec.id}')">
               <div style="display: flex; align-items: center; gap: 12px;">
-                <div class="executive-avatar" style="background: ${hasRoute ? 'linear-gradient(135deg, #10b981, #059669)' : isActive ? 'linear-gradient(135deg, #3b82f6, #1e40af)' : 'linear-gradient(135deg, #9ca3af, #6b7280)'};">
+                <div class="executive-avatar" style="background: ${hasRoute ? '#059669' : isActive ? '#1e40af' : '#6b7280'};">
                   ${initials}
                 </div>
                 <div>
