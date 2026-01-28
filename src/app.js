@@ -627,6 +627,36 @@ app.post('/routes/:routeId/end', async (req, res) => {
   }
 });
 
+// Obtener zonas disponibles para un vendedor
+app.get('/routes/zones/:userId', async (req, res) => {
+  try {
+    const zones = await routesService.getVendorZones(req.params.userId);
+    res.json({ success: true, data: zones });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Obtener ruta optimizada para un vendedor (filtrada por zona)
+app.get('/routes/optimize/:userId', async (req, res) => {
+  try {
+    const { zone, startLat, startLng } = req.query;
+    let startPoint = null;
+    if (startLat && startLng) {
+      startPoint = { lat: parseFloat(startLat), lng: parseFloat(startLng) };
+    }
+    const result = await routesService.getOptimizedRoute(req.params.userId, zone, startPoint);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Obtener configuración de vehículo estándar
+app.get('/routes/vehicle-config', (req, res) => {
+  res.json({ success: true, data: routesService.getVehicleConfig() });
+});
+
 // =============================================
 // MÓDULO 2: INTELIGENCIA DE MERCADO
 // =============================================
