@@ -288,12 +288,14 @@
     .user-avatar {
       width: 36px;
       height: 36px;
-      background: var(--accent);
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 600;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+      border: 2px solid rgba(255, 255, 255, 0.2);
       font-size: 14px;
     }
 
@@ -1073,6 +1075,47 @@
     }
 
     /* Responsive */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+      z-index: 99;
+    }
+
+    .sidebar-overlay.active {
+      display: block;
+    }
+
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .menu-toggle:hover {
+      background: var(--bg-hover);
+    }
+
+    .sidebar {
+      transition: transform 0.3s ease;
+    }
+
+    .responsive-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
     @media (max-width: 1200px) {
       .stats-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -1080,17 +1123,116 @@
       .grid-2, .grid-3-1 {
         grid-template-columns: 1fr;
       }
+      .responsive-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 1024px) {
       .sidebar {
         transform: translateX(-100%);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
       }
       .main {
         margin-left: 0;
       }
+      .menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .content {
+        padding: 20px;
+      }
+      .topbar {
+        padding: 0 16px;
+      }
+      .page-title {
+        font-size: 16px;
+      }
+    }
+
+    @media (max-width: 768px) {
       .stats-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .content {
+        padding: 16px;
+      }
+      .topbar {
+        padding: 0 12px;
+        height: 56px;
+      }
+      .page-title {
+        font-size: 15px;
+      }
+      .modal-content {
+        width: 95%;
+        max-height: 95vh;
+        border-radius: 8px;
+      }
+      .modal-body {
+        padding: 16px;
+      }
+      .card-header {
+        padding: 14px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .card-body {
+        padding: 14px 16px;
+      }
+      .responsive-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      table {
+        font-size: 13px;
+      }
+      th, td {
+        padding: 8px 10px;
+      }
+      .stat-card {
+        padding: 14px;
+        gap: 12px;
+      }
+      .stat-icon {
+        width: 40px;
+        height: 40px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .content {
+        padding: 12px;
+      }
+      .responsive-grid-4 {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .topbar-actions {
+        gap: 8px;
+      }
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+      }
+      .modal-content {
+        width: 98%;
+      }
+      .map-left-panel {
+        width: 180px !important;
+      }
+      .map-container {
+        height: 350px !important;
       }
     }
 
@@ -1401,12 +1543,12 @@
     <div class="sidebar-footer">
       <div style="cursor: pointer; padding: 12px; background: var(--bg-hover); border-radius: 8px;" onclick="document.querySelector('[data-tab=users]').click()">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <div id="sidebar-admin-avatar" style="width: 36px; height: 36px; background: #6b7280; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px; border: 2px solid #4ade80;">
-            AD
+          <div id="sidebar-admin-avatar" style="width: 36px; height: 36px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);">
+            <i data-lucide="crown" style="width: 18px; height: 18px;"></i>
           </div>
           <div style="flex: 1; min-width: 0;">
             <div id="sidebar-admin-name" style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Administrador</div>
-            <div style="font-size: 10px; color: #4ade80; display: flex; align-items: center; gap: 4px;">
+            <div style="font-size: 10px; color: #a78bfa; display: flex; align-items: center; gap: 4px;">
               <i data-lucide="shield-check" style="width: 10px; height: 10px;"></i>
               Control Maestro
             </div>
@@ -1417,16 +1559,25 @@
     </div>
   </aside>
 
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
   <!-- Main Content -->
   <main class="main">
     <header class="topbar">
-      <h1 class="page-title" id="page-title">Dashboard</h1>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button class="menu-toggle" onclick="toggleSidebar()" title="Menu">
+          <i data-lucide="menu" style="width: 22px; height: 22px;"></i>
+        </button>
+        <h1 class="page-title" id="page-title">Dashboard</h1>
+      </div>
       <div class="topbar-actions">
         <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
           <i data-lucide="sun" class="icon-sun"></i>
           <i data-lucide="moon" class="icon-moon"></i>
         </button>
-        <div class="user-avatar">AD</div>
+        <div class="user-avatar" title="Administrador">
+          <i data-lucide="crown" style="width: 18px; height: 18px;"></i>
+        </div>
       </div>
     </header>
 
@@ -1540,7 +1691,7 @@
         </div>
 
         <!-- Fila: Leyenda + Vendedores + Comparativo -->
-        <div style="display: flex; gap: 16px; margin-top: 20px; align-items: flex-start;">
+        <div style="display: flex; gap: 16px; margin-top: 20px; align-items: flex-start; flex-wrap: wrap;">
           <!-- Leyenda -->
           <div class="card" style="resize: both; overflow: auto; min-width: 220px; min-height: 180px; width: 260px;">
             <div class="card-header" style="padding: 12px 16px;">
@@ -1648,7 +1799,7 @@
               <div style="display: flex; gap: 12px; align-items: center;">
                 <div style="position: relative;">
                   <input type="text" id="executive-search" class="form-control" placeholder="Buscar vendedor..."
-                    style="width: 250px; background: rgba(255,255,255,0.95); border: none; padding-right: 30px;"
+                    style="width: 250px; max-width: 100%; background: rgba(255,255,255,0.95); border: none; padding-right: 30px;"
                     oninput="filterExecutiveDropdown(this.value)" onfocus="showExecutiveDropdown()" autocomplete="off">
                   <i data-lucide="search" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted); pointer-events: none;"></i>
                   <div id="executive-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-height: 300px; overflow-y: auto; z-index: 1000; margin-top: 4px;">
@@ -1671,7 +1822,7 @@
         </div>
 
         <!-- Executive Stats Cards -->
-        <div id="executive-stats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
+        <div id="executive-stats" class="responsive-grid-4" style="gap: 16px; margin-bottom: 20px;">
           <div class="card stat-card">
             <div class="card-body" style="padding: 16px; text-align: center;">
               <i data-lucide="users" style="width: 24px; height: 24px; color: var(--primary); margin-bottom: 8px;"></i>
@@ -1898,7 +2049,7 @@
                 <div style="font-size: 20px; font-weight: 700;">Registro de Check-in</div>
               </div>
               <div style="display: flex; gap: 12px; align-items: center;">
-                <select id="visit-executive-filter" class="form-control" style="width: 250px; background: rgba(255,255,255,0.95); border: none;" onchange="filterVisitsByExecutive()">
+                <select id="visit-executive-filter" class="form-control" style="width: 250px; max-width: 100%; background: rgba(255,255,255,0.95); border: none;" onchange="filterVisitsByExecutive()">
                   <option value="">-- Seleccionar Vendedor --</option>
                 </select>
               </div>
@@ -2092,7 +2243,7 @@
           </div>
           <div class="card-body" id="comparativo-panel" style="display: none;">
             <!-- Header con estadísticas -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+            <div class="responsive-grid-4" style="gap: 16px; margin-bottom: 24px;">
               <div style="background: var(--bg-hover); border-radius: 8px; padding: 16px; text-align: center;">
                 <div style="font-size: 24px; font-weight: 700; color: #3b82f6;" id="comp-total-products">-</div>
                 <div style="font-size: 11px; color: var(--text-muted);">Productos Monitoreados</div>
@@ -2211,7 +2362,7 @@
         <!-- ==================== VENDEDORES ==================== -->
         <div class="data-subpanel active" id="subpanel-vendedores">
           <!-- Header con stats -->
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+          <div class="responsive-grid-4" style="gap: 12px; margin-bottom: 20px;">
             <div class="card" style="text-align: center; padding: 16px;">
               <div style="font-size: 24px; font-weight: 700; color: var(--primary);" id="stat-exec-total">0</div>
               <div style="font-size: 11px; color: var(--text-muted);">Total Vendedores</div>
@@ -2691,21 +2842,21 @@
         <!-- Admin Actual - Control Total -->
         <div class="card" style="margin-bottom: 16px; background: #1e293b; border: 2px solid #374151;">
           <div class="card-body" style="padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="display: flex; align-items: center; gap: 16px;">
-                <div id="current-admin-avatar" style="width: 56px; height: 56px; background: #6b7280; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; border: 3px solid #4ade80;">
-                  AD
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 16px; min-width: 0; flex: 1;">
+                <div id="current-admin-avatar" style="width: 56px; min-width: 56px; height: 56px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5);">
+                  <i data-lucide="crown" style="width: 28px; height: 28px;"></i>
                 </div>
-                <div style="color: white;">
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <div style="color: white; min-width: 0;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
                     <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7;">Usuario Actual</span>
-                    <span style="background: #4ade80; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">CONTROL TOTAL</span>
+                    <span style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">CONTROL TOTAL</span>
                   </div>
-                  <div id="current-admin-name" style="font-size: 22px; font-weight: 700;">Administrador</div>
+                  <div id="current-admin-name" style="font-size: 22px; font-weight: 700; overflow: hidden; text-overflow: ellipsis;">Administrador</div>
                   <div id="current-admin-email" style="font-size: 13px; opacity: 0.7;">admin@leker.cl</div>
                 </div>
               </div>
-              <div style="text-align: right;">
+              <div style="text-align: right; flex-shrink: 0;">
                 <div style="color: rgba(255,255,255,0.6); font-size: 11px; margin-bottom: 8px;">
                   <i data-lucide="shield-check" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i>
                   Administrador del Sistema
@@ -2720,7 +2871,7 @@
         </div>
 
         <!-- Acciones Rápidas Admin -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
+        <div class="responsive-grid-4" style="gap: 12px; margin-bottom: 16px;">
           <button class="card" style="padding: 16px; text-align: center; cursor: pointer; border: none;" onclick="showPanel('data')">
             <i data-lucide="database" style="width: 24px; height: 24px; color: var(--accent); margin-bottom: 8px;"></i>
             <div style="font-size: 12px; font-weight: 500;">Base de Datos</div>
@@ -3299,6 +3450,13 @@
       lucide.createIcons();
     }
 
+    function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+    }
+
     function toggleTheme() {
       const current = document.documentElement.getAttribute('data-theme') || 'light';
       const newTheme = current === 'dark' ? 'light' : 'dark';
@@ -3387,6 +3545,14 @@
         }
         if (tab === 'intelligence') {
           loadComparativoData();
+        }
+
+        // Close sidebar on mobile after navigation
+        if (window.innerWidth <= 1024) {
+          const sidebar = document.querySelector('.sidebar');
+          const overlay = document.getElementById('sidebar-overlay');
+          sidebar.classList.remove('open');
+          overlay.classList.remove('active');
         }
 
         // Refresh maps when switching tabs
@@ -6958,6 +7124,12 @@
           importar: 'Importar Excel'
         };
         document.getElementById('page-title').textContent = subtabTitles[subtab] || 'Datos del Sistema';
+
+        // Close sidebar on mobile after navigation
+        if (window.innerWidth <= 1024) {
+          document.querySelector('.sidebar').classList.remove('open');
+          document.getElementById('sidebar-overlay').classList.remove('active');
+        }
 
         lucide.createIcons();
       });
