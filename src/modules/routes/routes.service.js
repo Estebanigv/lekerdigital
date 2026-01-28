@@ -781,41 +781,49 @@ class RoutesService {
   // =============================================
 
   // Obtiene ruta optimizada para un vendedor
-  // Obtiene las zonas disponibles para un vendedor
+  // Obtiene las zonas disponibles para un vendedor (con estado GPS)
   async getVendorZones(userId) {
     const { data: clients, error } = await supabase
       .from('clients')
-      .select('zone')
+      .select('zone, lat, lng')
       .eq('assigned_user_id', userId)
       .not('zone', 'is', null);
 
     if (error) throw error;
 
-    // Obtener zonas únicas con conteo
-    const zoneCounts = {};
+    // Obtener zonas únicas con conteo y estado GPS
+    const zoneStats = {};
     clients.forEach(c => {
       if (c.zone) {
-        zoneCounts[c.zone] = (zoneCounts[c.zone] || 0) + 1;
+        if (!zoneStats[c.zone]) {
+          zoneStats[c.zone] = { total: 0, withGps: 0 };
+        }
+        zoneStats[c.zone].total++;
+        if (c.lat && c.lng) {
+          zoneStats[c.zone].withGps++;
+        }
       }
     });
 
-    return Object.entries(zoneCounts).map(([zone, count]) => ({
+    return Object.entries(zoneStats).map(([zone, stats]) => ({
       zone,
-      clientCount: count
-    })).sort((a, b) => b.clientCount - a.clientCount);
+      clientCount: stats.total,
+      withGps: stats.withGps,
+      withoutGps: stats.total - stats.withGps
+    })).sort((a, b) => b.withGps - a.withGps); // Ordenar por los que tienen más GPS
   }
 
   async getOptimizedRoute(userId, zone = null, startPoint = null) {
     // Construir query base
     let query = supabase
       .from('clients')
-      .select('id, name, fantasy_name, address, commune, lat, lng, segment, priority, zone')
+      .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segment, priority, zone')
       .eq('assigned_user_id', userId)
       .not('lat', 'is', null)
       .not('lng', 'is', null);
 
-    // Filtrar por zona si se especifica
-    if (zone) {
+    // Filtrar por zona si se especifica (zona vacía = todas las zonas)
+    if (zone && zone.trim() !== '') {
       query = query.eq('zone', zone);
     }
 
