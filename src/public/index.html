@@ -4421,6 +4421,17 @@
         return;
       }
 
+      // SYNC: Actualizar selectedExecutiveId y cargar clientes
+      selectedExecutiveId = userId;
+      loadExecutiveClients();
+      loadExecutiveRouteOnMap();
+
+      // También sincronizar el buscador del header
+      const exec = executives.find(e => e.id === userId);
+      if (exec) {
+        document.getElementById('executive-search').value = exec.full_name;
+      }
+
       try {
         const res = await fetch(`${API}/api/users/${userId}/routes`);
         const data = await res.json();
