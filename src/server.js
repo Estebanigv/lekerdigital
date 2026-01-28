@@ -4,8 +4,10 @@ const app = require('./app');
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`
+// Only listen when running locally (not on Vercel)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║           LEKER Backend - Sistema de Gestión          ║
 ╠═══════════════════════════════════════════════════════╣
@@ -28,4 +30,8 @@ app.listen(PORT, () => {
   HEALTH:
   GET  /health                - Estado del servicio
   `);
-});
+  });
+}
+
+// Export for Vercel
+module.exports = app;
