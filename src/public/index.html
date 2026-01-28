@@ -3236,7 +3236,8 @@
       const icons = {
         success: 'check-circle',
         error: 'x-circle',
-        warning: 'alert-triangle'
+        warning: 'alert-triangle',
+        info: 'info'
       };
 
       toast.innerHTML = `
@@ -4624,7 +4625,7 @@
 
     async function generateOptimizedRoute() {
       if (!selectedExecutiveId) {
-        showToast('Selecciona un vendedor primero', 'warning');
+        showToast('warning', 'Atención', 'Selecciona un vendedor primero');
         return;
       }
 
@@ -4634,7 +4635,7 @@
         const zonesData = await zonesRes.json();
 
         if (!zonesData.success || !zonesData.data.length) {
-          showToast('Este vendedor no tiene clientes con zona asignada', 'warning');
+          showToast('warning', 'Sin zonas', 'Este vendedor no tiene clientes con zona asignada');
           return;
         }
 
@@ -4643,7 +4644,7 @@
 
       } catch (error) {
         console.error('Error fetching zones:', error);
-        showToast('Error al obtener zonas', 'error');
+        showToast('error', 'Error', 'No se pudieron obtener las zonas');
       }
     }
 
@@ -4707,29 +4708,29 @@
       const vendorName = exec ? exec.full_name : 'Vendedor';
 
       try {
-        showToast(`Calculando ruta para ${zone}...`, 'info');
+        showToast('info', 'Calculando', `Generando ruta para ${zone}...`);
 
         const res = await fetch(`${API}/routes/optimize/${selectedExecutiveId}?zone=${encodeURIComponent(zone)}`);
         const data = await res.json();
 
         if (!data.success) {
-          showToast(data.error || 'Error al calcular ruta', 'error');
+          showToast('error', 'Error', data.error || 'Error al calcular ruta');
           return;
         }
 
         if (!data.data.route || data.data.route.length === 0) {
-          showToast(`No hay clientes con coordenadas en ${zone}`, 'warning');
+          showToast('warning', 'Sin clientes', `No hay clientes con coordenadas en ${zone}`);
           return;
         }
 
         optimizedRouteData = data.data;
         displayOptimizedRoute(vendorName, zone);
         drawOptimizedRouteOnMap();
-        showToast(`Ruta optimizada: ${data.data.route.length} clientes, ${data.data.stats.distanceKm} km`, 'success');
+        showToast('success', 'Ruta Optimizada', `${data.data.route.length} clientes, ${data.data.stats.distanceKm} km`);
 
       } catch (error) {
         console.error('Error generating optimized route:', error);
-        showToast('Error al generar ruta optimizada', 'error');
+        showToast('error', 'Error', 'No se pudo generar la ruta optimizada');
       }
     }
 
