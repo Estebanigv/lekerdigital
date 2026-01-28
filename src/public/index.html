@@ -1658,6 +1658,10 @@
                 <button class="btn" onclick="clearExecutiveFilter()" style="background: white; color: var(--text-muted); padding: 10px 12px;" title="Limpiar filtro">
                   <i data-lucide="x" style="width: 16px; height: 16px;"></i>
                 </button>
+                <button class="btn" onclick="generateOptimizedRoute()" style="background: #10b981; color: white; padding: 10px 16px; font-weight: 600;" title="Generar ruta óptima">
+                  <i data-lucide="route" style="width: 16px; height: 16px;"></i>
+                  <span style="margin-left: 6px;">Ruta Óptima</span>
+                </button>
                 <button class="btn" onclick="loadTodayRoutes()" style="background: white; color: var(--primary); padding: 10px 16px;">
                   <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
                 </button>
@@ -1694,6 +1698,56 @@
               <i data-lucide="building-2" style="width: 24px; height: 24px; color: var(--accent); margin-bottom: 8px;"></i>
               <div id="stat-assigned-clients" style="font-size: 28px; font-weight: 700; color: var(--accent);">0</div>
               <div style="font-size: 12px; color: var(--text-muted);">Clientes Asignados</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Optimized Route Info Panel -->
+        <div id="optimized-route-panel" class="card" style="display: none; margin-bottom: 20px; background: linear-gradient(135deg, #10b981, #059669); color: white;">
+          <div class="card-body" style="padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                  <i data-lucide="route" style="width: 24px; height: 24px;"></i>
+                  <h3 style="margin: 0; font-size: 18px;">Ruta Optimizada</h3>
+                  <span id="opt-vendor-name" style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 12px;"></span>
+                </div>
+                <p style="margin: 0; opacity: 0.9; font-size: 14px;">Recorrido más eficiente calculado con algoritmo TSP</p>
+              </div>
+              <button onclick="closeOptimizedRoutePanel()" style="background: rgba(255,255,255,0.2); border: none; padding: 8px; border-radius: 8px; color: white; cursor: pointer;">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+              </button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-top: 20px;">
+              <div style="background: rgba(255,255,255,0.15); padding: 16px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 28px; font-weight: 700;" id="opt-total-clients">0</div>
+                <div style="font-size: 12px; opacity: 0.9;">Clientes a visitar</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.15); padding: 16px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 28px; font-weight: 700;" id="opt-distance">0 km</div>
+                <div style="font-size: 12px; opacity: 0.9;">Distancia total</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.15); padding: 16px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 28px; font-weight: 700;" id="opt-liters">0 L</div>
+                <div style="font-size: 12px; opacity: 0.9;">Combustible estimado</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.15); padding: 16px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 28px; font-weight: 700;" id="opt-cost">$0</div>
+                <div style="font-size: 12px; opacity: 0.9;">Costo estimado</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.15); padding: 16px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 28px; font-weight: 700;" id="opt-time">0 min</div>
+                <div style="font-size: 12px; opacity: 0.9;">Tiempo estimado</div>
+              </div>
+            </div>
+
+            <div style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 12px;">
+              <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                <span><i data-lucide="car" style="width: 14px; height: 14px; vertical-align: middle;"></i> Vehículo: <strong id="opt-efficiency">10 km/L</strong></span>
+                <span><i data-lucide="fuel" style="width: 14px; height: 14px; vertical-align: middle;"></i> Bencina: <strong id="opt-fuel-type">93 octanos</strong></span>
+                <span><i data-lucide="dollar-sign" style="width: 14px; height: 14px; vertical-align: middle;"></i> Precio: <strong id="opt-fuel-price">$1,150/L</strong></span>
+              </div>
             </div>
           </div>
         </div>
@@ -4545,6 +4599,156 @@
       selectedExecutiveId = null;
       document.getElementById('executive-search').value = '';
       filterByExecutive('');
+    }
+
+    // =============================================
+    // RUTA OPTIMIZADA
+    // =============================================
+
+    let optimizedRouteData = null;
+
+    async function generateOptimizedRoute() {
+      if (!selectedExecutiveId) {
+        showToast('Selecciona un vendedor primero', 'warning');
+        return;
+      }
+
+      const exec = executives.find(e => e.id === selectedExecutiveId);
+      const vendorName = exec ? exec.full_name : 'Vendedor';
+
+      try {
+        showToast('Calculando ruta óptima...', 'info');
+
+        const res = await fetch(`${API}/routes/optimize/${selectedExecutiveId}`);
+        const data = await res.json();
+
+        if (!data.success) {
+          showToast(data.error || 'Error al calcular ruta', 'error');
+          return;
+        }
+
+        if (!data.data.route || data.data.route.length === 0) {
+          showToast('No hay clientes con coordenadas para este vendedor', 'warning');
+          return;
+        }
+
+        optimizedRouteData = data.data;
+        displayOptimizedRoute(vendorName);
+        drawOptimizedRouteOnMap();
+        showToast(`Ruta optimizada: ${data.data.route.length} clientes, ${data.data.stats.distanceKm} km`, 'success');
+
+      } catch (error) {
+        console.error('Error generating optimized route:', error);
+        showToast('Error al generar ruta optimizada', 'error');
+      }
+    }
+
+    function displayOptimizedRoute(vendorName) {
+      const panel = document.getElementById('optimized-route-panel');
+      const stats = optimizedRouteData.stats;
+
+      document.getElementById('opt-vendor-name').textContent = vendorName;
+      document.getElementById('opt-total-clients').textContent = stats.totalClients;
+      document.getElementById('opt-distance').textContent = `${stats.distanceKm} km`;
+      document.getElementById('opt-liters').textContent = `${stats.litersUsed} L`;
+      document.getElementById('opt-cost').textContent = `$${stats.costCLP.toLocaleString('es-CL')}`;
+      document.getElementById('opt-time').textContent = `${stats.estimatedTime} min`;
+      document.getElementById('opt-efficiency').textContent = `${stats.fuelEfficiency} km/L`;
+      document.getElementById('opt-fuel-type').textContent = stats.vehicleConfig.FUEL_TYPE;
+      document.getElementById('opt-fuel-price').textContent = `$${stats.fuelPriceCLP.toLocaleString('es-CL')}/L`;
+
+      panel.style.display = 'block';
+      lucide.createIcons();
+    }
+
+    function closeOptimizedRoutePanel() {
+      document.getElementById('optimized-route-panel').style.display = 'none';
+      optimizedRouteData = null;
+      // Clear route line from map
+      if (window.routePolyline) {
+        routeMap.removeLayer(window.routePolyline);
+        window.routePolyline = null;
+      }
+    }
+
+    function drawOptimizedRouteOnMap() {
+      if (!optimizedRouteData || !optimizedRouteData.route.length) return;
+
+      // Clear existing route line
+      if (window.routePolyline) {
+        routeMap.removeLayer(window.routePolyline);
+      }
+
+      // Clear existing markers
+      routeMarkers.forEach(m => routeMap.removeLayer(m));
+      routeMarkers = [];
+
+      // Build coordinates array and add numbered markers
+      const coords = [];
+      optimizedRouteData.route.forEach((client, idx) => {
+        if (client.lat && client.lng) {
+          coords.push([client.lat, client.lng]);
+
+          // Create numbered marker
+          const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="
+              background: ${idx === 0 ? '#10b981' : '#3b82f6'};
+              color: white;
+              width: 28px;
+              height: 28px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 700;
+              font-size: 12px;
+              border: 3px solid white;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            ">${idx + 1}</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+          });
+
+          const marker = L.marker([client.lat, client.lng], { icon })
+            .bindPopup(`
+              <div style="min-width: 200px;">
+                <div style="font-weight: 700; font-size: 14px; color: #1e40af; margin-bottom: 8px;">
+                  ${idx + 1}. ${client.fantasy_name || client.name}
+                </div>
+                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">
+                  <strong>Dirección:</strong> ${client.address || 'Sin dirección'}
+                </div>
+                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">
+                  <strong>Comuna:</strong> ${client.commune || '-'}
+                </div>
+                <div style="font-size: 12px;">
+                  <span style="background: ${client.segment === 'A' ? '#10b981' : client.segment === 'B' ? '#3b82f6' : '#f59e0b'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">Segmento ${client.segment || '-'}</span>
+                  ${client.priority === 'FOCO' ? '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-left: 4px;">FOCO</span>' : ''}
+                </div>
+              </div>
+            `);
+
+          marker.addTo(routeMap);
+          routeMarkers.push(marker);
+        }
+      });
+
+      // Draw route polyline
+      if (coords.length > 1) {
+        window.routePolyline = L.polyline(coords, {
+          color: '#10b981',
+          weight: 4,
+          opacity: 0.8,
+          dashArray: '10, 10'
+        }).addTo(routeMap);
+      }
+
+      // Fit map to show all markers
+      if (coords.length > 0) {
+        const bounds = L.latLngBounds(coords);
+        routeMap.fitBounds(bounds, { padding: [50, 50] });
+      }
     }
 
     function filterByExecutive(execId) {

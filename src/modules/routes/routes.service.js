@@ -1,5 +1,97 @@
 const { supabase } = require('../../config/database');
 
+// =============================================
+// CONFIGURACIÓN DE VEHÍCULO ESTÁNDAR
+// =============================================
+const VEHICLE_CONFIG = {
+  FUEL_EFFICIENCY_KML: 10,        // 10 km por litro (vehículo estándar)
+  FUEL_PRICE_CLP: 1150,           // Precio bencina 93 octanos (CLP/litro)
+  FUEL_TYPE: '93 octanos'
+};
+
+// =============================================
+// FUNCIONES DE CÁLCULO DE DISTANCIA
+// =============================================
+
+// Calcula distancia entre dos puntos usando fórmula Haversine (en km)
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371; // Radio de la Tierra en km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+// Algoritmo Nearest Neighbor para TSP (optimización de ruta)
+function optimizeRouteOrder(clients, startPoint = null) {
+  if (!clients || clients.length === 0) return { route: [], totalDistance: 0 };
+
+  // Filtrar clientes con coordenadas válidas
+  const validClients = clients.filter(c => c.lat && c.lng);
+  if (validClients.length === 0) return { route: [], totalDistance: 0 };
+
+  const unvisited = [...validClients];
+  const route = [];
+  let totalDistance = 0;
+
+  // Punto de inicio (si se proporciona, o el primer cliente)
+  let current = startPoint && startPoint.lat && startPoint.lng
+    ? startPoint
+    : unvisited.shift();
+
+  if (!startPoint) {
+    route.push(current);
+  }
+
+  // Algoritmo Nearest Neighbor: siempre ir al cliente más cercano
+  while (unvisited.length > 0) {
+    let nearestIdx = 0;
+    let nearestDist = Infinity;
+
+    for (let i = 0; i < unvisited.length; i++) {
+      const dist = haversineDistance(
+        current.lat, current.lng,
+        unvisited[i].lat, unvisited[i].lng
+      );
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestIdx = i;
+      }
+    }
+
+    totalDistance += nearestDist;
+    current = unvisited.splice(nearestIdx, 1)[0];
+    route.push(current);
+  }
+
+  // Agregar distancia de retorno al punto inicial
+  if (route.length > 1 && startPoint) {
+    totalDistance += haversineDistance(
+      current.lat, current.lng,
+      startPoint.lat, startPoint.lng
+    );
+  }
+
+  return { route, totalDistance: Math.round(totalDistance * 10) / 10 };
+}
+
+// Calcula costo estimado de combustible
+function calculateFuelCost(distanceKm, fuelEfficiency = VEHICLE_CONFIG.FUEL_EFFICIENCY_KML) {
+  const litersUsed = distanceKm / fuelEfficiency;
+  const cost = litersUsed * VEHICLE_CONFIG.FUEL_PRICE_CLP;
+  return {
+    distanceKm: Math.round(distanceKm * 10) / 10,
+    litersUsed: Math.round(litersUsed * 100) / 100,
+    costCLP: Math.round(cost),
+    fuelEfficiency,
+    fuelPriceCLP: VEHICLE_CONFIG.FUEL_PRICE_CLP,
+    fuelType: VEHICLE_CONFIG.FUEL_TYPE
+  };
+}
+
 class RoutesService {
   // =============================================
   // USUARIOS
@@ -665,9 +757,9 @@ class RoutesService {
     if (!route) throw new Error('Ruta no encontrada');
 
     const kmTraveled = endKm - route.start_km;
-    const fuelUsed = kmTraveled / (route.vehicle?.fuel_efficiency_kml || 12);
-    const fuelPricePerLiter = 1200;
-    const totalCost = Math.round(fuelUsed * fuelPricePerLiter);
+    const fuelEfficiency = route.vehicle?.fuel_efficiency_kml || VEHICLE_CONFIG.FUEL_EFFICIENCY_KML;
+    const fuelUsed = kmTraveled / fuelEfficiency;
+    const totalCost = Math.round(fuelUsed * VEHICLE_CONFIG.FUEL_PRICE_CLP);
 
     const { data, error } = await supabase
       .from('daily_routes')
@@ -682,6 +774,62 @@ class RoutesService {
 
     if (error) throw error;
     return data;
+  }
+
+  // =============================================
+  // OPTIMIZACIÓN DE RUTAS
+  // =============================================
+
+  // Obtiene ruta optimizada para un vendedor
+  async getOptimizedRoute(userId, startPoint = null) {
+    // Obtener clientes asignados al vendedor con coordenadas
+    const { data: clients, error } = await supabase
+      .from('clients')
+      .select('id, name, fantasy_name, address, commune, lat, lng, segment, priority')
+      .eq('assigned_user_id', userId)
+      .not('lat', 'is', null)
+      .not('lng', 'is', null);
+
+    if (error) throw error;
+
+    if (!clients || clients.length === 0) {
+      return {
+        message: 'No hay clientes con coordenadas asignados a este vendedor',
+        route: [],
+        stats: null
+      };
+    }
+
+    // Optimizar orden de visitas
+    const { route, totalDistance } = optimizeRouteOrder(clients, startPoint);
+
+    // Calcular costos
+    const distanceWithReturn = startPoint ? totalDistance : totalDistance * 1.2; // Estimación retorno
+    const fuelStats = calculateFuelCost(distanceWithReturn);
+
+    return {
+      route: route.map((client, index) => ({
+        order: index + 1,
+        ...client
+      })),
+      stats: {
+        totalClients: route.length,
+        ...fuelStats,
+        estimatedTime: Math.round(distanceWithReturn / 30 * 60), // ~30 km/h promedio ciudad, en minutos
+        vehicleConfig: VEHICLE_CONFIG
+      }
+    };
+  }
+
+  // Obtiene configuración de vehículo estándar
+  getVehicleConfig() {
+    return VEHICLE_CONFIG;
+  }
+
+  // Calcula distancia y costo entre dos puntos
+  calculateDistanceCost(lat1, lng1, lat2, lng2) {
+    const distance = haversineDistance(lat1, lng1, lat2, lng2);
+    return calculateFuelCost(distance);
   }
 }
 

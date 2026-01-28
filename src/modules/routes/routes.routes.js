@@ -52,4 +52,29 @@ router.get(
   routesController.getActiveRoute
 );
 
+/**
+ * GET /routes/optimize/:userId
+ * Obtiene ruta optimizada para un vendedor
+ */
+router.get(
+  '/optimize/:userId',
+  [
+    param('userId').isUUID().withMessage('userId debe ser un UUID válido'),
+    validate
+  ],
+  routesController.getOptimizedRoute
+);
+
+/**
+ * GET /routes/vehicle-config
+ * Obtiene configuración de vehículo estándar
+ */
+router.get('/vehicle-config', routesController.getVehicleConfig);
+
+/**
+ * GET /routes/calculate-cost
+ * Calcula distancia y costo entre dos puntos
+ */
+router.get('/calculate-cost', routesController.calculateCost);
+
 module.exports = router;

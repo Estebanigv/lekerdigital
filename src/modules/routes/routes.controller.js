@@ -84,6 +84,88 @@ class RoutesController {
       });
     }
   }
+
+  /**
+   * GET /routes/optimize/:userId
+   * Obtiene ruta optimizada para un vendedor
+   */
+  async getOptimizedRoute(req, res) {
+    try {
+      const { userId } = req.params;
+      const { startLat, startLng } = req.query;
+
+      let startPoint = null;
+      if (startLat && startLng) {
+        startPoint = {
+          lat: parseFloat(startLat),
+          lng: parseFloat(startLng)
+        };
+      }
+
+      const result = await routesService.getOptimizedRoute(userId, startPoint);
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * GET /routes/vehicle-config
+   * Obtiene configuración de vehículo estándar
+   */
+  async getVehicleConfig(req, res) {
+    try {
+      const config = routesService.getVehicleConfig();
+      res.json({
+        success: true,
+        data: config
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * GET /routes/calculate-cost
+   * Calcula distancia y costo entre dos puntos
+   */
+  async calculateCost(req, res) {
+    try {
+      const { lat1, lng1, lat2, lng2 } = req.query;
+
+      if (!lat1 || !lng1 || !lat2 || !lng2) {
+        return res.status(400).json({
+          success: false,
+          error: 'Se requieren lat1, lng1, lat2, lng2'
+        });
+      }
+
+      const result = routesService.calculateDistanceCost(
+        parseFloat(lat1), parseFloat(lng1),
+        parseFloat(lat2), parseFloat(lng2)
+      );
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = new RoutesController();
