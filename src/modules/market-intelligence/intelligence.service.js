@@ -15,6 +15,38 @@ class IntelligenceService {
     return data || [];
   }
 
+  async upsertProducts(products) {
+    const results = { inserted: 0, updated: 0, errors: [] };
+
+    for (const product of products) {
+      const productData = {
+        sku: product.sku || product.codigo,
+        name: product.name || product.nombre,
+        description: product.description || product.descripcion,
+        base_price: parseFloat(product.base_price || product.precio || 0),
+        base_cost: parseFloat(product.base_cost || product.costo || 0),
+        category: product.category || product.categoria
+      };
+
+      const { data, error } = await supabase
+        .from('products')
+        .upsert(productData, {
+          onConflict: 'sku',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
+
+      if (error) {
+        results.errors.push({ sku: productData.sku, error: error.message });
+      } else {
+        results.inserted++;
+      }
+    }
+
+    return results;
+  }
+
   // =============================================
   // COMPETIDORES
   // =============================================
@@ -222,6 +254,227 @@ class IntelligenceService {
       product,
       competitors: Object.values(latestByCompetitor)
     };
+  }
+
+  // =============================================
+  // COMPARATIVO DE COMPETENCIA (n8n workflow)
+  // =============================================
+
+  /**
+   * Guarda datos del comparativo desde n8n
+   * @param {Array} items - Array de productos scrapeados
+   * @returns {Object} - Resultados del procesamiento
+   */
+  async saveCompetitorComparison(items) {
+    const results = { inserted: 0, errors: [] };
+
+    for (const item of items) {
+      try {
+        const record = {
+          fecha: item.fecha || new Date().toISOString().split('T')[0],
+          hora: item.hora || new Date().toTimeString().split(' ')[0],
+          fuente: item.fuente || item.source || 'DESCONOCIDO',
+          sku: item.sku || item.codigo || null,
+          nombre: item.nombre || item.name || item.producto,
+          tipo: item.tipo || item.type || this.detectProductType(item.nombre || item.name),
+          espesor: item.espesor || item.thickness || this.detectThickness(item.nombre || item.name),
+          precio_neto: parseInt(item.precio_neto || item.precio || item.price || 0),
+          precio_anterior: parseInt(item.precio_anterior || item.old_price || 0) || null,
+          url: item.url || item.link || null,
+          stock_status: item.stock_status || item.stock || 'unknown'
+        };
+
+        const { error } = await supabase
+          .from('competitor_comparison')
+          .insert(record);
+
+        if (error) {
+          results.errors.push({ item: item.nombre, error: error.message });
+        } else {
+          results.inserted++;
+        }
+      } catch (err) {
+        results.errors.push({ item: item.nombre || 'unknown', error: err.message });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Detecta el tipo de producto desde el nombre
+   */
+  detectProductType(nombre) {
+    if (!nombre) return 'Otro';
+    const lower = nombre.toLowerCase();
+    if (lower.includes('alveolar')) return 'Alveolar';
+    if (lower.includes('sólido') || lower.includes('solido')) return 'Sólido';
+    if (lower.includes('corrugado')) return 'Corrugado';
+    if (lower.includes('ondulado')) return 'Ondulado';
+    if (lower.includes('compacto')) return 'Compacto';
+    return 'Otro';
+  }
+
+  /**
+   * Detecta el espesor desde el nombre
+   */
+  detectThickness(nombre) {
+    if (!nombre) return null;
+    const match = nombre.match(/(\d+)\s*mm/i);
+    return match ? `${match[1]}mm` : null;
+  }
+
+  /**
+   * Obtiene el comparativo más reciente por fuente
+   */
+  async getLatestComparison() {
+    const { data, error } = await supabase
+      .from('competitor_comparison')
+      .select('*')
+      .order('scraped_at', { ascending: false })
+      .limit(500);
+
+    if (error) throw error;
+
+    // Agrupar por fuente y obtener los más recientes
+    const bySource = {};
+    for (const item of data || []) {
+      if (!bySource[item.fuente]) {
+        bySource[item.fuente] = [];
+      }
+      // Solo agregar si no existe ya este producto para esta fuente
+      const exists = bySource[item.fuente].find(p => p.nombre === item.nombre);
+      if (!exists) {
+        bySource[item.fuente].push(item);
+      }
+    }
+
+    return bySource;
+  }
+
+  /**
+   * Obtiene estadísticas del comparativo
+   */
+  async getComparisonStats() {
+    // Obtener datos de los últimos 7 días
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - 7);
+
+    const { data, error } = await supabase
+      .from('competitor_comparison')
+      .select('fuente, precio_neto, tipo, scraped_at')
+      .gte('scraped_at', fromDate.toISOString())
+      .gt('precio_neto', 0);
+
+    if (error) throw error;
+
+    // Calcular estadísticas por fuente
+    const stats = {};
+    for (const item of data || []) {
+      if (!stats[item.fuente]) {
+        stats[item.fuente] = {
+          fuente: item.fuente,
+          total_productos: 0,
+          precios: [],
+          tipos: {}
+        };
+      }
+      stats[item.fuente].total_productos++;
+      stats[item.fuente].precios.push(item.precio_neto);
+      stats[item.fuente].tipos[item.tipo] = (stats[item.fuente].tipos[item.tipo] || 0) + 1;
+    }
+
+    // Calcular promedios
+    return Object.values(stats).map(s => ({
+      fuente: s.fuente,
+      total_productos: s.total_productos,
+      precio_promedio: Math.round(s.precios.reduce((a, b) => a + b, 0) / s.precios.length),
+      precio_min: Math.min(...s.precios),
+      precio_max: Math.max(...s.precios),
+      tipos: s.tipos
+    }));
+  }
+
+  /**
+   * Obtiene histórico de precios por fuente para gráficos
+   */
+  async getComparisonHistory(days = 30) {
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - days);
+
+    const { data, error } = await supabase
+      .from('competitor_comparison')
+      .select('fuente, precio_neto, scraped_at, tipo')
+      .gte('scraped_at', fromDate.toISOString())
+      .gt('precio_neto', 0)
+      .order('scraped_at', { ascending: true });
+
+    if (error) throw error;
+
+    // Agrupar por fecha y fuente
+    const history = {};
+    for (const item of data || []) {
+      const date = item.scraped_at.split('T')[0];
+      if (!history[date]) {
+        history[date] = {};
+      }
+      if (!history[date][item.fuente]) {
+        history[date][item.fuente] = { precios: [], count: 0 };
+      }
+      history[date][item.fuente].precios.push(item.precio_neto);
+      history[date][item.fuente].count++;
+    }
+
+    // Convertir a formato para gráficos
+    const result = Object.entries(history).map(([date, sources]) => {
+      const entry = { date };
+      for (const [fuente, data] of Object.entries(sources)) {
+        entry[fuente] = Math.round(data.precios.reduce((a, b) => a + b, 0) / data.precios.length);
+        entry[`${fuente}_count`] = data.count;
+      }
+      return entry;
+    });
+
+    return result;
+  }
+
+  /**
+   * Guarda resumen semanal
+   */
+  async saveWeeklySummary() {
+    // Obtener el lunes de esta semana
+    const today = new Date();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - today.getDay() + 1);
+    const mondayStr = monday.toISOString().split('T')[0];
+
+    // Obtener estadísticas
+    const stats = await this.getComparisonStats();
+
+    const results = { inserted: 0, errors: [] };
+
+    for (const stat of stats) {
+      const summary = {
+        semana: mondayStr,
+        fuente: stat.fuente,
+        total_productos: stat.total_productos,
+        precio_promedio: stat.precio_promedio,
+        precio_min: stat.precio_min,
+        precio_max: stat.precio_max
+      };
+
+      const { error } = await supabase
+        .from('competitor_weekly_summary')
+        .upsert(summary, { onConflict: 'semana,fuente' });
+
+      if (error) {
+        results.errors.push({ fuente: stat.fuente, error: error.message });
+      } else {
+        results.inserted++;
+      }
+    }
+
+    return results;
   }
 }
 

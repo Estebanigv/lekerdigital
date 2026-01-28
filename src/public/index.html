@@ -405,6 +405,16 @@
       overflow: hidden;
     }
 
+    /* Resizable cards */
+    .card[style*="resize"] {
+      position: relative;
+    }
+
+    .card[style*="resize"]::-webkit-resizer {
+      background: linear-gradient(-45deg, transparent 30%, var(--border) 30%, var(--border) 40%, transparent 40%, transparent 60%, var(--border) 60%, var(--border) 70%, transparent 70%);
+      cursor: se-resize;
+    }
+
     .card-header {
       padding: 20px 24px;
       border-bottom: 1px solid var(--border);
@@ -433,7 +443,7 @@
       position: relative;
     }
 
-    #map {
+    #map, #map-route {
       height: 100%;
       width: 100%;
       z-index: 1;
@@ -1154,7 +1164,8 @@
       border-radius: 8px;
       padding: 12px 16px;
       z-index: 1000;
-      min-width: 200px;
+      min-width: 240px;
+      max-width: 280px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     .route-legend .legend-title {
@@ -1325,13 +1336,13 @@
         <div class="nav-item-expandable open">
           <div class="nav-item nav-item-parent" onclick="toggleSubmenu(this)">
             <i data-lucide="database"></i>
-            <span>Datos Base</span>
+            <span>Base de Datos</span>
             <i data-lucide="chevron-down" class="submenu-arrow"></i>
           </div>
           <div class="nav-submenu">
-            <div class="nav-subitem" data-tab="data" data-subtab="ejecutivos">
+            <div class="nav-subitem" data-tab="data" data-subtab="vendedores">
               <i data-lucide="users" style="width: 16px; height: 16px;"></i>
-              <span>Ejecutivos</span>
+              <span>Vendedores</span>
             </div>
             <div class="nav-subitem" data-tab="data" data-subtab="vehiculos">
               <i data-lucide="truck" style="width: 16px; height: 16px;"></i>
@@ -1377,12 +1388,31 @@
           </div>
         </div>
       </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Administración</div>
+        <div class="nav-item" data-tab="users">
+          <i data-lucide="shield-check"></i>
+          <span>Usuarios y Roles</span>
+        </div>
+      </div>
     </nav>
 
     <div class="sidebar-footer">
-      <div class="demo-badge">
-        <i data-lucide="flask-conical" style="width: 16px; height: 16px;"></i>
-        <span>Modo Demostración</span>
+      <div style="cursor: pointer; padding: 12px; background: var(--bg-hover); border-radius: 8px;" onclick="document.querySelector('[data-tab=users]').click()">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div id="sidebar-admin-avatar" style="width: 36px; height: 36px; background: #6b7280; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px; border: 2px solid #4ade80;">
+            AD
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div id="sidebar-admin-name" style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Administrador</div>
+            <div style="font-size: 10px; color: #4ade80; display: flex; align-items: center; gap: 4px;">
+              <i data-lucide="shield-check" style="width: 10px; height: 10px;"></i>
+              Control Maestro
+            </div>
+          </div>
+          <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: var(--text-muted);"></i>
+        </div>
       </div>
     </div>
   </aside>
@@ -1442,127 +1472,161 @@
           </div>
         </div>
 
-        <div class="grid-3-1">
-          <div class="card">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-              <h3><i data-lucide="map" style="width: 18px; height: 18px;"></i> Mapa de Clientes</h3>
-              <button id="btn-geocode-header" onclick="geocodeClientsWithoutCoords()" class="btn btn-warning" style="padding: 6px 12px; font-size: 11px; display: none;">
-                <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
-                Geocodificar <span id="geocode-count">0</span> clientes
+        <!-- Mapa de Clientes - Ancho completo -->
+        <div class="card">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <h3><i data-lucide="map" style="width: 18px; height: 18px;"></i> Mapa de Clientes</h3>
+            <div id="geocode-alert" style="display: none; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 8px 16px; border-radius: 8px; font-size: 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(217,119,6,0.3);">
+              <i data-lucide="alert-triangle" style="width: 18px; height: 18px;"></i>
+              <span><strong id="geocode-count">0</strong> clientes sin ubicación en mapa</span>
+              <button id="btn-geocode-header" onclick="geocodeClientsWithoutCoords()" style="background: white; color: #d97706; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;">
+                Cargar Ubicaciones
               </button>
             </div>
-            <div class="card-body" style="padding: 0;">
-              <div class="map-container">
-                <div id="map"></div>
-                <!-- Left Panel: Search + Filters -->
-                <div class="map-left-panel" style="position: absolute; top: 10px; left: 10px; z-index: 10; width: 260px;">
-                  <!-- Search -->
-                  <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); margin-bottom: 8px;">
-                    <div style="padding: 8px;">
-                      <input type="text" id="map-client-search" class="form-control" placeholder="Buscar cliente..." oninput="searchClientOnMap()" style="font-size: 12px; padding: 8px 12px;">
-                    </div>
-                    <div id="map-search-results" style="max-height: 180px; overflow-y: auto; display: none; border-top: 1px solid var(--border);">
-                    </div>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div class="map-container" style="height: 450px;">
+              <div id="map"></div>
+              <!-- Left Panel: Search + Filters -->
+              <div class="map-left-panel" style="position: absolute; top: 10px; left: 10px; z-index: 10; width: 220px;">
+                <!-- Search -->
+                <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); margin-bottom: 8px;">
+                  <div style="padding: 8px;">
+                    <input type="text" id="map-client-search" class="form-control" placeholder="Buscar cliente..." oninput="searchClientOnMap()" style="font-size: 12px; padding: 8px 12px;">
                   </div>
-                  <!-- Segment Filters -->
-                  <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 10px;">
-                    <div style="font-weight: 600; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Filtrar por Segmento</div>
-                    <div class="legend-item legend-filter active" onclick="filterMapBySegment('A')" data-segment="A" style="cursor: pointer; padding: 6px 8px; border-radius: 6px; margin: 3px 0; display: flex; align-items: center;">
-                      <div class="legend-dot a"></div>
-                      <span style="flex: 1;">Segmento A</span>
-                      <span id="count-segment-a" style="font-size: 11px; background: rgba(5,150,105,0.2); padding: 2px 8px; border-radius: 10px; font-weight: 600;">0</span>
-                    </div>
-                    <div class="legend-item legend-filter active" onclick="filterMapBySegment('B')" data-segment="B" style="cursor: pointer; padding: 6px 8px; border-radius: 6px; margin: 3px 0; display: flex; align-items: center;">
-                      <div class="legend-dot b"></div>
-                      <span style="flex: 1;">Segmento B</span>
-                      <span id="count-segment-b" style="font-size: 11px; background: rgba(217,119,6,0.2); padding: 2px 8px; border-radius: 10px; font-weight: 600;">0</span>
-                    </div>
-                    <div class="legend-item legend-filter active" onclick="filterMapBySegment('C')" data-segment="C" style="cursor: pointer; padding: 6px 8px; border-radius: 6px; margin: 3px 0; display: flex; align-items: center;">
-                      <div class="legend-dot c"></div>
-                      <span style="flex: 1;">Segmento C</span>
-                      <span id="count-segment-c" style="font-size: 11px; background: rgba(107,114,128,0.2); padding: 2px 8px; border-radius: 10px; font-weight: 600;">0</span>
-                    </div>
-                    <div class="legend-item legend-filter active" onclick="filterMapBySegment('FOCO')" data-segment="FOCO" style="cursor: pointer; padding: 6px 8px; border-radius: 6px; margin: 3px 0; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; align-items: center;">
-                      <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.4); margin-right: 8px;"></div>
-                      <span style="flex: 1;">Cliente FOCO</span>
-                      <span id="count-segment-foco" style="font-size: 11px; background: rgba(239,68,68,0.2); padding: 2px 8px; border-radius: 10px; font-weight: 600;">0</span>
-                    </div>
-                    <button onclick="filterMapBySegment('ALL')" style="width: 100%; margin-top: 10px; padding: 6px 10px; font-size: 11px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
-                      Mostrar Todos
-                    </button>
+                  <div id="map-search-results" style="max-height: 180px; overflow-y: auto; display: none; border-top: 1px solid var(--border);">
                   </div>
-                  <!-- Location Stats (below filters) -->
-                  <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 10px; margin-top: 8px;">
-                    <div style="font-weight: 600; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Ubicaciones</div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                      <span style="color: var(--text-muted); font-size: 12px;">Con GPS:</span>
-                      <span id="stats-with-coords" style="font-weight: 600; color: var(--success); font-size: 12px;">0</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                      <span style="color: var(--text-muted); font-size: 12px;">Sin GPS:</span>
-                      <span id="stats-without-coords" style="font-weight: 600; color: var(--warning); font-size: 12px;">0</span>
-                    </div>
-                    <button id="btn-geocode" onclick="geocodeClientsWithoutCoords()" style="width: 100%; padding: 6px 8px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; display: none;">
-                      <i data-lucide="map-pin" style="width: 12px; height: 12px; vertical-align: middle;"></i>
-                      Geocodificar
-                    </button>
+                </div>
+                <!-- Segment Filters -->
+                <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 10px;">
+                  <div style="font-weight: 600; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Segmentos</div>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('A')" data-segment="A" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                    <div class="legend-dot a"></div>
+                    <span style="flex: 1; font-size: 12px;">Segmento A</span>
+                    <span id="count-segment-a" style="font-size: 10px; background: rgba(5,150,105,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
                   </div>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('B')" data-segment="B" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                    <div class="legend-dot b"></div>
+                    <span style="flex: 1; font-size: 12px;">Segmento B</span>
+                    <span id="count-segment-b" style="font-size: 10px; background: rgba(217,119,6,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                  </div>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('C')" data-segment="C" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                    <div class="legend-dot c"></div>
+                    <span style="flex: 1; font-size: 12px;">Segmento C</span>
+                    <span id="count-segment-c" style="font-size: 10px; background: rgba(107,114,128,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                  </div>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('FOCO')" data-segment="FOCO" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; align-items: center;">
+                    <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.4); margin-right: 8px;"></div>
+                    <span style="flex: 1; font-size: 12px;">FOCO</span>
+                    <span id="count-segment-foco" style="font-size: 10px; background: rgba(239,68,68,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                  </div>
+                  <button onclick="filterMapBySegment('ALL')" style="width: 100%; margin-top: 8px; padding: 5px 8px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
+                    Mostrar Todos
+                  </button>
+                </div>
+                <!-- Location Stats -->
+                <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 8px 10px; margin-top: 8px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                    <span style="color: var(--text-muted);">Con GPS: <strong id="stats-with-coords" style="color: var(--success);">0</strong></span>
+                    <span style="color: var(--text-muted);">Sin GPS: <strong id="stats-without-coords" style="color: var(--warning);">0</strong></span>
+                  </div>
+                  <button id="btn-geocode" onclick="geocodeClientsWithoutCoords()" style="width: 100%; padding: 4px 6px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; display: none; margin-top: 6px;">
+                    <i data-lucide="map-pin" style="width: 10px; height: 10px; vertical-align: middle;"></i> Geocodificar
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-          <!-- Map Legend (below map) -->
-          <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 16px;">
-            <div style="font-weight: 600; margin-bottom: 12px; font-size: 13px; color: var(--text-primary);">
-              <i data-lucide="info" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>
-              Leyenda de Segmentación
+        </div>
+
+        <!-- Fila: Leyenda + Vendedores + Comparativo -->
+        <div style="display: flex; gap: 16px; margin-top: 20px; align-items: flex-start;">
+          <!-- Leyenda -->
+          <div class="card" style="resize: both; overflow: auto; min-width: 220px; min-height: 180px; width: 260px;">
+            <div class="card-header" style="padding: 12px 16px;">
+              <h3 style="font-size: 13px;"><i data-lucide="info" style="width: 14px; height: 14px;"></i> Leyenda de Segmentos</h3>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: rgba(5,150,105,0.08); border-radius: 8px;">
-                <div style="width: 16px; height: 16px; border-radius: 50%; background: #059669; flex-shrink: 0; margin-top: 2px;"></div>
-                <div>
-                  <div style="font-weight: 600; color: #059669; font-size: 13px;">Segmento A</div>
-                  <div style="font-size: 11px; color: var(--text-secondary);">Cliente de alto valor. Mayor frecuencia de visitas y prioridad de atención.</div>
+            <div class="card-body" style="padding: 12px 16px;">
+              <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12px;">
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                  <div style="width: 14px; height: 14px; border-radius: 50%; background: #059669; flex-shrink: 0; margin-top: 2px;"></div>
+                  <div>
+                    <div style="font-weight: 600; color: #059669;">Segmento A</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Clientes premium, alto volumen</div>
+                  </div>
                 </div>
-              </div>
-              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: rgba(217,119,6,0.08); border-radius: 8px;">
-                <div style="width: 16px; height: 16px; border-radius: 50%; background: #d97706; flex-shrink: 0; margin-top: 2px;"></div>
-                <div>
-                  <div style="font-weight: 600; color: #d97706; font-size: 13px;">Segmento B</div>
-                  <div style="font-size: 11px; color: var(--text-secondary);">Cliente de valor medio. Frecuencia de visitas moderada.</div>
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                  <div style="width: 14px; height: 14px; border-radius: 50%; background: #d97706; flex-shrink: 0; margin-top: 2px;"></div>
+                  <div>
+                    <div style="font-weight: 600; color: #d97706;">Segmento B</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Clientes intermedios, compras regulares</div>
+                  </div>
                 </div>
-              </div>
-              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: rgba(107,114,128,0.08); border-radius: 8px;">
-                <div style="width: 16px; height: 16px; border-radius: 50%; background: #6b7280; flex-shrink: 0; margin-top: 2px;"></div>
-                <div>
-                  <div style="font-weight: 600; color: #6b7280; font-size: 13px;">Segmento C</div>
-                  <div style="font-size: 11px; color: var(--text-secondary);">Cliente regular. Visitas según disponibilidad o por solicitud.</div>
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                  <div style="width: 14px; height: 14px; border-radius: 50%; background: #6b7280; flex-shrink: 0; margin-top: 2px;"></div>
+                  <div>
+                    <div style="font-weight: 600; color: #6b7280;">Segmento C</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Clientes pequeños o nuevos</div>
+                  </div>
                 </div>
-              </div>
-              <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: rgba(239,68,68,0.08); border-radius: 8px;">
-                <div style="width: 16px; height: 16px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.3); flex-shrink: 0; margin-top: 2px;"></div>
-                <div>
-                  <div style="font-weight: 600; color: #ef4444; font-size: 13px;">Cliente FOCO</div>
-                  <div style="font-size: 11px; color: var(--text-secondary);">Cliente prioritario marcado para seguimiento especial. Requiere atención inmediata.</div>
+                <div style="display: flex; align-items: flex-start; gap: 10px; margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border);">
+                  <div style="width: 14px; height: 14px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.25); flex-shrink: 0; margin-top: 2px;"></div>
+                  <div>
+                    <div style="font-weight: 600; color: #ef4444;">FOCO</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Atención prioritaria, seguimiento especial</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="card" id="card-executives">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleExecutivesCard()">
-              <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Ejecutivos</h3>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span id="executives-count" style="font-size: 12px; color: var(--text-muted);"></span>
-                <i data-lucide="chevron-down" id="executives-chevron" style="width: 18px; height: 18px; color: var(--text-muted); transition: transform 0.3s;"></i>
-              </div>
+          <!-- Vendedores -->
+          <div class="card" id="card-executives" style="resize: both; overflow: auto; min-width: 200px; min-height: 280px; flex: 1;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 style="display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                Vendedores
+                <span id="executives-count-badge" style="font-size: 13px; font-weight: 600; background: var(--primary); color: white; padding: 2px 10px; border-radius: 12px;">0</span>
+              </h3>
             </div>
-            <div class="card-body" id="executives-body" style="padding: 0; max-height: 400px; overflow: hidden; transition: max-height 0.3s ease;">
-              <div id="executives-panel" style="max-height: 400px; overflow-y: auto;">
+            <div class="card-body" id="executives-body" style="padding: 0; overflow-y: auto; flex: 1;">
+              <div id="executives-panel" style="max-height: 200px; overflow-y: auto;">
                 <div class="empty-state" style="padding: 24px;">
                   <i data-lucide="users" style="width: 48px; height: 48px;"></i>
-                  <p>Cargando ejecutivos...</p>
+                  <p>Cargando vendedores...</p>
                 </div>
+              </div>
+              <div style="padding: 10px 16px; border-top: 1px solid var(--border); text-align: center;">
+                <a href="#" onclick="document.querySelector('[data-tab=routes]').click(); return false;" style="font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 500;">
+                  Ver todos los vendedores →
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resumen Comparativo de Competencia -->
+          <div class="card" id="card-comparativo-summary" style="resize: both; overflow: auto; min-width: 300px; min-height: 200px; flex: 1.5;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <h3><i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i> Comparativo de Competencia</h3>
+              <a href="#" onclick="document.querySelector('[data-tab=intelligence]').click(); return false;" style="font-size: 12px; color: var(--primary); text-decoration: none;">Ver detalle →</a>
+            </div>
+            <div class="card-body" style="padding: 16px; overflow: auto;">
+              <div id="dashboard-comparativo-summary">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;">
+                  <div style="text-align: center; padding: 12px; background: var(--bg-hover); border-radius: 8px;">
+                    <div style="font-size: 20px; font-weight: 700; color: #3b82f6;" id="dash-comp-products">-</div>
+                    <div style="font-size: 10px; color: var(--text-muted);">Productos</div>
+                  </div>
+                  <div style="text-align: center; padding: 12px; background: var(--bg-hover); border-radius: 8px;">
+                    <div style="font-size: 20px; font-weight: 700; color: #059669;" id="dash-comp-sources">-</div>
+                    <div style="font-size: 10px; color: var(--text-muted);">Fuentes</div>
+                  </div>
+                  <div style="text-align: center; padding: 12px; background: var(--bg-hover); border-radius: 8px;">
+                    <div style="font-size: 20px; font-weight: 700; color: #f97316;" id="dash-comp-avg">-</div>
+                    <div style="font-size: 10px; color: var(--text-muted);">Precio Prom</div>
+                  </div>
+                </div>
+                <div id="dash-comp-bars" style="font-size: 12px;"></div>
               </div>
             </div>
           </div>
@@ -1578,13 +1642,22 @@
               <div style="display: flex; align-items: center; gap: 16px;">
                 <div style="color: white;">
                   <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Panel de Logística</div>
-                  <div style="font-size: 20px; font-weight: 700;">Gestión por Ejecutivo</div>
+                  <div style="font-size: 20px; font-weight: 700;">Gestión por Vendedor</div>
                 </div>
               </div>
               <div style="display: flex; gap: 12px; align-items: center;">
-                <select id="executive-filter" class="form-control" style="width: 250px; background: rgba(255,255,255,0.95); border: none;" onchange="filterByExecutive()">
-                  <option value="">-- Todos los Ejecutivos --</option>
-                </select>
+                <div style="position: relative;">
+                  <input type="text" id="executive-search" class="form-control" placeholder="Buscar vendedor..."
+                    style="width: 250px; background: rgba(255,255,255,0.95); border: none; padding-right: 30px;"
+                    oninput="filterExecutiveDropdown(this.value)" onfocus="showExecutiveDropdown()" autocomplete="off">
+                  <i data-lucide="search" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted); pointer-events: none;"></i>
+                  <div id="executive-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-height: 300px; overflow-y: auto; z-index: 1000; margin-top: 4px;">
+                    <div id="executive-dropdown-list"></div>
+                  </div>
+                </div>
+                <button class="btn" onclick="clearExecutiveFilter()" style="background: white; color: var(--text-muted); padding: 10px 12px;" title="Limpiar filtro">
+                  <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                </button>
                 <button class="btn" onclick="loadTodayRoutes()" style="background: white; color: var(--primary); padding: 10px 16px;">
                   <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
                 </button>
@@ -1599,7 +1672,7 @@
             <div class="card-body" style="padding: 16px; text-align: center;">
               <i data-lucide="users" style="width: 24px; height: 24px; color: var(--primary); margin-bottom: 8px;"></i>
               <div id="stat-total-executives" style="font-size: 28px; font-weight: 700; color: var(--primary);">0</div>
-              <div style="font-size: 12px; color: var(--text-muted);">Ejecutivos</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Vendedores</div>
             </div>
           </div>
           <div class="card stat-card">
@@ -1635,8 +1708,8 @@
               <div class="card-body">
                 <form id="form-start-day">
                   <div class="form-group">
-                    <label>Ejecutivo</label>
-                    <select id="start-user" class="form-control" required></select>
+                    <label>Vendedor</label>
+                    <select id="start-user" class="form-control" required onchange="checkActiveRoute(this.value)"></select>
                   </div>
                   <div class="form-group">
                     <label>Vehículo</label>
@@ -1652,13 +1725,41 @@
                   </button>
                 </form>
                 <div class="response-box" id="response-start" style="display: none;"></div>
+
+                <!-- Active Route Info -->
+                <div id="active-route-info" style="display: none; margin-top: 16px; padding: 16px; background: var(--bg-hover); border-radius: 8px; border-left: 4px solid var(--success);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h4 style="margin: 0; color: var(--success); display: flex; align-items: center; gap: 8px;">
+                      <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
+                      Ruta Activa
+                    </h4>
+                    <button type="button" class="btn btn-secondary" onclick="viewActiveRouteOnMap()" style="padding: 4px 12px; font-size: 11px;">
+                      <i data-lucide="map" style="width: 14px; height: 14px;"></i> Ver en Mapa
+                    </button>
+                  </div>
+                  <div id="active-route-details" style="font-size: 13px;"></div>
+                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px;">
+                    <div style="text-align: center; padding: 10px; background: var(--bg-card); border-radius: 6px;">
+                      <div style="font-size: 18px; font-weight: 700; color: var(--primary);" id="route-distance">-</div>
+                      <div style="font-size: 10px; color: var(--text-muted);">Km Estimados</div>
+                    </div>
+                    <div style="text-align: center; padding: 10px; background: var(--bg-card); border-radius: 6px;">
+                      <div style="font-size: 18px; font-weight: 700; color: var(--warning);" id="route-duration">-</div>
+                      <div style="font-size: 10px; color: var(--text-muted);">Duración Est.</div>
+                    </div>
+                    <div style="text-align: center; padding: 10px; background: var(--bg-card); border-radius: 6px;">
+                      <div style="font-size: 18px; font-weight: 700; color: var(--danger);" id="route-fuel-cost">-</div>
+                      <div style="font-size: 10px; color: var(--text-muted);">Costo Bencina</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
             <!-- Assigned Clients Card -->
             <div class="card">
               <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h3><i data-lucide="users-round" style="width: 18px; height: 18px;"></i> Clientes del Ejecutivo</h3>
+                <h3><i data-lucide="users-round" style="width: 18px; height: 18px;"></i> Clientes del Vendedor</h3>
                 <button class="btn btn-secondary" onclick="openAssignClientsModal()" style="padding: 6px 12px; font-size: 12px;">
                   <i data-lucide="user-plus" style="width: 14px; height: 14px;"></i> Asignar
                 </button>
@@ -1667,7 +1768,7 @@
                 <div id="executive-clients-list">
                   <div class="empty-state" style="padding: 24px;">
                     <i data-lucide="user-search" style="width: 36px; height: 36px;"></i>
-                    <p style="font-size: 13px;">Selecciona un ejecutivo para ver sus clientes asignados</p>
+                    <p style="font-size: 13px;">Selecciona un vendedor para ver sus clientes asignados</p>
                   </div>
                 </div>
               </div>
@@ -1675,12 +1776,12 @@
           </div>
 
           <!-- Right: Route Map -->
-          <div class="card">
+          <div class="card" style="display: flex; flex-direction: column; min-height: 500px;">
             <div class="card-header">
               <h3><i data-lucide="map" style="width: 18px; height: 18px;"></i> Mapa de Ruta</h3>
             </div>
-            <div class="card-body" style="padding: 0;">
-              <div class="map-container" style="height: 420px; position: relative;">
+            <div class="card-body" style="padding: 0; flex: 1; display: flex; flex-direction: column;">
+              <div class="map-container" style="flex: 1; min-height: 450px; position: relative;">
                 <div id="map-route"></div>
                 <div id="route-legend" class="route-legend" style="display: none;">
                   <div class="legend-title">Ruta del día</div>
@@ -1700,7 +1801,7 @@
             <table id="table-routes">
               <thead>
                 <tr>
-                  <th>Ejecutivo</th>
+                  <th>Vendedor</th>
                   <th>Vehículo</th>
                   <th>Hora Inicio</th>
                   <th>Km</th>
@@ -1728,7 +1829,7 @@
               </div>
               <div style="display: flex; gap: 12px; align-items: center;">
                 <select id="visit-executive-filter" class="form-control" style="width: 250px; background: rgba(255,255,255,0.95); border: none;" onchange="filterVisitsByExecutive()">
-                  <option value="">-- Seleccionar Ejecutivo --</option>
+                  <option value="">-- Seleccionar Vendedor --</option>
                 </select>
               </div>
             </div>
@@ -1744,9 +1845,9 @@
             <div class="card-body">
               <form id="form-checkin">
                 <div class="form-group">
-                  <label>Ruta Activa del Ejecutivo</label>
+                  <label>Ruta Activa del Vendedor</label>
                   <select id="checkin-route" class="form-control" required onchange="onRouteSelected()">
-                    <option value="">-- Selecciona un ejecutivo arriba --</option>
+                    <option value="">-- Selecciona un vendedor arriba --</option>
                   </select>
                   <small id="route-info-text" style="color: var(--text-muted); font-size: 11px; display: none;"></small>
                 </div>
@@ -1912,15 +2013,112 @@
             </table>
           </div>
         </div>
+
+        <!-- Comparativo de Competencia (n8n) -->
+        <div class="card" style="margin-top: 24px;">
+          <div class="card-header" style="cursor: pointer;" onclick="toggleComparativoPanel()">
+            <h3><i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i> Comparativo de Competencia</h3>
+            <i data-lucide="chevron-down" id="comparativo-toggle-icon" style="width: 18px; height: 18px;"></i>
+          </div>
+          <div class="card-body" id="comparativo-panel" style="display: none;">
+            <!-- Header con estadísticas -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+              <div style="background: var(--bg-hover); border-radius: 8px; padding: 16px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: #3b82f6;" id="comp-total-products">-</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Productos Monitoreados</div>
+              </div>
+              <div style="background: var(--bg-hover); border-radius: 8px; padding: 16px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: #059669;" id="comp-sources">-</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Fuentes</div>
+              </div>
+              <div style="background: var(--bg-hover); border-radius: 8px; padding: 16px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: #f97316;" id="comp-avg-price">-</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Precio Promedio</div>
+              </div>
+              <div style="background: var(--bg-hover); border-radius: 8px; padding: 16px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: #7c3aed;" id="comp-last-update">-</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Última Actualización</div>
+              </div>
+            </div>
+
+            <!-- Gráfico de precios por fuente -->
+            <div style="margin-bottom: 24px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0;">
+                  <i data-lucide="trending-up" style="width: 16px; height: 16px; color: #3b82f6;"></i>
+                  Comparativo de Precios por Fuente
+                </h4>
+                <button class="btn btn-secondary" onclick="loadComparativoData()" style="font-size: 11px; padding: 4px 10px;">
+                  <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Actualizar
+                </button>
+              </div>
+              <div id="comparativo-chart" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; min-height: 300px;">
+                <div style="display: flex; align-items: center; justify-content: center; height: 260px; color: var(--text-muted); font-size: 13px;">
+                  <div style="text-align: center;">
+                    <i data-lucide="bar-chart-2" style="width: 48px; height: 48px; opacity: 0.3; margin-bottom: 12px;"></i>
+                    <p>Cargando datos del comparativo...</p>
+                    <p style="font-size: 11px;">Los datos se actualizan cada lunes desde n8n</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabla de comparativo por fuente -->
+            <div style="margin-bottom: 24px;">
+              <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="table-2" style="width: 16px; height: 16px; color: #059669;"></i>
+                Detalle por Fuente
+              </h4>
+              <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+                <table id="comparativo-table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                  <thead>
+                    <tr style="background: var(--bg-hover);">
+                      <th style="padding: 12px; text-align: left; font-weight: 600;">Fuente</th>
+                      <th style="padding: 12px; text-align: center; font-weight: 600;">Productos</th>
+                      <th style="padding: 12px; text-align: right; font-weight: 600;">Precio Mín</th>
+                      <th style="padding: 12px; text-align: right; font-weight: 600;">Precio Prom</th>
+                      <th style="padding: 12px; text-align: right; font-weight: 600;">Precio Máx</th>
+                    </tr>
+                  </thead>
+                  <tbody id="comparativo-table-body">
+                    <tr>
+                      <td colspan="5" style="padding: 40px; text-align: center; color: var(--text-muted);">
+                        Sin datos. Ejecuta el workflow n8n "LEKER v32 - STOCKS FIX" para obtener datos.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Lista de productos por fuente -->
+            <div>
+              <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="package" style="width: 16px; height: 16px; color: #7c3aed;"></i>
+                Productos por Fuente
+              </h4>
+              <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;" id="comparativo-source-filters">
+                <button class="btn btn-primary" data-source="all" onclick="filterComparativoBySource('all')" style="font-size: 11px; padding: 6px 12px;">
+                  Todas
+                </button>
+              </div>
+              <div id="comparativo-products-list" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; max-height: 400px; overflow-y: auto;">
+                <div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 12px;">
+                  Selecciona una fuente para ver sus productos
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Data Panel -->
       <div class="panel" id="panel-data">
         <!-- Sub-navigation tabs -->
         <div class="data-tabs" style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid var(--border); padding-bottom: 12px;">
-          <button class="data-tab active" data-subtab="ejecutivos" onclick="switchDataTab('ejecutivos')">
+          <button class="data-tab active" data-subtab="vendedores" onclick="switchDataTab('vendedores')">
             <i data-lucide="users" style="width: 16px; height: 16px;"></i>
-            Ejecutivos
+            Vendedores
             <span class="badge badge-active" id="tab-users-count">0</span>
           </button>
           <button class="data-tab" data-subtab="vehiculos" onclick="switchDataTab('vehiculos')">
@@ -1940,13 +2138,13 @@
           </button>
         </div>
 
-        <!-- ==================== EJECUTIVOS ==================== -->
-        <div class="data-subpanel active" id="subpanel-ejecutivos">
+        <!-- ==================== VENDEDORES ==================== -->
+        <div class="data-subpanel active" id="subpanel-vendedores">
           <!-- Header con stats -->
           <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
             <div class="card" style="text-align: center; padding: 16px;">
               <div style="font-size: 24px; font-weight: 700; color: var(--primary);" id="stat-exec-total">0</div>
-              <div style="font-size: 11px; color: var(--text-muted);">Total Ejecutivos</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Total Vendedores</div>
             </div>
             <div class="card" style="text-align: center; padding: 16px;">
               <div style="font-size: 24px; font-weight: 700; color: var(--success);" id="stat-exec-active">0</div>
@@ -1962,10 +2160,10 @@
             </div>
           </div>
 
-          <!-- Agregar Ejecutivo (colapsable) -->
+          <!-- Agregar Vendedor (colapsable) -->
           <div class="card" style="margin-bottom: 20px;">
             <div class="card-header" style="cursor: pointer;" onclick="toggleAddUserForm()">
-              <h3><i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Agregar Nuevo Ejecutivo</h3>
+              <h3><i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Agregar Nuevo Vendedor</h3>
               <i data-lucide="chevron-down" id="add-user-chevron" style="width: 18px; height: 18px; transition: transform 0.2s;"></i>
             </div>
             <div class="card-body" id="add-user-form-body" style="display: none;">
@@ -1981,7 +2179,7 @@
                 <div class="form-group" style="margin-bottom: 0;">
                   <label>Rol</label>
                   <select id="user-role" class="form-control">
-                    <option value="executive">Ejecutivo</option>
+                    <option value="executive">Vendedor</option>
                     <option value="admin">Administrador</option>
                   </select>
                 </div>
@@ -1993,15 +2191,15 @@
             </div>
           </div>
 
-          <!-- Lista de Ejecutivos -->
+          <!-- Lista de Vendedores -->
           <div class="card">
             <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 12px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Lista de Ejecutivos</h3>
+                <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Lista de Vendedores</h3>
                 <div style="display: flex; gap: 8px; align-items: center;">
                   <select id="filter-user-role" class="form-control" style="width: 150px; padding: 6px 10px; font-size: 12px;" onchange="filterUsers()">
                     <option value="">Todos los roles</option>
-                    <option value="executive">Solo Ejecutivos</option>
+                    <option value="executive">Solo Vendedores</option>
                     <option value="admin">Solo Admins</option>
                   </select>
                   <span class="badge badge-active" id="users-count">0</span>
@@ -2013,7 +2211,7 @@
               <table id="table-users">
                 <thead>
                   <tr>
-                    <th>Ejecutivo</th>
+                    <th>Vendedor</th>
                     <th>Contacto</th>
                     <th>Clientes</th>
                     <th>Hoy</th>
@@ -2237,7 +2435,7 @@
                     Código | Razón Social | Nombre Fantasía | Dirección | Comuna | Zona | Segmento | Prioridad
                   </code>
 
-                  <p style="margin-bottom: 12px;"><strong>Ejecutivos:</strong></p>
+                  <p style="margin-bottom: 12px;"><strong>Vendedores:</strong></p>
                   <code style="display: block; padding: 12px; background: var(--bg-hover); border-radius: 6px; margin-bottom: 16px;">
                     Nombre | Email | Rol | Zona
                   </code>
@@ -2263,8 +2461,9 @@
                     <label>Categoría a importar</label>
                     <select id="import-category" class="form-control">
                       <option value="clients">Clientes</option>
-                      <option value="users">Ejecutivos</option>
+                      <option value="users">Vendedores</option>
                       <option value="vehicles">Vehículos</option>
+                      <option value="products">Productos</option>
                     </select>
                   </div>
                   <div class="form-group">
@@ -2416,6 +2615,416 @@
           </div>
         </div>
       </div>
+
+      <!-- Users Panel (Control Maestro) -->
+      <div class="panel" id="panel-users">
+        <!-- Admin Actual - Control Total -->
+        <div class="card" style="margin-bottom: 16px; background: #1e293b; border: 2px solid #374151;">
+          <div class="card-body" style="padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <div id="current-admin-avatar" style="width: 56px; height: 56px; background: #6b7280; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; border: 3px solid #4ade80;">
+                  AD
+                </div>
+                <div style="color: white;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7;">Usuario Actual</span>
+                    <span style="background: #4ade80; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">CONTROL TOTAL</span>
+                  </div>
+                  <div id="current-admin-name" style="font-size: 22px; font-weight: 700;">Administrador</div>
+                  <div id="current-admin-email" style="font-size: 13px; opacity: 0.7;">admin@leker.cl</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div style="color: rgba(255,255,255,0.6); font-size: 11px; margin-bottom: 8px;">
+                  <i data-lucide="shield-check" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i>
+                  Administrador del Sistema
+                </div>
+                <button class="btn" style="background: white; color: #1e293b;" onclick="openAddUserModal()">
+                  <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i>
+                  Nuevo Usuario
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones Rápidas Admin -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
+          <button class="card" style="padding: 16px; text-align: center; cursor: pointer; border: none;" onclick="showPanel('data')">
+            <i data-lucide="database" style="width: 24px; height: 24px; color: var(--accent); margin-bottom: 8px;"></i>
+            <div style="font-size: 12px; font-weight: 500;">Base de Datos</div>
+          </button>
+          <button class="card" style="padding: 16px; text-align: center; cursor: pointer; border: none;" onclick="showPanel('routes')">
+            <i data-lucide="map" style="width: 24px; height: 24px; color: #059669; margin-bottom: 8px;"></i>
+            <div style="font-size: 12px; font-weight: 500;">Rutas</div>
+          </button>
+          <button class="card" style="padding: 16px; text-align: center; cursor: pointer; border: none;" onclick="showPanel('executives')">
+            <i data-lucide="users" style="width: 24px; height: 24px; color: #1e40af; margin-bottom: 8px;"></i>
+            <div style="font-size: 12px; font-weight: 500;">Vendedores</div>
+          </button>
+          <button class="card" style="padding: 16px; text-align: center; cursor: pointer; border: none;" onclick="showPanel('marketing')">
+            <i data-lucide="megaphone" style="width: 24px; height: 24px; color: #dc2626; margin-bottom: 8px;"></i>
+            <div style="font-size: 12px; font-weight: 500;">Marketing</div>
+          </button>
+        </div>
+
+        <!-- Stats -->
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px;">
+          <div class="card" style="text-align: center; padding: 16px;">
+            <div style="font-size: 24px; font-weight: 700; color: var(--text-primary);" id="stat-users-total">0</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Total</div>
+          </div>
+          <div class="card" style="text-align: center; padding: 16px; border-left: 3px solid #374151;">
+            <div style="font-size: 24px; font-weight: 700; color: #374151;" id="stat-users-admin">0</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Admins</div>
+          </div>
+          <div class="card" style="text-align: center; padding: 16px; border-left: 3px solid #7c3aed;">
+            <div style="font-size: 24px; font-weight: 700; color: #7c3aed;" id="stat-users-supervisor">0</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Supervisores</div>
+          </div>
+          <div class="card" style="text-align: center; padding: 16px; border-left: 3px solid #1e40af;">
+            <div style="font-size: 24px; font-weight: 700; color: #1e40af;" id="stat-users-exec">0</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Vendedores</div>
+          </div>
+          <div class="card" style="text-align: center; padding: 16px; border-left: 3px solid #059669;">
+            <div style="font-size: 24px; font-weight: 700; color: #059669;" id="stat-users-viewer">0</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Lectura</div>
+          </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="card">
+          <div class="card-header" style="flex-direction: column; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Todos los Usuarios</h3>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="filter-users-role" class="form-control" style="width: 150px; padding: 6px 10px; font-size: 12px;" onchange="filterAllUsers()">
+                  <option value="">Todos los roles</option>
+                  <option value="admin">Administradores</option>
+                  <option value="supervisor">Supervisores</option>
+                  <option value="executive">Vendedores</option>
+                  <option value="viewer">Solo Lectura</option>
+                </select>
+                <select id="filter-users-status" class="form-control" style="width: 120px; padding: 6px 10px; font-size: 12px;" onchange="filterAllUsers()">
+                  <option value="">Todos</option>
+                  <option value="active">Activos</option>
+                  <option value="inactive">Inactivos</option>
+                </select>
+              </div>
+            </div>
+            <input type="text" id="search-all-users" class="form-control" placeholder="Buscar por nombre o email..." oninput="filterAllUsers()">
+          </div>
+          <div class="table-wrapper" style="max-height: 500px;">
+            <table id="table-all-users">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Email</th>
+                  <th>Rol</th>
+                  <th>Permisos</th>
+                  <th>Estado</th>
+                  <th>Último Acceso</th>
+                  <th style="text-align: center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-all-users"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Roles Section -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-header">
+            <h3><i data-lucide="shield" style="width: 18px; height: 18px;"></i> Roles del Sistema</h3>
+          </div>
+          <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+              <!-- Admin Role -->
+              <div style="border: 2px solid #374151; border-radius: 8px; padding: 16px; background: rgba(107, 114, 128, 0.05);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                  <div style="width: 40px; height: 40px; background: #374151; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="shield-check" style="width: 20px; height: 20px; color: white;"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 600;">Administrador</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Control total del sistema</div>
+                  </div>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary);">
+                  <div style="margin-bottom: 4px;">✓ Configurar sistema completo</div>
+                  <div style="margin-bottom: 4px;">✓ Gestionar usuarios y roles</div>
+                  <div style="margin-bottom: 4px;">✓ Importar/Exportar datos</div>
+                  <div style="margin-bottom: 4px;">✓ Configurar marketing</div>
+                  <div>✓ Acceso total a reportes</div>
+                </div>
+              </div>
+
+              <!-- Supervisor Role -->
+              <div style="border: 2px solid #7c3aed; border-radius: 8px; padding: 16px; background: rgba(124, 58, 237, 0.05);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                  <div style="width: 40px; height: 40px; background: #7c3aed; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="user-cog" style="width: 20px; height: 20px; color: white;"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 600;">Supervisor</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Vendedor Administrador</div>
+                  </div>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary);">
+                  <div style="margin-bottom: 4px;">✓ Ver todos los vendedores y rutas</div>
+                  <div style="margin-bottom: 4px;">✓ Asignar clientes a vendedores</div>
+                  <div style="margin-bottom: 4px;">✓ Exportar datos y reportes</div>
+                  <div style="margin-bottom: 4px;">✓ Ver marketing y dashboards</div>
+                  <div style="color: var(--text-muted);">✗ No configura sistema</div>
+                </div>
+              </div>
+
+              <!-- Executive Role -->
+              <div style="border: 2px solid #1e40af; border-radius: 8px; padding: 16px; background: rgba(30, 64, 175, 0.05);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                  <div style="width: 40px; height: 40px; background: #1e40af; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="briefcase" style="width: 20px; height: 20px; color: white;"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 600;">Vendedor</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Vendedor / Representante</div>
+                  </div>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary);">
+                  <div style="margin-bottom: 4px;">✓ Ver sus clientes asignados</div>
+                  <div style="margin-bottom: 4px;">✓ Iniciar y gestionar sus rutas</div>
+                  <div style="margin-bottom: 4px;">✓ Registrar visitas (check-in)</div>
+                  <div style="margin-bottom: 4px;">✓ Ver su historial personal</div>
+                  <div style="color: var(--text-muted);">✗ No ve otros vendedores</div>
+                </div>
+              </div>
+
+              <!-- Viewer Role -->
+              <div style="border: 2px solid #059669; border-radius: 8px; padding: 16px; background: rgba(5, 150, 105, 0.05);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                  <div style="width: 40px; height: 40px; background: #059669; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="eye" style="width: 20px; height: 20px; color: white;"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight: 600;">Lectura</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">Solo visualización</div>
+                  </div>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary);">
+                  <div style="margin-bottom: 4px;">✓ Ver dashboards asignados</div>
+                  <div style="margin-bottom: 4px;">✓ Ver metas y reportes</div>
+                  <div style="margin-bottom: 4px;">✓ Ver marketing asignado</div>
+                  <div style="color: var(--text-muted);">✗ No puede modificar datos</div>
+                  <div style="color: var(--text-muted);">✗ No puede crear rutas</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Integraciones n8n -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-header" style="cursor: pointer;" onclick="toggleN8nPanel()">
+            <h3><i data-lucide="workflow" style="width: 18px; height: 18px;"></i> Integraciones n8n</h3>
+            <i data-lucide="chevron-down" id="n8n-toggle-icon" style="width: 18px; height: 18px;"></i>
+          </div>
+          <div class="card-body" id="n8n-panel" style="display: none;">
+            <!-- Conexión API n8n -->
+            <div style="margin-bottom: 24px; padding: 16px; background: var(--bg-hover); border-radius: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0;">
+                  <i data-lucide="plug" style="width: 16px; height: 16px; color: #f97316;"></i>
+                  Conexión API n8n
+                </h4>
+                <div id="n8n-connection-status" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; background: #94a3b8; color: white;">
+                  No conectado
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+                <div class="form-group" style="margin: 0;">
+                  <label style="font-size: 11px;">URL de n8n Cloud</label>
+                  <input type="url" id="n8n-api-url" class="form-control" placeholder="https://tu-cuenta.app.n8n.cloud" style="font-size: 12px;">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                  <label style="font-size: 11px;">API Key</label>
+                  <input type="password" id="n8n-api-key" class="form-control" placeholder="eyJhbGci..." style="font-size: 12px;">
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button class="btn btn-secondary" onclick="testN8nApiConnection()" style="font-size: 12px;">
+                  <i data-lucide="wifi" style="width: 14px; height: 14px;"></i> Probar Conexión
+                </button>
+                <button class="btn btn-primary" onclick="saveN8nApiConfig()" style="font-size: 12px;">
+                  <i data-lucide="save" style="width: 14px; height: 14px;"></i> Guardar
+                </button>
+              </div>
+            </div>
+
+            <!-- Workflows de n8n -->
+            <div style="margin-bottom: 24px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0;">
+                  <i data-lucide="git-branch" style="width: 16px; height: 16px; color: #8b5cf6;"></i>
+                  Workflows Activos
+                </h4>
+                <button class="btn btn-secondary" onclick="loadN8nWorkflows()" style="font-size: 11px; padding: 4px 10px;">
+                  <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Actualizar
+                </button>
+              </div>
+              <div id="n8n-workflows-list" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; max-height: 200px; overflow-y: auto;">
+                <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px;">
+                  Conecta con n8n para ver tus workflows
+                </div>
+              </div>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
+
+            <!-- Webhook de Salida -->
+            <div style="margin-bottom: 24px;">
+              <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="arrow-right-from-line" style="width: 16px; height: 16px; color: var(--accent);"></i>
+                Webhook de Salida (LEKER → n8n)
+              </h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                Configura una URL de n8n para recibir eventos cuando ocurran acciones en LEKER.
+              </p>
+              <div class="form-group">
+                <label>URL del Webhook n8n</label>
+                <input type="url" id="n8n-webhook-url" class="form-control" placeholder="https://tu-n8n.com/webhook/xxx">
+              </div>
+              <div class="form-group">
+                <label>Secret (opcional)</label>
+                <input type="password" id="n8n-webhook-secret" class="form-control" placeholder="Token secreto para validar requests">
+              </div>
+              <div class="form-group">
+                <label>Eventos a enviar</label>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px;">
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
+                    <input type="checkbox" id="evt-route-completed" checked> Ruta completada
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
+                    <input type="checkbox" id="evt-visit-registered" checked> Visita registrada
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
+                    <input type="checkbox" id="evt-sync-completed" checked> Sincronización completada
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
+                    <input type="checkbox" id="evt-price-alert"> Alerta de precio
+                  </label>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
+                  <input type="checkbox" id="n8n-webhook-enabled"> Webhook habilitado
+                </label>
+                <div style="margin-left: auto; display: flex; gap: 8px;">
+                  <button class="btn btn-secondary" onclick="testN8nWebhook()">
+                    <i data-lucide="send" style="width: 14px; height: 14px;"></i> Test
+                  </button>
+                  <button class="btn btn-primary" onclick="saveN8nWebhookConfig()">
+                    <i data-lucide="save" style="width: 14px; height: 14px;"></i> Guardar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
+
+            <!-- Webhooks de Entrada -->
+            <div>
+              <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="arrow-left-to-line" style="width: 16px; height: 16px; color: #059669;"></i>
+                Webhooks de Entrada (n8n → LEKER)
+              </h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                Usa estos endpoints en tus workflows de n8n para enviar datos a LEKER.
+              </p>
+              <div style="background: var(--bg-hover); border-radius: 8px; padding: 16px;">
+                <div style="margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 12px; font-weight: 500;">Sincronizar Clientes</span>
+                    <span style="font-size: 10px; background: #059669; color: white; padding: 2px 6px; border-radius: 4px;">POST</span>
+                  </div>
+                  <code style="font-size: 11px; background: var(--bg-card); padding: 6px 10px; border-radius: 4px; display: block; word-break: break-all;" id="webhook-url-clients">/webhooks/n8n-sync-clients</code>
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 12px; font-weight: 500;">Sincronizar Productos</span>
+                    <span style="font-size: 10px; background: #059669; color: white; padding: 2px 6px; border-radius: 4px;">POST</span>
+                  </div>
+                  <code style="font-size: 11px; background: var(--bg-card); padding: 6px 10px; border-radius: 4px; display: block; word-break: break-all;" id="webhook-url-products">/webhooks/n8n-sync-products</code>
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 12px; font-weight: 500;">Sincronizar Usuarios</span>
+                    <span style="font-size: 10px; background: #059669; color: white; padding: 2px 6px; border-radius: 4px;">POST</span>
+                  </div>
+                  <code style="font-size: 11px; background: var(--bg-card); padding: 6px 10px; border-radius: 4px; display: block; word-break: break-all;" id="webhook-url-users">/webhooks/n8n-sync-users</code>
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 12px; font-weight: 500;">Actualizar Precios (Scraping)</span>
+                    <span style="font-size: 10px; background: #059669; color: white; padding: 2px 6px; border-radius: 4px;">POST</span>
+                  </div>
+                  <code style="font-size: 11px; background: var(--bg-card); padding: 6px 10px; border-radius: 4px; display: block; word-break: break-all;" id="webhook-url-prices">/webhooks/n8n-price-update</code>
+                </div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 12px; font-weight: 500;">Comparativo Competencia (LEKER v32)</span>
+                    <span style="font-size: 10px; background: #f97316; color: white; padding: 2px 6px; border-radius: 4px;">POST</span>
+                  </div>
+                  <code style="font-size: 11px; background: var(--bg-card); padding: 6px 10px; border-radius: 4px; display: block; word-break: break-all;" id="webhook-url-comparativo">/webhooks/n8n-comparativo</code>
+                </div>
+              </div>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
+
+            <!-- API de Reportes -->
+            <div>
+              <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="file-bar-chart" style="width: 16px; height: 16px; color: #7c3aed;"></i>
+                API de Reportes
+              </h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                Endpoints para generar reportes automáticos desde n8n.
+              </p>
+              <div style="background: var(--bg-hover); border-radius: 8px; padding: 16px;">
+                <div style="margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 12px; font-weight: 500;">Reporte Diario de Rutas</span>
+                    <span style="font-size: 10px; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px;">GET</span>
+                  </div>
+                  <code style="font-size: 11px; background: var(--bg-card); padding: 6px 10px; border-radius: 4px; display: block;">/api/reports/daily-routes?date=YYYY-MM-DD</code>
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 12px; font-weight: 500;">Reporte de Vendedores</span>
+                    <span style="font-size: 10px; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px;">GET</span>
+                  </div>
+                  <code style="font-size: 11px; background: var(--bg-card); padding: 6px 10px; border-radius: 4px; display: block;">/api/reports/executives</code>
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 12px; font-weight: 500;">Clientes sin Visita</span>
+                    <span style="font-size: 10px; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px;">GET</span>
+                  </div>
+                  <code style="font-size: 11px; background: var(--bg-card); padding: 6px 10px; border-radius: 4px; display: block;">/api/reports/clients-without-visit?days=30</code>
+                </div>
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 12px; font-weight: 500;">Inteligencia de Precios</span>
+                    <span style="font-size: 10px; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px;">GET</span>
+                  </div>
+                  <code style="font-size: 11px; background: var(--bg-card); padding: 6px 10px; border-radius: 4px; display: block;">/api/reports/price-intelligence</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
   </main>
 
   <!-- Modal Cliente -->
@@ -2485,20 +3094,20 @@
     </div>
   </div>
 
-  <!-- Modal Asignar Clientes a Ejecutivo -->
+  <!-- Modal Asignar Clientes a Vendedor -->
   <div id="modal-assign-clients" class="modal" style="display: none;">
     <div class="modal-backdrop" onclick="closeAssignClientsModal()"></div>
     <div class="modal-content" style="max-width: 1000px; width: 95%;">
       <div class="modal-header">
-        <h3><i data-lucide="users-round" style="width: 18px; height: 18px;"></i> Asignar Clientes a Ejecutivo</h3>
+        <h3><i data-lucide="users-round" style="width: 18px; height: 18px;"></i> Asignar Clientes a Vendedor</h3>
         <button class="btn-close" onclick="closeAssignClientsModal()">&times;</button>
       </div>
       <div class="modal-body">
         <div style="display: flex; gap: 16px; margin-bottom: 16px;">
           <div class="form-group" style="flex: 1; margin: 0;">
-            <label>Ejecutivo</label>
+            <label>Vendedor</label>
             <select id="assign-executive" class="form-control" onchange="loadClientsForAssignment()">
-              <option value="">-- Seleccionar ejecutivo --</option>
+              <option value="">-- Seleccionar vendedor --</option>
             </select>
           </div>
           <div class="form-group" style="flex: 1; margin: 0;">
@@ -2517,7 +3126,7 @@
             </div>
             <div id="available-clients-list" style="height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary);">
               <div class="empty-state" style="padding: 20px;">
-                <p style="font-size: 12px;">Selecciona un ejecutivo</p>
+                <p style="font-size: 12px;">Selecciona un vendedor</p>
               </div>
             </div>
             <button class="btn btn-primary btn-block" style="margin-top: 10px;" onclick="assignSelectedClients()">
@@ -2651,6 +3260,7 @@
     let allUsers = [];
     let allVehicles = [];
     let allClients = [];
+    let allRoutes = [];
     let filteredClients = [];
     let todayRoutesData = [];
 
@@ -2681,6 +3291,9 @@
         item.classList.add('active');
         document.getElementById(`panel-${tab}`).classList.add('active');
 
+        // Save current tab to localStorage
+        localStorage.setItem('leker_active_tab', tab);
+
         // Update page title
         const titles = {
           dashboard: 'Dashboard',
@@ -2688,13 +3301,20 @@
           visits: 'Gestión de Visitas',
           intelligence: 'Inteligencia de Mercado',
           data: 'Datos del Sistema',
-          marketing: 'Marketing Digital'
+          marketing: 'Marketing Digital',
+          users: 'Usuarios y Roles'
         };
         document.getElementById('page-title').textContent = titles[tab] || 'Dashboard';
 
-        // Load marketing config if on marketing panel
+        // Load data for specific tabs
         if (tab === 'marketing') {
           loadMarketingConfig();
+        }
+        if (tab === 'users') {
+          renderAllUsersTable();
+        }
+        if (tab === 'intelligence') {
+          loadComparativoData();
         }
 
         // Refresh maps when switching tabs
@@ -2971,8 +3591,11 @@
       if (geocodeBtn) {
         geocodeBtn.style.display = geocodable > 0 ? 'block' : 'none';
       }
-      if (geocodeBtnHeader) {
-        geocodeBtnHeader.style.display = geocodable > 0 ? 'inline-flex' : 'none';
+
+      // Show/hide geocode alert banner
+      const geocodeAlert = document.getElementById('geocode-alert');
+      if (geocodeAlert) {
+        geocodeAlert.style.display = geocodable > 0 ? 'flex' : 'none';
         if (geocodeCount) geocodeCount.textContent = geocodable;
       }
 
@@ -2996,19 +3619,21 @@
       // Disable buttons during processing
       const btn = document.getElementById('btn-geocode-header');
       const btnLegend = document.getElementById('btn-geocode');
-      if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width: 14px; height: 14px;"></i> Procesando...'; }
+      const geocodeAlert = document.getElementById('geocode-alert');
+
+      if (btn) { btn.disabled = true; btn.textContent = 'Procesando...'; }
       if (btnLegend) { btnLegend.disabled = true; }
 
-      showToast('info', 'Geocodificando', `Procesando ${Math.min(clientsToGeocode.length, 100)} de ${clientsToGeocode.length} clientes...`);
+      const totalToProcess = clientsToGeocode.length;
+      showToast('info', 'Geocodificando', `Iniciando proceso para ${totalToProcess} clientes. Esto puede tomar varios minutos...`);
 
       const geocoder = new google.maps.Geocoder();
       let processed = 0;
       let success = 0;
+      let errors = 0;
 
-      // Process up to 100 clients (Google rate limit consideration)
-      const batchSize = Math.min(clientsToGeocode.length, 100);
-
-      for (let i = 0; i < batchSize; i++) {
+      // Process ALL clients in batches
+      for (let i = 0; i < totalToProcess; i++) {
         const client = clientsToGeocode[i];
         // Build address string with available data
         let addressParts = [];
@@ -3022,6 +3647,17 @@
             geocoder.geocode({ address }, (results, status) => {
               if (status === 'OK' && results[0]) {
                 resolve(results[0].geometry.location);
+              } else if (status === 'OVER_QUERY_LIMIT') {
+                // Rate limited - wait and retry
+                setTimeout(() => {
+                  geocoder.geocode({ address }, (results2, status2) => {
+                    if (status2 === 'OK' && results2[0]) {
+                      resolve(results2[0].geometry.location);
+                    } else {
+                      reject(status2);
+                    }
+                  });
+                }, 2000);
               } else {
                 reject(status);
               }
@@ -3045,27 +3681,57 @@
           success++;
         } catch (e) {
           console.warn('Geocode failed for', client.name, e);
+          errors++;
         }
 
         processed++;
 
-        // Update progress every 10 clients
-        if (processed % 10 === 0 && btn) {
-          btn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width: 14px; height: 14px;"></i> ${processed}/${batchSize}...`;
+        // Update progress every 5 clients
+        if (processed % 5 === 0) {
+          const pct = Math.round((processed / totalToProcess) * 100);
+          if (btn) btn.textContent = `${pct}% (${processed}/${totalToProcess})`;
+          if (geocodeAlert) {
+            const countEl = document.getElementById('geocode-count');
+            if (countEl) countEl.textContent = totalToProcess - processed;
+          }
         }
 
-        // Delay between requests to avoid rate limits
-        await new Promise(r => setTimeout(r, 250));
+        // Update map every 50 clients to show progress
+        if (processed % 50 === 0 && success > 0) {
+          updateMapMarkers();
+        }
+
+        // Delay between requests to avoid rate limits (300ms)
+        await new Promise(r => setTimeout(r, 300));
       }
 
-      // Re-enable buttons (reuse btn and btnLegend from start of function)
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="map-pin" style="width: 14px; height: 14px;"></i> Geocodificar'; }
-      if (btnLegend) { btnLegend.disabled = false; }
+      // Show completion message
+      if (errors > 0) {
+        showToast('warning', 'Geocodificación completada', `${success} exitosos, ${errors} con error de ${processed} procesados`);
+      } else {
+        showToast('success', 'Geocodificación completada', `${success} clientes ubicados en el mapa`);
+      }
 
-      showToast('success', 'Geocodificación completada', `${success} de ${processed} clientes geocodificados correctamente`);
-
-      // Refresh markers without full reload
+      // Refresh markers and update stats
       addClientMarkers(allClients);
+
+      // Check remaining clients without coords
+      const remaining = allClients.filter(c => !c.lat && !c.lng && (c.address || c.commune)).length;
+
+      if (remaining === 0) {
+        // Hide geocode alert if no more clients to process
+        if (geocodeAlert) geocodeAlert.style.display = 'none';
+        if (btnLegend) btnLegend.style.display = 'none';
+      } else {
+        // Re-enable buttons for remaining clients
+        if (btn) { btn.disabled = false; btn.textContent = 'Cargar Ubicaciones'; }
+        if (btnLegend) { btnLegend.disabled = false; }
+        if (geocodeAlert) {
+          const countEl = document.getElementById('geocode-count');
+          if (countEl) countEl.textContent = remaining;
+        }
+      }
+
       lucide.createIcons();
     }
 
@@ -3106,18 +3772,19 @@
         allUsers = users.data;
         allVehicles = vehicles.data;
         allClients = clients.data;
+        allRoutes = routes.data;
         filteredClients = [...allClients];
         currentClientsPage = 1;
 
+        // Update admin info in sidebar
+        updateCurrentAdminInfo();
+
         // Populate executive filter dropdowns
-        const execOptions = '<option value="">-- Todos los Ejecutivos --</option>' +
-          executives.map(e => `<option value="${e.id}">${e.full_name}</option>`).join('');
-        const execFilterEl = document.getElementById('executive-filter');
-        if (execFilterEl) execFilterEl.innerHTML = execOptions;
+        // Note: executive-filter was replaced with executive-search (text input with dropdown)
 
         const visitExecFilterEl = document.getElementById('visit-executive-filter');
         if (visitExecFilterEl) {
-          visitExecFilterEl.innerHTML = '<option value="">-- Seleccionar Ejecutivo --</option>' +
+          visitExecFilterEl.innerHTML = '<option value="">-- Seleccionar Vendedor --</option>' +
             executives.map(e => `<option value="${e.id}">${e.full_name}</option>`).join('');
         }
 
@@ -3204,11 +3871,16 @@
     // Form handlers
     document.getElementById('form-start-day').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const userId = document.getElementById('start-user').value;
       const body = {
-        userId: document.getElementById('start-user').value,
+        userId: userId,
         vehicleId: document.getElementById('start-vehicle').value,
         startKm: parseFloat(document.getElementById('start-km').value)
       };
+
+      // Hide any previous response
+      document.getElementById('response-start').style.display = 'none';
+
       try {
         const res = await fetch(`${API}/routes/start`, {
           method: 'POST',
@@ -3216,10 +3888,34 @@
           body: JSON.stringify(body)
         });
         const data = await res.json();
-        showResponse('response-start', data, data.success);
-        loadData();
+
+        if (data.success) {
+          // Show success toast
+          showToast('success', 'Día Iniciado', `Ruta creada para ${data.data.user.name}`);
+
+          // Reload data
+          await loadData();
+
+          // Check and display the active route
+          await checkActiveRoute(userId);
+
+          // Load route on map
+          if (data.data.route) {
+            const assignedClients = allClients.filter(c => c.assigned_user_id === userId);
+            const mockRoute = {
+              ...data.data.route,
+              user: { full_name: data.data.user.name },
+              vehicle: { license_plate: data.data.vehicle.plate },
+              visits: assignedClients.map(client => ({ client, outcome: 'pending' }))
+            };
+            displayRouteOnMap(mockRoute);
+          }
+        } else {
+          // Show error toast
+          showToast('error', 'Error', data.error || 'No se pudo iniciar el día');
+        }
       } catch (error) {
-        showResponse('response-start', { error: error.message }, false);
+        showToast('error', 'Error', error.message);
       }
     });
 
@@ -3360,7 +4056,7 @@
     async function loadExecutiveRoute() {
       const userId = document.getElementById('select-route-executive').value;
       if (!userId) {
-        showToast('warning', 'Atención', 'Seleccione un ejecutivo');
+        showToast('warning', 'Atención', 'Seleccione un vendedor');
         return;
       }
 
@@ -3373,7 +4069,7 @@
           const activeRoute = data.data.find(r => r.status === 'active') || data.data[0];
           displayRouteOnMap(activeRoute);
         } else {
-          showToast('warning', 'Sin rutas', 'No hay rutas activas para este ejecutivo');
+          showToast('warning', 'Sin rutas', 'No hay rutas activas para este vendedor');
           clearRouteFromMap();
         }
       } catch (error) {
@@ -3514,14 +4210,302 @@
     }
 
     // =============================================
+    // ROUTE METRICS & ACTIVE ROUTE FUNCTIONS
+    // =============================================
+
+    let currentActiveRoute = null;
+    const FUEL_PRICE_PER_LITER = 1200; // CLP
+    const AVERAGE_SPEED_KMH = 30; // Average city driving speed
+
+    // Calculate distance between two points using Haversine formula
+    function calculateDistance(lat1, lng1, lat2, lng2) {
+      const R = 6371; // Earth's radius in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    // Calculate total route distance from clients
+    function calculateRouteMetrics(clients, vehicle) {
+      if (!clients || clients.length === 0) {
+        return { distance: 0, duration: 0, fuelCost: 0 };
+      }
+
+      // Filter clients with valid coordinates (handle null, undefined, empty string)
+      const validClients = clients.filter(c => {
+        const lat = parseFloat(c.lat);
+        const lng = parseFloat(c.lng);
+        return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+      });
+      console.log('Valid clients with coords:', validClients.length, 'of', clients.length);
+      if (validClients.length === 0) {
+        return { distance: 0, duration: 0, fuelCost: 0 };
+      }
+
+      let totalDistance = 0;
+
+      // Calculate distance between consecutive clients
+      for (let i = 0; i < validClients.length - 1; i++) {
+        const dist = calculateDistance(
+          parseFloat(validClients[i].lat),
+          parseFloat(validClients[i].lng),
+          parseFloat(validClients[i+1].lat),
+          parseFloat(validClients[i+1].lng)
+        );
+        totalDistance += dist;
+      }
+
+      // Add 20% for real road distance (roads aren't straight lines)
+      totalDistance = totalDistance * 1.2;
+
+      // Calculate duration (distance / speed) + 15 min per client for visit
+      const travelTime = totalDistance / AVERAGE_SPEED_KMH; // hours
+      const visitTime = validClients.length * 0.25; // 15 min per client
+      const totalDuration = travelTime + visitTime;
+
+      // Calculate fuel cost
+      const fuelEfficiency = vehicle?.fuel_efficiency_kml || 12; // km per liter
+      const fuelUsed = totalDistance / fuelEfficiency;
+      const fuelCost = Math.round(fuelUsed * FUEL_PRICE_PER_LITER);
+
+      return {
+        distance: Math.round(totalDistance * 10) / 10,
+        duration: totalDuration,
+        fuelCost: fuelCost
+      };
+    }
+
+    // Format duration to hours and minutes
+    function formatDuration(hours) {
+      const h = Math.floor(hours);
+      const m = Math.round((hours - h) * 60);
+      if (h === 0) return `${m} min`;
+      return `${h}h ${m}m`;
+    }
+
+    // Check and display active route for selected executive
+    async function checkActiveRoute(userId) {
+      const infoPanel = document.getElementById('active-route-info');
+      const form = document.getElementById('form-start-day');
+
+      if (!userId) {
+        infoPanel.style.display = 'none';
+        form.style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/api/users/${userId}/routes`);
+        const data = await res.json();
+
+        if (data.success && data.data.length > 0) {
+          const activeRoute = data.data.find(r => r.status === 'active');
+
+          if (activeRoute) {
+            currentActiveRoute = activeRoute;
+            displayActiveRouteInfo(activeRoute);
+            infoPanel.style.display = 'block';
+            form.querySelector('button[type="submit"]').innerHTML = '<i data-lucide="play" style="width: 16px; height: 16px;"></i> Ya hay ruta activa';
+            form.querySelector('button[type="submit"]').disabled = true;
+            lucide.createIcons();
+            return;
+          }
+        }
+
+        // No active route
+        currentActiveRoute = null;
+        infoPanel.style.display = 'none';
+        form.querySelector('button[type="submit"]').innerHTML = '<i data-lucide="play" style="width: 16px; height: 16px;"></i> Iniciar Día';
+        form.querySelector('button[type="submit"]').disabled = false;
+        lucide.createIcons();
+
+      } catch (error) {
+        console.error('Error checking active route:', error);
+      }
+    }
+
+    // Display active route information
+    function displayActiveRouteInfo(route) {
+      const details = document.getElementById('active-route-details');
+      const visits = route.visits || [];
+
+      // Use assigned clients if no visits yet, otherwise use visit clients
+      let clients = visits.map(v => v.client).filter(c => c);
+      if (clients.length === 0 && route.user_id) {
+        // Get assigned clients for this executive
+        clients = allClients.filter(c => c.assigned_user_id === route.user_id);
+        console.log('Assigned clients for route:', clients.length, 'user_id:', route.user_id);
+        if (clients.length > 0) {
+          console.log('First client coords:', clients[0].name, clients[0].lat, clients[0].lng, typeof clients[0].lat);
+        }
+      }
+
+      // Check how many have coordinates (handle string or number)
+      const clientsWithCoords = clients.filter(c => c.lat != null && c.lng != null && c.lat !== '' && c.lng !== '');
+
+      // Calculate metrics
+      const metrics = calculateRouteMetrics(clients, route.vehicle);
+
+      // Show warning if no coordinates
+      if (clients.length > 0 && clientsWithCoords.length === 0) {
+        document.getElementById('route-distance').textContent = 'Sin GPS';
+        document.getElementById('route-duration').textContent = 'Sin GPS';
+        document.getElementById('route-fuel-cost').textContent = 'Sin GPS';
+      } else {
+        document.getElementById('route-distance').textContent = metrics.distance + ' km';
+        document.getElementById('route-duration').textContent = formatDuration(metrics.duration);
+        document.getElementById('route-fuel-cost').textContent = '$' + metrics.fuelCost.toLocaleString();
+      }
+
+      // Update display
+      details.innerHTML = `
+        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+          <div><strong>Vehículo:</strong> ${route.vehicle?.license_plate || 'N/A'} (${route.vehicle?.model || ''})</div>
+          <div><strong>Inicio:</strong> ${new Date(route.created_at).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</div>
+          <div><strong>Km inicial:</strong> ${route.start_km?.toLocaleString() || 0}</div>
+          <div><strong>Clientes:</strong> ${clients.length} ${clientsWithCoords.length < clients.length ? `(${clientsWithCoords.length} con GPS)` : ''}</div>
+        </div>
+      `;
+
+      lucide.createIcons();
+    }
+
+    // View active route on map
+    function viewActiveRouteOnMap() {
+      if (currentActiveRoute) {
+        // If no visits, create a mock route with assigned clients
+        let routeToDisplay = currentActiveRoute;
+        if (!currentActiveRoute.visits || currentActiveRoute.visits.length === 0) {
+          const assignedClients = allClients.filter(c => c.assigned_user_id === currentActiveRoute.user_id);
+
+          // Check if clients have coordinates
+          const clientsWithCoords = assignedClients.filter(c => c.lat && c.lng);
+          if (clientsWithCoords.length === 0) {
+            showToast('warning', 'Sin coordenadas', 'Los clientes asignados no tienen ubicación GPS');
+          }
+
+          routeToDisplay = {
+            ...currentActiveRoute,
+            visits: assignedClients.map(client => ({ client, outcome: 'pending' }))
+          };
+        }
+
+        displayRouteOnMap(routeToDisplay);
+
+        // Trigger map resize in case it wasn't visible
+        if (routeMap) {
+          setTimeout(() => {
+            google.maps.event.trigger(routeMap, 'resize');
+            // Re-fit bounds after resize
+            if (routeMarkers.length > 0) {
+              const bounds = new google.maps.LatLngBounds();
+              routeMarkers.forEach(m => bounds.extend(m.getPosition()));
+              routeMap.fitBounds(bounds);
+            }
+          }, 100);
+        }
+
+        // Scroll to map if needed
+        document.getElementById('map-route').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    // =============================================
     // EXECUTIVE MANAGEMENT FUNCTIONS
     // =============================================
 
     let selectedExecutiveId = null;
     let executiveClients = [];
 
-    function filterByExecutive() {
-      selectedExecutiveId = document.getElementById('executive-filter').value;
+    // Executive search dropdown functions
+    function showExecutiveDropdown() {
+      const dropdown = document.getElementById('executive-dropdown');
+      dropdown.style.display = 'block';
+      filterExecutiveDropdown(document.getElementById('executive-search').value);
+
+      // Close on click outside
+      setTimeout(() => {
+        document.addEventListener('click', closeExecutiveDropdownOnClickOutside);
+      }, 100);
+    }
+
+    function closeExecutiveDropdownOnClickOutside(e) {
+      const dropdown = document.getElementById('executive-dropdown');
+      const searchInput = document.getElementById('executive-search');
+      if (!dropdown.contains(e.target) && e.target !== searchInput) {
+        dropdown.style.display = 'none';
+        document.removeEventListener('click', closeExecutiveDropdownOnClickOutside);
+      }
+    }
+
+    function filterExecutiveDropdown(searchTerm) {
+      const dropdown = document.getElementById('executive-dropdown-list');
+      const search = searchTerm.toLowerCase().trim();
+
+      let filtered = executives;
+      if (search) {
+        filtered = executives.filter(e =>
+          e.full_name.toLowerCase().includes(search) ||
+          e.email.toLowerCase().includes(search)
+        );
+      }
+
+      let html = `<div class="executive-option" onclick="selectExecutive('')" style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #eee; font-weight: 500; color: var(--primary);">
+        -- Todos los Vendedores --
+      </div>`;
+
+      filtered.forEach(e => {
+        const isSelected = e.id === selectedExecutiveId;
+        html += `<div class="executive-option" onclick="selectExecutive('${e.id}')"
+          style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f0f0f0; ${isSelected ? 'background: var(--primary-light); font-weight: 500;' : ''}"
+          onmouseover="this.style.background='#f5f5f5'"
+          onmouseout="this.style.background='${isSelected ? 'var(--primary-light)' : 'white'}'">
+          <div style="font-weight: 500;">${e.full_name}</div>
+          <div style="font-size: 11px; color: var(--text-muted);">${e.email}</div>
+        </div>`;
+      });
+
+      if (filtered.length === 0) {
+        html = `<div style="padding: 14px; text-align: center; color: var(--text-muted);">No se encontraron vendedores</div>`;
+      }
+
+      dropdown.innerHTML = html;
+    }
+
+    function selectExecutive(execId) {
+      selectedExecutiveId = execId;
+      const searchInput = document.getElementById('executive-search');
+      const dropdown = document.getElementById('executive-dropdown');
+
+      if (execId) {
+        const exec = executives.find(e => e.id === execId);
+        searchInput.value = exec ? exec.full_name : '';
+      } else {
+        searchInput.value = '';
+        searchInput.placeholder = 'Buscar vendedor...';
+      }
+
+      dropdown.style.display = 'none';
+      document.removeEventListener('click', closeExecutiveDropdownOnClickOutside);
+
+      // Trigger the filter
+      filterByExecutive(execId);
+    }
+
+    function clearExecutiveFilter() {
+      selectedExecutiveId = null;
+      document.getElementById('executive-search').value = '';
+      filterByExecutive('');
+    }
+
+    function filterByExecutive(execId) {
+      if (execId !== undefined) {
+        selectedExecutiveId = execId;
+      }
       updateExecutiveStats();
       loadExecutiveClients();
       loadExecutiveRouteOnMap();
@@ -3535,6 +4519,8 @@
       const startUserSelect = document.getElementById('start-user');
       if (startUserSelect && selectedExecutiveId) {
         startUserSelect.value = selectedExecutiveId;
+        // Check for active route
+        checkActiveRoute(selectedExecutiveId);
       }
     }
 
@@ -3542,17 +4528,16 @@
       const execId = document.getElementById('visit-executive-filter').value;
       const routeSelect = document.getElementById('checkin-route');
 
-      // Sync with main executive filter
-      const mainFilter = document.getElementById('executive-filter');
-      if (mainFilter && mainFilter.value !== execId) {
-        mainFilter.value = execId;
+      // Sync with main executive search
+      if (execId && selectedExecutiveId !== execId) {
+        selectExecutive(execId);
       }
 
       // Filter routes for this executive
       routeSelect.innerHTML = '';
 
       if (!execId) {
-        routeSelect.innerHTML = '<option value="">-- Selecciona un ejecutivo arriba --</option>';
+        routeSelect.innerHTML = '<option value="">-- Selecciona un vendedor arriba --</option>';
         document.getElementById('client-count-label').textContent = '';
         return;
       }
@@ -3561,7 +4546,7 @@
       const activeRoute = execRoutes.find(r => r.status === 'active');
 
       if (activeRoute) {
-        routeSelect.innerHTML = `<option value="${activeRoute.id}">${activeRoute.user?.full_name || 'Ejecutivo'} - Ruta activa</option>`;
+        routeSelect.innerHTML = `<option value="${activeRoute.id}">${activeRoute.user?.full_name || 'Vendedor'} - Ruta activa</option>`;
         document.getElementById('route-info-text').textContent = `Vehículo: ${activeRoute.vehicle?.license_plate || 'N/A'} | Inicio: ${activeRoute.start_km} km`;
         document.getElementById('route-info-text').style.display = 'block';
         document.getElementById('visit-route-status').textContent = 'Ruta Activa';
@@ -3598,7 +4583,7 @@
         listDiv.innerHTML = `
           <div class="empty-state" style="padding: 24px;">
             <i data-lucide="user-search" style="width: 36px; height: 36px;"></i>
-            <p style="font-size: 13px;">Selecciona un ejecutivo para ver sus clientes asignados</p>
+            <p style="font-size: 13px;">Selecciona un vendedor para ver sus clientes asignados</p>
           </div>
         `;
         lucide.createIcons();
@@ -3611,7 +4596,7 @@
         listDiv.innerHTML = `
           <div class="empty-state" style="padding: 24px;">
             <i data-lucide="users" style="width: 36px; height: 36px;"></i>
-            <p style="font-size: 13px;">Este ejecutivo no tiene clientes asignados</p>
+            <p style="font-size: 13px;">Este vendedor no tiene clientes asignados</p>
             <button class="btn btn-primary" onclick="openAssignClientsModal()" style="margin-top: 12px;">
               <i data-lucide="user-plus" style="width: 14px; height: 14px;"></i> Asignar Clientes
             </button>
@@ -3621,18 +4606,26 @@
         return;
       }
 
-      listDiv.innerHTML = executiveClients.slice(0, 50).map(c => `
-        <div style="padding: 8px 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <div style="font-weight: 500; font-size: 13px;">${c.fantasy_name || c.name}</div>
+      listDiv.innerHTML = executiveClients.slice(0, 50).map(c => {
+        const segmentColors = { A: '#22c55e', B: '#3b82f6', C: '#6b7280' };
+        const segment = c.segment || 'C';
+        const segmentColor = segmentColors[segment] || '#6b7280';
+        const isFoco = c.priority === 'FOCO';
+        return `
+        <div style="padding: 8px 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; ${isFoco ? 'background: rgba(239,68,68,0.05);' : ''}">
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+              ${c.fantasy_name || c.name}
+              ${isFoco ? '<span style="background: #ef4444; color: white; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: 600;">FOCO</span>' : ''}
+            </div>
             <div style="font-size: 11px; color: var(--text-muted);">${c.commune || c.zone || 'Sin zona'}</div>
           </div>
-          <div style="display: flex; gap: 4px; align-items: center;">
+          <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
             <code style="font-size: 10px; background: var(--bg-hover); padding: 2px 6px; border-radius: 4px;">${c.external_id}</code>
-            <span class="badge badge-${(c.segment || 'c').toLowerCase()}" style="font-size: 9px;">${c.segment || 'C'}</span>
+            <span style="background: ${segmentColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">${segment}</span>
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
 
       if (executiveClients.length > 50) {
         listDiv.innerHTML += `<div style="padding: 8px; text-align: center; color: var(--text-muted); font-size: 12px;">... y ${executiveClients.length - 50} más</div>`;
@@ -3783,7 +4776,7 @@
 
       // Populate executives
       const executives = allUsers.filter(u => u.role === 'executive');
-      execSelect.innerHTML = '<option value="">-- Seleccionar ejecutivo --</option>' +
+      execSelect.innerHTML = '<option value="">-- Seleccionar vendedor --</option>' +
         executives.map(e => `<option value="${e.id}">${e.full_name}</option>`).join('');
 
       // Populate zones
@@ -3813,7 +4806,7 @@
       const assignedDiv = document.getElementById('assigned-clients-list');
 
       if (!execId) {
-        availableDiv.innerHTML = '<div class="empty-state" style="padding: 20px;"><p style="font-size: 12px;">Selecciona un ejecutivo</p></div>';
+        availableDiv.innerHTML = '<div class="empty-state" style="padding: 20px;"><p style="font-size: 12px;">Selecciona un vendedor</p></div>';
         assignedDiv.innerHTML = '<div class="empty-state" style="padding: 20px;"><p style="font-size: 12px;">Sin clientes asignados</p></div>';
         return;
       }
@@ -4002,15 +4995,19 @@
     function updateRouteLegend(route) {
       const info = document.getElementById('route-info');
       const visits = route.visits || [];
+      const clients = visits.map(v => v.client).filter(c => c);
 
       const completed = visits.filter(v => v.check_out).length;
       const inProgress = visits.filter(v => v.check_in && !v.check_out).length;
       const pending = visits.length - completed - inProgress;
       const sales = visits.filter(v => v.outcome === 'sale').length;
 
+      // Calculate route metrics
+      const metrics = calculateRouteMetrics(clients, route.vehicle);
+
       info.innerHTML = `
         <div style="margin-bottom: 8px;">
-          <strong>${route.user?.full_name || 'Ejecutivo'}</strong><br>
+          <strong>${route.user?.full_name || 'Vendedor'}</strong><br>
           <span style="font-size: 12px; color: var(--text-muted);">${route.vehicle?.license_plate || ''} - ${route.date}</span>
         </div>
         <div class="legend-item"><div class="legend-dot visited"></div> Completadas: ${completed}</div>
@@ -4018,6 +5015,20 @@
         <div class="legend-item"><div class="legend-dot pending"></div> Pendientes: ${pending}</div>
         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
           <span style="color: var(--success); font-weight: 600;">Ventas: ${sales}</span>
+        </div>
+        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; font-size: 11px; text-align: center;">
+          <div>
+            <div style="font-weight: 600; color: var(--primary);">${metrics.distance} km</div>
+            <div style="color: var(--text-muted); font-size: 9px;">Distancia</div>
+          </div>
+          <div>
+            <div style="font-weight: 600; color: var(--warning);">${formatDuration(metrics.duration)}</div>
+            <div style="color: var(--text-muted); font-size: 9px;">Duración</div>
+          </div>
+          <div>
+            <div style="font-weight: 600; color: var(--danger);">$${metrics.fuelCost.toLocaleString()}</div>
+            <div style="color: var(--text-muted); font-size: 9px;">Bencina</div>
+          </div>
         </div>
       `;
     }
@@ -4083,19 +5094,19 @@
 
     function renderExecutivesPanel(routes) {
       const container = document.getElementById('executives-panel');
-      const countSpan = document.getElementById('executives-count');
+      const countBadge = document.getElementById('executives-count-badge');
       const executives = allUsers.filter(u => u.role === 'executive');
 
-      if (countSpan) {
-        const activeCount = executives.filter(e => e.status !== 'inactive').length;
-        countSpan.textContent = `${activeCount} activos de ${executives.length}`;
+      // Update the badge with count
+      if (countBadge) {
+        countBadge.textContent = executives.length;
       }
 
       if (executives.length === 0) {
         container.innerHTML = `
           <div class="empty-state" style="padding: 24px;">
             <i data-lucide="user-x" style="width: 48px; height: 48px;"></i>
-            <p>No hay ejecutivos registrados</p>
+            <p>No hay vendedores registrados</p>
           </div>
         `;
         lucide.createIcons();
@@ -4163,7 +5174,7 @@
       lucide.createIcons();
     }
 
-    let executivesCardOpen = true;
+    let executivesCardOpen = true; // Start expanded
     function toggleExecutivesCard() {
       const body = document.getElementById('executives-body');
       const chevron = document.getElementById('executives-chevron');
@@ -4171,13 +5182,19 @@
       executivesCardOpen = !executivesCardOpen;
 
       if (executivesCardOpen) {
-        body.style.maxHeight = '400px';
+        body.style.display = 'block';
         chevron.style.transform = 'rotate(0deg)';
       } else {
-        body.style.maxHeight = '0px';
+        body.style.display = 'none';
         chevron.style.transform = 'rotate(-90deg)';
       }
     }
+
+    // Initialize chevron rotation on load (expanded by default)
+    document.addEventListener('DOMContentLoaded', () => {
+      const chevron = document.getElementById('executives-chevron');
+      if (chevron) chevron.style.transform = 'rotate(0deg)';
+    });
 
     function toggleExecutiveDetails(execId) {
       const details = document.getElementById(`exec-details-${execId}`);
@@ -4217,7 +5234,8 @@
           visits: 'Gestión de Visitas',
           intelligence: 'Inteligencia de Mercado',
           data: 'Datos del Sistema',
-          marketing: 'Marketing Digital'
+          marketing: 'Marketing Digital',
+          users: 'Usuarios y Roles'
         };
         document.getElementById('page-title').textContent = titles[tabName] || 'Dashboard';
       }
@@ -4227,8 +5245,7 @@
       // Switch to Routes panel and select executive
       showPanel('routes');
       setTimeout(() => {
-        document.getElementById('executive-filter').value = execId;
-        filterByExecutive();
+        selectExecutive(execId);
       }, 100);
     }
 
@@ -4236,9 +5253,7 @@
       // Switch to Routes panel, select executive and open assign modal
       showPanel('routes');
       setTimeout(() => {
-        document.getElementById('executive-filter').value = execId;
-        selectedExecutiveId = execId;
-        filterByExecutive();
+        selectExecutive(execId);
         setTimeout(() => openAssignClientsModal(), 200);
       }, 100);
     }
@@ -4247,7 +5262,7 @@
       const newStatus = currentlyActive ? 'inactive' : 'active';
       const action = currentlyActive ? 'desactivar' : 'activar';
 
-      if (!confirm(`¿Estás seguro de ${action} este ejecutivo?`)) return;
+      if (!confirm(`¿Estás seguro de ${action} este vendedor?`)) return;
 
       try {
         // Update user status (we'll add a status field)
@@ -4255,7 +5270,7 @@
         if (exec) {
           exec.status = newStatus;
           renderExecutivesPanel(todayRoutesData);
-          showToast('success', 'Actualizado', `Ejecutivo ${newStatus === 'active' ? 'activado' : 'desactivado'}`);
+          showToast('success', 'Actualizado', `Vendedor ${newStatus === 'active' ? 'activado' : 'desactivado'}`);
         }
       } catch (e) {
         console.error('Error toggling status:', e);
@@ -4798,7 +5813,7 @@
       }
 
       if (filteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">Este ejecutivo no tiene rutas hoy</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">Este vendedor no tiene rutas hoy</td></tr>';
         return;
       }
 
@@ -4947,7 +5962,7 @@
               </div>
               <div>
                 <div style="font-weight: 600;">${u.full_name}</div>
-                <span class="badge ${u.role === 'admin' ? 'badge-secondary' : 'badge-primary'}" style="font-size: 9px;">${u.role === 'admin' ? 'Admin' : 'Ejecutivo'}</span>
+                <span class="badge ${u.role === 'admin' ? 'badge-secondary' : 'badge-primary'}" style="font-size: 9px;">${u.role === 'admin' ? 'Admin' : 'Vendedor'}</span>
               </div>
             </div>
           </td>
@@ -5013,9 +6028,7 @@
     function quickAssignToUser(userId) {
       showPanel('routes');
       setTimeout(() => {
-        document.getElementById('executive-filter').value = userId;
-        selectedExecutiveId = userId;
-        filterByExecutive();
+        selectExecutive(userId);
         setTimeout(() => openAssignClientsModal(), 200);
       }, 100);
     }
@@ -5023,9 +6036,7 @@
     function viewUserRoutes(userId) {
       showPanel('routes');
       setTimeout(() => {
-        document.getElementById('executive-filter').value = userId;
-        selectedExecutiveId = userId;
-        filterByExecutive();
+        selectExecutive(userId);
       }, 100);
     }
 
@@ -5289,7 +6300,7 @@
         return;
       }
 
-      const categoryNames = { clients: 'Clientes', users: 'Ejecutivos', vehicles: 'Vehículos' };
+      const categoryNames = { clients: 'Clientes', users: 'Vendedores', vehicles: 'Vehículos', products: 'Productos' };
       const modeNames = { upsert: 'Incremental', replace: 'Reemplazo Total' };
 
       if (mode === 'replace' && !confirm(`¿Estás seguro de hacer un REEMPLAZO TOTAL de ${categoryNames[category]}?\n\nEsto eliminará todos los registros existentes.`)) {
@@ -5404,6 +6415,12 @@
         item.classList.add('active');
         document.getElementById(`panel-${tab}`).classList.add('active');
 
+        // Save current tab to localStorage
+        localStorage.setItem('leker_active_tab', tab);
+        if (subtab) {
+          localStorage.setItem('leker_active_subtab', subtab);
+        }
+
         // Switch to subtab
         if (subtab) {
           switchDataTab(subtab);
@@ -5411,7 +6428,7 @@
 
         // Update page title
         const subtabTitles = {
-          ejecutivos: 'Ejecutivos',
+          vendedores: 'Vendedores',
           vehiculos: 'Vehículos',
           clientes: 'Clientes',
           productos: 'Productos',
@@ -5679,12 +6696,1022 @@
       );
     }
 
+    // =============================================
+    // GESTIÓN DE USUARIOS Y ROLES
+    // =============================================
+
+    let allUsersFiltered = [];
+
+    function renderAllUsersTable() {
+      const tbody = document.getElementById('tbody-all-users');
+      if (!tbody) return;
+
+      // Update stats
+      updateUserStats();
+
+      // Apply filters
+      filterAllUsers();
+    }
+
+    function filterAllUsers() {
+      const roleFilter = document.getElementById('filter-users-role')?.value || '';
+      const statusFilter = document.getElementById('filter-users-status')?.value || '';
+      const searchTerm = document.getElementById('search-all-users')?.value?.toLowerCase() || '';
+
+      allUsersFiltered = allUsers.filter(user => {
+        // Role filter
+        if (roleFilter && user.role !== roleFilter) return false;
+
+        // Status filter (for now, all users are considered active)
+        // This can be extended when status field is added to users table
+
+        // Search filter
+        if (searchTerm) {
+          const name = (user.full_name || '').toLowerCase();
+          const email = (user.email || '').toLowerCase();
+          if (!name.includes(searchTerm) && !email.includes(searchTerm)) return false;
+        }
+
+        return true;
+      });
+
+      renderUsersTableBody();
+    }
+
+    // Role configuration
+    const ROLE_CONFIG = {
+      admin: { label: 'Administrador', color: '#374151', permissions: 'Completo', icon: 'shield-check' },
+      supervisor: { label: 'Supervisor', color: '#7c3aed', permissions: 'Gestión', icon: 'user-cog' },
+      executive: { label: 'Vendedor', color: '#1e40af', permissions: 'Básico', icon: 'briefcase' },
+      viewer: { label: 'Lectura', color: '#059669', permissions: 'Solo ver', icon: 'eye' }
+    };
+
+    function getRoleConfig(role) {
+      return ROLE_CONFIG[role] || ROLE_CONFIG.executive;
+    }
+
+    function renderUsersTableBody() {
+      const tbody = document.getElementById('tbody-all-users');
+      if (!tbody) return;
+
+      if (allUsersFiltered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              <i data-lucide="users" style="width: 40px; height: 40px; margin-bottom: 10px; opacity: 0.3;"></i>
+              <div>No se encontraron usuarios</div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      tbody.innerHTML = allUsersFiltered.map(user => {
+        const initials = getInitials(user.full_name);
+        const roleConfig = getRoleConfig(user.role);
+        const isAdmin = user.role === 'admin';
+        const canHaveClients = ['executive', 'supervisor'].includes(user.role);
+        const canHaveRoutes = ['executive', 'supervisor'].includes(user.role);
+
+        // Count assigned clients
+        const assignedClients = allClients.filter(c => c.assigned_user_id === user.id).length;
+
+        // Check if user has active route today
+        const hasActiveRoute = allRoutes.some(r => r.user_id === user.id && r.status === 'active');
+
+        const permissionsBadge = `<span style="background: ${roleConfig.color}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">${roleConfig.permissions}</span>`;
+
+        let statusBadge = '<span style="background: #94a3b8; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">-</span>';
+        if (canHaveRoutes) {
+          statusBadge = hasActiveRoute
+            ? '<span style="background: #059669; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">En ruta</span>'
+            : '<span style="background: #94a3b8; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">Disponible</span>';
+        }
+
+        return `
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; background: ${roleConfig.color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px;">
+                  ${initials}
+                </div>
+                <div>
+                  <div style="font-weight: 500;">${user.full_name}</div>
+                  ${canHaveClients ? `<div style="font-size: 11px; color: var(--text-muted);">${assignedClients} clientes</div>` : ''}
+                </div>
+              </div>
+            </td>
+            <td style="color: var(--text-secondary); font-size: 13px;">${user.email}</td>
+            <td>
+              <select class="form-control" style="padding: 4px 8px; font-size: 12px; width: 130px;" onchange="changeUserRole('${user.id}', this.value)" ${isAdmin && allUsers.filter(u => u.role === 'admin').length === 1 ? 'disabled title="Debe haber al menos un administrador"' : ''}>
+                <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Administrador</option>
+                <option value="supervisor" ${user.role === 'supervisor' ? 'selected' : ''}>Supervisor</option>
+                <option value="executive" ${user.role === 'executive' ? 'selected' : ''}>Vendedor</option>
+                <option value="viewer" ${user.role === 'viewer' ? 'selected' : ''}>Lectura</option>
+              </select>
+            </td>
+            <td>${permissionsBadge}</td>
+            <td>${statusBadge}</td>
+            <td style="font-size: 12px; color: var(--text-muted);">-</td>
+            <td style="text-align: center;">
+              <div style="display: flex; gap: 4px; justify-content: center;">
+                ${canHaveRoutes ? `<button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="showPanel('executives'); setTimeout(() => { document.getElementById('filter-executive')?.querySelectorAll('option').forEach(o => { if(o.value === '${user.id}') o.selected = true; }); filterByExecutive(); }, 100);" title="Ver en mapa">
+                  <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
+                </button>` : ''}
+                <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; color: var(--danger);" onclick="deleteUserConfirm('${user.id}', '${user.full_name}')" ${isAdmin && allUsers.filter(u => u.role === 'admin').length === 1 ? 'disabled title="No se puede eliminar el único administrador"' : ''} title="Eliminar">
+                  <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function updateUserStats() {
+      const totalUsers = allUsers.length;
+      const admins = allUsers.filter(u => u.role === 'admin').length;
+      const supervisors = allUsers.filter(u => u.role === 'supervisor').length;
+      const executives = allUsers.filter(u => u.role === 'executive').length;
+      const viewers = allUsers.filter(u => u.role === 'viewer').length;
+
+      document.getElementById('stat-users-total').textContent = totalUsers;
+      document.getElementById('stat-users-admin').textContent = admins;
+      document.getElementById('stat-users-supervisor').textContent = supervisors;
+      document.getElementById('stat-users-exec').textContent = executives;
+      document.getElementById('stat-users-viewer').textContent = viewers;
+
+      // Update current admin info
+      updateCurrentAdminInfo();
+    }
+
+    // =============================================
+    // INTEGRACIONES N8N
+    // =============================================
+
+    function toggleN8nPanel() {
+      const panel = document.getElementById('n8n-panel');
+      const icon = document.getElementById('n8n-toggle-icon');
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+        loadN8nWebhookConfig();
+        updateWebhookUrls();
+        loadN8nApiStatus();
+      } else {
+        panel.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    async function loadN8nApiStatus() {
+      try {
+        const res = await fetch(`${API}/api/n8n/status`);
+        const data = await res.json();
+
+        const statusEl = document.getElementById('n8n-connection-status');
+
+        if (data.configured) {
+          // Try to test connection
+          const testRes = await fetch(`${API}/api/n8n/test`);
+          const testData = await testRes.json();
+
+          if (testData.success) {
+            statusEl.textContent = 'Conectado';
+            statusEl.style.background = '#059669';
+            loadN8nWorkflows();
+          } else {
+            statusEl.textContent = 'Error de conexión';
+            statusEl.style.background = '#dc2626';
+          }
+
+          if (data.apiUrl) {
+            document.getElementById('n8n-api-url').value = data.apiUrl;
+          }
+        } else {
+          statusEl.textContent = 'No configurado';
+          statusEl.style.background = '#94a3b8';
+        }
+      } catch (error) {
+        console.error('Error loading n8n status:', error);
+      }
+    }
+
+    async function testN8nApiConnection() {
+      const url = document.getElementById('n8n-api-url').value.trim();
+      const key = document.getElementById('n8n-api-key').value.trim();
+
+      if (!url) {
+        showToast('warning', 'URL requerida', 'Ingresa la URL de tu n8n Cloud');
+        return;
+      }
+
+      showToast('info', 'Probando conexión...', 'Conectando con n8n');
+
+      try {
+        // First save config temporarily
+        const saveRes = await fetch(`${API}/api/n8n/config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            apiUrl: url.endsWith('/api/v1') ? url : `${url}/api/v1`,
+            apiKey: key
+          })
+        });
+
+        const saveData = await saveRes.json();
+
+        if (saveData.success && saveData.connectionTest?.success) {
+          document.getElementById('n8n-connection-status').textContent = 'Conectado';
+          document.getElementById('n8n-connection-status').style.background = '#059669';
+          showToast('success', 'Conexión exitosa', 'n8n conectado correctamente');
+          loadN8nWorkflows();
+        } else {
+          document.getElementById('n8n-connection-status').textContent = 'Error';
+          document.getElementById('n8n-connection-status').style.background = '#dc2626';
+          showToast('error', 'Error de conexión', saveData.connectionTest?.error || 'No se pudo conectar');
+        }
+      } catch (error) {
+        showToast('error', 'Error', error.message);
+      }
+    }
+
+    async function saveN8nApiConfig() {
+      const url = document.getElementById('n8n-api-url').value.trim();
+      const key = document.getElementById('n8n-api-key').value.trim();
+
+      if (!url || !key) {
+        showToast('warning', 'Campos requeridos', 'URL y API Key son necesarios');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/api/n8n/config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            apiUrl: url.endsWith('/api/v1') ? url : `${url}/api/v1`,
+            apiKey: key
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', 'Configuración guardada', 'n8n configurado correctamente');
+          loadN8nApiStatus();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (error) {
+        showToast('error', 'Error', error.message);
+      }
+    }
+
+    async function loadN8nWorkflows() {
+      const listEl = document.getElementById('n8n-workflows-list');
+
+      try {
+        const res = await fetch(`${API}/api/n8n/workflows`);
+        const data = await res.json();
+
+        if (data.success && data.data?.data) {
+          const workflows = data.data.data;
+
+          if (workflows.length === 0) {
+            listEl.innerHTML = `
+              <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px;">
+                No hay workflows en n8n
+              </div>
+            `;
+            return;
+          }
+
+          listEl.innerHTML = workflows.map(wf => `
+            <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 500; font-size: 13px;">${wf.name}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">ID: ${wf.id}</div>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span style="font-size: 10px; padding: 3px 8px; border-radius: 4px; background: ${wf.active ? '#059669' : '#94a3b8'}; color: white;">
+                  ${wf.active ? 'Activo' : 'Inactivo'}
+                </span>
+                <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 10px;" onclick="${wf.active ? 'deactivateWorkflow' : 'activateWorkflow'}('${wf.id}')">
+                  ${wf.active ? 'Desactivar' : 'Activar'}
+                </button>
+                <button class="btn btn-primary" style="padding: 4px 8px; font-size: 10px;" onclick="executeWorkflow('${wf.id}')">
+                  <i data-lucide="play" style="width: 10px; height: 10px;"></i>
+                </button>
+              </div>
+            </div>
+          `).join('');
+
+          lucide.createIcons();
+        } else {
+          listEl.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px;">
+              ${data.error || 'Error al cargar workflows'}
+            </div>
+          `;
+        }
+      } catch (error) {
+        listEl.innerHTML = `
+          <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px;">
+            Error: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    async function activateWorkflow(workflowId) {
+      try {
+        const res = await fetch(`${API}/api/n8n/workflows/${workflowId}/activate`, { method: 'POST' });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', 'Workflow activado', 'El workflow está ahora activo');
+          loadN8nWorkflows();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (error) {
+        showToast('error', 'Error', error.message);
+      }
+    }
+
+    async function deactivateWorkflow(workflowId) {
+      try {
+        const res = await fetch(`${API}/api/n8n/workflows/${workflowId}/deactivate`, { method: 'POST' });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', 'Workflow desactivado', 'El workflow está ahora inactivo');
+          loadN8nWorkflows();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (error) {
+        showToast('error', 'Error', error.message);
+      }
+    }
+
+    async function executeWorkflow(workflowId) {
+      try {
+        showToast('info', 'Ejecutando...', 'Iniciando workflow');
+
+        const res = await fetch(`${API}/api/n8n/workflows/${workflowId}/execute`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', 'Workflow ejecutado', 'Revisa los resultados en n8n');
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (error) {
+        showToast('error', 'Error', error.message);
+      }
+    }
+
+    function updateWebhookUrls() {
+      const baseUrl = window.location.origin;
+      document.getElementById('webhook-url-clients').textContent = `${baseUrl}/webhooks/n8n-sync-clients`;
+      document.getElementById('webhook-url-products').textContent = `${baseUrl}/webhooks/n8n-sync-products`;
+      document.getElementById('webhook-url-users').textContent = `${baseUrl}/webhooks/n8n-sync-users`;
+      document.getElementById('webhook-url-prices').textContent = `${baseUrl}/webhooks/n8n-price-update`;
+      document.getElementById('webhook-url-comparativo').textContent = `${baseUrl}/webhooks/n8n-comparativo`;
+    }
+
+    async function loadN8nWebhookConfig() {
+      try {
+        const res = await fetch(`${API}/api/webhooks/config`);
+        const data = await res.json();
+
+        if (data.success) {
+          const config = data.data;
+          document.getElementById('n8n-webhook-url').value = config.url || '';
+          document.getElementById('n8n-webhook-enabled').checked = config.enabled || false;
+
+          // Set event checkboxes
+          const events = config.events || [];
+          document.getElementById('evt-route-completed').checked = events.includes('route_completed');
+          document.getElementById('evt-visit-registered').checked = events.includes('visit_registered');
+          document.getElementById('evt-sync-completed').checked = events.includes('sync_completed');
+          document.getElementById('evt-price-alert').checked = events.includes('price_alert');
+        }
+      } catch (error) {
+        console.error('Error loading webhook config:', error);
+      }
+    }
+
+    async function saveN8nWebhookConfig() {
+      const url = document.getElementById('n8n-webhook-url').value.trim();
+      const secret = document.getElementById('n8n-webhook-secret').value.trim();
+      const enabled = document.getElementById('n8n-webhook-enabled').checked;
+
+      const events = [];
+      if (document.getElementById('evt-route-completed').checked) events.push('route_completed');
+      if (document.getElementById('evt-visit-registered').checked) events.push('visit_registered');
+      if (document.getElementById('evt-sync-completed').checked) events.push('sync_completed');
+      if (document.getElementById('evt-price-alert').checked) events.push('price_alert');
+
+      try {
+        const res = await fetch(`${API}/api/webhooks/config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, secret, events, enabled })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', 'Configuración guardada', 'Webhook de n8n actualizado');
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (error) {
+        showToast('error', 'Error de conexión', error.message);
+      }
+    }
+
+    async function testN8nWebhook() {
+      const url = document.getElementById('n8n-webhook-url').value.trim();
+
+      if (!url) {
+        showToast('warning', 'URL requerida', 'Ingresa la URL del webhook de n8n');
+        return;
+      }
+
+      try {
+        showToast('info', 'Enviando test...', 'Probando conexión con n8n');
+
+        const res = await fetch(`${API}/api/webhooks/test`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', 'Test exitoso', 'El webhook respondió correctamente');
+        } else {
+          showToast('error', 'Test fallido', data.error || 'No se pudo conectar con n8n');
+        }
+      } catch (error) {
+        showToast('error', 'Error', error.message);
+      }
+    }
+
+    // =============================================
+    // COMPARATIVO DE COMPETENCIA
+    // =============================================
+
+    let comparativoData = {};
+    let currentSourceFilter = 'all';
+
+    // Colores para fuentes de comparativo (LEKER es la principal en azul)
+    const SOURCE_COLORS = {
+      'LEKER': '#3b82f6',      // Azul - Principal (base de productos)
+      'DVP': '#f97316',        // Naranja
+      'SODIMAC': '#059669',    // Verde
+      'PRODALAM': '#7c3aed',   // Púrpura
+      'IMPERIAL': '#dc2626',   // Rojo
+      'BOLD': '#0891b2'        // Cyan
+    };
+
+    // Colores adicionales para fuentes dinámicas
+    const EXTRA_COLORS = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#ef4444', '#10b981', '#3b82f6'];
+    let colorIndex = 0;
+
+    function getSourceColor(source) {
+      if (SOURCE_COLORS[source]) return SOURCE_COLORS[source];
+      // Asignar color dinámico para fuentes nuevas
+      if (!SOURCE_COLORS[source]) {
+        SOURCE_COLORS[source] = EXTRA_COLORS[colorIndex % EXTRA_COLORS.length];
+        colorIndex++;
+      }
+      return SOURCE_COLORS[source];
+    }
+
+    function toggleComparativoPanel() {
+      const panel = document.getElementById('comparativo-panel');
+      const icon = document.getElementById('comparativo-toggle-icon');
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+        loadComparativoData();
+      } else {
+        panel.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    async function loadComparativoData() {
+      try {
+        // Cargar estadísticas
+        const statsRes = await fetch(`${API}/api/comparativo/stats`);
+        const statsData = await statsRes.json();
+
+        // Cargar datos completos
+        const dataRes = await fetch(`${API}/api/comparativo`);
+        const fullData = await dataRes.json();
+
+        if (statsData.success && statsData.data) {
+          updateComparativoStats(statsData.data);
+          renderComparativoTable(statsData.data);
+        }
+
+        if (fullData.success && fullData.data) {
+          comparativoData = fullData.data;
+          renderSourceFilters(Object.keys(comparativoData));
+          renderComparativoChart(statsData.data || []);
+          filterComparativoBySource(currentSourceFilter);
+        }
+
+      } catch (error) {
+        console.error('Error loading comparativo data:', error);
+        showToast('error', 'Error', 'No se pudieron cargar los datos del comparativo');
+      }
+    }
+
+    function updateComparativoStats(stats) {
+      const totalProducts = stats.reduce((sum, s) => sum + s.total_productos, 0);
+      const sources = stats.length;
+      const avgPrice = stats.length > 0
+        ? Math.round(stats.reduce((sum, s) => sum + s.precio_promedio, 0) / stats.length)
+        : 0;
+
+      // Update intelligence panel
+      document.getElementById('comp-total-products').textContent = totalProducts.toLocaleString();
+      document.getElementById('comp-sources').textContent = sources;
+      document.getElementById('comp-avg-price').textContent = avgPrice > 0 ? `$${avgPrice.toLocaleString()}` : '-';
+      document.getElementById('comp-last-update').textContent = 'Hoy';
+
+      // Update dashboard summary
+      updateDashboardComparativoSummary(stats);
+    }
+
+    function updateDashboardComparativoSummary(stats) {
+      const totalProducts = stats.reduce((sum, s) => sum + s.total_productos, 0);
+      const sources = stats.length;
+      const avgPrice = stats.length > 0
+        ? Math.round(stats.reduce((sum, s) => sum + s.precio_promedio, 0) / stats.length)
+        : 0;
+
+      // Update dashboard cards
+      const dashProducts = document.getElementById('dash-comp-products');
+      const dashSources = document.getElementById('dash-comp-sources');
+      const dashAvg = document.getElementById('dash-comp-avg');
+      const dashBars = document.getElementById('dash-comp-bars');
+
+      if (dashProducts) dashProducts.textContent = totalProducts.toLocaleString();
+      if (dashSources) dashSources.textContent = sources;
+      if (dashAvg) dashAvg.textContent = avgPrice > 0 ? `$${avgPrice.toLocaleString()}` : '-';
+
+      // Render mini bars
+      if (dashBars && stats.length > 0) {
+        const maxPrice = Math.max(...stats.map(s => s.precio_promedio || 0));
+
+        dashBars.innerHTML = stats.map(s => {
+          const percentage = maxPrice > 0 ? ((s.precio_promedio || 0) / maxPrice) * 100 : 0;
+          const color = getSourceColor(s.fuente);
+          return `
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span style="width: 70px; font-size: 11px; font-weight: 500;">${s.fuente}</span>
+              <div style="flex: 1; height: 18px; background: var(--bg-hover); border-radius: 3px; overflow: hidden;">
+                <div style="height: 100%; width: ${percentage}%; background: ${color};"></div>
+              </div>
+              <span style="font-size: 10px; width: 55px; text-align: right;">$${(s.precio_promedio || 0).toLocaleString()}</span>
+            </div>
+          `;
+        }).join('');
+      } else if (dashBars) {
+        dashBars.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 11px; padding: 12px;">Sin datos de competencia</div>`;
+      }
+    }
+
+    async function loadDashboardComparativoSummary() {
+      try {
+        const res = await fetch(`${API}/api/comparativo/stats`);
+        const data = await res.json();
+
+        if (data.success && data.data) {
+          updateDashboardComparativoSummary(data.data);
+        }
+      } catch (error) {
+        console.error('Error loading dashboard comparativo:', error);
+      }
+    }
+
+    function renderComparativoTable(stats) {
+      const tbody = document.getElementById('comparativo-table-body');
+
+      if (!stats || stats.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding: 40px; text-align: center; color: var(--text-muted);">
+              Sin datos. Ejecuta el workflow n8n "LEKER v32 - STOCKS FIX" para obtener datos.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = stats.map(s => `
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: ${getSourceColor(s.fuente)};"></span>
+              <span style="font-weight: 500;">${s.fuente}</span>
+            </div>
+          </td>
+          <td style="padding: 12px; text-align: center;">${s.total_productos}</td>
+          <td style="padding: 12px; text-align: right; color: #059669;">$${s.precio_min?.toLocaleString() || '-'}</td>
+          <td style="padding: 12px; text-align: right; font-weight: 600;">$${s.precio_promedio?.toLocaleString() || '-'}</td>
+          <td style="padding: 12px; text-align: right; color: #dc2626;">$${s.precio_max?.toLocaleString() || '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderSourceFilters(sources) {
+      const filtersEl = document.getElementById('comparativo-source-filters');
+
+      let html = `
+        <button class="btn ${currentSourceFilter === 'all' ? 'btn-primary' : 'btn-secondary'}"
+                data-source="all" onclick="filterComparativoBySource('all')" style="font-size: 11px; padding: 6px 12px;">
+          Todas
+        </button>
+      `;
+
+      sources.forEach(source => {
+        const isActive = currentSourceFilter === source;
+        const color = getSourceColor(source);
+        html += `
+          <button class="btn ${isActive ? '' : 'btn-secondary'}"
+                  style="font-size: 11px; padding: 6px 12px; ${isActive ? `background: ${color}; border-color: ${color}; color: white;` : ''}"
+                  data-source="${source}" onclick="filterComparativoBySource('${source}')">
+            ${source}
+          </button>
+        `;
+      });
+
+      filtersEl.innerHTML = html;
+    }
+
+    function filterComparativoBySource(source) {
+      currentSourceFilter = source;
+      renderSourceFilters(Object.keys(comparativoData));
+
+      const listEl = document.getElementById('comparativo-products-list');
+
+      let products = [];
+      if (source === 'all') {
+        Object.values(comparativoData).forEach(sourceProducts => {
+          products = products.concat(sourceProducts);
+        });
+      } else {
+        products = comparativoData[source] || [];
+      }
+
+      if (products.length === 0) {
+        listEl.innerHTML = `
+          <div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 12px;">
+            No hay productos para esta fuente
+          </div>
+        `;
+        return;
+      }
+
+      // Ordenar por precio
+      products.sort((a, b) => (a.precio_neto || 0) - (b.precio_neto || 0));
+
+      listEl.innerHTML = products.map(p => `
+        <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+          <div style="flex: 1;">
+            <div style="font-weight: 500; font-size: 13px; margin-bottom: 4px;">${p.nombre}</div>
+            <div style="font-size: 11px; color: var(--text-muted); display: flex; gap: 12px;">
+              <span style="display: inline-flex; align-items: center; gap: 4px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: ${getSourceColor(p.fuente)};"></span>
+                ${p.fuente}
+              </span>
+              ${p.tipo ? `<span>${p.tipo}</span>` : ''}
+              ${p.espesor ? `<span>${p.espesor}</span>` : ''}
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 16px; font-weight: 700; color: var(--accent);">
+              ${p.precio_neto ? `$${p.precio_neto.toLocaleString()}` : '-'}
+            </div>
+            ${p.precio_anterior && p.precio_anterior !== p.precio_neto ?
+              `<div style="font-size: 11px; text-decoration: line-through; color: var(--text-muted);">
+                $${p.precio_anterior.toLocaleString()}
+              </div>` : ''
+            }
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderComparativoChart(stats) {
+      const chartEl = document.getElementById('comparativo-chart');
+
+      if (!stats || stats.length === 0) {
+        chartEl.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; height: 260px; color: var(--text-muted); font-size: 13px;">
+            <div style="text-align: center;">
+              <i data-lucide="bar-chart-2" style="width: 48px; height: 48px; opacity: 0.3; margin-bottom: 12px;"></i>
+              <p>Sin datos para mostrar</p>
+              <p style="font-size: 11px;">Los datos se reciben desde el workflow n8n</p>
+            </div>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      // Crear gráfico de barras simple con CSS
+      const maxPrice = Math.max(...stats.map(s => s.precio_promedio || 0));
+
+      chartEl.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 16px; height: 100%;">
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+            Precio promedio por fuente (últimos 7 días)
+          </div>
+          ${stats.map(s => {
+            const percentage = maxPrice > 0 ? ((s.precio_promedio || 0) / maxPrice) * 100 : 0;
+            const color = getSourceColor(s.fuente);
+            return `
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 100px; font-size: 12px; font-weight: 500;">${s.fuente}</div>
+                <div style="flex: 1; height: 32px; background: var(--bg-hover); border-radius: 4px; overflow: hidden; position: relative;">
+                  <div style="height: 100%; width: ${percentage}%; background: ${color}; border-radius: 4px; transition: width 0.5s ease;"></div>
+                  <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 600;">
+                    $${(s.precio_promedio || 0).toLocaleString()}
+                  </span>
+                </div>
+                <div style="width: 50px; text-align: right; font-size: 11px; color: var(--text-muted);">
+                  ${s.total_productos} prod
+                </div>
+              </div>
+            `;
+          }).join('')}
+          <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
+              <span>Total productos monitoreados: ${stats.reduce((sum, s) => sum + s.total_productos, 0)}</span>
+              <span>Fuentes: ${stats.length}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateCurrentAdminInfo() {
+      // Find the first admin (current user) - in production this would come from auth
+      const currentAdmin = allUsers.find(u => u.role === 'admin');
+
+      if (currentAdmin) {
+        const initials = getInitials(currentAdmin.full_name);
+
+        // Update Control Maestro panel
+        const avatarEl = document.getElementById('current-admin-avatar');
+        const nameEl = document.getElementById('current-admin-name');
+        const emailEl = document.getElementById('current-admin-email');
+
+        if (avatarEl) avatarEl.textContent = initials;
+        if (nameEl) nameEl.textContent = currentAdmin.full_name;
+        if (emailEl) emailEl.textContent = currentAdmin.email;
+
+        // Update sidebar footer
+        const sidebarAvatar = document.getElementById('sidebar-admin-avatar');
+        const sidebarName = document.getElementById('sidebar-admin-name');
+
+        if (sidebarAvatar) sidebarAvatar.textContent = initials;
+        if (sidebarName) sidebarName.textContent = currentAdmin.full_name;
+      }
+    }
+
+    function openAddUserModal() {
+      const modal = document.createElement('div');
+      modal.innerHTML = `
+        <div class="modal" style="display: flex;">
+          <div class="modal-backdrop" onclick="this.closest('.modal').remove()"></div>
+          <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+              <h3><i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Nuevo Usuario</h3>
+              <button class="btn-close" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label>Nombre Completo *</label>
+                <input type="text" id="new-user-name" class="form-control" placeholder="Ej: Juan Pérez">
+              </div>
+              <div class="form-group">
+                <label>Email *</label>
+                <input type="email" id="new-user-email" class="form-control" placeholder="juan@empresa.cl">
+              </div>
+              <div class="form-group">
+                <label>Rol</label>
+                <select id="new-user-role" class="form-control">
+                  <option value="executive">Vendedor - Vendedor/Representante</option>
+                  <option value="supervisor">Supervisor - Vendedor Administrador</option>
+                  <option value="viewer">Lectura - Solo visualización</option>
+                  <option value="admin">Administrador - Control total</option>
+                </select>
+              </div>
+              <div id="role-description" style="background: var(--bg-hover); padding: 12px; border-radius: 8px; font-size: 12px; color: var(--text-secondary);">
+                <strong>Vendedor:</strong> Gestiona sus propias rutas y clientes asignados.
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancelar</button>
+              <button class="btn btn-primary" onclick="createNewUser(this)">Crear Usuario</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      lucide.createIcons();
+      document.getElementById('new-user-name').focus();
+    }
+
+    async function createNewUser(btn) {
+      const modal = btn.closest('.modal');
+      const name = document.getElementById('new-user-name').value.trim();
+      const email = document.getElementById('new-user-email').value.trim();
+      const role = document.getElementById('new-user-role').value;
+
+      if (!name || !email) {
+        showToast('warning', 'Campos requeridos', 'Nombre y email son obligatorios');
+        return;
+      }
+
+      if (!email.includes('@')) {
+        showToast('warning', 'Email inválido', 'Ingresa un email válido');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Creando...';
+
+      try {
+        const res = await fetch(`${API}/api/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName: name, email, role })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', 'Usuario creado', name);
+          modal.remove();
+          loadData();
+        } else {
+          showToast('error', 'Error', data.error);
+          btn.disabled = false;
+          btn.textContent = 'Crear Usuario';
+        }
+      } catch (error) {
+        showToast('error', 'Error de conexión', error.message);
+        btn.disabled = false;
+        btn.textContent = 'Crear Usuario';
+      }
+    }
+
+    async function changeUserRole(userId, newRole) {
+      const user = allUsers.find(u => u.id === userId);
+      if (!user) return;
+
+      // Prevent removing last admin
+      if (user.role === 'admin' && newRole !== 'admin') {
+        const adminCount = allUsers.filter(u => u.role === 'admin').length;
+        if (adminCount <= 1) {
+          showToast('warning', 'Acción no permitida', 'Debe haber al menos un administrador');
+          renderAllUsersTable(); // Reset select
+          return;
+        }
+      }
+
+      try {
+        const res = await fetch(`${API}/api/users/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: newRole })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          const roleConfig = getRoleConfig(newRole);
+          showToast('success', 'Rol actualizado', `${user.full_name} es ahora ${roleConfig.label}`);
+          loadData();
+        } else {
+          showToast('error', 'Error', data.error);
+          renderAllUsersTable(); // Reset select
+        }
+      } catch (error) {
+        showToast('error', 'Error de conexión', error.message);
+        renderAllUsersTable(); // Reset select
+      }
+    }
+
+    function deleteUserConfirm(userId, userName) {
+      const user = allUsers.find(u => u.id === userId);
+      if (!user) return;
+
+      // Prevent deleting last admin
+      if (user.role === 'admin') {
+        const adminCount = allUsers.filter(u => u.role === 'admin').length;
+        if (adminCount <= 1) {
+          showToast('warning', 'Acción no permitida', 'No se puede eliminar el único administrador');
+          return;
+        }
+      }
+
+      const modal = document.createElement('div');
+      modal.innerHTML = `
+        <div class="modal" style="display: flex;">
+          <div class="modal-backdrop" onclick="this.closest('.modal').remove()"></div>
+          <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+              <h3 style="color: var(--danger);"><i data-lucide="alert-triangle" style="width: 18px; height: 18px;"></i> Eliminar Usuario</h3>
+              <button class="btn-close" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p>¿Estás seguro de eliminar a <strong>${userName}</strong>?</p>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Esta acción no se puede deshacer. Si el usuario tiene rutas activas, no se podrá eliminar.</p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancelar</button>
+              <button class="btn" style="background: var(--danger); color: white;" onclick="deleteUserExecute('${userId}', this)">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      lucide.createIcons();
+    }
+
+    async function deleteUserExecute(userId, btn) {
+      const modal = btn.closest('.modal');
+      btn.disabled = true;
+      btn.textContent = 'Eliminando...';
+
+      try {
+        const res = await fetch(`${API}/api/users/${userId}`, {
+          method: 'DELETE'
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', 'Usuario eliminado', 'El usuario ha sido eliminado');
+          modal.remove();
+          loadData();
+        } else {
+          showToast('error', 'Error', data.error);
+          btn.disabled = false;
+          btn.textContent = 'Eliminar';
+        }
+      } catch (error) {
+        showToast('error', 'Error de conexión', error.message);
+        btn.disabled = false;
+        btn.textContent = 'Eliminar';
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       initMaps();
       loadData();
       updateGpsStatus();
+      loadDashboardComparativoSummary();
       // Update GPS every 30 seconds
       setInterval(updateGpsStatus, 30000);
+
+      // Restore saved tab from localStorage
+      const savedTab = localStorage.getItem('leker_active_tab');
+      const savedSubtab = localStorage.getItem('leker_active_subtab');
+      if (savedTab && savedTab !== 'dashboard') {
+        setTimeout(() => {
+          // Try subitem first (for data subtabs)
+          let tabItem = document.querySelector(`.nav-subitem[data-tab="${savedTab}"][data-subtab="${savedSubtab}"]`);
+          if (!tabItem) {
+            tabItem = document.querySelector(`.nav-item[data-tab="${savedTab}"]`) ||
+                      document.querySelector(`.nav-subitem[data-tab="${savedTab}"]`);
+          }
+          if (tabItem) {
+            tabItem.click();
+          }
+        }, 100);
+      }
     });
   </script>
 </body>

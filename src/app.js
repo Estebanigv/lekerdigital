@@ -7,6 +7,7 @@ const XLSX = require('xlsx');
 // Import services
 const routesService = require('./modules/routes/routes.service');
 const intelligenceService = require('./modules/market-intelligence/intelligence.service');
+const n8nService = require('./services/n8n.service');
 
 const app = express();
 
@@ -179,6 +180,15 @@ app.delete('/api/users/:id', async (req, res) => {
   }
 });
 
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const user = await routesService.updateUser(req.params.id, req.body);
+    res.json({ success: true, message: 'Usuario actualizado', data: user });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 // =============================================
 // GESTIÓN DE VEHÍCULOS
 // =============================================
@@ -210,6 +220,15 @@ app.patch('/api/vehicles/:id/status', async (req, res) => {
     const { status } = req.body;
     const vehicle = await routesService.updateVehicleStatus(req.params.id, status);
     res.json({ success: true, message: 'Estado actualizado', data: vehicle });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/vehicles/:id', async (req, res) => {
+  try {
+    const vehicle = await routesService.updateVehicle(req.params.id, req.body);
+    res.json({ success: true, message: 'Vehículo actualizado', data: vehicle });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }
@@ -473,6 +492,83 @@ app.post('/api/upload/vehicles', upload.single('file'), async (req, res) => {
   }
 });
 
+// Upload Products (Productos)
+app.post('/api/upload/products', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No se envió archivo' });
+    }
+
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    // Find header row
+    let headerRow = 0;
+    for (let i = 0; i < Math.min(10, rawData.length); i++) {
+      const row = rawData[i] || [];
+      const rowStr = row.join(' ').toLowerCase();
+      if (rowStr.includes('sku') || rowStr.includes('codigo') || rowStr.includes('producto') || rowStr.includes('nombre')) {
+        headerRow = i;
+        break;
+      }
+    }
+
+    const headers = (rawData[headerRow] || []).map(h =>
+      String(h || '').toLowerCase().trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_')
+    );
+
+    const colMap = {
+      sku: headers.findIndex(h => h.includes('sku') || h.includes('codigo') || h.includes('code')),
+      name: headers.findIndex(h => h.includes('nombre') || h.includes('producto') || h.includes('name') || h.includes('descripcion')),
+      category: headers.findIndex(h => h.includes('categoria') || h.includes('category') || h.includes('linea')),
+      basePrice: headers.findIndex(h => h.includes('precio') || h.includes('price') || h.includes('costo'))
+    };
+
+    const productsData = [];
+    for (let i = headerRow + 1; i < rawData.length; i++) {
+      const row = rawData[i];
+      if (!row || row.length === 0) continue;
+
+      const getValue = (idx) => idx >= 0 && row[idx] ? String(row[idx]).trim() : '';
+      const getNumber = (idx) => {
+        if (idx < 0 || !row[idx]) return null;
+        const val = parseFloat(String(row[idx]).replace(/[^0-9.-]/g, ''));
+        return isNaN(val) ? null : val;
+      };
+
+      const sku = getValue(colMap.sku);
+      if (!sku) continue;
+
+      productsData.push({
+        sku: sku,
+        name: getValue(colMap.name) || `Producto ${sku}`,
+        category: getValue(colMap.category) || 'General',
+        base_price: getNumber(colMap.basePrice)
+      });
+    }
+
+    const results = await intelligenceService.upsertProducts(productsData);
+
+    res.json({
+      success: true,
+      message: `Importación completada`,
+      data: {
+        sheet: sheetName,
+        totalRows: productsData.length,
+        ...results
+      }
+    });
+
+  } catch (error) {
+    console.error('Error uploading products:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // =============================================
 // MÓDULO 1: RUTAS Y FLOTA
 // =============================================
@@ -535,6 +631,11 @@ app.post('/routes/:routeId/end', async (req, res) => {
 // MÓDULO 2: INTELIGENCIA DE MERCADO
 // =============================================
 
+// =============================================
+// WEBHOOKS N8N - ENTRADA (n8n → LEKER)
+// =============================================
+
+// Webhook: Actualización de precios (scraping)
 app.post('/webhooks/n8n-price-update', async (req, res) => {
   try {
     const { prices, productSku, competitorName, detectedPrice, source, evidenceUrl } = req.body;
@@ -547,6 +648,418 @@ app.post('/webhooks/n8n-price-update', async (req, res) => {
       message: `Procesados: ${results.inserted.length}, Errores: ${results.errors.length}`,
       data: results
     });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Webhook: Sincronización de clientes desde ERP/CRM
+app.post('/webhooks/n8n-sync-clients', async (req, res) => {
+  try {
+    const { clients, mode = 'upsert' } = req.body;
+
+    if (!clients || !Array.isArray(clients)) {
+      return res.status(400).json({ success: false, error: 'Se requiere un array de clientes' });
+    }
+
+    // Map fields from external format
+    const mappedClients = clients.map(c => ({
+      external_id: c.codigo || c.external_id || c.id,
+      name: c.razon_social || c.name || c.nombre,
+      fantasy_name: c.nombre_fantasia || c.fantasy_name,
+      address: c.direccion || c.address,
+      commune: c.comuna || c.commune,
+      zone: c.zona || c.zone,
+      segment: c.segmento || c.segment || 'C',
+      priority: c.prioridad || c.priority || 'Normal',
+      lat: c.latitud || c.lat,
+      lng: c.longitud || c.lng
+    }));
+
+    const results = mode === 'replace'
+      ? await routesService.replaceClients(mappedClients)
+      : await routesService.upsertClients(mappedClients);
+
+    // Trigger outbound webhook
+    await triggerWebhook('sync_completed', { type: 'clients', count: mappedClients.length, results });
+
+    res.json({
+      success: true,
+      message: `Sincronización completada: ${results.inserted} procesados`,
+      data: results
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Webhook: Sincronización de productos
+app.post('/webhooks/n8n-sync-products', async (req, res) => {
+  try {
+    const { products, mode = 'upsert' } = req.body;
+
+    if (!products || !Array.isArray(products)) {
+      return res.status(400).json({ success: false, error: 'Se requiere un array de productos' });
+    }
+
+    const results = await intelligenceService.upsertProducts(products);
+
+    await triggerWebhook('sync_completed', { type: 'products', count: products.length, results });
+
+    res.json({
+      success: true,
+      message: `Productos sincronizados: ${results.inserted}`,
+      data: results
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Webhook: Sincronización de ejecutivos
+app.post('/webhooks/n8n-sync-users', async (req, res) => {
+  try {
+    const { users, mode = 'upsert' } = req.body;
+
+    if (!users || !Array.isArray(users)) {
+      return res.status(400).json({ success: false, error: 'Se requiere un array de usuarios' });
+    }
+
+    const mappedUsers = users.map(u => ({
+      full_name: u.nombre || u.full_name || u.name,
+      email: u.email || u.correo,
+      role: u.rol || u.role || 'executive'
+    }));
+
+    const results = mode === 'replace'
+      ? await routesService.replaceUsers(mappedUsers)
+      : await routesService.upsertUsers(mappedUsers);
+
+    res.json({
+      success: true,
+      message: `Usuarios sincronizados: ${results.inserted}`,
+      data: results
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Webhook: Comparativo de competencia desde n8n (LEKER v32 - STOCKS FIX)
+app.post('/webhooks/n8n-comparativo', async (req, res) => {
+  try {
+    const { items, data, productos, comparativo } = req.body;
+
+    // Aceptar diferentes formatos del payload
+    const records = items || data || productos || comparativo || (Array.isArray(req.body) ? req.body : [req.body]);
+
+    if (!records || (Array.isArray(records) && records.length === 0)) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se recibieron datos del comparativo',
+        received: Object.keys(req.body)
+      });
+    }
+
+    const itemsArray = Array.isArray(records) ? records : [records];
+
+    console.log(`[Comparativo] Recibidos ${itemsArray.length} productos desde n8n`);
+
+    const results = await intelligenceService.saveCompetitorComparison(itemsArray);
+
+    // Generar resumen semanal si es lunes
+    const today = new Date();
+    if (today.getDay() === 1) {
+      await intelligenceService.saveWeeklySummary();
+    }
+
+    res.json({
+      success: true,
+      message: `Comparativo procesado: ${results.inserted} productos guardados`,
+      data: {
+        received: itemsArray.length,
+        inserted: results.inserted,
+        errors: results.errors.length,
+        errorDetails: results.errors.slice(0, 5) // Solo primeros 5 errores
+      }
+    });
+  } catch (error) {
+    console.error('[Comparativo] Error:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// =============================================
+// WEBHOOKS N8N - SALIDA (LEKER → n8n)
+// =============================================
+
+// In-memory webhook configuration (en producción usar base de datos)
+let webhookConfig = {
+  enabled: false,
+  url: '',
+  secret: '',
+  events: ['route_completed', 'visit_registered', 'goal_reached', 'price_alert', 'sync_completed']
+};
+
+// Configurar webhook de salida
+app.post('/api/webhooks/config', async (req, res) => {
+  try {
+    const { url, secret, events, enabled } = req.body;
+
+    if (url) webhookConfig.url = url;
+    if (secret) webhookConfig.secret = secret;
+    if (events) webhookConfig.events = events;
+    if (typeof enabled === 'boolean') webhookConfig.enabled = enabled;
+
+    res.json({
+      success: true,
+      message: 'Configuración de webhook actualizada',
+      data: { ...webhookConfig, secret: webhookConfig.secret ? '****' : '' }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Obtener configuración de webhook
+app.get('/api/webhooks/config', (req, res) => {
+  res.json({
+    success: true,
+    data: { ...webhookConfig, secret: webhookConfig.secret ? '****' : '' }
+  });
+});
+
+// Test webhook
+app.post('/api/webhooks/test', async (req, res) => {
+  try {
+    if (!webhookConfig.url) {
+      return res.status(400).json({ success: false, error: 'No hay URL de webhook configurada' });
+    }
+
+    const testPayload = {
+      event: 'test',
+      timestamp: new Date().toISOString(),
+      data: { message: 'Test de conexión desde LEKER' }
+    };
+
+    const result = await triggerWebhook('test', testPayload.data);
+
+    res.json({
+      success: result.success,
+      message: result.success ? 'Webhook enviado correctamente' : 'Error al enviar webhook',
+      data: result
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Función para disparar webhooks
+async function triggerWebhook(event, data) {
+  if (!webhookConfig.enabled || !webhookConfig.url) {
+    return { success: false, reason: 'Webhook no configurado' };
+  }
+
+  if (!webhookConfig.events.includes(event) && event !== 'test') {
+    return { success: false, reason: 'Evento no habilitado' };
+  }
+
+  try {
+    const payload = {
+      event,
+      timestamp: new Date().toISOString(),
+      data
+    };
+
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    if (webhookConfig.secret) {
+      headers['X-Webhook-Secret'] = webhookConfig.secret;
+    }
+
+    const response = await fetch(webhookConfig.url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    });
+
+    return {
+      success: response.ok,
+      status: response.status,
+      event
+    };
+  } catch (error) {
+    console.error('Webhook error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// =============================================
+// API DE REPORTES PARA N8N
+// =============================================
+
+// Reporte diario de rutas
+app.get('/api/reports/daily-routes', async (req, res) => {
+  try {
+    const date = req.query.date || new Date().toISOString().split('T')[0];
+    const routes = await routesService.getRoutesByDate(date);
+
+    const summary = {
+      date,
+      total_routes: routes.length,
+      completed: routes.filter(r => r.status === 'completed').length,
+      active: routes.filter(r => r.status === 'active').length,
+      total_visits: routes.reduce((sum, r) => sum + (r.visits_count || 0), 0),
+      total_km: routes.reduce((sum, r) => sum + ((r.end_km || 0) - (r.start_km || 0)), 0),
+      routes
+    };
+
+    res.json({ success: true, data: summary });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Reporte de ejecutivos
+app.get('/api/reports/executives', async (req, res) => {
+  try {
+    const users = await routesService.getAllUsers();
+    const clients = await routesService.getAllClients();
+    const routes = await routesService.getAllRoutes();
+
+    const executives = users
+      .filter(u => u.role === 'executive' || u.role === 'supervisor')
+      .map(exec => {
+        const assignedClients = clients.filter(c => c.assigned_user_id === exec.id);
+        const execRoutes = routes.filter(r => r.user_id === exec.id);
+        const completedRoutes = execRoutes.filter(r => r.status === 'completed');
+
+        return {
+          id: exec.id,
+          name: exec.full_name,
+          email: exec.email,
+          role: exec.role,
+          clients_assigned: assignedClients.length,
+          total_routes: execRoutes.length,
+          completed_routes: completedRoutes.length,
+          total_visits: completedRoutes.reduce((sum, r) => sum + (r.visits_count || 0), 0)
+        };
+      });
+
+    res.json({ success: true, data: executives });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Reporte de clientes sin visita
+app.get('/api/reports/clients-without-visit', async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const clients = await routesService.getAllClients();
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const clientsWithoutVisit = clients.filter(c => {
+      if (!c.last_visit_at) return true;
+      return new Date(c.last_visit_at) < cutoffDate;
+    });
+
+    res.json({
+      success: true,
+      data: {
+        days,
+        total: clientsWithoutVisit.length,
+        clients: clientsWithoutVisit.map(c => ({
+          id: c.id,
+          external_id: c.external_id,
+          name: c.name,
+          fantasy_name: c.fantasy_name,
+          commune: c.commune,
+          segment: c.segment,
+          last_visit: c.last_visit_at
+        }))
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Reporte de precios y competencia
+app.get('/api/reports/price-intelligence', async (req, res) => {
+  try {
+    const prices = await intelligenceService.getAllPrices();
+    const products = await intelligenceService.getAllProducts();
+
+    // Group prices by product
+    const pricesByProduct = {};
+    prices.forEach(p => {
+      if (!pricesByProduct[p.product_id]) {
+        pricesByProduct[p.product_id] = [];
+      }
+      pricesByProduct[p.product_id].push(p);
+    });
+
+    const report = products.map(product => {
+      const productPrices = pricesByProduct[product.id] || [];
+      const competitors = [...new Set(productPrices.map(p => p.competitor_name))];
+      const avgPrice = productPrices.length > 0
+        ? productPrices.reduce((sum, p) => sum + p.detected_price, 0) / productPrices.length
+        : null;
+
+      return {
+        product_id: product.id,
+        sku: product.sku,
+        name: product.name,
+        our_price: product.base_price,
+        avg_competitor_price: avgPrice ? Math.round(avgPrice) : null,
+        price_difference: avgPrice ? Math.round(product.base_price - avgPrice) : null,
+        competitors_tracked: competitors.length,
+        last_update: productPrices.length > 0
+          ? productPrices.sort((a, b) => new Date(b.detected_at) - new Date(a.detected_at))[0].detected_at
+          : null
+      };
+    });
+
+    res.json({ success: true, data: report });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// =============================================
+// COMPARATIVO DE COMPETENCIA
+// =============================================
+
+// Obtener comparativo actual (últimos datos por fuente)
+app.get('/api/comparativo', async (req, res) => {
+  try {
+    const data = await intelligenceService.getLatestComparison();
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Obtener estadísticas del comparativo
+app.get('/api/comparativo/stats', async (req, res) => {
+  try {
+    const stats = await intelligenceService.getComparisonStats();
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Obtener histórico para gráficos
+app.get('/api/comparativo/history', async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const history = await intelligenceService.getComparisonHistory(days);
+    res.json({ success: true, data: history });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -579,8 +1092,135 @@ app.get('/health', (req, res) => {
     status: 'ok',
     mode: 'PRODUCTION',
     database: 'Supabase',
+    n8n: n8nService.isConfigured() ? 'configured' : 'not_configured',
     timestamp: new Date().toISOString()
   });
+});
+
+// =============================================
+// INTEGRACIÓN N8N - API
+// =============================================
+
+// Test conexión con n8n
+app.get('/api/n8n/test', async (req, res) => {
+  try {
+    const result = await n8nService.testConnection();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Configurar n8n (actualiza URL y API key en runtime)
+app.post('/api/n8n/config', async (req, res) => {
+  try {
+    const { apiUrl, apiKey } = req.body;
+    n8nService.updateConfig(apiUrl, apiKey);
+
+    // Test connection with new config
+    const testResult = await n8nService.testConnection();
+
+    res.json({
+      success: testResult.success,
+      message: testResult.success ? 'Configuración actualizada y conexión verificada' : 'Configuración actualizada pero la conexión falló',
+      connectionTest: testResult
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Obtener estado de configuración
+app.get('/api/n8n/status', (req, res) => {
+  res.json({
+    success: true,
+    configured: n8nService.isConfigured(),
+    apiUrl: n8nService.apiUrl ? n8nService.apiUrl.replace(/\/api\/v1$/, '') : null
+  });
+});
+
+// Listar workflows
+app.get('/api/n8n/workflows', async (req, res) => {
+  try {
+    const workflows = await n8nService.listWorkflows();
+    res.json({ success: true, data: workflows });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Obtener workflow específico
+app.get('/api/n8n/workflows/:id', async (req, res) => {
+  try {
+    const workflow = await n8nService.getWorkflow(req.params.id);
+    res.json({ success: true, data: workflow });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Activar workflow
+app.post('/api/n8n/workflows/:id/activate', async (req, res) => {
+  try {
+    const result = await n8nService.activateWorkflow(req.params.id);
+    res.json({ success: true, message: 'Workflow activado', data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Desactivar workflow
+app.post('/api/n8n/workflows/:id/deactivate', async (req, res) => {
+  try {
+    const result = await n8nService.deactivateWorkflow(req.params.id);
+    res.json({ success: true, message: 'Workflow desactivado', data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Ejecutar workflow manualmente
+app.post('/api/n8n/workflows/:id/execute', async (req, res) => {
+  try {
+    const result = await n8nService.executeWorkflow(req.params.id, req.body);
+    res.json({ success: true, message: 'Workflow ejecutado', data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Listar ejecuciones
+app.get('/api/n8n/executions', async (req, res) => {
+  try {
+    const { workflowId, limit } = req.query;
+    const executions = await n8nService.listExecutions(workflowId, parseInt(limit) || 20);
+    res.json({ success: true, data: executions });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Obtener plantillas de workflows
+app.get('/api/n8n/templates', (req, res) => {
+  const templates = n8nService.getWorkflowTemplates();
+  res.json({ success: true, data: templates });
+});
+
+// Crear workflow desde plantilla
+app.post('/api/n8n/workflows/from-template', async (req, res) => {
+  try {
+    const { templateId } = req.body;
+    const templates = n8nService.getWorkflowTemplates();
+
+    if (!templates[templateId]) {
+      return res.status(400).json({ success: false, error: 'Plantilla no encontrada' });
+    }
+
+    const result = await n8nService.createWorkflowFromTemplate(templates[templateId]);
+    res.json({ success: true, message: 'Workflow creado', data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 module.exports = app;

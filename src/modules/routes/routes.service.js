@@ -53,6 +53,26 @@ class RoutesService {
     return true;
   }
 
+  async updateUser(userId, userData) {
+    const { id, created_at, email, ...updateData } = userData;
+
+    // Map camelCase to snake_case if needed
+    if (userData.fullName) {
+      updateData.full_name = userData.fullName;
+      delete updateData.fullName;
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
   // =============================================
   // VEHÍCULOS
   // =============================================
@@ -114,6 +134,30 @@ class RoutesService {
     const { data, error } = await supabase
       .from('vehicles')
       .update({ status })
+      .eq('id', vehicleId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async updateVehicle(vehicleId, vehicleData) {
+    const { id, created_at, ...updateData } = vehicleData;
+
+    // Map camelCase to snake_case if needed
+    if (vehicleData.fuelEfficiency !== undefined) {
+      updateData.fuel_efficiency_kml = parseFloat(vehicleData.fuelEfficiency);
+      delete updateData.fuelEfficiency;
+    }
+    if (vehicleData.licensePlate) {
+      updateData.license_plate = vehicleData.licensePlate;
+      delete updateData.licensePlate;
+    }
+
+    const { data, error } = await supabase
+      .from('vehicles')
+      .update(updateData)
       .eq('id', vehicleId)
       .select()
       .single();
@@ -573,6 +617,41 @@ class RoutesService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
+    return data || [];
+  }
+
+  async getRoutesByDate(date) {
+    const { data, error } = await supabase
+      .from('daily_routes')
+      .select(`
+        *,
+        user:users(id, full_name, email),
+        vehicle:vehicles(id, license_plate, model)
+      `)
+      .eq('date', date)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Get visit counts
+    if (data && data.length > 0) {
+      const routeIds = data.map(r => r.id);
+      const { data: visits } = await supabase
+        .from('visits')
+        .select('route_id')
+        .in('route_id', routeIds);
+
+      const visitCounts = {};
+      visits?.forEach(v => {
+        visitCounts[v.route_id] = (visitCounts[v.route_id] || 0) + 1;
+      });
+
+      return data.map(route => ({
+        ...route,
+        visits_count: visitCounts[route.id] || 0
+      }));
+    }
+
     return data || [];
   }
 
