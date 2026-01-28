@@ -53,8 +53,21 @@ router.get(
 );
 
 /**
+ * GET /routes/zones/:userId
+ * Obtiene las zonas disponibles para un vendedor
+ */
+router.get(
+  '/zones/:userId',
+  [
+    param('userId').isUUID().withMessage('userId debe ser un UUID válido'),
+    validate
+  ],
+  routesController.getVendorZones
+);
+
+/**
  * GET /routes/optimize/:userId
- * Obtiene ruta optimizada para un vendedor
+ * Obtiene ruta optimizada para un vendedor (filtrada por zona)
  */
 router.get(
   '/optimize/:userId',

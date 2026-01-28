@@ -86,13 +86,34 @@ class RoutesController {
   }
 
   /**
+   * GET /routes/zones/:userId
+   * Obtiene las zonas disponibles para un vendedor
+   */
+  async getVendorZones(req, res) {
+    try {
+      const { userId } = req.params;
+      const zones = await routesService.getVendorZones(userId);
+
+      res.json({
+        success: true,
+        data: zones
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  /**
    * GET /routes/optimize/:userId
-   * Obtiene ruta optimizada para un vendedor
+   * Obtiene ruta optimizada para un vendedor (filtrada por zona)
    */
   async getOptimizedRoute(req, res) {
     try {
       const { userId } = req.params;
-      const { startLat, startLng } = req.query;
+      const { zone, startLat, startLng } = req.query;
 
       let startPoint = null;
       if (startLat && startLng) {
@@ -102,7 +123,7 @@ class RoutesController {
         };
       }
 
-      const result = await routesService.getOptimizedRoute(userId, startPoint);
+      const result = await routesService.getOptimizedRoute(userId, zone, startPoint);
 
       res.json({
         success: true,

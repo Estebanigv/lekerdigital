@@ -781,33 +781,68 @@ class RoutesService {
   // =============================================
 
   // Obtiene ruta optimizada para un vendedor
-  async getOptimizedRoute(userId, startPoint = null) {
-    // Obtener clientes asignados al vendedor con coordenadas
+  // Obtiene las zonas disponibles para un vendedor
+  async getVendorZones(userId) {
     const { data: clients, error } = await supabase
       .from('clients')
-      .select('id, name, fantasy_name, address, commune, lat, lng, segment, priority')
+      .select('zone')
+      .eq('assigned_user_id', userId)
+      .not('zone', 'is', null);
+
+    if (error) throw error;
+
+    // Obtener zonas únicas con conteo
+    const zoneCounts = {};
+    clients.forEach(c => {
+      if (c.zone) {
+        zoneCounts[c.zone] = (zoneCounts[c.zone] || 0) + 1;
+      }
+    });
+
+    return Object.entries(zoneCounts).map(([zone, count]) => ({
+      zone,
+      clientCount: count
+    })).sort((a, b) => b.clientCount - a.clientCount);
+  }
+
+  async getOptimizedRoute(userId, zone = null, startPoint = null) {
+    // Construir query base
+    let query = supabase
+      .from('clients')
+      .select('id, name, fantasy_name, address, commune, lat, lng, segment, priority, zone')
       .eq('assigned_user_id', userId)
       .not('lat', 'is', null)
       .not('lng', 'is', null);
+
+    // Filtrar por zona si se especifica
+    if (zone) {
+      query = query.eq('zone', zone);
+    }
+
+    const { data: clients, error } = await query;
 
     if (error) throw error;
 
     if (!clients || clients.length === 0) {
       return {
-        message: 'No hay clientes con coordenadas asignados a este vendedor',
+        message: zone
+          ? `No hay clientes con coordenadas en la zona "${zone}" para este vendedor`
+          : 'No hay clientes con coordenadas asignados a este vendedor',
         route: [],
-        stats: null
+        stats: null,
+        zone: zone
       };
     }
 
     // Optimizar orden de visitas
     const { route, totalDistance } = optimizeRouteOrder(clients, startPoint);
 
-    // Calcular costos
-    const distanceWithReturn = startPoint ? totalDistance : totalDistance * 1.2; // Estimación retorno
+    // Calcular costos (ida y vuelta)
+    const distanceWithReturn = totalDistance * 2; // Ida y vuelta
     const fuelStats = calculateFuelCost(distanceWithReturn);
 
     return {
+      zone: zone || 'Todas las zonas',
       route: route.map((client, index) => ({
         order: index + 1,
         ...client

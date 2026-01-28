@@ -4620,6 +4620,7 @@
     // =============================================
 
     let optimizedRouteData = null;
+    let selectedZone = null;
 
     async function generateOptimizedRoute() {
       if (!selectedExecutiveId) {
@@ -4627,13 +4628,88 @@
         return;
       }
 
+      // Primero obtener las zonas disponibles para este vendedor
+      try {
+        const zonesRes = await fetch(`${API}/routes/zones/${selectedExecutiveId}`);
+        const zonesData = await zonesRes.json();
+
+        if (!zonesData.success || !zonesData.data.length) {
+          showToast('Este vendedor no tiene clientes con zona asignada', 'warning');
+          return;
+        }
+
+        // Mostrar selector de zona
+        showZoneSelector(zonesData.data);
+
+      } catch (error) {
+        console.error('Error fetching zones:', error);
+        showToast('Error al obtener zonas', 'error');
+      }
+    }
+
+    function showZoneSelector(zones) {
+      const exec = executives.find(e => e.id === selectedExecutiveId);
+      const vendorName = exec ? exec.full_name : 'Vendedor';
+
+      // Crear modal de selección de zona
+      const modal = document.createElement('div');
+      modal.id = 'zone-selector-modal';
+      modal.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5); z-index: 9999;
+        display: flex; align-items: center; justify-content: center;
+      `;
+
+      modal.innerHTML = `
+        <div style="background: white; border-radius: 16px; padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+          <h3 style="margin: 0 0 8px 0; color: #1e40af; display: flex; align-items: center; gap: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            Seleccionar Zona
+          </h3>
+          <p style="margin: 0 0 16px 0; color: #6b7280; font-size: 14px;">Vendedor: <strong>${vendorName}</strong></p>
+          <div style="display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto;">
+            ${zones.map(z => `
+              <button onclick="selectZoneAndGenerateRoute('${z.zone}')" style="
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 10px;
+                background: white; cursor: pointer; transition: all 0.2s;
+                font-size: 14px;
+              " onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff';"
+                 onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white';">
+                <span style="font-weight: 600; color: #1f2937;">${z.zone}</span>
+                <span style="background: #3b82f6; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px;">
+                  ${z.clientCount} clientes
+                </span>
+              </button>
+            `).join('')}
+          </div>
+          <button onclick="closeZoneSelector()" style="
+            width: 100%; margin-top: 16px; padding: 12px; border: none;
+            background: #f3f4f6; color: #6b7280; border-radius: 8px;
+            cursor: pointer; font-size: 14px;
+          ">Cancelar</button>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+    }
+
+    function closeZoneSelector() {
+      const modal = document.getElementById('zone-selector-modal');
+      if (modal) modal.remove();
+    }
+
+    async function selectZoneAndGenerateRoute(zone) {
+      closeZoneSelector();
+      selectedZone = zone;
+
       const exec = executives.find(e => e.id === selectedExecutiveId);
       const vendorName = exec ? exec.full_name : 'Vendedor';
 
       try {
-        showToast('Calculando ruta óptima...', 'info');
+        showToast(`Calculando ruta para ${zone}...`, 'info');
 
-        const res = await fetch(`${API}/routes/optimize/${selectedExecutiveId}`);
+        const res = await fetch(`${API}/routes/optimize/${selectedExecutiveId}?zone=${encodeURIComponent(zone)}`);
         const data = await res.json();
 
         if (!data.success) {
@@ -4642,12 +4718,12 @@
         }
 
         if (!data.data.route || data.data.route.length === 0) {
-          showToast('No hay clientes con coordenadas para este vendedor', 'warning');
+          showToast(`No hay clientes con coordenadas en ${zone}`, 'warning');
           return;
         }
 
         optimizedRouteData = data.data;
-        displayOptimizedRoute(vendorName);
+        displayOptimizedRoute(vendorName, zone);
         drawOptimizedRouteOnMap();
         showToast(`Ruta optimizada: ${data.data.route.length} clientes, ${data.data.stats.distanceKm} km`, 'success');
 
@@ -4657,11 +4733,11 @@
       }
     }
 
-    function displayOptimizedRoute(vendorName) {
+    function displayOptimizedRoute(vendorName, zone = null) {
       const panel = document.getElementById('optimized-route-panel');
       const stats = optimizedRouteData.stats;
 
-      document.getElementById('opt-vendor-name').textContent = vendorName;
+      document.getElementById('opt-vendor-name').textContent = zone ? `${vendorName} - ${zone}` : vendorName;
       document.getElementById('opt-total-clients').textContent = stats.totalClients;
       document.getElementById('opt-distance').textContent = `${stats.distanceKm} km`;
       document.getElementById('opt-liters').textContent = `${stats.litersUsed} L`;
