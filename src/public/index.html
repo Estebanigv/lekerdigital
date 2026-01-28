@@ -3371,6 +3371,9 @@
       let markersWithoutCoords = 0;
       let segmentCounts = { A: 0, B: 0, C: 0, FOCO: 0 };
 
+      // Chile bounds: lat -17 to -56, lng -76 to -66
+      const isInChile = (lat, lng) => lat >= -56 && lat <= -17 && lng >= -76 && lng <= -66;
+
       clients.forEach(client => {
         // Check if client has coordinates
         if (!client.lat || !client.lng) {
@@ -3378,8 +3381,17 @@
           return;
         }
 
+        const lat = parseFloat(client.lat);
+        const lng = parseFloat(client.lng);
+
+        // Skip invalid coordinates (outside Chile)
+        if (!isInChile(lat, lng)) {
+          markersWithoutCoords++;
+          return;
+        }
+
         markersWithCoords++;
-        const position = { lat: parseFloat(client.lat), lng: parseFloat(client.lng) };
+        const position = { lat, lng };
         bounds.extend(position);
 
         // Marker colors by segment
@@ -3457,9 +3469,19 @@
       if (countC) countC.textContent = segmentCounts.C || 0;
       if (countFoco) countFoco.textContent = segmentCounts.FOCO || 0;
 
-      // Fit bounds to show all markers
+      // Fit bounds to show all markers, but limit zoom
       if (markersWithCoords > 0) {
         mainMap.fitBounds(bounds);
+        // Limit max zoom to avoid getting too close
+        const listener = google.maps.event.addListener(mainMap, 'idle', function() {
+          if (mainMap.getZoom() > 15) mainMap.setZoom(15);
+          if (mainMap.getZoom() < 5) mainMap.setZoom(8); // Don't zoom out too much
+          google.maps.event.removeListener(listener);
+        });
+      } else {
+        // No markers, center on Chile
+        mainMap.setCenter({ lat: -33.45, lng: -70.65 });
+        mainMap.setZoom(6);
       }
     }
 
@@ -3607,6 +3629,8 @@
       lucide.createIcons();
     }
 
+    let geocodingCancelled = false;
+
     async function geocodeClientsWithoutCoords() {
       // Filter clients without coordinates that have some address info
       const clientsToGeocode = allClients.filter(c => !c.lat && !c.lng && (c.address || c.commune));
@@ -3616,26 +3640,40 @@
         return;
       }
 
+      geocodingCancelled = false;
+
       // Disable buttons during processing
       const btn = document.getElementById('btn-geocode-header');
       const btnLegend = document.getElementById('btn-geocode');
       const geocodeAlert = document.getElementById('geocode-alert');
 
-      if (btn) { btn.disabled = true; btn.textContent = 'Procesando...'; }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Cancelar';
+        btn.onclick = () => { geocodingCancelled = true; };
+      }
       if (btnLegend) { btnLegend.disabled = true; }
 
-      const totalToProcess = clientsToGeocode.length;
-      showToast('info', 'Geocodificando', `Iniciando proceso para ${totalToProcess} clientes. Esto puede tomar varios minutos...`);
+      const totalToProcess = Math.min(clientsToGeocode.length, 200); // Process max 200 at a time
+      showToast('info', 'Geocodificando', `Procesando ${totalToProcess} clientes (de ${clientsToGeocode.length}). Puedes cancelar en cualquier momento.`);
 
       const geocoder = new google.maps.Geocoder();
       let processed = 0;
       let success = 0;
       let errors = 0;
+      let rateLimitHits = 0;
 
-      // Process ALL clients in batches
+      // Chile bounds validation
+      const isInChile = (lat, lng) => lat >= -56 && lat <= -17 && lng >= -76 && lng <= -66;
+
+      // Process clients in batches
       for (let i = 0; i < totalToProcess; i++) {
+        if (geocodingCancelled) {
+          showToast('warning', 'Cancelado', `Proceso cancelado. ${success} clientes geocodificados.`);
+          break;
+        }
+
         const client = clientsToGeocode[i];
-        // Build address string with available data
         let addressParts = [];
         if (client.address) addressParts.push(client.address);
         if (client.commune) addressParts.push(client.commune);
@@ -3644,20 +3682,21 @@
 
         try {
           const result = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject('TIMEOUT'), 10000);
+
             geocoder.geocode({ address }, (results, status) => {
+              clearTimeout(timeout);
               if (status === 'OK' && results[0]) {
-                resolve(results[0].geometry.location);
+                const loc = results[0].geometry.location;
+                // Validate coordinates are in Chile
+                if (isInChile(loc.lat(), loc.lng())) {
+                  resolve(loc);
+                } else {
+                  reject('OUTSIDE_CHILE');
+                }
               } else if (status === 'OVER_QUERY_LIMIT') {
-                // Rate limited - wait and retry
-                setTimeout(() => {
-                  geocoder.geocode({ address }, (results2, status2) => {
-                    if (status2 === 'OK' && results2[0]) {
-                      resolve(results2[0].geometry.location);
-                    } else {
-                      reject(status2);
-                    }
-                  });
-                }, 2000);
+                rateLimitHits++;
+                reject('RATE_LIMIT');
               } else {
                 reject(status);
               }
@@ -3668,41 +3707,39 @@
           await fetch(`${API}/api/clients/${client.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              lat: result.lat(),
-              lng: result.lng()
-            })
+            body: JSON.stringify({ lat: result.lat(), lng: result.lng() })
           });
 
-          // Update local data
           client.lat = result.lat();
           client.lng = result.lng();
-
           success++;
         } catch (e) {
-          console.warn('Geocode failed for', client.name, e);
           errors++;
+          // If rate limited, increase delay
+          if (e === 'RATE_LIMIT' && rateLimitHits > 3) {
+            showToast('warning', 'Límite de Google', 'Esperando 5 segundos por límite de API...');
+            await new Promise(r => setTimeout(r, 5000));
+            rateLimitHits = 0;
+          }
         }
 
         processed++;
 
-        // Update progress every 5 clients
-        if (processed % 5 === 0) {
-          const pct = Math.round((processed / totalToProcess) * 100);
-          if (btn) btn.textContent = `${pct}% (${processed}/${totalToProcess})`;
-          if (geocodeAlert) {
-            const countEl = document.getElementById('geocode-count');
-            if (countEl) countEl.textContent = totalToProcess - processed;
-          }
+        // Update progress
+        const pct = Math.round((processed / totalToProcess) * 100);
+        if (btn && !geocodingCancelled) btn.textContent = `${pct}% - Cancelar`;
+        if (geocodeAlert) {
+          const countEl = document.getElementById('geocode-count');
+          if (countEl) countEl.textContent = clientsToGeocode.length - success;
         }
 
-        // Update map every 50 clients to show progress
-        if (processed % 50 === 0 && success > 0) {
-          updateMapMarkers();
+        // Update map every 25 clients
+        if (processed % 25 === 0 && success > 0) {
+          addClientMarkers(allClients);
         }
 
-        // Delay between requests to avoid rate limits (300ms)
-        await new Promise(r => setTimeout(r, 300));
+        // Delay between requests (500ms to avoid rate limits)
+        await new Promise(r => setTimeout(r, 500));
       }
 
       // Show completion message
@@ -3724,11 +3761,18 @@
         if (btnLegend) btnLegend.style.display = 'none';
       } else {
         // Re-enable buttons for remaining clients
-        if (btn) { btn.disabled = false; btn.textContent = 'Cargar Ubicaciones'; }
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Cargar Ubicaciones';
+          btn.onclick = geocodeClientsWithoutCoords;
+        }
         if (btnLegend) { btnLegend.disabled = false; }
         if (geocodeAlert) {
           const countEl = document.getElementById('geocode-count');
           if (countEl) countEl.textContent = remaining;
+        }
+        if (remaining > 0) {
+          showToast('info', 'Quedan pendientes', `${remaining} clientes aún sin ubicación. Puedes continuar después.`);
         }
       }
 
