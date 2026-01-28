@@ -1767,7 +1767,14 @@
                   </div>
                   <div class="form-group">
                     <label>Vehículo</label>
-                    <select id="start-vehicle" class="form-control" required></select>
+                    <div id="standard-vehicle-display" style="background: var(--bg-hover); padding: 12px 16px; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                      <i data-lucide="car" style="width: 20px; height: 20px; color: var(--primary);"></i>
+                      <div>
+                        <div style="font-weight: 600; color: var(--text);" id="standard-vehicle-name">Vehículo Estándar Chile</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">10 km/L • Bencina 93 octanos • $1,150/L</div>
+                      </div>
+                    </div>
+                    <input type="hidden" id="start-vehicle" value="">
                   </div>
                   <div class="form-group">
                     <label>Kilometraje Inicial</label>
@@ -3852,9 +3859,16 @@
         document.getElementById('stat-products').textContent = products.data.length;
         document.getElementById('stat-routes').textContent = routes.data.length;
 
-        // Populate selects (only active vehicles)
+        // Populate selects
         populateSelect('start-user', users.data, 'id', 'full_name');
-        populateSelect('start-vehicle', vehicles.data.filter(v => v.status === 'active'), 'id', d => `${d.license_plate} - ${d.model}`);
+
+        // Set standard vehicle (first active vehicle)
+        const activeVehicles = vehicles.data.filter(v => v.status === 'active');
+        if (activeVehicles.length > 0) {
+          const standardVehicle = activeVehicles[0];
+          document.getElementById('start-vehicle').value = standardVehicle.id;
+          document.getElementById('standard-vehicle-name').textContent = standardVehicle.model;
+        }
 
         // Clear client search (now using search + hidden input)
         document.getElementById('checkin-client-search').value = '';
