@@ -2,17 +2,22 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/server.js",
+      "src": "api/index.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "src/public/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
+      "src": "/(.*)\\.(js|css|ico|png|jpg|jpeg|svg|gif|woff|woff2|ttf|eot)$",
+      "dest": "/src/public/$1.$2"
+    },
+    {
       "src": "/(.*)",
-      "dest": "src/server.js"
+      "dest": "/api/index.js"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
