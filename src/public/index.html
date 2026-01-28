@@ -3260,6 +3260,7 @@
     let allUsers = [];
     let allVehicles = [];
     let allClients = [];
+    let executives = []; // Vendedores/Ejecutivos
     let allRoutes = [];
     let filteredClients = [];
     let todayRoutesData = [];
@@ -3809,8 +3810,8 @@
         populateSelect('webhook-product', products.data, 'sku', d => `${d.sku} - ${d.name}`);
         populateSelect('compare-product', products.data, 'id', d => `${d.sku} - ${d.name}`);
 
-        // Populate route executive select
-        const executives = users.data.filter(u => u.role === 'executive');
+        // Populate route executive select (vendedores)
+        executives = users.data.filter(u => u.role === 'executive' || u.role === 'supervisor');
 
         // Store data globally for filtering
         allUsers = users.data;
