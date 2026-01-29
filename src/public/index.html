@@ -1515,7 +1515,7 @@
         </div>
         <div class="logo-text">LEKER<span>.</span></div>
       </div>
-      <div style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.1.5</div>
+      <div style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.1.6</div>
     </div>
 
     <nav class="nav">
@@ -1717,7 +1717,7 @@
                 <!-- Search -->
                 <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); margin-bottom: 8px;">
                   <div style="padding: 8px;">
-                    <input type="text" id="map-client-search" class="form-control" placeholder="Buscar cliente..." oninput="searchClientOnMap()" style="font-size: 12px; padding: 8px 12px;">
+                    <input type="text" id="map-client-search" class="form-control" placeholder="Buscar por código o nombre..." oninput="searchClientOnMap()" style="font-size: 12px; padding: 8px 12px;">
                   </div>
                   <div id="map-search-results" style="max-height: 180px; overflow-y: auto; display: none; border-top: 1px solid var(--border);">
                   </div>
@@ -3857,32 +3857,33 @@
         return;
       }
 
-      // Filter clients with coordinates
+      // Filter all clients (with and without GPS)
       const filtered = allClients.filter(c => {
-        if (!c.lat || !c.lng) return false;
         const matchCode = c.external_id && c.external_id.toLowerCase().includes(search);
         const matchName = c.name && c.name.toLowerCase().includes(search);
         const matchFantasy = c.fantasy_name && c.fantasy_name.toLowerCase().includes(search);
         return matchCode || matchName || matchFantasy;
-      }).slice(0, 10);
+      }).slice(0, 15);
 
       if (filtered.length === 0) {
-        resultsDiv.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-muted); font-size: 12px;">No se encontraron clientes con ubicación</div>';
+        resultsDiv.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-muted); font-size: 12px;">No se encontraron clientes</div>';
         resultsDiv.style.display = 'block';
         return;
       }
 
-      resultsDiv.innerHTML = filtered.map(c => `
-        <div onclick="zoomToClient('${c.id}')" style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='transparent'">
+      resultsDiv.innerHTML = filtered.map(c => {
+        const hasGPS = c.lat && c.lng;
+        return `
+        <div onclick="${hasGPS ? `zoomToClient('${c.id}')` : `showToast('warning','Sin GPS','Este cliente no tiene ubicación registrada')`}" style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.2s; ${!hasGPS ? 'opacity: 0.7;' : ''}" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='transparent'">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <div style="font-weight: 500; font-size: 12px;">${c.fantasy_name || c.name}</div>
-              <div style="font-size: 10px; color: var(--text-muted);">${c.commune || ''}</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 500; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.fantasy_name || c.name}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">${c.commune || ''} ${!hasGPS ? '· Sin GPS' : ''}</div>
             </div>
-            <code style="font-size: 10px; background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px;">${c.external_id}</code>
+            <code style="font-size: 10px; background: ${hasGPS ? 'var(--accent)' : '#94a3b8'}; color: white; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">${c.external_id || ''}</code>
           </div>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
       resultsDiv.style.display = 'block';
     }
 
