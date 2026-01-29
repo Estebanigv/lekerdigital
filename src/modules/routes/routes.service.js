@@ -331,6 +331,31 @@ class RoutesService {
     return data;
   }
 
+  async reassignClients(fromUserId, toUserId) {
+    // Count clients to reassign
+    const { data: clients, error: countError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('assigned_user_id', fromUserId);
+
+    if (countError) throw countError;
+
+    if (!clients || clients.length === 0) {
+      throw new Error('El vendedor origen no tiene clientes asignados');
+    }
+
+    // Reassign all clients
+    const { data, error } = await supabase
+      .from('clients')
+      .update({ assigned_user_id: toUserId })
+      .eq('assigned_user_id', fromUserId)
+      .select('id');
+
+    if (error) throw error;
+
+    return { updated: data.length, fromUserId, toUserId };
+  }
+
   async deleteClient(clientId) {
     // Check if client has visits
     const { data: visits } = await supabase

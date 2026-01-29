@@ -88,6 +88,22 @@ app.delete('/api/clients/:id', async (req, res) => {
   }
 });
 
+app.post('/api/clients/reassign', async (req, res) => {
+  try {
+    const { fromUserId, toUserId } = req.body;
+    if (!fromUserId || !toUserId) {
+      return res.status(400).json({ success: false, error: 'Se requiere vendedor origen y destino' });
+    }
+    if (fromUserId === toUserId) {
+      return res.status(400).json({ success: false, error: 'El vendedor origen y destino no pueden ser el mismo' });
+    }
+    const result = await routesService.reassignClients(fromUserId, toUserId);
+    res.json({ success: true, message: 'Clientes reasignados', data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 app.get('/api/products', async (req, res) => {
   try {
     const data = await intelligenceService.getAllProducts();
