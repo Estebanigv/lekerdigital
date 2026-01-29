@@ -1160,6 +1160,10 @@
         grid-template-columns: 1fr;
         gap: 12px;
       }
+      .grid-2, .grid-3-1 {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
       .content {
         padding: 16px;
       }
@@ -1183,6 +1187,9 @@
         flex-wrap: wrap;
         gap: 8px;
       }
+      .card-header h3 {
+        font-size: 14px;
+      }
       .card-body {
         padding: 14px 16px;
       }
@@ -1191,10 +1198,11 @@
         gap: 8px;
       }
       table {
-        font-size: 13px;
+        font-size: 12px;
       }
       th, td {
         padding: 8px 10px;
+        white-space: nowrap;
       }
       .stat-card {
         padding: 14px;
@@ -1204,6 +1212,33 @@
         width: 40px;
         height: 40px;
       }
+      .map-container {
+        height: 350px !important;
+        min-height: 300px !important;
+      }
+      .map-left-panel {
+        position: relative !important;
+        width: 100% !important;
+        max-height: 200px;
+        overflow-y: auto;
+        top: auto !important;
+        left: auto !important;
+      }
+      .btn {
+        font-size: 12px;
+        padding: 8px 14px;
+      }
+      .form-control, .form-select {
+        font-size: 14px;
+      }
+      .route-legend {
+        bottom: 10px;
+        left: 10px;
+        min-width: 180px;
+        max-width: 220px;
+        padding: 8px 12px;
+        font-size: 12px;
+      }
     }
 
     @media (max-width: 480px) {
@@ -1212,27 +1247,62 @@
         margin-bottom: 16px;
       }
       .content {
-        padding: 12px;
+        padding: 10px;
       }
       .responsive-grid-4 {
         grid-template-columns: 1fr 1fr;
         gap: 6px;
       }
       .topbar-actions {
-        gap: 8px;
+        gap: 6px;
       }
       .user-avatar {
         width: 32px;
         height: 32px;
       }
       .modal-content {
-        width: 98%;
+        width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+      }
+      .modal-body {
+        padding: 12px;
       }
       .map-left-panel {
-        width: 180px !important;
+        width: 100% !important;
+        max-height: 160px;
       }
       .map-container {
-        height: 350px !important;
+        height: 280px !important;
+      }
+      .card-header {
+        padding: 12px 14px;
+      }
+      .card-body {
+        padding: 12px 14px;
+      }
+      table {
+        font-size: 11px;
+      }
+      th, td {
+        padding: 6px 8px;
+      }
+      .stat-card {
+        padding: 12px;
+      }
+      .stat-value {
+        font-size: 20px;
+      }
+      .btn {
+        font-size: 11px;
+        padding: 6px 12px;
+      }
+      .page-title {
+        font-size: 14px;
+      }
+      .sidebar-header {
+        padding: 16px;
       }
     }
 
