@@ -8,6 +8,7 @@ const XLSX = require('xlsx');
 const routesService = require('./modules/routes/routes.service');
 const intelligenceService = require('./modules/market-intelligence/intelligence.service');
 const n8nService = require('./services/n8n.service');
+const googleSheetsService = require('./services/googleSheets.service');
 
 const app = express();
 
@@ -200,6 +201,54 @@ app.put('/api/users/:id', async (req, res) => {
   try {
     const user = await routesService.updateUser(req.params.id, req.body);
     res.json({ success: true, message: 'Usuario actualizado', data: user });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Obtener clientes asignados a un vendedor
+app.get('/api/users/:id/clients', async (req, res) => {
+  try {
+    const data = await routesService.getClientsByUser(req.params.id);
+    res.json({ success: true, data, total: data.length });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Asignar zona a un vendedor
+app.put('/api/users/:id/zone', async (req, res) => {
+  try {
+    const { zone, zone_leader } = req.body;
+    const user = await routesService.updateUserZone(req.params.id, zone, zone_leader);
+    res.json({ success: true, message: 'Zona asignada', data: user });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Listar zonas con sus lideres y vendedores
+app.get('/api/zones', async (req, res) => {
+  try {
+    const data = await routesService.getZones();
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Reasignar clientes seleccionados
+app.post('/api/clients/reassign-selected', async (req, res) => {
+  try {
+    const { clientIds, toUserId } = req.body;
+    if (!clientIds || !Array.isArray(clientIds) || clientIds.length === 0) {
+      return res.status(400).json({ success: false, error: 'Se requiere lista de clientes' });
+    }
+    if (!toUserId) {
+      return res.status(400).json({ success: false, error: 'Se requiere vendedor destino' });
+    }
+    const result = await routesService.reassignSelectedClients(clientIds, toUserId);
+    res.json({ success: true, message: 'Clientes reasignados', data: result });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }
@@ -1264,6 +1313,46 @@ app.post('/api/n8n/workflows/from-template', async (req, res) => {
 
     const result = await n8nService.createWorkflowFromTemplate(templates[templateId]);
     res.json({ success: true, message: 'Workflow creado', data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// =============================================
+// API ENDPOINTS - VISIT PERFORMANCE
+// =============================================
+
+app.get('/api/visit-performance', async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    const data = await routesService.getVisitPerformance(from || null, to || null);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// =============================================
+// API ENDPOINTS - GOOGLE SHEETS
+// =============================================
+
+app.get('/api/gsheets/status', (req, res) => {
+  res.json({ success: true, configured: googleSheetsService.isConfigured() });
+});
+
+app.get('/api/gsheets/all', async (req, res) => {
+  try {
+    const data = await googleSheetsService.getAllSheets();
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/gsheets/:sheet', async (req, res) => {
+  try {
+    const data = await googleSheetsService.getSheet(req.params.sheet);
+    res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

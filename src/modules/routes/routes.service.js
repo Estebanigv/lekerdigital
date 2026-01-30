@@ -889,6 +889,189 @@ class RoutesService {
     };
   }
 
+  // =============================================
+  // ZONALES Y CLIENTES POR VENDEDOR
+  // =============================================
+
+  async getClientsByUser(userId) {
+    let allUserClients = [];
+    let from = 0;
+    const batchSize = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('assigned_user_id', userId)
+        .order('name')
+        .range(from, from + batchSize - 1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        allUserClients = allUserClients.concat(data);
+        from += batchSize;
+        hasMore = data.length === batchSize;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    return allUserClients;
+  }
+
+  async updateUserZone(userId, zone, isLeader = false) {
+    const updateData = { zone };
+    if (typeof isLeader === 'boolean') {
+      updateData.zone_leader = isLeader;
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getZones() {
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, full_name, email, role, zone, zone_leader, status')
+      .order('full_name');
+
+    if (error) throw error;
+
+    // Group by zone
+    const zones = {};
+    const ZONE_ORDER = ['Norte', 'Centro', 'Centro Sur', 'Sur'];
+
+    users.forEach(u => {
+      const zoneName = u.zone || 'Sin Zona';
+      if (!zones[zoneName]) {
+        zones[zoneName] = { name: zoneName, leader: null, vendors: [] };
+      }
+      if (u.zone_leader) {
+        zones[zoneName].leader = u;
+      }
+      if (u.role === 'executive' || u.role === 'zonal') {
+        zones[zoneName].vendors.push(u);
+      }
+    });
+
+    // Sort zones by predefined order
+    const sortedZones = [];
+    ZONE_ORDER.forEach(z => {
+      if (zones[z]) sortedZones.push(zones[z]);
+    });
+    // Add any remaining zones not in the predefined order
+    Object.keys(zones).forEach(z => {
+      if (!ZONE_ORDER.includes(z)) sortedZones.push(zones[z]);
+    });
+
+    return sortedZones;
+  }
+
+  async reassignSelectedClients(clientIds, toUserId) {
+    if (!clientIds || clientIds.length === 0) {
+      throw new Error('No se seleccionaron clientes');
+    }
+
+    const { data, error } = await supabase
+      .from('clients')
+      .update({ assigned_user_id: toUserId })
+      .in('id', clientIds)
+      .select('id');
+
+    if (error) throw error;
+
+    return { updated: data.length, toUserId };
+  }
+
+  /**
+   * Obtiene estadísticas de rendimiento de visitas por vendedor
+   * Puede filtrar por rango de fechas
+   */
+  async getVisitPerformance(dateFrom = null, dateTo = null) {
+    // Get all users (executives)
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, full_name, role, zone, zone_leader')
+      .in('role', ['executive', 'zonal', 'supervisor'])
+      .order('full_name');
+
+    if (usersError) throw usersError;
+
+    // Build routes query with date filter
+    let routesQuery = supabase
+      .from('daily_routes')
+      .select(`
+        id, user_id, date, status,
+        visits(id, outcome, check_in, check_out)
+      `)
+      .order('date', { ascending: false });
+
+    if (dateFrom) routesQuery = routesQuery.gte('date', dateFrom);
+    if (dateTo) routesQuery = routesQuery.lte('date', dateTo);
+
+    const { data: routes, error: routesError } = await routesQuery;
+    if (routesError) throw routesError;
+
+    // Build per-user stats
+    const stats = users.map(user => {
+      const userRoutes = (routes || []).filter(r => r.user_id === user.id);
+      const allVisits = userRoutes.flatMap(r => r.visits || []);
+
+      const outcomes = { sale: 0, contacted: 0, no_contact: 0, no_stock: 0, not_interested: 0, pending: 0 };
+      allVisits.forEach(v => {
+        if (outcomes.hasOwnProperty(v.outcome)) outcomes[v.outcome]++;
+        else outcomes.pending++;
+      });
+
+      const totalVisits = allVisits.length;
+      const effectiveVisits = outcomes.sale + outcomes.contacted;
+      const effectiveness = totalVisits > 0 ? Math.round((effectiveVisits / totalVisits) * 100) : 0;
+
+      // Days worked (unique dates with routes)
+      const uniqueDays = new Set(userRoutes.map(r => r.date));
+      const daysWorked = uniqueDays.size;
+      const avgVisitsPerDay = daysWorked > 0 ? Math.round((totalVisits / daysWorked) * 10) / 10 : 0;
+
+      return {
+        userId: user.id,
+        name: user.full_name,
+        role: user.role,
+        zone: user.zone,
+        zoneLeader: user.zone_leader,
+        totalRoutes: userRoutes.length,
+        completedRoutes: userRoutes.filter(r => r.status === 'completed').length,
+        daysWorked,
+        totalVisits,
+        effectiveVisits,
+        effectiveness,
+        avgVisitsPerDay,
+        outcomes
+      };
+    });
+
+    // Sort by effectiveness descending
+    stats.sort((a, b) => b.effectiveness - a.effectiveness || b.totalVisits - a.totalVisits);
+
+    // Totals
+    const totals = {
+      totalVendedores: stats.length,
+      totalVisits: stats.reduce((s, u) => s + u.totalVisits, 0),
+      totalSales: stats.reduce((s, u) => s + u.outcomes.sale, 0),
+      avgEffectiveness: stats.length > 0 ? Math.round(stats.reduce((s, u) => s + u.effectiveness, 0) / stats.length) : 0
+    };
+
+    return { stats, totals };
+  }
+
   // Obtiene configuración de vehículo estándar
   getVehicleConfig() {
     return VEHICLE_CONFIG;
