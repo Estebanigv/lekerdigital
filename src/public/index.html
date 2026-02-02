@@ -3689,10 +3689,16 @@
             </h2>
             <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Datos sincronizados desde Google Sheets</p>
           </div>
-          <button class="btn btn-primary" onclick="loadGoogleSheetsData(true)" id="gs-refresh-btn" style="flex-shrink: 0;">
-            <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
-            Actualizar Datos
-          </button>
+          <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+            <a href="https://docs.google.com/spreadsheets/d/1iZQyuGfJ8MXbH9hi_DBrF7uSyoKBHBt_S1if6KVYpQA/edit" target="_blank" rel="noopener" class="btn btn-success" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+              <i data-lucide="file-spreadsheet" style="width:16px;height:16px;"></i>
+              Abrir Excel
+            </a>
+            <button class="btn btn-primary" onclick="loadGoogleSheetsData(true)" id="gs-refresh-btn">
+              <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
+              Actualizar Datos
+            </button>
+          </div>
         </div>
 
         <!-- Loading state -->
