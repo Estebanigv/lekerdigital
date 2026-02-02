@@ -2103,7 +2103,7 @@
           </div>
           <div class="logo-text">LEKER<span>.</span></div>
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.2.5</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.2.6</div>
       </div>
       <button class="sidebar-collapse-btn" onclick="toggleCollapseSidebar()" title="Contraer menú (Ctrl+B)">
         <i data-lucide="panel-left-close" style="width: 16px; height: 16px;"></i>
@@ -3912,12 +3912,12 @@
             <div id="gs-8020-summary" class="gs-summary-grid" style="margin-bottom:16px;"></div>
 
             <!-- Toggle Vendedores / Zonales -->
-            <div style="display:flex;gap:6px;margin-bottom:16px;">
-              <button class="btn" id="btn-8020-vendedores" onclick="switch8020View('vendedores')" style="flex:1;font-weight:600;">
-                <i data-lucide="users" style="width:14px;height:14px;"></i> Vendedores
+            <div style="display:flex;gap:0;margin-bottom:16px;background:var(--bg-hover);border-radius:10px;padding:4px;border:1px solid var(--border);">
+              <button id="btn-8020-vendedores" onclick="switch8020View('vendedores')" style="flex:1;padding:10px 16px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;background:var(--bg-card);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,0.08);font-family:inherit;">
+                <i data-lucide="users" style="width:15px;height:15px;"></i> Vendedores
               </button>
-              <button class="btn btn-secondary" id="btn-8020-zonales" onclick="switch8020View('zonales')" style="flex:1;">
-                <i data-lucide="shield" style="width:14px;height:14px;"></i> Zonales
+              <button id="btn-8020-zonales" onclick="switch8020View('zonales')" style="flex:1;padding:10px 16px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;background:transparent;color:var(--text-secondary);box-shadow:none;font-family:inherit;">
+                <i data-lucide="shield" style="width:15px;height:15px;"></i> Zonales
               </button>
             </div>
 
@@ -6115,7 +6115,7 @@
 
       filtered.forEach(e => {
         const isSelected = e.id === selectedExecutiveId;
-        const gsData = (gsheetsVendedoresParsed || []).find(v => v.name && e.full_name && v.name.toLowerCase() === e.full_name.toLowerCase());
+        const gsData = findVendedorData(e.full_name);
         const zona = gsData ? gsData.zona : '';
         const zc = ZONE_COLORS[(zona || '').toLowerCase()] || null;
         const zoneTag = zc ? `<span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">${zona}</span>` : '';
@@ -7140,6 +7140,19 @@
       return parts.slice(0, 2).map(p => p[0].toUpperCase()).join('');
     }
 
+    function normalizeName(n) {
+      if (!n) return '';
+      return n.toLowerCase().replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function findVendedorData(fullName) {
+      if (!fullName) return null;
+      const norm = normalizeName(fullName);
+      return (gsheetsVendedoresParsed || []).find(v => v.name && normalizeName(v.name) === norm) ||
+             (gsheetsVendedoresParsed || []).find(v => v.name && (normalizeName(v.name).includes(norm) || norm.includes(normalizeName(v.name)))) ||
+             null;
+    }
+
     function renderExecutivesPanel(routes) {
       const container = document.getElementById('executives-panel');
       const countBadge = document.getElementById('executives-count-badge');
@@ -7163,7 +7176,7 @@
 
       // Enrich with Google Sheets zone data
       const enriched = execUsers.map(exec => {
-        const gsData = (gsheetsVendedoresParsed || []).find(v => v.name && exec.full_name && v.name.toLowerCase() === exec.full_name.toLowerCase());
+        const gsData = findVendedorData(exec.full_name);
         return { ...exec, _zona: gsData ? gsData.zona : '', _isZonal: gsData ? gsData.isZonal : false, _zonal: gsData ? gsData.zonal : '', _mail: gsData ? gsData.mail : exec.email, _cel: gsData ? gsData.cel : '' };
       });
 
@@ -8098,12 +8111,12 @@
       if (zoneFilter) {
         if (zoneFilter === 'sin_zona') {
           filtered = filtered.filter(u => {
-            const gs = (gsheetsVendedoresParsed || []).find(v => v.name && u.full_name && v.name.toLowerCase() === u.full_name.toLowerCase());
+            const gs = findVendedorData(u.full_name);
             return !gs || !gs.zona;
           });
         } else {
           filtered = filtered.filter(u => {
-            const gs = (gsheetsVendedoresParsed || []).find(v => v.name && u.full_name && v.name.toLowerCase() === u.full_name.toLowerCase());
+            const gs = findVendedorData(u.full_name);
             return gs && gs.zona === zoneFilter;
           });
         }
@@ -8164,7 +8177,7 @@
         const visits = r.visits?.length || r.visits_count || 0;
         const progress = assignedClients > 0 ? Math.round((visits / assignedClients) * 100) : 0;
         const startTime = r.created_at ? new Date(r.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '-';
-        const gsData = (gsheetsVendedoresParsed || []).find(v => v.name && r.user?.full_name && v.name.toLowerCase() === r.user.full_name.toLowerCase());
+        const gsData = findVendedorData(r.user?.full_name);
         const zona = gsData ? gsData.zona : '';
         const zc = ZONE_COLORS[(zona || '').toLowerCase()] || null;
         const zoneTag = zc ? `<span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap;">${zona}</span>` : '';
@@ -8317,7 +8330,7 @@
 
       // Enrich with Google Sheets zone data
       const enriched = data.map(u => {
-        const gsData = (gsheetsVendedoresParsed || []).find(v => v.name && u.full_name && v.name.toLowerCase() === u.full_name.toLowerCase());
+        const gsData = findVendedorData(u.full_name);
         return { ...u, _zona: gsData ? gsData.zona : '', _isZonal: gsData ? gsData.isZonal : false, _zonal: gsData ? gsData.zonal : '', _mail: gsData ? gsData.mail : '', _cel: gsData ? gsData.cel : '' };
       });
 
@@ -9536,7 +9549,7 @@
         const canHaveRoutes = ['executive', 'supervisor'].includes(user.role);
 
         // Enrich with Google Sheets data
-        const gsData = (gsheetsVendedoresParsed || []).find(v => v.name && user.full_name && v.name.toLowerCase() === user.full_name.toLowerCase());
+        const gsData = findVendedorData(user.full_name);
         const zona = gsData ? gsData.zona : '';
         const zc = ZONE_COLORS[(zona || '').toLowerCase()] || null;
         const zoneTag = zc ? `<span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">${zona}</span>` : '';
@@ -10881,12 +10894,14 @@
       let html = '';
 
       // View toggle
-      html += `<div style="display:flex;gap:6px;margin-bottom:16px;">
-        <button class="btn ${vendedoresViewMode === 'zonales' ? 'btn-primary' : 'btn-secondary'}" onclick="vendedoresViewMode='zonales';renderVendedoresCards(gsheetsVendedoresParsed)" style="font-size:13px;padding:8px 16px;">
-          <i data-lucide="network" style="width:14px;height:14px;"></i> Por Zonal
+      const activeStyle = 'background:var(--bg-card);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.08);';
+      const inactiveStyle = 'background:transparent;color:var(--text-secondary);font-weight:500;box-shadow:none;';
+      html += `<div style="display:flex;gap:0;margin-bottom:16px;background:var(--bg-hover);border-radius:10px;padding:4px;border:1px solid var(--border);">
+        <button onclick="vendedoresViewMode='zonales';renderVendedoresCards(gsheetsVendedoresParsed)" style="flex:1;padding:10px 16px;border:none;border-radius:8px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;font-family:inherit;${vendedoresViewMode === 'zonales' ? activeStyle : inactiveStyle}">
+          <i data-lucide="network" style="width:15px;height:15px;"></i> Por Zonal
         </button>
-        <button class="btn ${vendedoresViewMode === 'todos' ? 'btn-primary' : 'btn-secondary'}" onclick="vendedoresViewMode='todos';renderVendedoresCards(gsheetsVendedoresParsed)" style="font-size:13px;padding:8px 16px;">
-          <i data-lucide="layout-grid" style="width:14px;height:14px;"></i> Todos
+        <button onclick="vendedoresViewMode='todos';renderVendedoresCards(gsheetsVendedoresParsed)" style="flex:1;padding:10px 16px;border:none;border-radius:8px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s;font-family:inherit;${vendedoresViewMode === 'todos' ? activeStyle : inactiveStyle}">
+          <i data-lucide="layout-grid" style="width:15px;height:15px;"></i> Todos
         </button>
       </div>`;
 
@@ -11055,7 +11070,7 @@
       </div>`;
 
       sorted.slice(0, 7).forEach(([name, count]) => {
-        const vData = gsheetsVendedoresParsed.find(v => v.name.toLowerCase() === name.toLowerCase());
+        const vData = findVendedorData(name);
         const zona = vData ? vData.zona : '';
         const zc = ZONE_COLORS[zona.toLowerCase()] || { color: 'var(--text-muted)' };
         const pct = totalVend > 0 ? Math.round(count / totalVend * 100) : 0;
@@ -11138,13 +11153,25 @@
       if (view === 'vendedores') {
         vendView.style.display = 'block';
         zonView.style.display = 'none';
-        btnVend.className = 'btn btn-primary';
-        btnZon.className = 'btn btn-secondary';
+        btnVend.style.background = 'var(--bg-card)';
+        btnVend.style.color = 'var(--accent)';
+        btnVend.style.fontWeight = '600';
+        btnVend.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
+        btnZon.style.background = 'transparent';
+        btnZon.style.color = 'var(--text-secondary)';
+        btnZon.style.fontWeight = '500';
+        btnZon.style.boxShadow = 'none';
       } else {
         vendView.style.display = 'none';
         zonView.style.display = 'block';
-        btnVend.className = 'btn btn-secondary';
-        btnZon.className = 'btn btn-primary';
+        btnZon.style.background = 'var(--bg-card)';
+        btnZon.style.color = 'var(--accent)';
+        btnZon.style.fontWeight = '600';
+        btnZon.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
+        btnVend.style.background = 'transparent';
+        btnVend.style.color = 'var(--text-secondary)';
+        btnVend.style.fontWeight = '500';
+        btnVend.style.boxShadow = 'none';
       }
       lucide.createIcons();
     }
@@ -11406,7 +11433,7 @@
         const notaPreview = nota ? (nota.length > 30 ? nota.substring(0, 30) + '...' : nota) : '';
 
         // Enrich with zone data from Google Sheets
-        const gsData = (gsheetsVendedoresParsed || []).find(v => v.name.toLowerCase() === (s.name || '').toLowerCase());
+        const gsData = findVendedorData(s.name);
         const zona = gsData ? gsData.zona : '';
         const isZonal = gsData ? gsData.isZonal : false;
         const zc = ZONE_COLORS[(zona || '').toLowerCase()] || { bg: 'var(--bg-hover)', color: 'var(--text-muted)', border: 'var(--border)' };
@@ -11483,7 +11510,7 @@
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
               <div>
                 <div style="font-weight: 700; font-size: 14px;">${exec.full_name}</div>
-                <div style="font-size: 12px; color: var(--text-muted);">${(() => { const gs = (gsheetsVendedoresParsed || []).find(v => v.name && exec.full_name && v.name.toLowerCase() === exec.full_name.toLowerCase()); const z = gs ? gs.zona : ''; const isZ = gs ? gs.isZonal : false; const zcl = ZONE_COLORS[(z || '').toLowerCase()]; return (isZ ? 'Zonal' : 'Ejecutivo') + (z && zcl ? ' | <span style="background:' + zcl.bg + ';color:' + zcl.color + ';border:1px solid ' + zcl.border + ';padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">' + z + '</span>' : ''); })()}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${(() => { const gs = findVendedorData(exec.full_name); const z = gs ? gs.zona : ''; const isZ = gs ? gs.isZonal : false; const zcl = ZONE_COLORS[(z || '').toLowerCase()]; return (isZ ? 'Zonal' : 'Ejecutivo') + (z && zcl ? ' | <span style="background:' + zcl.bg + ';color:' + zcl.color + ';border:1px solid ' + zcl.border + ';padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">' + z + '</span>' : ''); })()}</div>
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <span style="background: var(--bg-hover); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;">${totalClients} clientes</span>
