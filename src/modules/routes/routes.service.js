@@ -1000,7 +1000,7 @@ class RoutesService {
     // Get all users (executives)
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('id, full_name, role, zone, zone_leader')
+      .select('id, full_name, role')
       .in('role', ['executive', 'zonal', 'supervisor'])
       .order('full_name');
 
@@ -1045,8 +1045,6 @@ class RoutesService {
         userId: user.id,
         name: user.full_name,
         role: user.role,
-        zone: user.zone,
-        zoneLeader: user.zone_leader,
         totalRoutes: userRoutes.length,
         completedRoutes: userRoutes.filter(r => r.status === 'completed').length,
         daysWorked,

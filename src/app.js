@@ -1333,6 +1333,63 @@ app.get('/api/visit-performance', async (req, res) => {
 });
 
 // =============================================
+// SYNC VENDEDORES FROM GOOGLE SHEETS
+// =============================================
+
+app.post('/api/sync-vendedores', async (req, res) => {
+  try {
+    if (!googleSheetsService.isConfigured()) {
+      return res.status(400).json({ success: false, error: 'Google Sheets no configurado' });
+    }
+    const allSheets = await googleSheetsService.getAllSheets();
+    // Find vendedores sheet
+    const sheetKey = Object.keys(allSheets).find(k => k.toLowerCase().includes('vendedor'));
+    if (!sheetKey) {
+      return res.status(404).json({ success: false, error: 'Hoja de vendedores no encontrada' });
+    }
+    const rows = allSheets[sheetKey];
+    // Find header row
+    let headerIdx = 0;
+    for (let i = 0; i < Math.min(rows.length, 10); i++) {
+      if (rows[i].some(c => c && String(c).toLowerCase().includes('vendedor'))) { headerIdx = i; break; }
+    }
+    const headers = rows[headerIdx];
+    const nameIdx = headers.findIndex(h => h && String(h).toLowerCase().includes('vendedor'));
+    const zonaIdx = headers.findIndex(h => h && String(h).toLowerCase().includes('zona'));
+    const zonalIdx = headers.findIndex(h => h && String(h).toLowerCase().includes('zonal'));
+
+    // Get all users
+    const users = await routesService.getAllUsers();
+    let updated = 0;
+    const results = [];
+
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const row = rows[i];
+      const name = (nameIdx >= 0 ? row[nameIdx] : '');
+      const isZonal = row[0] && String(row[0]).toLowerCase().includes('zonal');
+      if (!name) continue;
+
+      // Match user by full_name (case insensitive)
+      const user = users.find(u => u.full_name && u.full_name.toLowerCase() === name.toLowerCase());
+      if (user && isZonal && user.role !== 'zonal') {
+        // Update role to zonal
+        try {
+          await routesService.updateUser(user.id, { role: 'zonal' });
+          updated++;
+          results.push({ name: user.full_name, action: 'role updated to zonal' });
+        } catch (e) {
+          results.push({ name: user.full_name, action: 'error: ' + e.message });
+        }
+      }
+    }
+
+    res.json({ success: true, message: `${updated} usuarios actualizados`, data: results });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// =============================================
 // API ENDPOINTS - GOOGLE SHEETS
 // =============================================
 

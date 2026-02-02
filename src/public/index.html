@@ -105,11 +105,145 @@
       position: fixed;
       height: 100vh;
       z-index: 100;
+      transition: width 0.25s ease;
     }
 
     .sidebar-header {
       padding: 24px;
       border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 73px;
+    }
+
+    /* Collapse toggle button */
+    .sidebar-collapse-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .sidebar-collapse-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    /* Sidebar search */
+    .sidebar-search {
+      padding: 12px 12px 0;
+    }
+    .sidebar-search-input {
+      width: 100%;
+      padding: 8px 12px 8px 32px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .sidebar-search-input::placeholder {
+      color: var(--text-muted);
+    }
+    .sidebar-search-input:focus {
+      border-color: var(--accent);
+    }
+    .sidebar-search-wrap {
+      position: relative;
+    }
+    .sidebar-search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* Collapsed sidebar */
+    .sidebar.collapsed {
+      width: 68px;
+    }
+    .sidebar.collapsed .sidebar-header {
+      padding: 24px 14px;
+      justify-content: center;
+    }
+    .sidebar.collapsed .logo-text,
+    .sidebar.collapsed .sidebar-version,
+    .sidebar.collapsed .sidebar-collapse-btn,
+    .sidebar.collapsed .sidebar-search,
+    .sidebar.collapsed .nav-section-title,
+    .sidebar.collapsed .nav-item span,
+    .sidebar.collapsed .nav-item-parent .submenu-arrow,
+    .sidebar.collapsed .nav-submenu,
+    .sidebar.collapsed .sidebar-footer > div > div > div:nth-child(2),
+    .sidebar.collapsed .sidebar-footer > div > div > i:last-child {
+      display: none;
+    }
+    .sidebar.collapsed .logo {
+      gap: 0;
+    }
+    .sidebar.collapsed .nav-item {
+      justify-content: center;
+      padding: 11px;
+      position: relative;
+    }
+    .sidebar.collapsed .nav-item i {
+      margin: 0;
+    }
+    .sidebar.collapsed .nav-section {
+      margin-bottom: 12px;
+    }
+    .sidebar.collapsed .sidebar-footer > div {
+      padding: 8px;
+      display: flex;
+      justify-content: center;
+    }
+    .sidebar.collapsed .sidebar-footer > div > div {
+      justify-content: center;
+    }
+    .sidebar.collapsed + .sidebar-overlay + .main {
+      margin-left: 68px;
+    }
+
+    /* Tooltip for collapsed sidebar */
+    .sidebar.collapsed .nav-item[data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: calc(100% + 8px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border: 1px solid var(--border);
+      z-index: 200;
+      pointer-events: none;
+    }
+
+    /* Nav item hidden by search */
+    .nav-section.search-hidden,
+    .nav-item.search-hidden,
+    .nav-subitem.search-hidden,
+    .nav-item-expandable.search-hidden {
+      display: none !important;
     }
 
     .logo {
@@ -141,6 +275,23 @@
     .nav {
       padding: 16px 12px;
       flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .nav::-webkit-scrollbar {
+      width: 4px;
+    }
+    .nav::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .nav::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+    .nav::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
     }
 
     .nav-section {
@@ -261,6 +412,7 @@
       flex: 1;
       margin-left: 240px;
       min-height: 100vh;
+      transition: margin-left 0.25s ease;
     }
 
     .topbar {
@@ -406,7 +558,7 @@
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      overflow: hidden;
+      overflow: visible;
     }
 
     /* Resizable cards */
@@ -420,19 +572,25 @@
     }
 
     .card-header {
-      padding: 20px 24px;
+      padding: 16px 20px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      background: var(--bg-secondary);
     }
 
     .card-header h3 {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      color: var(--text-primary);
+    }
+
+    .card-header h3 i, .card-header h3 svg {
+      color: var(--accent);
     }
 
     .card-body {
@@ -879,6 +1037,155 @@
       animation: spin 1s linear infinite;
     }
 
+    /* Google Sheets Tables */
+    .gs-table-wrap {
+      overflow-x: auto;
+      max-height: 600px;
+      border-radius: 8px;
+    }
+    .gs-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+    .gs-table thead {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .gs-table thead th {
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      background: var(--bg-secondary);
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+      user-select: none;
+    }
+    .gs-table tbody tr {
+      transition: background 0.15s;
+    }
+    .gs-table tbody tr:nth-child(even) {
+      background: var(--bg-hover);
+    }
+    .gs-table tbody tr:hover {
+      background: rgba(59, 130, 246, 0.06);
+    }
+    [data-theme="dark"] .gs-table tbody tr:hover {
+      background: rgba(59, 130, 246, 0.12);
+    }
+    .gs-table tbody td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .gs-table tbody td.num {
+      text-align: right;
+      font-weight: 500;
+    }
+    .gs-table tbody tr.row-danger {
+      background: rgba(239, 68, 68, 0.07);
+    }
+    .gs-table tbody tr.row-danger:hover {
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    /* GSheets Tabs Bar */
+    .gs-tabs-bar {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      background: var(--bg-hover);
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+    .gs-tabs-bar .data-tab {
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      gap: 6px;
+    }
+    .gs-tabs-bar .data-tab:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .gs-tabs-bar .data-tab.active {
+      background: var(--bg-card);
+      color: var(--accent);
+      border-color: transparent;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .gs-tab-badge {
+      font-size: 10px;
+      font-weight: 600;
+      background: var(--border);
+      color: var(--text-muted);
+      padding: 1px 7px;
+      border-radius: 10px;
+      min-width: 18px;
+      text-align: center;
+    }
+    .gs-tabs-bar .data-tab.active .gs-tab-badge {
+      background: rgba(59, 130, 246, 0.12);
+      color: var(--accent);
+    }
+
+    /* GSheets Pagination */
+    .gs-pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .gs-pagination-info {
+      font-size: 12px;
+    }
+    .gs-pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .gs-pagination-controls button {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .gs-pagination-controls button:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .gs-pagination-page {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
     /* Tables */
     .table-wrapper {
       overflow-x: auto;
@@ -1148,12 +1455,19 @@
         box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
       }
       .main {
-        margin-left: 0;
+        margin-left: 0 !important;
       }
       .menu-toggle {
         display: flex;
         align-items: center;
         justify-content: center;
+      }
+      .sidebar-collapse-btn {
+        display: none;
+      }
+      .sidebar.collapsed {
+        width: 240px;
+        transform: translateX(-100%);
       }
       .content {
         padding: 20px;
@@ -1515,21 +1829,33 @@
 </head>
 <body>
   <!-- Sidebar -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <div class="logo">
-        <div class="logo-icon">
-          <i data-lucide="truck" style="width: 22px; height: 22px; color: white;"></i>
+      <div style="cursor: pointer;" onclick="expandSidebar()">
+        <div class="logo">
+          <div class="logo-icon">
+            <i data-lucide="truck" style="width: 22px; height: 22px; color: white;"></i>
+          </div>
+          <div class="logo-text">LEKER<span>.</span></div>
         </div>
-        <div class="logo-text">LEKER<span>.</span></div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.2.5</div>
       </div>
-      <div style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.2.1</div>
+      <button class="sidebar-collapse-btn" onclick="toggleCollapseSidebar()" title="Contraer menú (Ctrl+B)">
+        <i data-lucide="panel-left-close" style="width: 16px; height: 16px;"></i>
+      </button>
+    </div>
+
+    <div class="sidebar-search">
+      <div class="sidebar-search-wrap">
+        <i data-lucide="search" class="sidebar-search-icon"></i>
+        <input type="text" class="sidebar-search-input" id="sidebar-search" placeholder="Buscar... (Ctrl+K)" oninput="filterSidebar(this.value)">
+      </div>
     </div>
 
     <nav class="nav">
       <div class="nav-section">
         <div class="nav-section-title">Principal</div>
-        <div class="nav-item active" data-tab="dashboard">
+        <div class="nav-item active" data-tab="dashboard" data-tooltip="Dashboard">
           <i data-lucide="layout-dashboard"></i>
           <span>Dashboard</span>
         </div>
@@ -1537,11 +1863,11 @@
 
       <div class="nav-section">
         <div class="nav-section-title">Logística</div>
-        <div class="nav-item" data-tab="routes">
+        <div class="nav-item" data-tab="routes" data-tooltip="Rutas y Mapa">
           <i data-lucide="map-pin"></i>
           <span>Rutas y Mapa</span>
         </div>
-        <div class="nav-item" data-tab="visits">
+        <div class="nav-item" data-tab="visits" data-tooltip="Visitas">
           <i data-lucide="clipboard-check"></i>
           <span>Visitas</span>
         </div>
@@ -1549,7 +1875,7 @@
 
       <div class="nav-section">
         <div class="nav-section-title">Inteligencia</div>
-        <div class="nav-item" data-tab="intelligence">
+        <div class="nav-item" data-tab="intelligence" data-tooltip="Precios Mercado">
           <i data-lucide="trending-up"></i>
           <span>Precios Mercado</span>
         </div>
@@ -1558,7 +1884,7 @@
       <div class="nav-section">
         <div class="nav-section-title">Configuración</div>
         <div class="nav-item-expandable open">
-          <div class="nav-item nav-item-parent" onclick="toggleSubmenu(this)">
+          <div class="nav-item nav-item-parent" data-tooltip="Base de Datos" onclick="toggleSubmenu(this)">
             <i data-lucide="database"></i>
             <span>Base de Datos</span>
             <i data-lucide="chevron-down" class="submenu-arrow"></i>
@@ -1591,7 +1917,7 @@
       <div class="nav-section">
         <div class="nav-section-title">Datos Comerciales</div>
         <div class="nav-item-expandable">
-          <div class="nav-item nav-item-parent" onclick="toggleSubmenu(this)">
+          <div class="nav-item nav-item-parent" data-tooltip="Google Sheets" onclick="toggleSubmenu(this)">
             <i data-lucide="sheet"></i>
             <span>Google Sheets</span>
             <i data-lucide="chevron-down" class="submenu-arrow"></i>
@@ -1632,7 +1958,7 @@
       <div class="nav-section">
         <div class="nav-section-title">Marketing</div>
         <div class="nav-item-expandable open">
-          <div class="nav-item nav-item-parent" onclick="toggleSubmenu(this)">
+          <div class="nav-item nav-item-parent" data-tooltip="Marketing" onclick="toggleSubmenu(this)">
             <i data-lucide="megaphone"></i>
             <span>Herramientas</span>
             <i data-lucide="chevron-down" class="submenu-arrow"></i>
@@ -1656,7 +1982,7 @@
 
       <div class="nav-section">
         <div class="nav-section-title">Administración</div>
-        <div class="nav-item" data-tab="users">
+        <div class="nav-item" data-tab="users" data-tooltip="Usuarios y Roles">
           <i data-lucide="shield-check"></i>
           <span>Usuarios y Roles</span>
         </div>
@@ -2557,10 +2883,10 @@
                 <div style="display: flex; gap: 8px; align-items: center;">
                   <select id="filter-user-zone" class="form-control" style="width: 150px; padding: 6px 10px; font-size: 12px;" onchange="filterUsers()">
                     <option value="">Todas las zonas</option>
-                    <option value="Norte">Norte</option>
-                    <option value="Centro">Centro</option>
-                    <option value="Centro Sur">Centro Sur</option>
-                    <option value="Sur">Sur</option>
+                    <option value="Zona Norte">Zona Norte</option>
+                    <option value="Zona Centro">Zona Centro</option>
+                    <option value="Zona Centro Sur">Zona Centro Sur</option>
+                    <option value="Zona Sur">Zona Sur</option>
                     <option value="sin_zona">Sin Zona</option>
                   </select>
                   <select id="filter-user-role" class="form-control" style="width: 150px; padding: 6px 10px; font-size: 12px;" onchange="filterUsers()">
@@ -3091,12 +3417,14 @@
 
       <!-- Google Sheets Panel -->
       <div class="panel" id="panel-gsheets">
-        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; padding: 24px 24px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px;">
           <div>
-            <h2><i data-lucide="sheet" style="width: 24px; height: 24px;"></i> Datos Comerciales</h2>
-            <p class="panel-subtitle">Datos sincronizados desde Google Sheets</p>
+            <h2 style="font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+              <i data-lucide="sheet" style="width: 24px; height: 24px; color: var(--accent);"></i> Datos Comerciales
+            </h2>
+            <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Datos sincronizados desde Google Sheets</p>
           </div>
-          <button class="btn btn-primary" onclick="loadGoogleSheetsData(true)" id="gs-refresh-btn">
+          <button class="btn btn-primary" onclick="loadGoogleSheetsData(true)" id="gs-refresh-btn" style="flex-shrink: 0;">
             <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
             Actualizar Datos
           </button>
@@ -3132,27 +3460,27 @@
         <!-- Data content -->
         <div id="gs-content" style="display: none;">
           <!-- Sub-tabs for gsheets panel -->
-          <div class="data-tabs" style="margin-bottom: 16px;" id="gs-tabs">
+          <div class="gs-tabs-bar" id="gs-tabs">
             <button class="data-tab" data-gstab="gs-rendimiento" onclick="switchGsheetsTab('gs-rendimiento')">
               <i data-lucide="bar-chart-3" style="width: 14px; height: 14px;"></i> Rendimiento
             </button>
             <button class="data-tab active" data-gstab="gs-ventas" onclick="switchGsheetsTab('gs-ventas')">
-              <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i> Ventas
+              <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i> Ventas <span class="gs-tab-badge" id="gs-badge-ventas"></span>
             </button>
             <button class="data-tab" data-gstab="gs-cobranzas" onclick="switchGsheetsTab('gs-cobranzas')">
-              <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i> Cobranzas
+              <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i> Cobranzas <span class="gs-tab-badge" id="gs-badge-cobranzas"></span>
             </button>
             <button class="data-tab" data-gstab="gs-vendedores" onclick="switchGsheetsTab('gs-vendedores')">
-              <i data-lucide="users" style="width: 14px; height: 14px;"></i> Vendedores
+              <i data-lucide="users" style="width: 14px; height: 14px;"></i> Vendedores <span class="gs-tab-badge" id="gs-badge-vendedores"></span>
             </button>
             <button class="data-tab" data-gstab="gs-8020" onclick="switchGsheetsTab('gs-8020')">
               <i data-lucide="pie-chart" style="width: 14px; height: 14px;"></i> 80-20
             </button>
             <button class="data-tab" data-gstab="gs-direcciones" onclick="switchGsheetsTab('gs-direcciones')">
-              <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i> Direcciones
+              <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i> Direcciones <span class="gs-tab-badge" id="gs-badge-direcciones"></span>
             </button>
             <button class="data-tab" data-gstab="gs-reasignacion" onclick="switchGsheetsTab('gs-reasignacion')">
-              <i data-lucide="repeat" style="width: 14px; height: 14px;"></i> Reasignación
+              <i data-lucide="repeat" style="width: 14px; height: 14px;"></i> Reasignacion <span class="gs-tab-badge" id="gs-badge-reasignacion"></span>
             </button>
           </div>
 
@@ -3210,17 +3538,22 @@
           <!-- Ventas por Mes -->
           <div class="data-subpanel active" id="gs-subpanel-gs-ventas">
             <div class="card">
-              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <h3><i data-lucide="trending-up" style="width: 18px; height: 18px;"></i> Ventas por Mes</h3>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <input type="text" id="gs-ventas-search" class="form-control" placeholder="Buscar cliente o vendedor..." style="width: 220px;" oninput="filterGsheetsVentas()">
-                  <select id="gs-ventas-mes" class="form-control" style="width: 140px;" onchange="filterGsheetsVentas()">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                  <div style="position:relative;">
+                    <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
+                    <input type="text" id="gs-ventas-search" class="form-control" placeholder="Buscar..." style="width: 200px; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsVentas()">
+                  </div>
+                  <select id="gs-ventas-mes" class="form-control" style="width: 160px; font-size: 13px;" onchange="filterGsheetsVentas()">
                     <option value="">Todos los meses</option>
                   </select>
                 </div>
               </div>
-              <div class="card-body" id="gs-ventas-body" style="overflow-x: auto;">
-                <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+              <div class="card-body" style="padding: 0;">
+                <div id="gs-ventas-body" style="overflow-x: auto;">
+                  <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+                </div>
               </div>
             </div>
           </div>
@@ -3228,43 +3561,49 @@
           <!-- Cobranzas -->
           <div class="data-subpanel" id="gs-subpanel-gs-cobranzas">
             <div class="card">
-              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <h3><i data-lucide="credit-card" style="width: 18px; height: 18px;"></i> Cobranzas</h3>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <input type="text" id="gs-cobranzas-search" class="form-control" placeholder="Buscar..." style="width: 220px;" oninput="filterGsheetsCobranzas()">
-                  <select id="gs-cobranzas-filter" class="form-control" style="width: 160px;" onchange="filterGsheetsCobranzas()">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                  <div style="position:relative;">
+                    <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
+                    <input type="text" id="gs-cobranzas-search" class="form-control" placeholder="Buscar..." style="width: 200px; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsCobranzas()">
+                  </div>
+                  <select id="gs-cobranzas-filter" class="form-control" style="width: 140px; font-size: 13px;" onchange="filterGsheetsCobranzas()">
                     <option value="">Todos</option>
                     <option value="vencido">Vencidos</option>
                     <option value="vigente">Vigentes</option>
                   </select>
                 </div>
               </div>
-              <div class="card-body" id="gs-cobranzas-body" style="overflow-x: auto;">
-                <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+              <div class="card-body" style="padding: 0;">
+                <div id="gs-cobranzas-body" style="overflow-x: auto;">
+                  <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Vendedores / Zonales -->
           <div class="data-subpanel" id="gs-subpanel-gs-vendedores">
-            <!-- Tabla de Google Sheets -->
+            <!-- Fichas de vendedores -->
             <div class="card" style="margin-bottom: 16px;">
-              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Vendedores / Zonales (Google Sheets)</h3>
-                <input type="text" id="gs-vendedores-search" class="form-control" placeholder="Buscar vendedor..." style="width: 220px;" oninput="filterGsheetsVendedoresTable()">
+              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Equipo Comercial</h3>
+                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Datos sincronizados desde Google Sheets</p>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <select id="gs-vendedores-zona-filter" class="form-control" style="width: 160px; font-size: 13px;" onchange="filterGsheetsVendedoresCards()">
+                    <option value="">Todas las zonas</option>
+                  </select>
+                  <div style="position:relative;">
+                    <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
+                    <input type="text" id="gs-vendedores-search" class="form-control" placeholder="Buscar..." style="width: 180px; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsVendedoresCards()">
+                  </div>
+                </div>
               </div>
-              <div class="card-body" id="gs-vendedores-body" style="overflow-x: auto;">
+              <div class="card-body" id="gs-vendedores-body">
                 <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
-              </div>
-            </div>
-
-            <!-- Zonas por Vendedor (desde BD local) -->
-            <div class="card" style="margin-bottom: 16px;">
-              <div class="card-header">
-                <h3><i data-lucide="map" style="width: 18px; height: 18px;"></i> Zonas Detalladas por Vendedor</h3>
-              </div>
-              <div class="card-body" id="gs-vendedores-zonas-body" style="overflow-x: auto;">
-                <p style="text-align: center; color: var(--text-muted); padding: 20px;">Cargando zonas...</p>
               </div>
             </div>
 
@@ -3298,20 +3637,62 @@
 
           <!-- 80-20 -->
           <div class="data-subpanel" id="gs-subpanel-gs-8020">
-            <div class="card" style="margin-bottom: 16px;">
-              <div class="card-header">
-                <h3><i data-lucide="pie-chart" style="width: 18px; height: 18px;"></i> 80-20 Vendedores</h3>
-              </div>
-              <div class="card-body" id="gs-8020-vendedores-body" style="overflow-x: auto;">
-                <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+            <!-- Summary cards -->
+            <div id="gs-8020-summary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px;"></div>
+
+            <!-- Toggle Vendedores / Zonales -->
+            <div style="display:flex;gap:6px;margin-bottom:16px;">
+              <button class="btn" id="btn-8020-vendedores" onclick="switch8020View('vendedores')" style="flex:1;font-weight:600;">
+                <i data-lucide="users" style="width:14px;height:14px;"></i> Vendedores
+              </button>
+              <button class="btn btn-secondary" id="btn-8020-zonales" onclick="switch8020View('zonales')" style="flex:1;">
+                <i data-lucide="shield" style="width:14px;height:14px;"></i> Zonales
+              </button>
+            </div>
+
+            <!-- Vendedores 80-20 -->
+            <div id="gs-8020-view-vendedores">
+              <div class="card">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                  <h3><i data-lucide="pie-chart" style="width:18px;height:18px;"></i> Clientes 80-20 por Vendedor</h3>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <select id="gs-8020-vend-filter" class="form-control" style="width:180px;font-size:13px;" onchange="filter8020Vendedores()">
+                      <option value="">Todos los vendedores</option>
+                    </select>
+                    <div style="position:relative;">
+                      <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
+                      <input type="text" id="gs-8020-vend-search" class="form-control" placeholder="Buscar cliente..." style="width:180px;padding-left:32px;font-size:13px;" oninput="filter8020Vendedores()">
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body" style="padding:0;">
+                  <div id="gs-8020-vendedores-body" style="overflow-x:auto;">
+                    <p style="text-align:center;color:var(--text-muted);padding:20px;">Sin datos</p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="card">
-              <div class="card-header">
-                <h3><i data-lucide="pie-chart" style="width: 18px; height: 18px;"></i> 80-20 Zonales</h3>
-              </div>
-              <div class="card-body" id="gs-8020-zonales-body" style="overflow-x: auto;">
-                <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+
+            <!-- Zonales 80-20 -->
+            <div id="gs-8020-view-zonales" style="display:none;">
+              <div class="card">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                  <h3><i data-lucide="shield" style="width:18px;height:18px;"></i> Clientes 80-20 por Zonal</h3>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <select id="gs-8020-zon-filter" class="form-control" style="width:180px;font-size:13px;" onchange="filter8020Zonales()">
+                      <option value="">Todos los zonales</option>
+                    </select>
+                    <div style="position:relative;">
+                      <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
+                      <input type="text" id="gs-8020-zon-search" class="form-control" placeholder="Buscar cliente..." style="width:180px;padding-left:32px;font-size:13px;" oninput="filter8020Zonales()">
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body" style="padding:0;">
+                  <div id="gs-8020-zonales-body" style="overflow-x:auto;">
+                    <p style="text-align:center;color:var(--text-muted);padding:20px;">Sin datos</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -3319,29 +3700,66 @@
           <!-- Direcciones -->
           <div class="data-subpanel" id="gs-subpanel-gs-direcciones">
             <div class="card" style="margin-bottom: 16px;">
-              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <h3><i data-lucide="map-pin" style="width: 18px; height: 18px;"></i> Direcciones</h3>
-                <input type="text" id="gs-direcciones-search" class="form-control" placeholder="Buscar..." style="width: 220px;" oninput="filterGsheetsDirecciones()">
+                <div style="position:relative;">
+                  <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
+                  <input type="text" id="gs-direcciones-search" class="form-control" placeholder="Buscar..." style="width: 200px; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsDirecciones()">
+                </div>
               </div>
-              <div class="card-body" id="gs-direcciones-body" style="overflow-x: auto;">
-                <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+              <div class="card-body" style="padding: 0;">
+                <div id="gs-direcciones-body" style="overflow-x: auto;">
+                  <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+                </div>
               </div>
             </div>
             <div class="card">
               <div class="card-header">
                 <h3><i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Direcciones Validadas</h3>
               </div>
-              <div class="card-body" id="gs-direcciones-validadas-body" style="overflow-x: auto;">
-                <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+              <div class="card-body" style="padding: 0;">
+                <div id="gs-direcciones-validadas-body" style="overflow-x: auto;">
+                  <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Reasignación -->
           <div class="data-subpanel" id="gs-subpanel-gs-reasignacion">
+            <!-- Reasignar zona a ejecutivo -->
+            <div class="card" style="margin-bottom: 16px;">
+              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <h3><i data-lucide="shuffle" style="width: 18px; height: 18px;"></i> Reasignar Zona a Ejecutivo</h3>
+              </div>
+              <div class="card-body">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                  <div style="flex: 1; min-width: 200px;">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Zona (de Google Sheets)</label>
+                    <select id="reasign-zone-select" class="form-control">
+                      <option value="">-- Seleccionar zona --</option>
+                    </select>
+                  </div>
+                  <div style="flex: 1; min-width: 200px;">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Ejecutivo destino</label>
+                    <select id="reasign-exec-select" class="form-control">
+                      <option value="">-- Seleccionar ejecutivo --</option>
+                    </select>
+                  </div>
+                  <button class="btn btn-primary" onclick="executeZoneReassign()" style="padding: 10px 20px; white-space: nowrap;">
+                    <i data-lucide="check" style="width: 16px; height: 16px;"></i> Reasignar Clientes
+                  </button>
+                </div>
+                <div id="reasign-preview" style="margin-top: 12px;"></div>
+                <div id="reasign-result" style="margin-top: 12px;"></div>
+              </div>
+            </div>
+
+            <!-- Tabla de datos de reasignación desde Google Sheets -->
             <div class="card">
-              <div class="card-header">
-                <h3><i data-lucide="repeat" style="width: 18px; height: 18px;"></i> Reasignación de Vendedores</h3>
+              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <h3><i data-lucide="repeat" style="width: 18px; height: 18px;"></i> Datos de Reasignacion (Google Sheets)</h3>
+                <input type="text" id="gs-reasignacion-search" class="form-control" placeholder="Buscar..." style="width: 220px;" oninput="filterGsheetsReasignacion()">
               </div>
               <div class="card-body" id="gs-reasignacion-body" style="overflow-x: auto;">
                 <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
@@ -4068,9 +4486,110 @@
 
     // Submenu Toggle
     function toggleSubmenu(element) {
+      const sidebar = document.getElementById('sidebar');
+      // If collapsed, expand first then open submenu
+      if (sidebar.classList.contains('collapsed')) {
+        expandSidebar();
+      }
       const parent = element.closest('.nav-item-expandable');
       parent.classList.toggle('open');
     }
+
+    // Sidebar Collapse/Expand
+    function toggleCollapseSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      const main = document.querySelector('.main');
+      main.style.marginLeft = isCollapsed ? '68px' : '240px';
+      localStorage.setItem('leker_sidebar_collapsed', isCollapsed);
+      // Re-create icons for the collapse btn
+      lucide.createIcons();
+    }
+
+    function expandSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar.classList.contains('collapsed')) {
+        sidebar.classList.remove('collapsed');
+        document.querySelector('.main').style.marginLeft = '240px';
+        localStorage.setItem('leker_sidebar_collapsed', false);
+        lucide.createIcons();
+      }
+    }
+
+    // Restore sidebar collapsed state
+    if (localStorage.getItem('leker_sidebar_collapsed') === 'true') {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.add('collapsed');
+      document.querySelector('.main').style.marginLeft = '68px';
+    }
+
+    // Sidebar Search / Filter
+    function filterSidebar(query) {
+      const q = query.toLowerCase().trim();
+      const sections = document.querySelectorAll('.nav-section');
+
+      sections.forEach(section => {
+        let sectionHasMatch = false;
+
+        // Check direct nav-items
+        section.querySelectorAll('.nav-item:not(.nav-item-parent)').forEach(item => {
+          const text = item.textContent.toLowerCase();
+          const match = !q || text.includes(q);
+          item.classList.toggle('search-hidden', !match);
+          if (match) sectionHasMatch = true;
+        });
+
+        // Check expandable items and their sub-items
+        section.querySelectorAll('.nav-item-expandable').forEach(expandable => {
+          let expandableHasMatch = false;
+          const parentText = expandable.querySelector('.nav-item-parent')?.textContent.toLowerCase() || '';
+
+          expandable.querySelectorAll('.nav-subitem').forEach(subitem => {
+            const text = subitem.textContent.toLowerCase();
+            const match = !q || text.includes(q) || parentText.includes(q);
+            subitem.classList.toggle('search-hidden', !match);
+            if (match) expandableHasMatch = true;
+          });
+
+          expandable.classList.toggle('search-hidden', !expandableHasMatch);
+          if (expandableHasMatch) {
+            sectionHasMatch = true;
+            // Auto-expand if searching
+            if (q) expandable.classList.add('open');
+          }
+        });
+
+        section.classList.toggle('search-hidden', !sectionHasMatch);
+      });
+    }
+
+    // Keyboard shortcuts for sidebar
+    document.addEventListener('keydown', (e) => {
+      // Ctrl+B or Cmd+B to toggle sidebar collapse
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        if (window.innerWidth > 1024) {
+          toggleCollapseSidebar();
+        }
+      }
+      // Ctrl+K or Cmd+K to focus sidebar search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar.classList.contains('collapsed')) expandSidebar();
+        const searchInput = document.getElementById('sidebar-search');
+        searchInput.focus();
+      }
+      // Escape to clear search and blur
+      if (e.key === 'Escape') {
+        const searchInput = document.getElementById('sidebar-search');
+        if (document.activeElement === searchInput) {
+          searchInput.value = '';
+          filterSidebar('');
+          searchInput.blur();
+        }
+      }
+    });
 
     // Tab Navigation
     document.querySelectorAll('.nav-item:not(.nav-item-parent)').forEach(item => {
@@ -5325,11 +5844,15 @@
 
       filtered.forEach(e => {
         const isSelected = e.id === selectedExecutiveId;
+        const gsData = (gsheetsVendedoresParsed || []).find(v => v.name && e.full_name && v.name.toLowerCase() === e.full_name.toLowerCase());
+        const zona = gsData ? gsData.zona : '';
+        const zc = ZONE_COLORS[(zona || '').toLowerCase()] || null;
+        const zoneTag = zc ? `<span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">${zona}</span>` : '';
         html += `<div class="executive-option" onclick="selectExecutive('${e.id}')"
           style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f0f0f0; ${isSelected ? 'background: var(--primary-light); font-weight: 500;' : ''}"
           onmouseover="this.style.background='#f5f5f5'"
           onmouseout="this.style.background='${isSelected ? 'var(--primary-light)' : 'white'}'">
-          <div style="font-weight: 500;">${e.full_name}</div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight: 500;">${e.full_name}</span>${zoneTag}</div>
           <div style="font-size: 11px; color: var(--text-muted);">${e.email}</div>
         </div>`;
       });
@@ -6349,14 +6872,14 @@
     function renderExecutivesPanel(routes) {
       const container = document.getElementById('executives-panel');
       const countBadge = document.getElementById('executives-count-badge');
-      const executives = allUsers.filter(u => u.role === 'executive' || u.role === 'zonal');
+      const execUsers = allUsers.filter(u => u.role === 'executive' || u.role === 'supervisor');
 
       // Update the badge with count
       if (countBadge) {
-        countBadge.textContent = executives.length;
+        countBadge.textContent = execUsers.length;
       }
 
-      if (executives.length === 0) {
+      if (execUsers.length === 0) {
         container.innerHTML = `
           <div class="empty-state" style="padding: 24px;">
             <i data-lucide="user-x" style="width: 48px; height: 48px;"></i>
@@ -6367,11 +6890,17 @@
         return;
       }
 
-      // Group by zone
-      const ZONE_ORDER = ['Norte', 'Centro', 'Centro Sur', 'Sur', 'Sin Zona'];
+      // Enrich with Google Sheets zone data
+      const enriched = execUsers.map(exec => {
+        const gsData = (gsheetsVendedoresParsed || []).find(v => v.name && exec.full_name && v.name.toLowerCase() === exec.full_name.toLowerCase());
+        return { ...exec, _zona: gsData ? gsData.zona : '', _isZonal: gsData ? gsData.isZonal : false, _zonal: gsData ? gsData.zonal : '', _mail: gsData ? gsData.mail : exec.email, _cel: gsData ? gsData.cel : '' };
+      });
+
+      // Group by zone using Google Sheets data
+      const ZONE_ORDER = ['Zona Norte', 'Zona Centro', 'Zona Centro Sur', 'Zona Sur', 'Sin Zona'];
       const zoneGroups = {};
-      executives.forEach(exec => {
-        const zone = exec.zone || 'Sin Zona';
+      enriched.forEach(exec => {
+        const zone = exec._zona || 'Sin Zona';
         if (!zoneGroups[zone]) zoneGroups[zone] = [];
         zoneGroups[zone].push(exec);
       });
@@ -6382,17 +6911,17 @@
 
       sortedZones.forEach(zone => {
         const zoneExecs = zoneGroups[zone];
-        const leader = zoneExecs.find(e => e.zone_leader);
-        const zoneColors = { 'Norte': '#3b82f6', 'Centro': '#8b5cf6', 'Centro Sur': '#f59e0b', 'Sur': '#10b981', 'Sin Zona': '#6b7280' };
-        const zoneColor = zoneColors[zone] || '#6b7280';
+        const zonal = zoneExecs.find(e => e._isZonal);
+        const zc = ZONE_COLORS[(zone || '').toLowerCase()] || { bg: 'var(--bg-hover)', color: '#6b7280', border: 'var(--border)' };
+        const zoneColor = zc.color;
 
         html += `
-          <div style="padding: 8px 16px; background: ${zoneColor}15; border-left: 3px solid ${zoneColor}; margin: 4px 0; display: flex; justify-content: space-between; align-items: center;">
+          <div style="padding: 8px 16px; background: ${zc.bg}; border-left: 3px solid ${zoneColor}; margin: 4px 0; display: flex; justify-content: space-between; align-items: center;">
             <div style="font-weight: 700; font-size: 12px; color: ${zoneColor}; text-transform: uppercase; letter-spacing: 0.5px;">
               ${zone}
             </div>
             <div style="font-size: 11px; color: var(--text-muted);">
-              ${leader ? `Zonal: ${leader.full_name}` : ''} &middot; ${zoneExecs.length} vendedores
+              ${zonal ? `Zonal: ${zonal.full_name}` : ''} &middot; ${zoneExecs.length} vendedores
             </div>
           </div>
         `;
@@ -6408,15 +6937,15 @@
             <div class="executive-item" data-exec-id="${exec.id}">
               <div class="executive-header" onclick="toggleExecutiveDetails('${exec.id}')">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                  <div class="executive-avatar" style="background: ${hasRoute ? '#059669' : exec.zone_leader ? zoneColor : isActive ? '#1e40af' : '#6b7280'};">
+                  <div class="executive-avatar" style="background: ${hasRoute ? '#059669' : exec._isZonal ? zoneColor : isActive ? '#1e40af' : '#6b7280'};">
                     ${initials}
                   </div>
                   <div>
                     <div style="font-weight: 600; font-size: 14px;">
                       ${exec.full_name}
-                      ${exec.zone_leader ? '<span style="font-size: 9px; background: ' + zoneColor + '; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 6px;">ZONAL</span>' : ''}
+                      ${exec._isZonal ? '<span style="font-size: 9px; background: ' + zoneColor + '; color: white; padding: 1px 6px; border-radius: 4px; margin-left: 6px;">ZONAL</span>' : ''}
                     </div>
-                    <div style="font-size: 11px; color: var(--text-muted);">${exec.email}</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">${exec._mail || exec.email}</div>
                   </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -7297,9 +7826,15 @@
 
       if (zoneFilter) {
         if (zoneFilter === 'sin_zona') {
-          filtered = filtered.filter(u => !u.zone);
+          filtered = filtered.filter(u => {
+            const gs = (gsheetsVendedoresParsed || []).find(v => v.name && u.full_name && v.name.toLowerCase() === u.full_name.toLowerCase());
+            return !gs || !gs.zona;
+          });
         } else {
-          filtered = filtered.filter(u => u.zone === zoneFilter);
+          filtered = filtered.filter(u => {
+            const gs = (gsheetsVendedoresParsed || []).find(v => v.name && u.full_name && v.name.toLowerCase() === u.full_name.toLowerCase());
+            return gs && gs.zona === zoneFilter;
+          });
         }
       }
 
@@ -7358,16 +7893,20 @@
         const visits = r.visits?.length || r.visits_count || 0;
         const progress = assignedClients > 0 ? Math.round((visits / assignedClients) * 100) : 0;
         const startTime = r.created_at ? new Date(r.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '-';
+        const gsData = (gsheetsVendedoresParsed || []).find(v => v.name && r.user?.full_name && v.name.toLowerCase() === r.user.full_name.toLowerCase());
+        const zona = gsData ? gsData.zona : '';
+        const zc = ZONE_COLORS[(zona || '').toLowerCase()] || null;
+        const zoneTag = zc ? `<span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap;">${zona}</span>` : '';
 
         return `
           <tr>
             <td>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: ${zc ? zc.color : 'var(--primary)'}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">
                   ${(r.user?.full_name || 'E')[0]}
                 </div>
                 <div>
-                  <div style="font-weight: 500;">${r.user?.full_name || '-'}</div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span style="font-weight: 500;">${r.user?.full_name || '-'}</span>${zoneTag}</div>
                   <div style="font-size: 11px; color: var(--text-muted);">${assignedClients} clientes asignados</div>
                 </div>
               </div>
@@ -7505,12 +8044,17 @@
         return;
       }
 
-      // Group users by zone
-      const ZONE_ORDER = ['Norte', 'Centro', 'Centro Sur', 'Sur', 'Sin Zona'];
-      const zoneColors = { 'Norte': '#3b82f6', 'Centro': '#8b5cf6', 'Centro Sur': '#f59e0b', 'Sur': '#10b981', 'Sin Zona': '#6b7280' };
+      // Enrich with Google Sheets zone data
+      const enriched = data.map(u => {
+        const gsData = (gsheetsVendedoresParsed || []).find(v => v.name && u.full_name && v.name.toLowerCase() === u.full_name.toLowerCase());
+        return { ...u, _zona: gsData ? gsData.zona : '', _isZonal: gsData ? gsData.isZonal : false, _zonal: gsData ? gsData.zonal : '', _mail: gsData ? gsData.mail : '', _cel: gsData ? gsData.cel : '' };
+      });
+
+      // Group users by zone using Google Sheets data
+      const ZONE_ORDER = ['Zona Norte', 'Zona Centro', 'Zona Centro Sur', 'Zona Sur', 'Sin Zona'];
       const zoneGroups = {};
-      data.forEach(u => {
-        const zone = u.zone || 'Sin Zona';
+      enriched.forEach(u => {
+        const zone = u._zona || 'Sin Zona';
         if (!zoneGroups[zone]) zoneGroups[zone] = [];
         zoneGroups[zone].push(u);
       });
@@ -7520,20 +8064,21 @@
 
       let html = '';
       sortedZones.forEach(zone => {
-        const zoneColor = zoneColors[zone] || '#6b7280';
+        const zc = ZONE_COLORS[(zone || '').toLowerCase()] || { bg: 'var(--bg-hover)', color: '#6b7280', border: 'var(--border)' };
+        const zoneColor = zc.color;
         const zoneUsers = zoneGroups[zone];
-        const leader = zoneUsers.find(u => u.zone_leader);
+        const zonal = zoneUsers.find(u => u._isZonal);
 
         // Zone header row
         html += `
-          <tr style="background: ${zoneColor}10;">
+          <tr style="background: ${zc.bg};">
             <td colspan="6" style="padding: 10px 16px; border-left: 3px solid ${zoneColor};">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="font-weight: 700; font-size: 13px; color: ${zoneColor}; text-transform: uppercase; letter-spacing: 0.5px;">
                   ${zone}
                 </div>
                 <div style="font-size: 11px; color: var(--text-muted);">
-                  ${leader ? 'Zonal: <strong>' + leader.full_name + '</strong> &middot; ' : ''}${zoneUsers.length} vendedores
+                  ${zonal ? 'Zonal: <strong>' + zonal.full_name + '</strong> &middot; ' : ''}${zoneUsers.length} vendedores
                 </div>
               </div>
             </td>
@@ -7547,27 +8092,27 @@
           const todayVisits = todayRoute?.visits_count || todayRoute?.visits?.length || 0;
           const isActive = u.status !== 'inactive';
           const initials = getInitials(u.full_name);
-          const roleLabel = u.role === 'admin' ? 'Admin' : u.role === 'zonal' ? 'Zonal' : 'Vendedor';
-          const roleClass = u.role === 'admin' ? 'badge-secondary' : u.zone_leader ? 'badge-warning' : 'badge-primary';
+          const roleLabel = u.role === 'admin' ? 'Admin' : u._isZonal ? 'Zonal' : 'Vendedor';
+          const roleClass = u.role === 'admin' ? 'badge-secondary' : u._isZonal ? 'badge-warning' : 'badge-primary';
 
           html += `
           <tr>
             <td>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 36px; height: 36px; border-radius: 50%; background: ${u.zone_leader ? zoneColor : u.role === 'admin' ? '#6b7280' : '#1e40af'}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: ${u._isZonal ? zoneColor : u.role === 'admin' ? '#6b7280' : '#1e40af'}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px;">
                   ${initials}
                 </div>
                 <div>
                   <div style="font-weight: 600;">${u.full_name}</div>
-                  <span class="badge ${roleClass}" style="font-size: 9px;">${roleLabel}${u.zone_leader ? ' (Lider)' : ''}</span>
+                  <span class="badge ${roleClass}" style="font-size: 9px;">${roleLabel}${u._isZonal ? ' (Lider)' : ''}</span>
                 </div>
               </div>
             </td>
             <td>
-              ${renderUserZonesBadges(u.id)}
+              ${u._zona ? (() => { const zcb = ZONE_COLORS[(u._zona || '').toLowerCase()] || { bg: 'var(--bg-hover)', color: 'var(--text-muted)', border: 'var(--border)' }; return '<span style="background:' + zcb.bg + ';color:' + zcb.color + ';border:1px solid ' + zcb.border + ';padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">' + u._zona + '</span>'; })() : renderUserZonesBadges(u.id)}
             </td>
             <td>
-              ${u.role === 'executive' || u.role === 'zonal' ? `
+              ${u.role === 'executive' || u.role === 'supervisor' || u._isZonal ? `
                 <div style="cursor: pointer;" onclick="toggleTableVendorClients('${u.id}', this)">
                   <div style="font-size: 13px; font-weight: 600; color: var(--primary);">${assignedClients}</div>
                   <div style="font-size: 10px; color: var(--accent); text-decoration: underline;">ver clientes</div>
@@ -7575,7 +8120,7 @@
               ` : '<span style="color: var(--text-muted);">-</span>'}
             </td>
             <td>
-              ${u.role === 'executive' || u.role === 'zonal' ? `
+              ${u.role === 'executive' || u.role === 'supervisor' || u._isZonal ? `
                 ${hasActiveRoute ? `
                   <span class="badge badge-success" style="font-size: 10px;">En Ruta</span>
                   <div style="font-size: 10px; color: var(--text-muted);">${todayVisits} visitas</div>
@@ -7594,7 +8139,7 @@
             </td>
             <td>
               <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
-                ${u.role === 'executive' || u.role === 'zonal' ? `
+                ${u.role === 'executive' || u.role === 'supervisor' || u._isZonal ? `
                   <button class="btn btn-primary" onclick="quickAssignToUser('${u.id}')" style="padding: 4px 10px; font-size: 11px;">
                     <i data-lucide="user-plus" style="width: 12px; height: 12px;"></i>
                     Asignar
@@ -8719,6 +9264,12 @@
         const canHaveClients = ['executive', 'supervisor'].includes(user.role);
         const canHaveRoutes = ['executive', 'supervisor'].includes(user.role);
 
+        // Enrich with Google Sheets data
+        const gsData = (gsheetsVendedoresParsed || []).find(v => v.name && user.full_name && v.name.toLowerCase() === user.full_name.toLowerCase());
+        const zona = gsData ? gsData.zona : '';
+        const zc = ZONE_COLORS[(zona || '').toLowerCase()] || null;
+        const zoneTag = zc ? `<span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">${zona}</span>` : '';
+
         // Count assigned clients
         const assignedClients = allClients.filter(c => c.assigned_user_id === user.id).length;
 
@@ -8738,16 +9289,16 @@
           <tr>
             <td>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="width: 36px; height: 36px; background: ${roleConfig.color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px;">
+                <div style="width: 36px; height: 36px; background: ${zc ? zc.color : roleConfig.color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px;">
                   ${initials}
                 </div>
                 <div>
-                  <div style="font-weight: 500;">${user.full_name}</div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span style="font-weight: 500;">${user.full_name}</span>${zoneTag}</div>
                   ${canHaveClients ? `<div style="font-size: 11px; color: var(--text-muted);">${assignedClients} clientes</div>` : ''}
                 </div>
               </div>
             </td>
-            <td style="color: var(--text-secondary); font-size: 13px;">${user.email}</td>
+            <td style="color: var(--text-secondary); font-size: 13px;">${gsData && gsData.mail ? gsData.mail : user.email}</td>
             <td>
               <select class="form-control" style="padding: 4px 8px; font-size: 12px; width: 130px;" onchange="changeUserRole('${user.id}', this.value)" ${isAdmin && allUsers.filter(u => u.role === 'admin').length === 1 ? 'disabled title="Debe haber al menos un administrador"' : ''}>
                 <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Administrador</option>
@@ -9744,6 +10295,16 @@
       return null;
     }
 
+    // Find real header row in sheet data (skip empty/decorative rows)
+    function cleanSheetData(data) {
+      if (!data || data.length === 0) return data;
+      for (let i = 0; i < Math.min(data.length, 10); i++) {
+        const nonEmpty = data[i].filter(c => c !== '' && c != null).length;
+        if (nonEmpty >= 2) return data.slice(i);
+      }
+      return data;
+    }
+
     function renderAllGsheetsData(data) {
       // Find and render each sheet
       const ventas = findSheetData(data, ['ventas por mes', 'ventas']);
@@ -9763,6 +10324,18 @@
       renderGsheets8020(v8020, z8020);
       renderGsheetsDirecciones(direccionesRaw, direcciones);
       renderGsheetsReasignacion(reasignacion);
+
+      // Update tab badges with row counts
+      function setBadge(id, data) {
+        const el = document.getElementById(id);
+        if (el && data && data.length > 1) el.textContent = data.length - 1;
+        else if (el) el.textContent = '';
+      }
+      setBadge('gs-badge-ventas', ventas);
+      setBadge('gs-badge-cobranzas', cobranzas);
+      setBadge('gs-badge-vendedores', vendedores);
+      setBadge('gs-badge-direcciones', direccionesRaw);
+      setBadge('gs-badge-reasignacion', reasignacion);
     }
 
     function sheetToTable(rows, containerId, opts = {}) {
@@ -9776,7 +10349,6 @@
       const dataRows = rows.slice(1).filter(r => r.some(cell => cell !== '' && cell != null));
 
       if (opts.maxRows && dataRows.length > opts.maxRows && !opts.showAll) {
-        // Paginated view
         const pageSize = opts.maxRows || 100;
         const page = opts.page || 0;
         const start = page * pageSize;
@@ -9784,12 +10356,12 @@
         const totalPages = Math.ceil(dataRows.length / pageSize);
 
         let html = buildTableHtml(headers, pageRows, opts);
-        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px;color:var(--text-muted);">
-          <span>Mostrando ${start + 1}-${Math.min(start + pageSize, dataRows.length)} de ${dataRows.length} registros</span>
-          <div style="display:flex;gap:8px;">
-            ${page > 0 ? `<button class="btn btn-secondary" onclick="gsPageTable('${containerId}', ${page - 1}, '${opts.storeKey || ''}')">Anterior</button>` : ''}
-            <span style="padding:6px 12px;">Página ${page + 1} de ${totalPages}</span>
-            ${page < totalPages - 1 ? `<button class="btn btn-secondary" onclick="gsPageTable('${containerId}', ${page + 1}, '${opts.storeKey || ''}')">Siguiente</button>` : ''}
+        html += `<div class="gs-pagination">
+          <span class="gs-pagination-info">Mostrando ${start + 1}-${Math.min(start + pageSize, dataRows.length)} de ${dataRows.length} registros</span>
+          <div class="gs-pagination-controls">
+            ${page > 0 ? `<button onclick="gsPageTable('${containerId}', ${page - 1}, '${opts.storeKey || ''}')">Anterior</button>` : ''}
+            <span class="gs-pagination-page">Pag. ${page + 1} / ${totalPages}</span>
+            ${page < totalPages - 1 ? `<button onclick="gsPageTable('${containerId}', ${page + 1}, '${opts.storeKey || ''}')">Siguiente</button>` : ''}
           </div>
         </div>`;
         container.innerHTML = html;
@@ -9802,26 +10374,31 @@
     }
 
     function buildTableHtml(headers, rows, opts = {}) {
-      let html = '<table class="data-table" style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr>';
+      let html = '<div class="gs-table-wrap"><table class="gs-table"><thead><tr>';
       headers.forEach(h => {
-        html += `<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);font-weight:600;white-space:nowrap;">${h || ''}</th>`;
+        html += `<th>${h || ''}</th>`;
       });
       html += '</tr></thead><tbody>';
 
       rows.forEach(row => {
-        let rowStyle = '';
+        let rowClass = '';
         if (opts.highlightFn) {
-          rowStyle = opts.highlightFn(row, headers);
+          const style = opts.highlightFn(row, headers);
+          if (style && style.includes('239,68,68')) rowClass = ' class="row-danger"';
         }
-        html += `<tr style="${rowStyle}">`;
+        html += `<tr${rowClass}>`;
         row.forEach((cell, i) => {
-          const align = isNumericColumn(cell) ? 'text-align:right;' : '';
-          html += `<td style="padding:8px 12px;border-bottom:1px solid var(--border);${align}">${cell != null ? cell : ''}</td>`;
+          const val = cell != null ? cell : '';
+          const isNum = isNumericColumn(cell);
+          const str = String(val);
+          const truncated = str.length > 50 ? str.slice(0, 47) + '...' : str;
+          const titleAttr = str.length > 50 ? ` title="${str.replace(/"/g, '&quot;')}"` : '';
+          html += `<td${isNum ? ' class="num"' : ''}${titleAttr}>${truncated}</td>`;
         });
         html += '</tr>';
       });
 
-      html += '</tbody></table>';
+      html += '</tbody></table></div>';
       return html;
     }
 
@@ -9834,6 +10411,7 @@
     // Ventas por Mes
     function renderGsheetsVentas(data) {
       if (!data || data.length === 0) return;
+      data = cleanSheetData(data);
       gsheetsAllVentas = data;
 
       // Populate month filter
@@ -9868,6 +10446,7 @@
     // Cobranzas
     function renderGsheetsCobranzas(data) {
       if (!data || data.length === 0) return;
+      data = cleanSheetData(data);
       gsheetsAllCobranzas = data;
 
       sheetToTable(data, 'gs-cobranzas-body', {
@@ -9942,30 +10521,372 @@
     }
 
     // Vendedores / Zonales
+    let gsheetsVendedoresParsed = [];
+
+    const ZONE_COLORS = {
+      'zona norte': { bg: 'rgba(59,130,246,0.08)', color: '#3b82f6', border: 'rgba(59,130,246,0.2)', icon: 'compass' },
+      'zona centro': { bg: 'rgba(16,185,129,0.08)', color: '#10b981', border: 'rgba(16,185,129,0.2)', icon: 'building' },
+      'zona centro sur': { bg: 'rgba(245,158,11,0.08)', color: '#f59e0b', border: 'rgba(245,158,11,0.2)', icon: 'mountain' },
+      'zona sur': { bg: 'rgba(139,92,246,0.08)', color: '#8b5cf6', border: 'rgba(139,92,246,0.2)', icon: 'trees' }
+    };
+
     function renderGsheetsVendedores(data) {
       if (!data || data.length === 0) return;
-      gsheetsAllVendedores = data;
-      sheetToTable(data, 'gs-vendedores-body');
+
+      // Find real header row
+      let headerIdx = 0;
+      for (let i = 0; i < Math.min(data.length, 5); i++) {
+        if (data[i].some(cell => cell && String(cell).toLowerCase().includes('vendedor'))) {
+          headerIdx = i; break;
+        }
+      }
+      const cleanData = data.slice(headerIdx);
+      gsheetsAllVendedores = cleanData;
+
+      const headers = cleanData[0];
+      const rows = cleanData.slice(1).filter(r => r.some(c => c !== '' && c != null));
+
+      // Find column indices
+      const nameIdx = headers.findIndex(h => h && String(h).toLowerCase().includes('vendedor'));
+      const zonaIdx = headers.findIndex(h => h && String(h).toLowerCase().includes('zona'));
+      const zonalIdx = headers.findIndex(h => h && String(h).toLowerCase().includes('zonal'));
+      const mailIdx = headers.findIndex(h => h && String(h).toLowerCase().includes('mail'));
+      const celIdx = headers.findIndex(h => h && String(h).toLowerCase().includes('celular'));
+      const regionIdx = headers.findIndex(h => h && String(h).toLowerCase().includes('region'));
+
+      // Parse all vendedores
+      gsheetsVendedoresParsed = [];
+      const zones = new Set();
+      rows.forEach(row => {
+        const name = (nameIdx >= 0 ? row[nameIdx] : '') || '';
+        if (!name) return;
+        const zona = (zonaIdx >= 0 ? row[zonaIdx] : '') || '';
+        const isZonal = row[0] && String(row[0]).toLowerCase().includes('zonal');
+        if (zona) zones.add(zona);
+        gsheetsVendedoresParsed.push({
+          name,
+          zona,
+          zonal: (zonalIdx >= 0 ? row[zonalIdx] : '') || '',
+          mail: (mailIdx >= 0 ? row[mailIdx] : '') || '',
+          cel: (celIdx >= 0 ? row[celIdx] : '') || '',
+          region: (regionIdx >= 0 ? row[regionIdx] : '') || '',
+          isZonal
+        });
+      });
+
+      // Populate zone filter
+      const zoneFilter = document.getElementById('gs-vendedores-zona-filter');
+      if (zoneFilter) {
+        zoneFilter.innerHTML = '<option value="">Todas las zonas</option>' +
+          [...zones].sort().map(z => `<option value="${z}">${z}</option>`).join('');
+      }
+
+      renderVendedoresCards(gsheetsVendedoresParsed);
+    }
+
+    function filterGsheetsVendedoresCards() {
+      const search = (document.getElementById('gs-vendedores-search').value || '').toLowerCase();
+      const zona = document.getElementById('gs-vendedores-zona-filter').value;
+      let filtered = gsheetsVendedoresParsed.filter(v => {
+        const matchSearch = !search || v.name.toLowerCase().includes(search) || v.zona.toLowerCase().includes(search) || v.mail.toLowerCase().includes(search);
+        const matchZona = !zona || v.zona === zona;
+        return matchSearch && matchZona;
+      });
+      renderVendedoresCards(filtered);
+    }
+
+    let vendedoresViewMode = 'zonales'; // 'zonales' or 'todos'
+
+    function renderVendedoresCards(vendedores) {
+      const container = document.getElementById('gs-vendedores-body');
+      if (!vendedores || vendedores.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">Sin resultados</p>';
+        return;
+      }
+
+      const zonales = vendedores.filter(v => v.isZonal);
+      const execs = vendedores.filter(v => !v.isZonal);
+
+      let html = '';
+
+      // View toggle
+      html += `<div style="display:flex;gap:6px;margin-bottom:16px;">
+        <button class="btn ${vendedoresViewMode === 'zonales' ? 'btn-primary' : 'btn-secondary'}" onclick="vendedoresViewMode='zonales';renderVendedoresCards(gsheetsVendedoresParsed)" style="font-size:13px;padding:8px 16px;">
+          <i data-lucide="network" style="width:14px;height:14px;"></i> Por Zonal
+        </button>
+        <button class="btn ${vendedoresViewMode === 'todos' ? 'btn-primary' : 'btn-secondary'}" onclick="vendedoresViewMode='todos';renderVendedoresCards(gsheetsVendedoresParsed)" style="font-size:13px;padding:8px 16px;">
+          <i data-lucide="layout-grid" style="width:14px;height:14px;"></i> Todos
+        </button>
+      </div>`;
+
+      if (vendedoresViewMode === 'zonales') {
+        // Group by zonal
+        zonales.forEach(z => {
+          const myExecs = execs.filter(e => e.zonal.toLowerCase() === z.name.toLowerCase());
+          const zc = ZONE_COLORS[z.zona.toLowerCase()] || { bg:'var(--bg-hover)', color:'var(--text-muted)', border:'var(--border)' };
+          const cardId = 'zonal-group-' + z.name.replace(/[^a-zA-Z]/g, '');
+
+          html += `<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden;">`;
+          // Zonal header - clickable
+          html += `<div onclick="toggleZonalGroup('${cardId}')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;background:${zc.bg};border-left:4px solid ${zc.color};transition:background 0.15s;" onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:40px;height:40px;border-radius:50%;background:${zc.color};display:flex;align-items:center;justify-content:center;">
+                <i data-lucide="shield" style="width:18px;height:18px;color:white;"></i>
+              </div>
+              <div>
+                <div style="font-weight:700;font-size:15px;color:var(--text-primary);">${z.name}</div>
+                <div style="font-size:12px;color:var(--text-muted);display:flex;gap:8px;align-items:center;margin-top:2px;">
+                  <span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 8px;border-radius:12px;font-size:10px;font-weight:600;">${z.zona}</span>
+                  <span>${myExecs.length} ejecutivo${myExecs.length !== 1 ? 's' : ''}</span>
+                  ${z.region ? `<span>| ${z.region}</span>` : ''}
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              ${z.mail ? `<a href="mailto:${z.mail}" onclick="event.stopPropagation()" style="font-size:11px;color:var(--accent);text-decoration:none;background:rgba(59,130,246,0.08);padding:4px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="mail" style="width:10px;height:10px;"></i>${z.mail}</a>` : ''}
+              ${z.cel ? `<a href="tel:${z.cel.replace(/\\s/g,'')}" onclick="event.stopPropagation()" style="font-size:11px;color:var(--text-secondary);text-decoration:none;background:var(--bg-hover);padding:4px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="phone" style="width:10px;height:10px;"></i>${z.cel}</a>` : ''}
+              <i data-lucide="chevron-down" id="${cardId}-icon" style="width:18px;height:18px;color:var(--text-muted);transition:transform 0.2s;"></i>
+            </div>
+          </div>`;
+
+          // Ejecutivos grid - collapsed by default
+          html += `<div id="${cardId}" style="display:none;padding:12px 16px;background:var(--bg-card);border-top:1px solid var(--border);">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">`;
+          myExecs.forEach(e => { html += buildVendedorCard(e, false); });
+          if (myExecs.length === 0) {
+            html += '<p style="color:var(--text-muted);font-size:13px;padding:8px;">Sin ejecutivos asignados</p>';
+          }
+          html += `</div></div></div>`;
+        });
+
+        // Ejecutivos sin zonal
+        const sinZonal = execs.filter(e => !zonales.some(z => z.name.toLowerCase() === e.zonal.toLowerCase()));
+        if (sinZonal.length > 0) {
+          html += `<div style="margin-top:8px;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:10px;padding:0 4px;">Sin zonal asignado</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">`;
+          sinZonal.forEach(e => { html += buildVendedorCard(e, false); });
+          html += '</div></div>';
+        }
+
+      } else {
+        // Todos view - flat grid
+        if (zonales.length > 0) {
+          html += '<div style="margin-bottom:16px;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:10px;padding:0 4px;">Zonales</div>';
+          html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">';
+          zonales.forEach(v => { html += buildVendedorCard(v, true); });
+          html += '</div></div>';
+        }
+        if (execs.length > 0) {
+          html += '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:10px;padding:0 4px;">Ejecutivos</div>';
+          html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">';
+          execs.forEach(v => { html += buildVendedorCard(v, false); });
+          html += '</div></div>';
+        }
+      }
+
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function toggleZonalGroup(id) {
+      const el = document.getElementById(id);
+      const icon = document.getElementById(id + '-icon');
+      if (el.style.display === 'none') {
+        el.style.display = 'block';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+      } else {
+        el.style.display = 'none';
+        if (icon) icon.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    function buildVendedorCard(v, isZonal) {
+      const zc = ZONE_COLORS[v.zona.toLowerCase()] || { bg: 'var(--bg-hover)', color: 'var(--text-muted)', border: 'var(--border)', icon: 'map-pin' };
+      const borderLeft = isZonal ? `border-left: 3px solid ${zc.color};` : '';
+      const bgCard = isZonal ? `background: ${zc.bg};` : 'background: var(--bg-card);';
+
+      return `<div style="${bgCard}${borderLeft}border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:box-shadow 0.15s;" onmouseenter="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseleave="this.style.boxShadow='none'">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+            <div style="width:36px;height:36px;min-width:36px;border-radius:50%;background:${zc.bg};border:1px solid ${zc.border};display:flex;align-items:center;justify-content:center;">
+              <i data-lucide="${isZonal ? 'shield' : 'user'}" style="width:16px;height:16px;color:${zc.color};"></i>
+            </div>
+            <div style="min-width:0;">
+              <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.name}</div>
+              ${isZonal ? '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:' + zc.color + ';font-weight:600;">Zonal</div>' : ''}
+            </div>
+          </div>
+          <span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:2px 10px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;flex-shrink:0;">${v.zona || 'Sin zona'}</span>
+        </div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:4px;font-size:12px;">
+          ${!isZonal && v.zonal ? `<div style="color:var(--text-muted);">Reporta a: <strong style="color:var(--text-secondary);">${v.zonal}</strong></div>` : ''}
+          ${v.region ? `<div style="color:var(--text-muted);"><i data-lucide="map-pin" style="width:11px;height:11px;display:inline-block;vertical-align:-1px;"></i> ${v.region}</div>` : ''}
+        </div>
+        ${(v.mail || v.cel) ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
+          ${v.mail ? `<a href="mailto:${v.mail}" style="font-size:11px;color:var(--accent);text-decoration:none;background:rgba(59,130,246,0.06);padding:3px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="mail" style="width:10px;height:10px;"></i>${v.mail}</a>` : ''}
+          ${v.cel ? `<a href="tel:${v.cel.replace(/\s/g,'')}" style="font-size:11px;color:var(--text-secondary);text-decoration:none;background:var(--bg-hover);padding:3px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="phone" style="width:10px;height:10px;"></i>${v.cel}</a>` : ''}
+        </div>` : ''}
+      </div>`;
     }
 
     // 80-20
+    let gs8020VendClean = null;
+    let gs8020ZonClean = null;
+
     function renderGsheets8020(vendedoresData, zonalesData) {
       if (vendedoresData && vendedoresData.length > 0) {
-        sheetToTable(vendedoresData, 'gs-8020-vendedores-body');
+        gs8020VendClean = cleanSheetData(vendedoresData);
+        // Remove empty columns
+        gs8020VendClean = removeEmptyCols(gs8020VendClean);
+        render8020Vendedores(gs8020VendClean);
       }
       if (zonalesData && zonalesData.length > 0) {
-        sheetToTable(zonalesData, 'gs-8020-zonales-body');
+        gs8020ZonClean = cleanSheetData(zonalesData);
+        gs8020ZonClean = removeEmptyCols(gs8020ZonClean);
+        render8020Zonales(gs8020ZonClean);
       }
+      render8020Summary();
+    }
+
+    function removeEmptyCols(data) {
+      if (!data || data.length === 0) return data;
+      const cols = data[0].length;
+      const emptyIdx = [];
+      for (let c = 0; c < cols; c++) {
+        const hasData = data.some(row => row[c] !== '' && row[c] != null);
+        if (!hasData) emptyIdx.push(c);
+      }
+      return data.map(row => row.filter((_, i) => !emptyIdx.includes(i)));
+    }
+
+    function render8020Summary() {
+      const container = document.getElementById('gs-8020-summary');
+      if (!container) return;
+
+      // Count per vendedor
+      const vendCounts = {};
+      if (gs8020VendClean && gs8020VendClean.length > 1) {
+        const h = gs8020VendClean[0];
+        const vendIdx = h.findIndex(c => c && (String(c).toLowerCase().includes('final') || String(c).toLowerCase().includes('vendedor')));
+        const idx = vendIdx >= 0 ? vendIdx : 3;
+        gs8020VendClean.slice(1).forEach(r => {
+          const v = r[idx] || 'Sin asignar';
+          vendCounts[v] = (vendCounts[v] || 0) + 1;
+        });
+      }
+
+      const totalVend = Object.values(vendCounts).reduce((a, b) => a + b, 0);
+      const sorted = Object.entries(vendCounts).sort((a, b) => b[1] - a[1]);
+
+      let html = `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:28px;font-weight:700;color:var(--accent);">${totalVend}</div>
+        <div style="font-size:11px;color:var(--text-muted);">Total Clientes 80-20</div>
+      </div>`;
+
+      sorted.slice(0, 7).forEach(([name, count]) => {
+        const vData = gsheetsVendedoresParsed.find(v => v.name.toLowerCase() === name.toLowerCase());
+        const zona = vData ? vData.zona : '';
+        const zc = ZONE_COLORS[zona.toLowerCase()] || { color: 'var(--text-muted)' };
+        const pct = totalVend > 0 ? Math.round(count / totalVend * 100) : 0;
+        html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;cursor:pointer;" onclick="document.getElementById('gs-8020-vend-filter').value='${name}';filter8020Vendedores();">
+          <div style="font-size:22px;font-weight:700;color:${zc.color};">${count}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-top:2px;">${name}</div>
+          <div style="font-size:10px;color:var(--text-muted);">${pct}% del total</div>
+        </div>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function render8020Vendedores(data) {
+      if (!data) return;
+      const headers = data[0];
+      // Populate filter
+      const vendIdx = headers.findIndex(c => c && (String(c).toLowerCase().includes('final') || String(c).toLowerCase().includes('vendedor')));
+      const idx = vendIdx >= 0 ? vendIdx : 3;
+      const vendedores = [...new Set(data.slice(1).map(r => r[idx]).filter(Boolean))].sort();
+      const select = document.getElementById('gs-8020-vend-filter');
+      if (select) {
+        select.innerHTML = '<option value="">Todos los vendedores</option>' +
+          vendedores.map(v => `<option value="${v}">${v}</option>`).join('');
+      }
+      sheetToTable(data, 'gs-8020-vendedores-body', { maxRows: 50, page: 0, storeKey: '8020vend' });
+    }
+
+    function filter8020Vendedores() {
+      if (!gs8020VendClean) return;
+      const filter = document.getElementById('gs-8020-vend-filter').value;
+      const search = (document.getElementById('gs-8020-vend-search').value || '').toLowerCase();
+      const headers = gs8020VendClean[0];
+      const vendIdx = headers.findIndex(c => c && (String(c).toLowerCase().includes('final') || String(c).toLowerCase().includes('vendedor')));
+      const idx = vendIdx >= 0 ? vendIdx : 3;
+
+      let filtered = [headers];
+      gs8020VendClean.slice(1).forEach(row => {
+        const matchVend = !filter || row[idx] === filter;
+        const matchSearch = !search || row.some(c => String(c).toLowerCase().includes(search));
+        if (matchVend && matchSearch) filtered.push(row);
+      });
+      sheetToTable(filtered, 'gs-8020-vendedores-body', { maxRows: 50, page: 0, storeKey: '8020vend' });
+    }
+
+    function render8020Zonales(data) {
+      if (!data) return;
+      const headers = data[0];
+      const zonIdx = headers.length - 1; // last col is zonal name
+      const zonales = [...new Set(data.slice(1).map(r => r[zonIdx]).filter(Boolean))].sort();
+      const select = document.getElementById('gs-8020-zon-filter');
+      if (select) {
+        select.innerHTML = '<option value="">Todos los zonales</option>' +
+          zonales.map(z => `<option value="${z}">${z}</option>`).join('');
+      }
+      sheetToTable(data, 'gs-8020-zonales-body', { maxRows: 50, page: 0, storeKey: '8020zon' });
+    }
+
+    function filter8020Zonales() {
+      if (!gs8020ZonClean) return;
+      const filter = document.getElementById('gs-8020-zon-filter').value;
+      const search = (document.getElementById('gs-8020-zon-search').value || '').toLowerCase();
+      const headers = gs8020ZonClean[0];
+      const zonIdx = headers.length - 1;
+
+      let filtered = [headers];
+      gs8020ZonClean.slice(1).forEach(row => {
+        const matchZon = !filter || row[zonIdx] === filter;
+        const matchSearch = !search || row.some(c => String(c).toLowerCase().includes(search));
+        if (matchZon && matchSearch) filtered.push(row);
+      });
+      sheetToTable(filtered, 'gs-8020-zonales-body', { maxRows: 50, page: 0, storeKey: '8020zon' });
+    }
+
+    function switch8020View(view) {
+      const vendView = document.getElementById('gs-8020-view-vendedores');
+      const zonView = document.getElementById('gs-8020-view-zonales');
+      const btnVend = document.getElementById('btn-8020-vendedores');
+      const btnZon = document.getElementById('btn-8020-zonales');
+      if (view === 'vendedores') {
+        vendView.style.display = 'block';
+        zonView.style.display = 'none';
+        btnVend.className = 'btn btn-primary';
+        btnZon.className = 'btn btn-secondary';
+      } else {
+        vendView.style.display = 'none';
+        zonView.style.display = 'block';
+        btnVend.className = 'btn btn-secondary';
+        btnZon.className = 'btn btn-primary';
+      }
+      lucide.createIcons();
     }
 
     // Direcciones
     function renderGsheetsDirecciones(rawData, validadasData) {
       if (rawData && rawData.length > 0) {
+        rawData = cleanSheetData(rawData);
         gsheetsAllDirecciones = rawData;
         sheetToTable(rawData, 'gs-direcciones-body', { maxRows: 100, page: 0, storeKey: 'direcciones' });
       }
       if (validadasData && validadasData.length > 0) {
-        sheetToTable(validadasData, 'gs-direcciones-validadas-body', { maxRows: 100, page: 0, storeKey: 'dirvalidadas' });
+        sheetToTable(cleanSheetData(validadasData), 'gs-direcciones-validadas-body', { maxRows: 100, page: 0, storeKey: 'dirvalidadas' });
       }
     }
 
@@ -9984,9 +10905,165 @@
     }
 
     // Reasignación
+    let gsheetsAllReasignacion = null;
+
     function renderGsheetsReasignacion(data) {
       if (!data || data.length === 0) return;
-      sheetToTable(data, 'gs-reasignacion-body');
+
+      // Find the real header row (first row with "Zona" or "Vendedor" in it)
+      let headerIdx = 0;
+      for (let i = 0; i < Math.min(data.length, 10); i++) {
+        if (data[i].some(cell => cell && String(cell).toLowerCase().includes('zona'))) {
+          headerIdx = i;
+          break;
+        }
+      }
+      // Use data from headerIdx onwards
+      const cleanData = data.slice(headerIdx);
+      gsheetsAllReasignacion = cleanData;
+      sheetToTable(cleanData, 'gs-reasignacion-body', { maxRows: 100, page: 0, storeKey: 'reasignacion' });
+
+      // Use zones from vendedores parsed data (has all 4 zones)
+      const zoneSelect = document.getElementById('reasign-zone-select');
+      if (zoneSelect) {
+        const ZONAS = ['Zona Norte', 'Zona Centro', 'Zona Centro Sur', 'Zona Sur'];
+        // Also add any extra zones from vendedores data
+        if (gsheetsVendedoresParsed && gsheetsVendedoresParsed.length > 0) {
+          gsheetsVendedoresParsed.forEach(v => {
+            if (v.zona && !ZONAS.includes(v.zona)) ZONAS.push(v.zona);
+          });
+        }
+        zoneSelect.innerHTML = '<option value="">-- Seleccionar zona --</option>' + ZONAS.map(z => `<option value="${z}">${z}</option>`).join('');
+      }
+
+      // Populate executive select grouped by zone
+      const execSelect = document.getElementById('reasign-exec-select');
+      if (execSelect && allUsers) {
+        let html = '<option value="">-- Seleccionar ejecutivo --</option>';
+        const ZONAS = ['Zona Norte', 'Zona Centro', 'Zona Centro Sur', 'Zona Sur'];
+        ZONAS.forEach(zona => {
+          const vendedoresInZone = gsheetsVendedoresParsed.filter(v => v.zona === zona);
+          if (vendedoresInZone.length > 0) {
+            html += `<optgroup label="${zona}">`;
+            vendedoresInZone.forEach(v => {
+              const user = allUsers.find(u => u.full_name && u.full_name.toLowerCase() === v.name.toLowerCase());
+              if (user) {
+                html += `<option value="${user.id}">${v.name}${v.isZonal ? ' (Zonal)' : ''}</option>`;
+              }
+            });
+            html += '</optgroup>';
+          }
+        });
+        // Add users not in any zone
+        const mapped = gsheetsVendedoresParsed.map(v => v.name.toLowerCase());
+        const unmapped = allUsers.filter(u => !mapped.includes(u.full_name.toLowerCase()));
+        if (unmapped.length > 0) {
+          html += '<optgroup label="Sin zona">';
+          unmapped.forEach(u => { html += `<option value="${u.id}">${u.full_name}</option>`; });
+          html += '</optgroup>';
+        }
+        execSelect.innerHTML = html;
+      }
+
+      // Preview on zone change
+      if (zoneSelect) zoneSelect.onchange = previewZoneReassign;
+    }
+
+    function filterGsheetsReasignacion() {
+      if (!gsheetsAllReasignacion || gsheetsAllReasignacion.length === 0) return;
+      const search = (document.getElementById('gs-reasignacion-search').value || '').toLowerCase();
+      const headers = gsheetsAllReasignacion[0];
+      let filtered = [headers];
+      gsheetsAllReasignacion.slice(1).forEach(row => {
+        if (!search || row.some(cell => String(cell).toLowerCase().includes(search))) {
+          filtered.push(row);
+        }
+      });
+      sheetToTable(filtered, 'gs-reasignacion-body', { maxRows: 100, page: 0, storeKey: 'reasignacion' });
+    }
+
+    async function previewZoneReassign() {
+      const zone = document.getElementById('reasign-zone-select').value;
+      const preview = document.getElementById('reasign-preview');
+      if (!zone) { preview.innerHTML = ''; return; }
+
+      try {
+        // Find vendedores in this zone
+        const vendedoresInZone = gsheetsVendedoresParsed.filter(v => v.zona === zone && !v.isZonal);
+        const vendedorNames = vendedoresInZone.map(v => v.name.toLowerCase());
+
+        // Find their user IDs
+        const userIds = allUsers
+          .filter(u => vendedorNames.includes(u.full_name.toLowerCase()))
+          .map(u => u.id);
+
+        // Find clients assigned to these users
+        let totalClients = 0;
+        const clientIds = [];
+        const details = [];
+
+        for (const uid of userIds) {
+          const res = await fetch(`${API}/api/users/${uid}/clients`);
+          const json = await res.json();
+          if (json.success && json.data) {
+            totalClients += json.data.length;
+            json.data.forEach(c => clientIds.push(c.id));
+            const userName = allUsers.find(u => u.id === uid)?.full_name || uid;
+            details.push(`${userName}: ${json.data.length}`);
+          }
+        }
+
+        const zc = ZONE_COLORS[zone.toLowerCase()] || { bg: 'rgba(59,130,246,0.06)', color: 'var(--accent)' };
+        preview.innerHTML = `<div style="padding: 12px 16px; background: ${zc.bg}; border-radius: 8px; font-size: 13px;">
+          <div style="font-weight: 600; color: ${zc.color}; margin-bottom: 6px;">${zone} - ${totalClients} clientes</div>
+          <div style="color: var(--text-muted); font-size: 12px;">
+            Vendedores: ${vendedoresInZone.map(v => v.name).join(', ')}<br>
+            ${details.length > 0 ? 'Detalle: ' + details.join(' | ') : ''}
+          </div>
+        </div>`;
+        preview.dataset.clientIds = JSON.stringify(clientIds);
+      } catch (e) {
+        preview.innerHTML = `<div style="padding: 10px 14px; background: rgba(239,68,68,0.06); border-radius: 8px; font-size: 13px; color: var(--danger);">Error: ${e.message}</div>`;
+      }
+    }
+
+    async function executeZoneReassign() {
+      const zone = document.getElementById('reasign-zone-select').value;
+      const execId = document.getElementById('reasign-exec-select').value;
+      const result = document.getElementById('reasign-result');
+      const preview = document.getElementById('reasign-preview');
+
+      if (!zone || !execId) {
+        showToast('warning', 'Campos requeridos', 'Selecciona zona y ejecutivo');
+        return;
+      }
+
+      const clientIds = preview.dataset.clientIds ? JSON.parse(preview.dataset.clientIds) : [];
+      if (clientIds.length === 0) {
+        showToast('warning', 'Sin clientes', 'No hay clientes en esta zona para reasignar');
+        return;
+      }
+
+      const execName = document.getElementById('reasign-exec-select').selectedOptions[0].text;
+      if (!confirm(`Reasignar ${clientIds.length} clientes de zona "${zone}" a ${execName}?`)) return;
+
+      try {
+        result.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Reasignando...</p>';
+        const res = await fetch(`${API}/api/clients/reassign-selected`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientIds, toUserId: execId })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error);
+        result.innerHTML = `<div style="padding: 10px 14px; background: rgba(16,185,129,0.08); border-radius: 8px; font-size: 13px; color: var(--success);">
+          <strong>${json.data.updated}</strong> clientes reasignados exitosamente a <strong>${execName}</strong>
+        </div>`;
+        showToast('success', 'Reasignacion completa', `${json.data.updated} clientes movidos a ${execName}`);
+      } catch (e) {
+        result.innerHTML = `<div style="padding: 10px 14px; background: rgba(239,68,68,0.06); border-radius: 8px; font-size: 13px; color: var(--danger);">Error: ${e.message}</div>`;
+        showToast('error', 'Error', e.message);
+      }
     }
 
     // =============================================
@@ -10036,19 +11113,19 @@
         return;
       }
 
-      let html = `<table class="data-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+      let html = `<div class="gs-table-wrap"><table class="gs-table">
         <thead><tr>
-          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);font-weight:600;">Vendedor</th>
-          <th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);font-weight:600;">Zona</th>
-          <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);font-weight:600;">Rutas</th>
-          <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);font-weight:600;">Días</th>
-          <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);font-weight:600;">Visitas</th>
-          <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);font-weight:600;">Prom/Día</th>
-          <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);font-weight:600;">Ventas</th>
-          <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);font-weight:600;">Contactados</th>
-          <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);font-weight:600;">Sin Contacto</th>
-          <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);font-weight:600;">Efectividad</th>
-          <th style="padding:10px 12px;text-align:center;border-bottom:2px solid var(--border);font-weight:600;">Nota</th>
+          <th>Vendedor</th>
+          <th>Zona</th>
+          <th style="text-align:center;">Rutas</th>
+          <th style="text-align:center;">Días</th>
+          <th style="text-align:center;">Visitas</th>
+          <th style="text-align:center;">Prom/Día</th>
+          <th style="text-align:center;">Ventas</th>
+          <th style="text-align:center;">Contactados</th>
+          <th style="text-align:center;">Sin Contacto</th>
+          <th style="text-align:center;">Efectividad</th>
+          <th style="text-align:center;">Nota</th>
         </tr></thead><tbody>`;
 
       stats.forEach(s => {
@@ -10057,31 +11134,37 @@
         const nota = getVendedorNota(s.userId);
         const notaPreview = nota ? (nota.length > 30 ? nota.substring(0, 30) + '...' : nota) : '';
 
+        // Enrich with zone data from Google Sheets
+        const gsData = (gsheetsVendedoresParsed || []).find(v => v.name.toLowerCase() === (s.name || '').toLowerCase());
+        const zona = gsData ? gsData.zona : '';
+        const isZonal = gsData ? gsData.isZonal : false;
+        const zc = ZONE_COLORS[(zona || '').toLowerCase()] || { bg: 'var(--bg-hover)', color: 'var(--text-muted)', border: 'var(--border)' };
+
         html += `<tr>
           <td style="padding:8px 12px;border-bottom:1px solid var(--border);">
             <div style="font-weight:600;">${s.name}</div>
-            <div style="font-size:11px;color:var(--text-muted);">${s.role === 'zonal' ? 'Zonal' : 'Ejecutivo'}${s.zoneLeader ? ' (Líder)' : ''}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${isZonal ? 'Zonal' : 'Ejecutivo'}</div>
           </td>
           <td style="padding:8px 12px;border-bottom:1px solid var(--border);">
-            <span style="background:rgba(99,102,241,0.1);color:#6366f1;padding:2px 8px;border-radius:4px;font-size:12px;">${s.zone || 'Sin zona'}</span>
+            ${zona ? `<span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;">${zona}</span>` : '<span style="font-size:12px;color:var(--text-muted);">Sin zona</span>'}
           </td>
-          <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:center;">${s.totalRoutes}<br><span style="font-size:10px;color:var(--text-muted);">${s.completedRoutes} comp.</span></td>
-          <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:center;">${s.daysWorked}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:center;font-weight:600;">${s.totalVisits}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:center;">${s.avgVisitsPerDay}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:center;color:var(--success);font-weight:600;">${s.outcomes.sale}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:center;">${s.outcomes.contacted}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:center;color:var(--danger);">${s.outcomes.no_contact}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:center;">
-            <span style="background:${effBg};color:${effColor};padding:4px 10px;border-radius:6px;font-weight:700;font-size:13px;">${s.effectiveness}%</span>
+          <td style="text-align:center;">${s.totalRoutes}<br><span style="font-size:10px;color:var(--text-muted);">${s.completedRoutes} comp.</span></td>
+          <td style="text-align:center;">${s.daysWorked}</td>
+          <td style="text-align:center;font-weight:600;">${s.totalVisits}</td>
+          <td style="text-align:center;">${s.avgVisitsPerDay}</td>
+          <td style="text-align:center;color:var(--success);font-weight:600;">${s.outcomes.sale}</td>
+          <td style="text-align:center;">${s.outcomes.contacted}</td>
+          <td style="text-align:center;color:var(--danger);">${s.outcomes.no_contact}</td>
+          <td style="text-align:center;">
+            <span style="background:${effBg};color:${effColor};padding:4px 10px;border-radius:20px;font-weight:700;font-size:12px;">${s.effectiveness}%</span>
           </td>
-          <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:center;">
+          <td style="text-align:center;">
             ${notaPreview ? `<span title="${nota}" style="cursor:help;font-size:12px;color:var(--text-muted);">${notaPreview}</span>` : '<span style="color:var(--text-muted);font-size:11px;">-</span>'}
           </td>
         </tr>`;
       });
 
-      html += '</tbody></table>';
+      html += '</tbody></table></div>';
       container.innerHTML = html;
     }
 
@@ -10129,7 +11212,7 @@
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
               <div>
                 <div style="font-weight: 700; font-size: 14px;">${exec.full_name}</div>
-                <div style="font-size: 12px; color: var(--text-muted);">${exec.role === 'zonal' ? 'Zonal' : 'Ejecutivo'} ${exec.zone ? '| Zona: ' + exec.zone : ''} ${exec.zone_leader ? '(Líder)' : ''}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${(() => { const gs = (gsheetsVendedoresParsed || []).find(v => v.name && exec.full_name && v.name.toLowerCase() === exec.full_name.toLowerCase()); const z = gs ? gs.zona : ''; const isZ = gs ? gs.isZonal : false; const zcl = ZONE_COLORS[(z || '').toLowerCase()]; return (isZ ? 'Zonal' : 'Ejecutivo') + (z && zcl ? ' | <span style="background:' + zcl.bg + ';color:' + zcl.color + ';border:1px solid ' + zcl.border + ';padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">' + z + '</span>' : ''); })()}</div>
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <span style="background: var(--bg-hover); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;">${totalClients} clientes</span>
