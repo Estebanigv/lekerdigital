@@ -3946,6 +3946,9 @@
 
             <!-- Zonales 80-20 -->
             <div id="gs-8020-view-zonales" style="display:none;">
+              <!-- Zonal summary cards -->
+              <div id="gs-8020-zonales-summary" class="gs-summary-grid" style="margin-bottom:16px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));"></div>
+
               <div class="card">
                 <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                   <h3><i data-lucide="shield" style="width:18px;height:18px;"></i> Clientes 80-20 por Zonal</h3>
@@ -11061,23 +11064,57 @@
         });
       }
 
+      // Count per zonal
+      const zonCounts = {};
+      if (gs8020ZonClean && gs8020ZonClean.length > 1) {
+        const hz = gs8020ZonClean[0];
+        const zonIdx = hz.length - 1;
+        gs8020ZonClean.slice(1).forEach(r => {
+          const z = r[zonIdx] || 'Sin asignar';
+          zonCounts[z] = (zonCounts[z] || 0) + 1;
+        });
+      }
+
       const totalVend = Object.values(vendCounts).reduce((a, b) => a + b, 0);
-      const sorted = Object.entries(vendCounts).sort((a, b) => b[1] - a[1]);
+      const totalZon = Object.values(zonCounts).reduce((a, b) => a + b, 0);
+      const sortedVend = Object.entries(vendCounts).sort((a, b) => b[1] - a[1]);
+      const sortedZon = Object.entries(zonCounts).sort((a, b) => b[1] - a[1]);
 
       let html = `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
-        <div style="font-size:28px;font-weight:700;color:var(--accent);">${totalVend}</div>
-        <div style="font-size:11px;color:var(--text-muted);">Total Clientes 80-20</div>
+        <div style="font-size:24px;font-weight:700;color:var(--accent);">${totalVend}</div>
+        <div style="font-size:11px;color:var(--text-muted);">Clientes Vendedores</div>
+      </div>`;
+      html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:24px;font-weight:700;color:#8b5cf6;">${totalZon}</div>
+        <div style="font-size:11px;color:var(--text-muted);">Clientes Zonales</div>
       </div>`;
 
-      sorted.slice(0, 7).forEach(([name, count]) => {
+      // Vendedor cards
+      sortedVend.slice(0, 5).forEach(([name, count]) => {
         const vData = findVendedorData(name);
         const zona = vData ? vData.zona : '';
-        const zc = ZONE_COLORS[zona.toLowerCase()] || { color: 'var(--text-muted)' };
+        const zc = ZONE_COLORS[zona.toLowerCase()] || { color: 'var(--text-muted)', bg: 'var(--bg-hover)', border: 'var(--border)' };
         const pct = totalVend > 0 ? Math.round(count / totalVend * 100) : 0;
-        html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;cursor:pointer;" onclick="document.getElementById('gs-8020-vend-filter').value='${name}';filter8020Vendedores();">
-          <div style="font-size:22px;font-weight:700;color:${zc.color};">${count}</div>
-          <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-top:2px;">${name}</div>
-          <div style="font-size:10px;color:var(--text-muted);">${pct}% del total</div>
+        html += `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;" onclick="switch8020View('vendedores');document.getElementById('gs-8020-vend-filter').value='${name}';filter8020Vendedores();">
+          <div style="font-size:20px;font-weight:700;color:${zc.color};">${count}</div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-primary);margin-top:2px;">${name}</div>
+          <div style="font-size:10px;color:var(--text-muted);">${pct}%</div>
+        </div>`;
+      });
+
+      // Zonal cards
+      sortedZon.forEach(([name, count]) => {
+        const vData = findVendedorData(name);
+        const zona = vData ? vData.zona : '';
+        const zc = ZONE_COLORS[zona.toLowerCase()] || { color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)' };
+        const pct = totalZon > 0 ? Math.round(count / totalZon * 100) : 0;
+        html += `<div style="background:${zc.bg};border:1px solid ${zc.border};border-radius:10px;padding:12px;text-align:center;cursor:pointer;" onclick="switch8020View('zonales');document.getElementById('gs-8020-zon-filter').value='${name}';filter8020Zonales();">
+          <div style="font-size:20px;font-weight:700;color:${zc.color};">${count}</div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-primary);margin-top:2px;">${name}</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:3px;">
+            <span style="font-size:9px;background:${zc.color};color:white;padding:1px 6px;border-radius:4px;font-weight:600;">ZONAL</span>
+            <span style="font-size:10px;color:var(--text-muted);">${pct}%</span>
+          </div>
         </div>`;
       });
 
@@ -11124,8 +11161,41 @@
       const select = document.getElementById('gs-8020-zon-filter');
       if (select) {
         select.innerHTML = '<option value="">Todos los zonales</option>' +
-          zonales.map(z => `<option value="${z}">${z}</option>`).join('');
+          zonales.map(z => {
+            const vData = findVendedorData(z);
+            const zona = vData ? vData.zona : '';
+            return `<option value="${z}">${z}${zona ? ' (' + zona + ')' : ''}</option>`;
+          }).join('');
       }
+
+      // Render zonal summary cards above table
+      const summaryDiv = document.getElementById('gs-8020-zonales-summary');
+      if (summaryDiv) {
+        let summaryHtml = '';
+        zonales.forEach(z => {
+          const count = data.slice(1).filter(r => r[zonIdx] === z).length;
+          const vData = findVendedorData(z);
+          const zona = vData ? vData.zona : '';
+          const zc = ZONE_COLORS[zona.toLowerCase()] || { color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)' };
+          summaryHtml += `<div style="background:${zc.bg};border:1px solid ${zc.border};border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="document.getElementById('gs-8020-zon-filter').value='${z}';filter8020Zonales();">
+            <div style="width:40px;height:40px;border-radius:50%;background:${zc.color};color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">
+              ${z.split('.').map(p => p.trim()[0] || '').join('').toUpperCase().substring(0,2)}
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;font-size:13px;">${z}</div>
+              <div style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+                ${zona ? '<span style="background:' + zc.bg + ';color:' + zc.color + ';border:1px solid ' + zc.border + ';padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">' + zona + '</span>' : ''}
+                <span>${count} clientes</span>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:22px;font-weight:700;color:${zc.color};">${count}</div>
+            </div>
+          </div>`;
+        });
+        summaryDiv.innerHTML = summaryHtml;
+      }
+
       sheetToTable(data, 'gs-8020-zonales-body', { maxRows: 50, page: 0, storeKey: '8020zon' });
     }
 
