@@ -1186,6 +1186,77 @@
       color: var(--text-primary);
     }
 
+    /* Responsive utility classes for JS-generated content */
+    .gs-vendedores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .gs-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .gs-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .gs-filter-bar select,
+    .gs-filter-bar input {
+      min-width: 0;
+      flex: 1 1 160px;
+      max-width: 260px;
+    }
+    .gs-zone-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .gs-vendedores-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .gs-summary-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .gs-filter-bar {
+        gap: 8px;
+      }
+      .gs-filter-bar select,
+      .gs-filter-bar input {
+        flex: 1 1 120px;
+        max-width: 100%;
+        font-size: 12px;
+      }
+    }
+    @media (max-width: 480px) {
+      .gs-vendedores-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .gs-summary-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .gs-filter-bar {
+        gap: 6px;
+      }
+      .gs-filter-bar select,
+      .gs-filter-bar input {
+        flex: 1 1 100%;
+        max-width: 100%;
+        font-size: 12px;
+        padding: 8px 10px;
+      }
+    }
+
     /* Tables */
     .table-wrapper {
       overflow-x: auto;
@@ -1478,19 +1549,35 @@
       .page-title {
         font-size: 16px;
       }
+      .gs-tabs-bar {
+        gap: 4px;
+        padding: 8px 10px;
+      }
+      .gs-tabs-bar .data-tab {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+      .executive-header {
+        padding: 10px 14px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .executive-details {
+        padding: 0 14px 14px 14px;
+      }
     }
 
     @media (max-width: 768px) {
       .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
       }
       .grid-2, .grid-3-1 {
         grid-template-columns: 1fr;
         gap: 16px;
       }
       .content {
-        padding: 16px;
+        padding: 14px;
       }
       .topbar {
         padding: 0 12px;
@@ -1508,15 +1595,15 @@
         padding: 16px;
       }
       .card-header {
-        padding: 14px 16px;
+        padding: 12px 14px;
         flex-wrap: wrap;
         gap: 8px;
       }
       .card-header h3 {
-        font-size: 14px;
+        font-size: 13px;
       }
       .card-body {
-        padding: 14px 16px;
+        padding: 12px 14px;
       }
       .responsive-grid-4 {
         grid-template-columns: repeat(2, 1fr);
@@ -1530,12 +1617,22 @@
         white-space: nowrap;
       }
       .stat-card {
-        padding: 14px;
-        gap: 12px;
+        padding: 12px;
+        gap: 10px;
       }
       .stat-icon {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
+      }
+      .stat-icon svg, .stat-icon i {
+        width: 18px !important;
+        height: 18px !important;
+      }
+      .stat-value {
+        font-size: 22px;
+      }
+      .stat-info p {
+        font-size: 11px;
       }
       .map-container {
         height: 350px !important;
@@ -1564,26 +1661,95 @@
         padding: 8px 12px;
         font-size: 12px;
       }
+      /* Google Sheets responsive */
+      .gs-tabs-bar {
+        gap: 4px;
+        padding: 6px 8px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+      }
+      .gs-tabs-bar .data-tab {
+        padding: 6px 8px;
+        font-size: 11px;
+        border-radius: 6px;
+      }
+      .gs-tab-badge {
+        font-size: 9px;
+        padding: 1px 5px;
+      }
+      .gs-table {
+        font-size: 11px;
+      }
+      .gs-table thead th {
+        padding: 8px 10px;
+        font-size: 10px;
+      }
+      .gs-table tbody td {
+        padding: 7px 10px;
+        max-width: 180px;
+      }
+      .gs-table-wrap {
+        max-height: 450px;
+      }
+      .gs-pagination {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+      }
+      .gs-pagination-controls button {
+        padding: 5px 10px;
+        font-size: 11px;
+      }
+      /* Executive panel responsive */
+      .executive-header {
+        padding: 10px 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .executive-avatar {
+        width: 34px;
+        height: 34px;
+        font-size: 12px;
+      }
+      .executive-details {
+        padding: 0 12px 12px 12px;
+      }
+      .executive-details > div:first-child {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+      }
     }
 
     @media (max-width: 480px) {
       .stats-grid {
+        grid-template-columns: 1fr 1fr;
         gap: 8px;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
       }
       .content {
-        padding: 10px;
+        padding: 8px;
       }
       .responsive-grid-4 {
         grid-template-columns: 1fr 1fr;
         gap: 6px;
       }
+      .topbar {
+        height: 50px;
+        padding: 0 10px;
+      }
       .topbar-actions {
-        gap: 6px;
+        gap: 4px;
+      }
+      .topbar-actions .btn {
+        padding: 6px;
       }
       .user-avatar {
-        width: 32px;
-        height: 32px;
+        width: 30px;
+        height: 30px;
+        font-size: 11px;
+      }
+      .page-title {
+        font-size: 13px;
       }
       .modal-content {
         width: 100%;
@@ -1592,7 +1758,13 @@
         margin: 0;
       }
       .modal-body {
-        padding: 12px;
+        padding: 10px;
+      }
+      .modal-header {
+        padding: 12px 14px;
+      }
+      .modal-header h3 {
+        font-size: 14px;
       }
       .map-left-panel {
         width: 100% !important;
@@ -1601,11 +1773,17 @@
       .map-container {
         height: 280px !important;
       }
+      .card {
+        border-radius: 8px;
+      }
       .card-header {
-        padding: 12px 14px;
+        padding: 10px 12px;
+      }
+      .card-header h3 {
+        font-size: 12px;
       }
       .card-body {
-        padding: 12px 14px;
+        padding: 10px 12px;
       }
       table {
         font-size: 11px;
@@ -1614,20 +1792,107 @@
         padding: 6px 8px;
       }
       .stat-card {
-        padding: 12px;
+        padding: 10px;
+        gap: 8px;
+      }
+      .stat-icon {
+        width: 32px;
+        height: 32px;
+      }
+      .stat-icon svg, .stat-icon i {
+        width: 16px !important;
+        height: 16px !important;
       }
       .stat-value {
-        font-size: 20px;
+        font-size: 18px;
+      }
+      .stat-info p {
+        font-size: 10px;
       }
       .btn {
         font-size: 11px;
-        padding: 6px 12px;
-      }
-      .page-title {
-        font-size: 14px;
+        padding: 6px 10px;
       }
       .sidebar-header {
         padding: 16px;
+      }
+      /* Google Sheets mobile */
+      .gs-tabs-bar {
+        gap: 3px;
+        padding: 5px 6px;
+        border-radius: 6px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+      .gs-tabs-bar .data-tab {
+        padding: 5px 7px;
+        font-size: 10px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .gs-tab-badge {
+        font-size: 8px;
+        padding: 0px 4px;
+        min-width: 14px;
+      }
+      .gs-table {
+        font-size: 10px;
+      }
+      .gs-table thead th {
+        padding: 6px 8px;
+        font-size: 9px;
+      }
+      .gs-table tbody td {
+        padding: 5px 8px;
+        max-width: 140px;
+      }
+      .gs-table-wrap {
+        max-height: 380px;
+        border-radius: 6px;
+      }
+      .gs-pagination {
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px 0;
+        font-size: 11px;
+      }
+      .gs-pagination-controls button {
+        padding: 4px 8px;
+        font-size: 10px;
+      }
+      .gs-pagination-page {
+        font-size: 10px;
+        padding: 4px 8px;
+      }
+      /* Executive panel mobile */
+      .executive-header {
+        padding: 8px 10px;
+        gap: 6px;
+      }
+      .executive-avatar {
+        width: 30px;
+        height: 30px;
+        font-size: 11px;
+      }
+      .executive-header > div:first-child > div:last-child > div:first-child {
+        font-size: 12px;
+      }
+      .executive-header > div:last-child {
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .executive-details {
+        padding: 0 10px 10px 10px;
+      }
+      .executive-details > div:first-child {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 6px;
+      }
+      /* Form controls mobile */
+      .form-control, .form-select {
+        font-size: 13px;
+        padding: 10px 12px;
       }
     }
 
@@ -2881,7 +3146,7 @@
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Vendedores por Zona</h3>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                  <select id="filter-user-zone" class="form-control" style="width: 150px; padding: 6px 10px; font-size: 12px;" onchange="filterUsers()">
+                  <select id="filter-user-zone" class="form-control" style="max-width: 150px; width:100%; padding: 6px 10px; font-size: 12px;" onchange="filterUsers()">
                     <option value="">Todas las zonas</option>
                     <option value="Zona Norte">Zona Norte</option>
                     <option value="Zona Centro">Zona Centro</option>
@@ -2889,7 +3154,7 @@
                     <option value="Zona Sur">Zona Sur</option>
                     <option value="sin_zona">Sin Zona</option>
                   </select>
-                  <select id="filter-user-role" class="form-control" style="width: 150px; padding: 6px 10px; font-size: 12px;" onchange="filterUsers()">
+                  <select id="filter-user-role" class="form-control" style="max-width: 150px; width:100%; padding: 6px 10px; font-size: 12px;" onchange="filterUsers()">
                     <option value="">Todos los roles</option>
                     <option value="executive">Solo Vendedores</option>
                     <option value="admin">Solo Admins</option>
@@ -3120,10 +3385,10 @@
               </div>
               <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 <input type="text" id="search-clients" class="form-control" placeholder="Buscar por código o nombre..." oninput="filterClients()" style="flex: 1; min-width: 200px;">
-                <select id="filter-zone" class="form-control" onchange="filterClients()" style="width: 160px;">
+                <select id="filter-zone" class="form-control" onchange="filterClients()" style="max-width: 160px; width:100%;">
                   <option value="">Todas las zonas</option>
                 </select>
-                <select id="filter-segment" class="form-control" onchange="filterClients()" style="width: 130px;">
+                <select id="filter-segment" class="form-control" onchange="filterClients()" style="max-width: 130px; width:100%;">
                   <option value="">Segmento</option>
                   <option value="A">Segmento A</option>
                   <option value="B">Segmento B</option>
@@ -3487,37 +3752,37 @@
           <!-- Rendimiento Visitas -->
           <div class="data-subpanel" id="gs-subpanel-gs-rendimiento">
             <!-- Stats summary cards -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
-              <div class="card" style="text-align: center; padding: 16px;">
-                <div style="font-size: 28px; font-weight: 700; color: var(--accent);" id="perf-total-visits">0</div>
-                <div style="font-size: 12px; color: var(--text-muted);">Total Visitas</div>
+            <div class="gs-summary-grid" style="margin-bottom: 16px;">
+              <div class="card" style="text-align: center; padding: 14px;">
+                <div style="font-size: 24px; font-weight: 700; color: var(--accent);" id="perf-total-visits">0</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Total Visitas</div>
               </div>
-              <div class="card" style="text-align: center; padding: 16px;">
-                <div style="font-size: 28px; font-weight: 700; color: var(--success);" id="perf-total-sales">0</div>
-                <div style="font-size: 12px; color: var(--text-muted);">Ventas</div>
+              <div class="card" style="text-align: center; padding: 14px;">
+                <div style="font-size: 24px; font-weight: 700; color: var(--success);" id="perf-total-sales">0</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Ventas</div>
               </div>
-              <div class="card" style="text-align: center; padding: 16px;">
-                <div style="font-size: 28px; font-weight: 700; color: #6366f1;" id="perf-avg-effectiveness">0%</div>
-                <div style="font-size: 12px; color: var(--text-muted);">Efectividad Promedio</div>
+              <div class="card" style="text-align: center; padding: 14px;">
+                <div style="font-size: 24px; font-weight: 700; color: #6366f1;" id="perf-avg-effectiveness">0%</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Efectividad Promedio</div>
               </div>
-              <div class="card" style="text-align: center; padding: 16px;">
-                <div style="font-size: 28px; font-weight: 700; color: #f59e0b;" id="perf-total-vendors">0</div>
-                <div style="font-size: 12px; color: var(--text-muted);">Vendedores Activos</div>
+              <div class="card" style="text-align: center; padding: 14px;">
+                <div style="font-size: 24px; font-weight: 700; color: #f59e0b;" id="perf-total-vendors">0</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Vendedores Activos</div>
               </div>
             </div>
 
             <!-- Date filter -->
             <div class="card" style="margin-bottom: 16px;">
               <div class="card-body" style="padding: 12px 16px;">
-                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                  <label style="font-weight: 600; font-size: 13px;">Filtrar por fecha:</label>
-                  <input type="date" id="perf-date-from" class="form-control" style="width: 160px;">
-                  <span style="color: var(--text-muted);">a</span>
-                  <input type="date" id="perf-date-to" class="form-control" style="width: 160px;">
-                  <button class="btn btn-primary" onclick="loadVisitPerformance()" style="padding: 8px 16px;">
+                <div class="gs-filter-bar">
+                  <label style="font-weight: 600; font-size: 13px; flex-shrink:0;">Filtrar por fecha:</label>
+                  <input type="date" id="perf-date-from" class="form-control" style="max-width: 160px;">
+                  <span style="color: var(--text-muted); flex-shrink:0;">a</span>
+                  <input type="date" id="perf-date-to" class="form-control" style="max-width: 160px;">
+                  <button class="btn btn-primary" onclick="loadVisitPerformance()" style="padding: 8px 16px; flex-shrink:0;">
                     <i data-lucide="filter" style="width: 14px; height: 14px;"></i> Filtrar
                   </button>
-                  <button class="btn btn-secondary" onclick="document.getElementById('perf-date-from').value='';document.getElementById('perf-date-to').value='';loadVisitPerformance();" style="padding: 8px 16px;">
+                  <button class="btn btn-secondary" onclick="document.getElementById('perf-date-from').value='';document.getElementById('perf-date-to').value='';loadVisitPerformance();" style="padding: 8px 16px; flex-shrink:0;">
                     Limpiar
                   </button>
                 </div>
@@ -3543,9 +3808,9 @@
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                   <div style="position:relative;">
                     <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
-                    <input type="text" id="gs-ventas-search" class="form-control" placeholder="Buscar..." style="width: 200px; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsVentas()">
+                    <input type="text" id="gs-ventas-search" class="form-control" placeholder="Buscar..." style="max-width: 200px; width:100%; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsVentas()">
                   </div>
-                  <select id="gs-ventas-mes" class="form-control" style="width: 160px; font-size: 13px;" onchange="filterGsheetsVentas()">
+                  <select id="gs-ventas-mes" class="form-control" style="max-width: 160px; width:100%; font-size: 13px;" onchange="filterGsheetsVentas()">
                     <option value="">Todos los meses</option>
                   </select>
                 </div>
@@ -3566,9 +3831,9 @@
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                   <div style="position:relative;">
                     <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
-                    <input type="text" id="gs-cobranzas-search" class="form-control" placeholder="Buscar..." style="width: 200px; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsCobranzas()">
+                    <input type="text" id="gs-cobranzas-search" class="form-control" placeholder="Buscar..." style="max-width: 200px; width:100%; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsCobranzas()">
                   </div>
-                  <select id="gs-cobranzas-filter" class="form-control" style="width: 140px; font-size: 13px;" onchange="filterGsheetsCobranzas()">
+                  <select id="gs-cobranzas-filter" class="form-control" style="max-width: 140px; width:100%; font-size: 13px;" onchange="filterGsheetsCobranzas()">
                     <option value="">Todos</option>
                     <option value="vencido">Vencidos</option>
                     <option value="vigente">Vigentes</option>
@@ -3592,13 +3857,13 @@
                   <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Equipo Comercial</h3>
                   <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Datos sincronizados desde Google Sheets</p>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <select id="gs-vendedores-zona-filter" class="form-control" style="width: 160px; font-size: 13px;" onchange="filterGsheetsVendedoresCards()">
+                <div class="gs-filter-bar">
+                  <select id="gs-vendedores-zona-filter" class="form-control" style="max-width: 160px; font-size: 13px;" onchange="filterGsheetsVendedoresCards()">
                     <option value="">Todas las zonas</option>
                   </select>
-                  <div style="position:relative;">
+                  <div style="position:relative;flex:1 1 140px;max-width:200px;">
                     <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
-                    <input type="text" id="gs-vendedores-search" class="form-control" placeholder="Buscar..." style="width: 180px; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsVendedoresCards()">
+                    <input type="text" id="gs-vendedores-search" class="form-control" placeholder="Buscar..." style="width:100%; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsVendedoresCards()">
                   </div>
                 </div>
               </div>
@@ -3638,7 +3903,7 @@
           <!-- 80-20 -->
           <div class="data-subpanel" id="gs-subpanel-gs-8020">
             <!-- Summary cards -->
-            <div id="gs-8020-summary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px;"></div>
+            <div id="gs-8020-summary" class="gs-summary-grid" style="margin-bottom:16px;"></div>
 
             <!-- Toggle Vendedores / Zonales -->
             <div style="display:flex;gap:6px;margin-bottom:16px;">
@@ -3655,13 +3920,13 @@
               <div class="card">
                 <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                   <h3><i data-lucide="pie-chart" style="width:18px;height:18px;"></i> Clientes 80-20 por Vendedor</h3>
-                  <div style="display:flex;gap:8px;align-items:center;">
-                    <select id="gs-8020-vend-filter" class="form-control" style="width:180px;font-size:13px;" onchange="filter8020Vendedores()">
+                  <div class="gs-filter-bar">
+                    <select id="gs-8020-vend-filter" class="form-control" style="max-width:180px;font-size:13px;" onchange="filter8020Vendedores()">
                       <option value="">Todos los vendedores</option>
                     </select>
-                    <div style="position:relative;">
+                    <div style="position:relative;flex:1 1 160px;max-width:200px;">
                       <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
-                      <input type="text" id="gs-8020-vend-search" class="form-control" placeholder="Buscar cliente..." style="width:180px;padding-left:32px;font-size:13px;" oninput="filter8020Vendedores()">
+                      <input type="text" id="gs-8020-vend-search" class="form-control" placeholder="Buscar cliente..." style="width:100%;padding-left:32px;font-size:13px;" oninput="filter8020Vendedores()">
                     </div>
                   </div>
                 </div>
@@ -3678,13 +3943,13 @@
               <div class="card">
                 <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                   <h3><i data-lucide="shield" style="width:18px;height:18px;"></i> Clientes 80-20 por Zonal</h3>
-                  <div style="display:flex;gap:8px;align-items:center;">
-                    <select id="gs-8020-zon-filter" class="form-control" style="width:180px;font-size:13px;" onchange="filter8020Zonales()">
+                  <div class="gs-filter-bar">
+                    <select id="gs-8020-zon-filter" class="form-control" style="max-width:180px;font-size:13px;" onchange="filter8020Zonales()">
                       <option value="">Todos los zonales</option>
                     </select>
-                    <div style="position:relative;">
+                    <div style="position:relative;flex:1 1 160px;max-width:200px;">
                       <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
-                      <input type="text" id="gs-8020-zon-search" class="form-control" placeholder="Buscar cliente..." style="width:180px;padding-left:32px;font-size:13px;" oninput="filter8020Zonales()">
+                      <input type="text" id="gs-8020-zon-search" class="form-control" placeholder="Buscar cliente..." style="width:100%;padding-left:32px;font-size:13px;" oninput="filter8020Zonales()">
                     </div>
                   </div>
                 </div>
@@ -3704,7 +3969,7 @@
                 <h3><i data-lucide="map-pin" style="width: 18px; height: 18px;"></i> Direcciones</h3>
                 <div style="position:relative;">
                   <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
-                  <input type="text" id="gs-direcciones-search" class="form-control" placeholder="Buscar..." style="width: 200px; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsDirecciones()">
+                  <input type="text" id="gs-direcciones-search" class="form-control" placeholder="Buscar..." style="max-width: 200px; width:100%; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsDirecciones()">
                 </div>
               </div>
               <div class="card-body" style="padding: 0;">
@@ -3733,21 +3998,21 @@
                 <h3><i data-lucide="shuffle" style="width: 18px; height: 18px;"></i> Reasignar Zona a Ejecutivo</h3>
               </div>
               <div class="card-body">
-                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
-                  <div style="flex: 1; min-width: 200px;">
+                <div class="gs-filter-bar" style="align-items: flex-end;">
+                  <div style="flex: 1; min-width: 140px;">
                     <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Zona (de Google Sheets)</label>
                     <select id="reasign-zone-select" class="form-control">
                       <option value="">-- Seleccionar zona --</option>
                     </select>
                   </div>
-                  <div style="flex: 1; min-width: 200px;">
+                  <div style="flex: 1; min-width: 140px;">
                     <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Ejecutivo destino</label>
                     <select id="reasign-exec-select" class="form-control">
                       <option value="">-- Seleccionar ejecutivo --</option>
                     </select>
                   </div>
-                  <button class="btn btn-primary" onclick="executeZoneReassign()" style="padding: 10px 20px; white-space: nowrap;">
-                    <i data-lucide="check" style="width: 16px; height: 16px;"></i> Reasignar Clientes
+                  <button class="btn btn-primary" onclick="executeZoneReassign()" style="padding: 10px 20px; white-space: nowrap; flex-shrink:0;">
+                    <i data-lucide="check" style="width: 16px; height: 16px;"></i> Reasignar
                   </button>
                 </div>
                 <div id="reasign-preview" style="margin-top: 12px;"></div>
@@ -3759,7 +4024,7 @@
             <div class="card">
               <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <h3><i data-lucide="repeat" style="width: 18px; height: 18px;"></i> Datos de Reasignacion (Google Sheets)</h3>
-                <input type="text" id="gs-reasignacion-search" class="form-control" placeholder="Buscar..." style="width: 220px;" oninput="filterGsheetsReasignacion()">
+                <input type="text" id="gs-reasignacion-search" class="form-control" placeholder="Buscar..." style="max-width: 220px; width: 100%;" oninput="filterGsheetsReasignacion()">
               </div>
               <div class="card-body" id="gs-reasignacion-body" style="overflow-x: auto;">
                 <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
@@ -3852,14 +4117,14 @@
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
               <h3><i data-lucide="users" style="width: 18px; height: 18px;"></i> Todos los Usuarios</h3>
               <div style="display: flex; gap: 8px; align-items: center;">
-                <select id="filter-users-role" class="form-control" style="width: 150px; padding: 6px 10px; font-size: 12px;" onchange="filterAllUsers()">
+                <select id="filter-users-role" class="form-control" style="max-width: 150px; width:100%; padding: 6px 10px; font-size: 12px;" onchange="filterAllUsers()">
                   <option value="">Todos los roles</option>
                   <option value="admin">Administradores</option>
                   <option value="supervisor">Supervisores</option>
                   <option value="executive">Vendedores</option>
                   <option value="viewer">Solo Lectura</option>
                 </select>
-                <select id="filter-users-status" class="form-control" style="width: 120px; padding: 6px 10px; font-size: 12px;" onchange="filterAllUsers()">
+                <select id="filter-users-status" class="form-control" style="max-width: 120px; width:100%; padding: 6px 10px; font-size: 12px;" onchange="filterAllUsers()">
                   <option value="">Todos</option>
                   <option value="active">Activos</option>
                   <option value="inactive">Inactivos</option>
@@ -4325,7 +4590,7 @@
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <span style="font-weight: 600;">Clientes Disponibles <span id="available-count" style="color: var(--text-muted); font-weight: normal;">(0)</span></span>
-              <input type="text" id="search-available" class="form-control" placeholder="Buscar código o nombre..." style="width: 180px; padding: 6px 10px; font-size: 12px;" oninput="filterAvailableClients()">
+              <input type="text" id="search-available" class="form-control" placeholder="Buscar código o nombre..." style="max-width: 180px; width:100%; padding: 6px 10px; font-size: 12px;" oninput="filterAvailableClients()">
             </div>
             <div id="available-clients-list" style="height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary);">
               <div class="empty-state" style="padding: 20px;">
@@ -4340,7 +4605,7 @@
           <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <span style="font-weight: 600;">Clientes Asignados <span id="assigned-count" style="color: var(--primary);">(0)</span></span>
-              <input type="text" id="search-assigned" class="form-control" placeholder="Buscar..." style="width: 180px; padding: 6px 10px; font-size: 12px;" oninput="filterAssignedClients()">
+              <input type="text" id="search-assigned" class="form-control" placeholder="Buscar..." style="max-width: 180px; width:100%; padding: 6px 10px; font-size: 12px;" oninput="filterAssignedClients()">
             </div>
             <div id="assigned-clients-list" style="height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary);">
               <div class="empty-state" style="padding: 20px;">
@@ -10651,7 +10916,7 @@
 
           // Ejecutivos grid - collapsed by default
           html += `<div id="${cardId}" style="display:none;padding:12px 16px;background:var(--bg-card);border-top:1px solid var(--border);">
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">`;
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">`;
           myExecs.forEach(e => { html += buildVendedorCard(e, false); });
           if (myExecs.length === 0) {
             html += '<p style="color:var(--text-muted);font-size:13px;padding:8px;">Sin ejecutivos asignados</p>';
@@ -10663,7 +10928,7 @@
         const sinZonal = execs.filter(e => !zonales.some(z => z.name.toLowerCase() === e.zonal.toLowerCase()));
         if (sinZonal.length > 0) {
           html += `<div style="margin-top:8px;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:10px;padding:0 4px;">Sin zonal asignado</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">`;
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">`;
           sinZonal.forEach(e => { html += buildVendedorCard(e, false); });
           html += '</div></div>';
         }
@@ -10672,13 +10937,13 @@
         // Todos view - flat grid
         if (zonales.length > 0) {
           html += '<div style="margin-bottom:16px;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:10px;padding:0 4px;">Zonales</div>';
-          html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">';
+          html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">';
           zonales.forEach(v => { html += buildVendedorCard(v, true); });
           html += '</div></div>';
         }
         if (execs.length > 0) {
           html += '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:10px;padding:0 4px;">Ejecutivos</div>';
-          html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">';
+          html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">';
           execs.forEach(v => { html += buildVendedorCard(v, false); });
           html += '</div></div>';
         }
