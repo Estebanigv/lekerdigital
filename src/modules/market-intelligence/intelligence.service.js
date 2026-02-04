@@ -356,14 +356,25 @@ class IntelligenceService {
    * Obtiene estadísticas del comparativo
    */
   async getComparisonStats() {
-    // Obtener datos de los últimos 7 días
-    const fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - 7);
+    // Primero obtener la fecha del último scraping
+    const { data: latestData } = await supabase
+      .from('competitor_comparison')
+      .select('scraped_at')
+      .order('scraped_at', { ascending: false })
+      .limit(1);
+
+    if (!latestData || latestData.length === 0) {
+      return [];
+    }
+
+    // Usar la fecha del último scraping para obtener todos los datos de ese día
+    const latestDate = new Date(latestData[0].scraped_at);
+    latestDate.setHours(0, 0, 0, 0);
 
     const { data, error } = await supabase
       .from('competitor_comparison')
       .select('fuente, precio_neto, tipo, scraped_at')
-      .gte('scraped_at', fromDate.toISOString())
+      .gte('scraped_at', latestDate.toISOString())
       .gt('precio_neto', 0);
 
     if (error) throw error;
