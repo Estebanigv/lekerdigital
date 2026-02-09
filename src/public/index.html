@@ -404,15 +404,23 @@
     }
 
     .nav-subitem.active {
-      background: rgba(59, 130, 246, 0.15);
-      color: var(--accent);
+      background: var(--accent);
+      color: white;
       font-weight: 600;
+      border-radius: 6px;
+    }
+    .nav-subitem.active i {
+      color: white;
     }
 
     .nav-item-expandable.has-active-child > .nav-item-parent {
-      background: rgba(59, 130, 246, 0.08);
+      background: rgba(59, 130, 246, 0.15);
       color: var(--accent);
       border-left: 3px solid var(--accent);
+      font-weight: 600;
+    }
+    .nav-item-expandable.has-active-child > .nav-item-parent i {
+      color: var(--accent);
     }
 
     .sidebar-footer {
@@ -2404,7 +2412,7 @@
       <div class="login-logo">
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
         <p>Sistema de Gestión Logística</p>
-        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.3.8</div>
+        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.3.9</div>
       </div>
 
       <!-- Login Form -->
@@ -2473,7 +2481,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.3.8</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.3.9</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -3779,14 +3787,22 @@
               </div>
             </div>
             <div id="vendors-by-zone-container" style="max-height: 600px; overflow-y: auto;">
-              <table id="table-users">
+              <table id="table-users" style="table-layout: fixed;">
+                <colgroup>
+                  <col style="width: 22%;">
+                  <col style="width: 25%;">
+                  <col style="width: 10%;">
+                  <col style="width: 10%;">
+                  <col style="width: 10%;">
+                  <col style="width: 23%;">
+                </colgroup>
                 <thead>
                   <tr>
                     <th>Vendedor</th>
-                    <th>Zonas / Comunas</th>
-                    <th>Clientes</th>
-                    <th>Hoy</th>
-                    <th>Estado</th>
+                    <th>Zona / Comunas</th>
+                    <th style="text-align: center;">Clientes</th>
+                    <th style="text-align: center;">Hoy</th>
+                    <th style="text-align: center;">Estado</th>
                     <th style="text-align: center;">Acciones</th>
                   </tr>
                 </thead>
@@ -5842,6 +5858,7 @@
 
         item.classList.add('active');
         document.getElementById(`panel-${tab}`).classList.add('active');
+        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
         // Save current tab to localStorage
         localStorage.setItem('leker_active_tab', tab);
@@ -8422,18 +8439,24 @@
     }
 
     function showPanel(tabName) {
-      // Find and click the nav item for this tab
-      const navItem = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
+      // Find direct nav item or first subitem for this tab
+      const navItem = document.querySelector(`.nav-item:not(.nav-item-parent)[data-tab="${tabName}"]`);
       if (navItem) {
         navItem.click();
       } else {
-        // Fallback: manually switch panels
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        document.querySelectorAll('.nav-subitem').forEach(i => i.classList.remove('active'));
-        document.querySelectorAll('.nav-item-expandable').forEach(i => i.classList.remove('has-active-child'));
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        const panel = document.getElementById(`panel-${tabName}`);
-        if (panel) panel.classList.add('active');
+        // Try clicking the first subitem of this tab (for expandable menus)
+        const subItem = document.querySelector(`.nav-subitem[data-tab="${tabName}"]`);
+        if (subItem) {
+          subItem.click();
+        } else {
+          // Final fallback
+          document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+          document.querySelectorAll('.nav-subitem').forEach(i => i.classList.remove('active'));
+          document.querySelectorAll('.nav-item-expandable').forEach(i => i.classList.remove('has-active-child'));
+          document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+          const panel = document.getElementById(`panel-${tabName}`);
+          if (panel) panel.classList.add('active');
+        }
 
         const titles = {
           dashboard: 'Dashboard',
@@ -8944,19 +8967,16 @@
 
     // Filter functions
     function goToClientsBySegmentation(seg) {
-      showPanel('data');
+      const subtab = document.querySelector('.nav-subitem[data-tab="data"][data-subtab="clientes"]');
+      if (subtab) subtab.click();
       setTimeout(() => {
-        const subtab = document.querySelector('.nav-subitem[data-subtab="clients"]');
-        if (subtab) subtab.click();
-        setTimeout(() => {
-          document.getElementById('filter-segmentation').value = seg;
-          document.getElementById('search-clients').value = '';
-          document.getElementById('filter-zone').value = '';
-          document.getElementById('filter-segment').value = '';
-          document.getElementById('filter-priority').value = '';
-          filterClients();
-        }, 100);
-      }, 100);
+        document.getElementById('filter-segmentation').value = seg;
+        document.getElementById('search-clients').value = '';
+        document.getElementById('filter-zone').value = '';
+        document.getElementById('filter-segment').value = '';
+        document.getElementById('filter-priority').value = '';
+        filterClients();
+      }, 150);
     }
 
     function filterClients() {
@@ -9365,19 +9385,16 @@
         if (c.commune) zonesMap[z].add(c.commune);
       });
       const zoneEntries = Object.entries(zonesMap);
-      if (zoneEntries.length === 0) return '<span style="color:var(--text-muted);font-size:12px;">Sin zonas</span>';
+      if (zoneEntries.length === 0) return '<span style="color:var(--text-muted);font-size:11px;">Sin zonas</span>';
       const zColors = {'Norte':'#3b82f6','Centro':'#8b5cf6','Centro Sur':'#f59e0b','Sur':'#10b981'};
-      return zoneEntries.map(function(entry) {
+      return '<div style="display:flex;flex-wrap:wrap;gap:3px;">' + zoneEntries.map(function(entry) {
         const z = entry[0];
         const communes = entry[1];
         const col = zColors[z] || '#6b7280';
-        const communeList = Array.from(communes).sort();
-        const communeText = communeList.length > 0 ? communeList.join(', ') : '';
-        return '<div style="margin-bottom:3px;">' +
-          '<span style="background:' + col + '15;color:' + col + ';padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">' + z + '</span>' +
-          (communeText ? '<div style="font-size:10px;color:var(--text-muted);margin-top:1px;padding-left:4px;">' + communeText + '</div>' : '') +
-          '</div>';
-      }).join('');
+        const communeCount = communes.size;
+        const communeTitle = Array.from(communes).sort().join(', ');
+        return '<span style="background:' + col + '15;color:' + col + ';padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap;" title="' + communeTitle + '">' + z + (communeCount > 0 ? ' (' + communeCount + ')' : '') + '</span>';
+      }).join('') + '</div>';
     }
 
     function renderUsersTable(data) {
@@ -9453,22 +9470,23 @@
                 </div>
               </div>
             </td>
-            <td>
-              ${u._zona ? (() => { const zcb = ZONE_COLORS[(u._zona || '').toLowerCase()] || { bg: 'var(--bg-hover)', color: 'var(--text-muted)', border: 'var(--border)' }; return '<span style="background:' + zcb.bg + ';color:' + zcb.color + ';border:1px solid ' + zcb.border + ';padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">' + u._zona + '</span>'; })() : renderUserZonesBadges(u.id)}
+            <td style="overflow: hidden;">
+              <div style="max-height: 60px; overflow: hidden;">
+              ${u._zona ? (() => { const zcb = ZONE_COLORS[(u._zona || '').toLowerCase()] || { bg: 'var(--bg-hover)', color: 'var(--text-muted)', border: 'var(--border)' }; return '<span style="background:' + zcb.bg + ';color:' + zcb.color + ';border:1px solid ' + zcb.border + ';padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;">' + u._zona + '</span>'; })() : renderUserZonesBadges(u.id)}
+              </div>
             </td>
-            <td>
+            <td style="text-align: center;">
               ${u.role === 'executive' || u.role === 'supervisor' || u._isZonal ? `
                 <div style="cursor: pointer;" onclick="toggleTableVendorClients('${u.id}', this)">
-                  <div style="font-size: 13px; font-weight: 600; color: var(--primary);">${assignedClients}</div>
-                  <div style="font-size: 10px; color: var(--accent); text-decoration: underline;">ver clientes</div>
+                  <div style="font-size: 14px; font-weight: 700; color: var(--primary);">${assignedClients}</div>
+                  <div style="font-size: 10px; color: var(--accent);">ver clientes</div>
                 </div>
               ` : '<span style="color: var(--text-muted);">-</span>'}
             </td>
-            <td>
+            <td style="text-align: center;">
               ${u.role === 'executive' || u.role === 'supervisor' || u._isZonal ? `
                 ${hasActiveRoute ? `
                   <span class="badge badge-success" style="font-size: 10px;">En Ruta</span>
-                  <div style="font-size: 10px; color: var(--text-muted);">${todayVisits} visitas</div>
                 ` : todayRoute ? `
                   <span class="badge badge-secondary" style="font-size: 10px;">Completada</span>
                 ` : `
@@ -9476,29 +9494,27 @@
                 `}
               ` : '<span style="color: var(--text-muted);">-</span>'}
             </td>
-            <td>
-              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleUserStatus('${u.id}', this.checked)" style="width: 16px; height: 16px;">
-                <span style="font-size: 11px; color: ${isActive ? 'var(--success)' : 'var(--text-muted)'};">${isActive ? 'Activo' : 'Inactivo'}</span>
+            <td style="text-align: center;">
+              <label style="display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleUserStatus('${u.id}', this.checked)" style="width: 15px; height: 15px;">
+                <span style="font-size: 11px; color: ${isActive ? 'var(--success)' : 'var(--text-muted)'};">${isActive ? 'Activo' : 'Inact.'}</span>
               </label>
             </td>
             <td>
-              <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+              <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
                 ${u.role === 'executive' || u.role === 'supervisor' || u._isZonal ? `
-                  <button class="btn btn-primary" onclick="quickAssignToUser('${u.id}')" style="padding: 4px 10px; font-size: 11px;">
+                  <button class="btn btn-primary" onclick="quickAssignToUser('${u.id}')" style="padding: 3px 8px; font-size: 10px;" title="Asignar clientes">
                     <i data-lucide="user-plus" style="width: 12px; height: 12px;"></i>
-                    Asignar
                   </button>
-                  <button class="btn btn-secondary" onclick="viewUserRoutes('${u.id}')" style="padding: 4px 10px; font-size: 11px;">
+                  <button class="btn btn-secondary" onclick="viewUserRoutes('${u.id}')" style="padding: 3px 8px; font-size: 10px;" title="Ver rutas">
                     <i data-lucide="route" style="width: 12px; height: 12px;"></i>
-                    Rutas
                   </button>
                 ` : ''}
-                <button class="btn-icon" onclick="editUser('${u.id}')" title="Editar">
-                  <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+                <button class="btn-icon" onclick="editUser('${u.id}')" title="Editar" style="padding: 3px;">
+                  <i data-lucide="pencil" style="width: 13px; height: 13px;"></i>
                 </button>
-                <button class="btn-icon" style="color: var(--danger);" onclick="deleteUser('${u.id}')" title="Eliminar">
-                  <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                <button class="btn-icon" style="color: var(--danger); padding: 3px;" onclick="deleteUser('${u.id}')" title="Eliminar">
+                  <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
                 </button>
               </div>
             </td>
@@ -10224,10 +10240,16 @@
 
         item.classList.add('active');
         document.getElementById(`panel-${tab}`).classList.add('active');
+        setTimeout(() => item.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
 
-        // Highlight parent expandable
+        // Highlight parent expandable and ensure it's open
         const parentExpandable = item.closest('.nav-item-expandable');
-        if (parentExpandable) parentExpandable.classList.add('has-active-child');
+        if (parentExpandable) {
+          parentExpandable.classList.add('has-active-child');
+          if (!parentExpandable.classList.contains('open')) {
+            parentExpandable.classList.add('open');
+          }
+        }
 
         // Save current tab to localStorage
         localStorage.setItem('leker_active_tab', tab);
