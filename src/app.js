@@ -10,6 +10,10 @@ const intelligenceService = require('./modules/market-intelligence/intelligence.
 const n8nService = require('./services/n8n.service');
 const googleSheetsService = require('./services/googleSheets.service');
 
+// Auth
+const authRouter = require('./modules/auth/auth.controller');
+const { authenticate, authorize } = require('./middlewares/auth');
+
 const app = express();
 
 // Configure multer for file uploads
@@ -23,10 +27,26 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // =============================================
+// AUTH ROUTES (public - no middleware)
+// =============================================
+app.use('/api/auth', authRouter);
+
+// =============================================
+// AUTH MIDDLEWARE - Protect all API & routes
+// Excludes: /api/auth/*, /webhooks/*, /health, static files
+// =============================================
+app.use('/api', (req, res, next) => {
+  // Skip auth for /api/auth/* routes (login, setup, check-setup)
+  if (req.path.startsWith('/auth')) return next();
+  authenticate(req, res, next);
+});
+app.use('/routes', authenticate);
+
+// =============================================
 // API ENDPOINTS - DATOS AUXILIARES (para UI)
 // =============================================
 
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', authorize('admin'), async (req, res) => {
   try {
     const data = await routesService.getAllUsers();
     res.json({ success: true, data });
@@ -89,7 +109,7 @@ app.delete('/api/clients/:id', async (req, res) => {
   }
 });
 
-app.post('/api/clients/reassign', async (req, res) => {
+app.post('/api/clients/reassign', authorize('admin', 'supervisor'), async (req, res) => {
   try {
     const { fromUserId, toUserId } = req.body;
     if (!fromUserId || !toUserId) {
@@ -175,7 +195,7 @@ app.get('/api/price-intelligence', async (req, res) => {
 // GESTIÓN DE VENDEDORES
 // =============================================
 
-app.post('/api/users', async (req, res) => {
+app.post('/api/users', authorize('admin'), async (req, res) => {
   try {
     const { fullName, email, role } = req.body;
     if (!fullName || !email) {
@@ -188,7 +208,7 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-app.delete('/api/users/:id', async (req, res) => {
+app.delete('/api/users/:id', authorize('admin'), async (req, res) => {
   try {
     await routesService.deleteUser(req.params.id);
     res.json({ success: true, message: 'Vendedor eliminado' });
@@ -197,7 +217,7 @@ app.delete('/api/users/:id', async (req, res) => {
   }
 });
 
-app.put('/api/users/:id', async (req, res) => {
+app.put('/api/users/:id', authorize('admin'), async (req, res) => {
   try {
     const user = await routesService.updateUser(req.params.id, req.body);
     res.json({ success: true, message: 'Usuario actualizado', data: user });
@@ -217,7 +237,7 @@ app.get('/api/users/:id/clients', async (req, res) => {
 });
 
 // Asignar zona a un vendedor
-app.put('/api/users/:id/zone', async (req, res) => {
+app.put('/api/users/:id/zone', authorize('admin'), async (req, res) => {
   try {
     const { zone, zone_leader } = req.body;
     const user = await routesService.updateUserZone(req.params.id, zone, zone_leader);
@@ -238,7 +258,7 @@ app.get('/api/zones', async (req, res) => {
 });
 
 // Reasignar clientes seleccionados
-app.post('/api/clients/reassign-selected', async (req, res) => {
+app.post('/api/clients/reassign-selected', authorize('admin', 'supervisor'), async (req, res) => {
   try {
     const { clientIds, toUserId } = req.body;
     if (!clientIds || !Array.isArray(clientIds) || clientIds.length === 0) {
@@ -303,7 +323,7 @@ app.put('/api/vehicles/:id', async (req, res) => {
 // IMPORTACIÓN DE EXCEL
 // =============================================
 
-app.post('/api/upload/clients', upload.single('file'), async (req, res) => {
+app.post('/api/upload/clients', authorize('admin', 'supervisor'), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, error: 'No se envió archivo' });
@@ -407,7 +427,7 @@ app.post('/api/upload/clients', upload.single('file'), async (req, res) => {
 });
 
 // Upload Users (Ejecutivos)
-app.post('/api/upload/users', upload.single('file'), async (req, res) => {
+app.post('/api/upload/users', authorize('admin'), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, error: 'No se envió archivo' });
@@ -483,7 +503,7 @@ app.post('/api/upload/users', upload.single('file'), async (req, res) => {
 });
 
 // Upload Vehicles (Vehículos)
-app.post('/api/upload/vehicles', upload.single('file'), async (req, res) => {
+app.post('/api/upload/vehicles', authorize('admin', 'supervisor'), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, error: 'No se envió archivo' });
@@ -558,7 +578,7 @@ app.post('/api/upload/vehicles', upload.single('file'), async (req, res) => {
 });
 
 // Upload Products (Productos)
-app.post('/api/upload/products', upload.single('file'), async (req, res) => {
+app.post('/api/upload/products', authorize('admin', 'supervisor'), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, error: 'No se envió archivo' });
@@ -654,8 +674,8 @@ app.post('/routes/start', async (req, res) => {
 
 app.post('/routes/checkin', async (req, res) => {
   try {
-    const { routeId, clientId, outcome, audioUrl, lat, lng, addressUpdate } = req.body;
-    const result = await routesService.checkIn({ routeId, clientId, outcome, audioUrl, lat, lng, addressUpdate });
+    const { routeId, clientId, outcome, audioUrl, lat, lng, addressUpdate, checklistData } = req.body;
+    const result = await routesService.checkIn({ routeId, clientId, outcome, audioUrl, lat, lng, addressUpdate, checklistData });
     res.status(201).json({
       success: true,
       message: result.addressUpdated ? 'Visita registrada y dirección actualizada' : 'Visita registrada correctamente',
@@ -897,7 +917,7 @@ let webhookConfig = {
 };
 
 // Configurar webhook de salida
-app.post('/api/webhooks/config', async (req, res) => {
+app.post('/api/webhooks/config', authorize('admin'), async (req, res) => {
   try {
     const { url, secret, events, enabled } = req.body;
 
@@ -925,7 +945,7 @@ app.get('/api/webhooks/config', (req, res) => {
 });
 
 // Test webhook
-app.post('/api/webhooks/test', async (req, res) => {
+app.post('/api/webhooks/test', authorize('admin'), async (req, res) => {
   try {
     if (!webhookConfig.url) {
       return res.status(400).json({ success: false, error: 'No hay URL de webhook configurada' });
@@ -1181,6 +1201,142 @@ app.get('/intelligence/product/:productId/comparison', async (req, res) => {
   }
 });
 
+// =============================================
+// SEGMENTACIÓN DE CLIENTES
+// =============================================
+
+// Sincronizar segmentación desde datos del frontend
+app.post('/api/clients/sync-segmentation', async (req, res) => {
+  try {
+    const { codes8020 } = req.body;
+    const result = await routesService.syncClientSegmentationFromCodes([], codes8020 || []);
+    res.json({
+      success: true,
+      message: `Segmentación sincronizada: ${result.segmentCounts['80-20']} clave (80-20), ${result.segmentCounts.L} con ventas (L)`,
+      data: result
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Estadísticas de segmentación
+app.get('/api/clients/segmentation-stats', async (req, res) => {
+  try {
+    const stats = await routesService.getSegmentationStats();
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// =============================================
+// CHECKLIST DE VISITA
+// =============================================
+
+// Datos consolidados para checklist de un cliente
+app.get('/api/clients/:clientId/checklist-data', async (req, res) => {
+  try {
+    const data = await routesService.getClientChecklistData(req.params.clientId);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Actualizar ficha del cliente
+app.put('/api/clients/:clientId/profile', async (req, res) => {
+  try {
+    const data = await routesService.updateClientProfile(req.params.clientId, req.body);
+    res.json({ success: true, message: 'Ficha del cliente actualizada', data });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// =============================================
+// RUTAS PLANIFICADAS
+// =============================================
+
+// Generar plan semanal
+app.post('/api/routes/generate-schedule', async (req, res) => {
+  try {
+    const { userId, startDate, endDate } = req.body;
+    if (!userId || !startDate || !endDate) {
+      return res.status(400).json({ success: false, error: 'Se requiere userId, startDate y endDate' });
+    }
+    const result = await routesService.generateSchedule(userId, startDate, endDate);
+    res.json({
+      success: true,
+      message: `Plan generado: ${result.totalClients} clientes en ${result.days} días`,
+      data: result
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Reprogramar rutas pendientes
+app.post('/api/routes/reschedule-incomplete', async (req, res) => {
+  try {
+    const { userId, date } = req.body;
+    if (!userId || !date) {
+      return res.status(400).json({ success: false, error: 'Se requiere userId y date' });
+    }
+    const result = await routesService.rescheduleIncomplete(userId, date);
+    res.json({ success: true, message: `${result.rescheduled} rutas reprogramadas`, data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Obtener rutas planificadas de un vendedor
+app.get('/api/routes/schedule/:userId', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const data = await routesService.getScheduledRoutes(req.params.userId, startDate, endDate);
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Recalcular frecuencias de visita
+app.post('/api/clients/update-visit-frequency', async (req, res) => {
+  try {
+    const result = await routesService.updateAllVisitFrequencies();
+    res.json({ success: true, message: `${result.updated} frecuencias actualizadas`, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// =============================================
+// DASHBOARD MEJORADO
+// =============================================
+
+// Estadísticas por vendedor
+app.get('/api/dashboard/vendor-stats', async (req, res) => {
+  try {
+    const month = req.query.month || new Date().toISOString().slice(0, 7);
+    const data = await routesService.getVendorDashboardStats(month);
+    res.json({ success: true, data, month });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Calendario de visitas de un vendedor
+app.get('/api/dashboard/calendar/:userId', async (req, res) => {
+  try {
+    const month = req.query.month || new Date().toISOString().slice(0, 7);
+    const data = await routesService.getVendorCalendar(req.params.userId, month);
+    res.json({ success: true, data, month });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({
@@ -1197,7 +1353,7 @@ app.get('/health', (req, res) => {
 // =============================================
 
 // Test conexión con n8n
-app.get('/api/n8n/test', async (req, res) => {
+app.get('/api/n8n/test', authorize('admin'), async (req, res) => {
   try {
     const result = await n8nService.testConnection();
     res.json(result);
@@ -1207,7 +1363,7 @@ app.get('/api/n8n/test', async (req, res) => {
 });
 
 // Configurar n8n (actualiza URL y API key en runtime)
-app.post('/api/n8n/config', async (req, res) => {
+app.post('/api/n8n/config', authorize('admin'), async (req, res) => {
   try {
     const { apiUrl, apiKey } = req.body;
     n8nService.updateConfig(apiUrl, apiKey);
@@ -1226,7 +1382,7 @@ app.post('/api/n8n/config', async (req, res) => {
 });
 
 // Obtener estado de configuración
-app.get('/api/n8n/status', (req, res) => {
+app.get('/api/n8n/status', authorize('admin'), (req, res) => {
   res.json({
     success: true,
     configured: n8nService.isConfigured(),
@@ -1235,7 +1391,7 @@ app.get('/api/n8n/status', (req, res) => {
 });
 
 // Listar workflows
-app.get('/api/n8n/workflows', async (req, res) => {
+app.get('/api/n8n/workflows', authorize('admin'), async (req, res) => {
   try {
     const workflows = await n8nService.listWorkflows();
     res.json({ success: true, data: workflows });
@@ -1245,7 +1401,7 @@ app.get('/api/n8n/workflows', async (req, res) => {
 });
 
 // Obtener workflow específico
-app.get('/api/n8n/workflows/:id', async (req, res) => {
+app.get('/api/n8n/workflows/:id', authorize('admin'), async (req, res) => {
   try {
     const workflow = await n8nService.getWorkflow(req.params.id);
     res.json({ success: true, data: workflow });
@@ -1255,7 +1411,7 @@ app.get('/api/n8n/workflows/:id', async (req, res) => {
 });
 
 // Activar workflow
-app.post('/api/n8n/workflows/:id/activate', async (req, res) => {
+app.post('/api/n8n/workflows/:id/activate', authorize('admin'), async (req, res) => {
   try {
     const result = await n8nService.activateWorkflow(req.params.id);
     res.json({ success: true, message: 'Workflow activado', data: result });
@@ -1265,7 +1421,7 @@ app.post('/api/n8n/workflows/:id/activate', async (req, res) => {
 });
 
 // Desactivar workflow
-app.post('/api/n8n/workflows/:id/deactivate', async (req, res) => {
+app.post('/api/n8n/workflows/:id/deactivate', authorize('admin'), async (req, res) => {
   try {
     const result = await n8nService.deactivateWorkflow(req.params.id);
     res.json({ success: true, message: 'Workflow desactivado', data: result });
@@ -1275,7 +1431,7 @@ app.post('/api/n8n/workflows/:id/deactivate', async (req, res) => {
 });
 
 // Ejecutar workflow manualmente
-app.post('/api/n8n/workflows/:id/execute', async (req, res) => {
+app.post('/api/n8n/workflows/:id/execute', authorize('admin'), async (req, res) => {
   try {
     const result = await n8nService.executeWorkflow(req.params.id, req.body);
     res.json({ success: true, message: 'Workflow ejecutado', data: result });
@@ -1285,7 +1441,7 @@ app.post('/api/n8n/workflows/:id/execute', async (req, res) => {
 });
 
 // Listar ejecuciones
-app.get('/api/n8n/executions', async (req, res) => {
+app.get('/api/n8n/executions', authorize('admin'), async (req, res) => {
   try {
     const { workflowId, limit } = req.query;
     const executions = await n8nService.listExecutions(workflowId, parseInt(limit) || 20);
@@ -1296,13 +1452,13 @@ app.get('/api/n8n/executions', async (req, res) => {
 });
 
 // Obtener plantillas de workflows
-app.get('/api/n8n/templates', (req, res) => {
+app.get('/api/n8n/templates', authorize('admin'), (req, res) => {
   const templates = n8nService.getWorkflowTemplates();
   res.json({ success: true, data: templates });
 });
 
 // Crear workflow desde plantilla
-app.post('/api/n8n/workflows/from-template', async (req, res) => {
+app.post('/api/n8n/workflows/from-template', authorize('admin'), async (req, res) => {
   try {
     const { templateId } = req.body;
     const templates = n8nService.getWorkflowTemplates();

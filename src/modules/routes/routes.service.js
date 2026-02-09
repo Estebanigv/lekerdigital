@@ -566,7 +566,7 @@ class RoutesService {
     };
   }
 
-  async checkIn({ routeId, clientId, outcome, audioUrl, lat, lng, addressUpdate }) {
+  async checkIn({ routeId, clientId, outcome, audioUrl, lat, lng, addressUpdate, checklistData }) {
     const { data: route, error: routeError } = await supabase
       .from('daily_routes')
       .select('id, status')
@@ -578,23 +578,29 @@ class RoutesService {
 
     const { data: client, error: clientError } = await supabase
       .from('clients')
-      .select('id, name, lat, lng')
+      .select('id, name, lat, lng, consecutive_no_sale')
       .eq('id', clientId)
       .single();
 
     if (clientError || !client) throw new Error('Cliente no encontrado');
 
+    const visitInsert = {
+      route_id: routeId,
+      client_id: clientId,
+      check_in: new Date().toISOString(),
+      outcome: outcome || 'pending',
+      audio_url: audioUrl || null,
+      check_in_lat: lat || null,
+      check_in_lng: lng || null
+    };
+
+    if (checklistData) {
+      visitInsert.checklist_data = checklistData;
+    }
+
     const { data: visit, error: visitError } = await supabase
       .from('visits')
-      .insert([{
-        route_id: routeId,
-        client_id: clientId,
-        check_in: new Date().toISOString(),
-        outcome: outcome || 'pending',
-        audio_url: audioUrl || null,
-        check_in_lat: lat || null,
-        check_in_lng: lng || null
-      }])
+      .insert([visitInsert])
       .select()
       .single();
 
@@ -602,6 +608,14 @@ class RoutesService {
 
     // Update client's last visit and potentially coordinates/address
     const updateData = { last_visit_at: new Date().toISOString() };
+
+    // Track consecutive visits without sale
+    if (outcome === 'sale') {
+      updateData.consecutive_no_sale = 0;
+      updateData.last_sale_date = new Date().toISOString();
+    } else if (outcome === 'contacted' || outcome === 'no_contact') {
+      updateData.consecutive_no_sale = (client.consecutive_no_sale || 0) + 1;
+    }
 
     // If address correction was provided, use that
     if (addressUpdate) {
@@ -619,6 +633,15 @@ class RoutesService {
       .from('clients')
       .update(updateData)
       .eq('id', clientId);
+
+    // Mark scheduled route as completed if exists
+    const today = new Date().toISOString().split('T')[0];
+    await supabase
+      .from('scheduled_routes')
+      .update({ status: 'completed', updated_at: new Date().toISOString() })
+      .eq('client_id', clientId)
+      .eq('scheduled_date', today)
+      .eq('status', 'pending');
 
     return {
       visit,
@@ -1079,6 +1102,586 @@ class RoutesService {
   calculateDistanceCost(lat1, lng1, lat2, lng2) {
     const distance = haversineDistance(lat1, lng1, lat2, lng2);
     return calculateFuelCost(distance);
+  }
+
+  // =============================================
+  // SEGMENTACIÓN DE CLIENTES (Fase 1)
+  // =============================================
+
+  /**
+   * Sincroniza segmentación desde códigos enviados por el frontend
+   * codesL: array de external_id de clientes con ventas (L)
+   * codes8020: array de external_id de clientes clave (80-20)
+   * Prioridad: 80-20 > L > N
+   */
+  async syncClientSegmentationFromCodes(codesL, codes8020) {
+    const results = { updated: 0, errors: [], segmentCounts: { L: 0, '80-20': 0, N: 0 } };
+
+    // Get all clients
+    const allClients = await this.getAllClients();
+    const clientsByCode = {};
+    allClients.forEach(c => {
+      if (c.external_id) clientsByCode[String(c.external_id).trim()] = c;
+    });
+
+    // Step 1: Mark ALL existing clients as L (todos compraron en Leker)
+    const allClientIds = allClients.map(c => c.id);
+    if (allClientIds.length > 0) {
+      const batchSize = 500;
+      for (let i = 0; i < allClientIds.length; i += batchSize) {
+        const batch = allClientIds.slice(i, i + batchSize);
+        await supabase
+          .from('clients')
+          .update({ segmentation: 'L' })
+          .in('id', batch);
+      }
+    }
+
+    // Step 2: Mark 80-20 clients (overrides L - clientes clave)
+    const codes8020Set = new Set((codes8020 || []).map(c => String(c).trim()).filter(Boolean));
+    const eightTwentyIds = [];
+    codes8020Set.forEach(code => {
+      if (clientsByCode[code]) eightTwentyIds.push(clientsByCode[code].id);
+    });
+    if (eightTwentyIds.length > 0) {
+      const batchSize = 500;
+      for (let i = 0; i < eightTwentyIds.length; i += batchSize) {
+        const batch = eightTwentyIds.slice(i, i + batchSize);
+        const { error } = await supabase
+          .from('clients')
+          .update({ segmentation: '80-20' })
+          .in('id', batch);
+        if (error) results.errors.push({ step: '80-20', error: error.message });
+      }
+      results.segmentCounts['80-20'] = eightTwentyIds.length;
+    }
+
+    // Count: L = total - 80-20, N = 0 (solo para clientes nuevos importados)
+    results.segmentCounts.L = allClients.length - eightTwentyIds.length;
+    results.segmentCounts.N = 0;
+    results.updated = allClients.length;
+
+    return results;
+  }
+
+  /**
+   * Estadísticas de segmentación
+   */
+  async getSegmentationStats() {
+    const allClients = await this.getAllClients();
+    const stats = { L: 0, '80-20': 0, N: 0, total: allClients.length };
+
+    allClients.forEach(c => {
+      const seg = c.segmentation || 'N';
+      if (seg === '80-20') stats['80-20']++;
+      else if (seg === 'L') stats.L++;
+      else stats.N++;
+    });
+
+    return stats;
+  }
+
+  // =============================================
+  // CHECKLIST DE VISITA (Fase 2)
+  // =============================================
+
+  /**
+   * Obtiene datos consolidados para el checklist de un cliente
+   */
+  async getClientChecklistData(clientId) {
+    // Get client data
+    const { data: client, error: clientError } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', clientId)
+      .single();
+
+    if (clientError || !client) throw new Error('Cliente no encontrado');
+
+    // Get last visit
+    const { data: lastVisits } = await supabase
+      .from('visits')
+      .select('*, route:daily_routes(date, user:users(full_name))')
+      .eq('client_id', clientId)
+      .order('check_in', { ascending: false })
+      .limit(5);
+
+    // Get scheduled routes pending for this client
+    const { data: scheduledPending } = await supabase
+      .from('scheduled_routes')
+      .select('*')
+      .eq('client_id', clientId)
+      .eq('status', 'pending')
+      .order('scheduled_date', { ascending: true })
+      .limit(3);
+
+    return {
+      client,
+      lastVisit: lastVisits && lastVisits.length > 0 ? lastVisits[0] : null,
+      visitHistory: lastVisits || [],
+      scheduledVisits: scheduledPending || []
+    };
+  }
+
+  /**
+   * Actualiza ficha del cliente (dueño, comprador, teléfonos, etc.)
+   */
+  async updateClientProfile(clientId, profileData) {
+    const allowedFields = [
+      'owner_name', 'buyer_name', 'phone', 'phone2', 'email',
+      'observations', 'competitor_provider1', 'competitor_provider2',
+      'is_competitor_client', 'segmentation'
+    ];
+
+    const updateData = {};
+    allowedFields.forEach(field => {
+      if (profileData[field] !== undefined) {
+        updateData[field] = profileData[field];
+      }
+    });
+
+    if (Object.keys(updateData).length === 0) {
+      throw new Error('No hay campos válidos para actualizar');
+    }
+
+    const { data, error } = await supabase
+      .from('clients')
+      .update(updateData)
+      .eq('id', clientId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  // =============================================
+  // RUTAS PLANIFICADAS (Fase 3)
+  // =============================================
+
+  /**
+   * Genera plan semanal L-V para un vendedor
+   */
+  async generateSchedule(userId, startDate, endDate) {
+    // Get vendor's clients with segmentation
+    const { data: clients, error } = await supabase
+      .from('clients')
+      .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, visit_frequency_days, consecutive_no_sale, last_visit_at, is_competitor_client')
+      .eq('assigned_user_id', userId);
+
+    if (error) throw error;
+    if (!clients || clients.length === 0) {
+      throw new Error('El vendedor no tiene clientes asignados');
+    }
+
+    // Sort by priority: 80-20 first, then L, then N
+    const priorityOrder = { '80-20': 0, 'L': 1, 'N': 2 };
+    clients.sort((a, b) => {
+      const pa = priorityOrder[a.segmentation] ?? 2;
+      const pb = priorityOrder[b.segmentation] ?? 2;
+      return pa - pb;
+    });
+
+    // Filter clients that need a visit (based on frequency and last visit)
+    const now = new Date();
+    const clientsToVisit = clients.filter(c => {
+      if (!c.last_visit_at) return true;
+      const lastVisit = new Date(c.last_visit_at);
+      const daysSince = Math.floor((now - lastVisit) / (1000 * 60 * 60 * 24));
+      return daysSince >= (c.visit_frequency_days || 30) * 0.7; // 70% of frequency threshold
+    });
+
+    // Generate weekdays between start and end
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const weekdays = [];
+    const current = new Date(start);
+    while (current <= end) {
+      const day = current.getDay();
+      if (day >= 1 && day <= 5) { // Mon-Fri
+        weekdays.push(new Date(current).toISOString().split('T')[0]);
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    if (weekdays.length === 0) {
+      throw new Error('No hay días hábiles en el rango seleccionado');
+    }
+
+    // Group clients by commune for optimizing travel
+    const byCommune = {};
+    clientsToVisit.forEach(c => {
+      const key = c.commune || 'Sin Comuna';
+      if (!byCommune[key]) byCommune[key] = [];
+      byCommune[key].push(c);
+    });
+
+    // Distribute clients across days (8-10 per day)
+    const MAX_PER_DAY = 10;
+    const schedule = {};
+    weekdays.forEach(d => { schedule[d] = []; });
+
+    let dayIdx = 0;
+    // First pass: distribute by commune groups to minimize travel
+    Object.values(byCommune).forEach(communeClients => {
+      communeClients.forEach(client => {
+        // Find day with least clients
+        let bestDay = weekdays[dayIdx % weekdays.length];
+        let minCount = Infinity;
+        weekdays.forEach(d => {
+          if (schedule[d].length < minCount) {
+            minCount = schedule[d].length;
+            bestDay = d;
+          }
+        });
+
+        if (schedule[bestDay].length < MAX_PER_DAY) {
+          schedule[bestDay].push(client);
+        } else {
+          // Find any day with space
+          const availableDay = weekdays.find(d => schedule[d].length < MAX_PER_DAY);
+          if (availableDay) {
+            schedule[availableDay].push(client);
+          }
+        }
+        dayIdx++;
+      });
+    });
+
+    // Optimize route order for each day
+    const optimizedSchedule = {};
+    for (const [date, dayClients] of Object.entries(schedule)) {
+      if (dayClients.length === 0) continue;
+      const clientsWithCoords = dayClients.filter(c => c.lat && c.lng);
+      const clientsWithoutCoords = dayClients.filter(c => !c.lat || !c.lng);
+
+      let orderedClients;
+      if (clientsWithCoords.length > 0) {
+        const { route, totalDistance } = optimizeRouteOrder(clientsWithCoords);
+        orderedClients = [...route, ...clientsWithoutCoords];
+        optimizedSchedule[date] = {
+          clients: orderedClients,
+          totalDistance: Math.round(totalDistance * 10) / 10,
+          estimatedTime: Math.round(totalDistance / 30 * 60) // 30km/h avg
+        };
+      } else {
+        optimizedSchedule[date] = {
+          clients: dayClients,
+          totalDistance: 0,
+          estimatedTime: 0
+        };
+      }
+    }
+
+    // Delete existing pending scheduled routes for this user in the date range
+    await supabase
+      .from('scheduled_routes')
+      .delete()
+      .eq('user_id', userId)
+      .eq('status', 'pending')
+      .gte('scheduled_date', startDate)
+      .lte('scheduled_date', endDate);
+
+    // Insert new scheduled routes
+    const inserts = [];
+    for (const [date, dayData] of Object.entries(optimizedSchedule)) {
+      dayData.clients.forEach((client, idx) => {
+        inserts.push({
+          user_id: userId,
+          scheduled_date: date,
+          client_id: client.id,
+          priority: idx,
+          status: 'pending',
+          original_date: date
+        });
+      });
+    }
+
+    if (inserts.length > 0) {
+      const batchSize = 100;
+      for (let i = 0; i < inserts.length; i += batchSize) {
+        const batch = inserts.slice(i, i + batchSize);
+        await supabase.from('scheduled_routes').insert(batch);
+      }
+    }
+
+    return {
+      totalClients: inserts.length,
+      days: Object.keys(optimizedSchedule).length,
+      schedule: optimizedSchedule
+    };
+  }
+
+  /**
+   * Mueve rutas pendientes de un día al siguiente hábil
+   */
+  async rescheduleIncomplete(userId, date) {
+    // Get pending routes for the date
+    const { data: pending, error } = await supabase
+      .from('scheduled_routes')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('scheduled_date', date)
+      .eq('status', 'pending');
+
+    if (error) throw error;
+    if (!pending || pending.length === 0) {
+      return { rescheduled: 0, message: 'No hay rutas pendientes para reprogramar' };
+    }
+
+    // Find next business day
+    const currentDate = new Date(date);
+    let nextDay = new Date(currentDate);
+    do {
+      nextDay.setDate(nextDay.getDate() + 1);
+    } while (nextDay.getDay() === 0 || nextDay.getDay() === 6);
+
+    const nextDateStr = nextDay.toISOString().split('T')[0];
+
+    // Update status and date
+    const ids = pending.map(p => p.id);
+    const { error: updateError } = await supabase
+      .from('scheduled_routes')
+      .update({
+        scheduled_date: nextDateStr,
+        status: 'rescheduled',
+        updated_at: new Date().toISOString()
+      })
+      .in('id', ids);
+
+    if (updateError) throw updateError;
+
+    // Create new pending entries for next day
+    const newEntries = pending.map((p, idx) => ({
+      user_id: userId,
+      scheduled_date: nextDateStr,
+      client_id: p.client_id,
+      priority: idx,
+      status: 'pending',
+      original_date: p.original_date || date
+    }));
+
+    await supabase.from('scheduled_routes').insert(newEntries);
+
+    return {
+      rescheduled: pending.length,
+      fromDate: date,
+      toDate: nextDateStr
+    };
+  }
+
+  /**
+   * Obtiene rutas planificadas de un vendedor
+   */
+  async getScheduledRoutes(userId, startDate, endDate) {
+    let query = supabase
+      .from('scheduled_routes')
+      .select('*, client:clients(id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation)')
+      .eq('user_id', userId)
+      .order('scheduled_date')
+      .order('priority');
+
+    if (startDate) query = query.gte('scheduled_date', startDate);
+    if (endDate) query = query.lte('scheduled_date', endDate);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    // Group by date
+    const byDate = {};
+    (data || []).forEach(sr => {
+      if (!byDate[sr.scheduled_date]) byDate[sr.scheduled_date] = [];
+      byDate[sr.scheduled_date].push(sr);
+    });
+
+    return byDate;
+  }
+
+  /**
+   * Recalcula frecuencias de visita para todos los clientes
+   */
+  async updateAllVisitFrequencies() {
+    const allClients = await this.getAllClients();
+    let updated = 0;
+
+    for (const client of allClients) {
+      let frequency = 30; // default: 1 visit per month
+
+      // 80-20 clients: every 15 days
+      if (client.segmentation === '80-20') {
+        frequency = 15;
+      }
+
+      // 5+ consecutive no sale: increase frequency by 1.5x
+      if ((client.consecutive_no_sale || 0) >= 5) {
+        frequency = Math.round(frequency * 1.5);
+      }
+
+      // Competitor client with potential: reduce frequency by 0.75x
+      if (client.is_competitor_client && client.segmentation !== 'N') {
+        frequency = Math.round(frequency * 0.75);
+      }
+
+      if (frequency !== (client.visit_frequency_days || 30)) {
+        await supabase
+          .from('clients')
+          .update({ visit_frequency_days: frequency })
+          .eq('id', client.id);
+        updated++;
+      }
+    }
+
+    return { updated, total: allClients.length };
+  }
+
+  // =============================================
+  // DASHBOARD MEJORADO (Fase 4)
+  // =============================================
+
+  /**
+   * Estadísticas por vendedor para un mes
+   */
+  async getVendorDashboardStats(month) {
+    // month format: YYYY-MM
+    const startDate = `${month}-01`;
+    const endOfMonth = new Date(parseInt(month.split('-')[0]), parseInt(month.split('-')[1]), 0);
+    const endDate = endOfMonth.toISOString().split('T')[0];
+
+    // Get users
+    const { data: users } = await supabase
+      .from('users')
+      .select('id, full_name, role')
+      .in('role', ['executive', 'zonal', 'supervisor'])
+      .order('full_name');
+
+    // Get routes in month
+    const { data: routes } = await supabase
+      .from('daily_routes')
+      .select('id, user_id, date, status, visits(id, outcome, client_id)')
+      .gte('date', startDate)
+      .lte('date', endDate);
+
+    const vendorStats = (users || []).map(user => {
+      const userRoutes = (routes || []).filter(r => r.user_id === user.id);
+      const allVisits = userRoutes.flatMap(r => r.visits || []);
+
+      // Unique clients with sale
+      const clientsWithSale = new Set();
+      let totalSales = 0;
+      allVisits.forEach(v => {
+        if (v.outcome === 'sale') {
+          totalSales++;
+          clientsWithSale.add(v.client_id);
+        }
+      });
+
+      // Days worked
+      const daysWorked = new Set(userRoutes.map(r => r.date)).size;
+
+      // Weekly breakdown
+      const weeklyData = {};
+      userRoutes.forEach(r => {
+        const d = new Date(r.date);
+        const weekNum = Math.ceil(d.getDate() / 7);
+        const weekKey = `Semana ${weekNum}`;
+        if (!weeklyData[weekKey]) weeklyData[weekKey] = { visits: 0, days: new Set(), clients: new Set() };
+        const visits = r.visits || [];
+        weeklyData[weekKey].visits += visits.length;
+        weeklyData[weekKey].days.add(r.date);
+        visits.forEach(v => weeklyData[weekKey].clients.add(v.client_id));
+      });
+
+      // Convert Sets to counts
+      const weeklyArr = Object.entries(weeklyData).map(([week, data]) => ({
+        week,
+        visits: data.visits,
+        days: data.days.size,
+        clients: data.clients.size
+      }));
+
+      return {
+        userId: user.id,
+        name: user.full_name,
+        role: user.role,
+        totalVisits: allVisits.length,
+        totalSales,
+        clientsWithSale: clientsWithSale.size,
+        daysWorked,
+        weekly: weeklyArr
+      };
+    });
+
+    return vendorStats;
+  }
+
+  /**
+   * Datos de calendario de un vendedor para un mes
+   */
+  async getVendorCalendar(userId, month) {
+    const startDate = `${month}-01`;
+    const endOfMonth = new Date(parseInt(month.split('-')[0]), parseInt(month.split('-')[1]), 0);
+    const endDate = endOfMonth.toISOString().split('T')[0];
+
+    // Get actual visits/routes
+    const { data: routes } = await supabase
+      .from('daily_routes')
+      .select('id, date, status, visits(id, outcome, client:clients(id, name, segmentation))')
+      .eq('user_id', userId)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date');
+
+    // Get scheduled routes
+    const { data: scheduled } = await supabase
+      .from('scheduled_routes')
+      .select('scheduled_date, status, client:clients(id, name, segmentation)')
+      .eq('user_id', userId)
+      .gte('scheduled_date', startDate)
+      .lte('scheduled_date', endDate);
+
+    // Build day-by-day data
+    const calendar = {};
+    const current = new Date(startDate);
+    while (current <= endOfMonth) {
+      const dateStr = current.toISOString().split('T')[0];
+      calendar[dateStr] = {
+        scheduled: 0,
+        completed: 0,
+        pending: 0,
+        segmentation: { '80-20': 0, L: 0, N: 0 }
+      };
+      current.setDate(current.getDate() + 1);
+    }
+
+    // Fill from scheduled routes
+    (scheduled || []).forEach(sr => {
+      const d = sr.scheduled_date;
+      if (calendar[d]) {
+        if (sr.status === 'pending') calendar[d].pending++;
+        else if (sr.status === 'completed') calendar[d].completed++;
+        calendar[d].scheduled++;
+        const seg = sr.client?.segmentation || 'N';
+        if (calendar[d].segmentation[seg] !== undefined) {
+          calendar[d].segmentation[seg]++;
+        }
+      }
+    });
+
+    // Fill from actual routes
+    (routes || []).forEach(r => {
+      const d = r.date;
+      if (calendar[d]) {
+        const visits = r.visits || [];
+        // Override completed count with actual visits
+        calendar[d].completed = visits.length;
+        visits.forEach(v => {
+          const seg = v.client?.segmentation || 'N';
+          if (!calendar[d].segmentation[seg]) calendar[d].segmentation[seg] = 0;
+        });
+      }
+    });
+
+    return calendar;
   }
 }
 

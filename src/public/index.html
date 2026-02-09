@@ -181,6 +181,7 @@
       padding: 24px 14px;
       justify-content: center;
     }
+    .sidebar.collapsed .logo-img,
     .sidebar.collapsed .logo-text,
     .sidebar.collapsed .sidebar-version,
     .sidebar.collapsed .sidebar-collapse-btn,
@@ -2098,20 +2099,355 @@
     .price-card {
       background: #f8fafc;
     }
+
+    /* Segmentation badges */
+    .seg-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .seg-badge-8020 {
+      background: rgba(239, 68, 68, 0.15);
+      color: #dc2626;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .seg-badge-L {
+      background: rgba(59, 130, 246, 0.15);
+      color: #2563eb;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .seg-badge-N {
+      background: rgba(107, 114, 128, 0.15);
+      color: #6b7280;
+      border: 1px solid rgba(107, 114, 128, 0.3);
+    }
+
+    /* Checklist panel */
+    .checklist-panel {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background: var(--bg-card);
+    }
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--bg-hover);
+      margin-bottom: 8px;
+    }
+    .checklist-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      cursor: pointer;
+      accent-color: var(--success);
+    }
+    .checklist-item.checked {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .checklist-item-label {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .checklist-item-detail {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Route planner calendar */
+    .schedule-calendar {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+    .schedule-day {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      background: var(--bg-card);
+    }
+    .schedule-day-header {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .schedule-day-client {
+      font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+      background: var(--bg-hover);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Vendor stats cards */
+    .vendor-stat-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      background: var(--bg-card);
+    }
+    .vendor-stat-card h4 {
+      font-size: 15px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Monthly calendar grid */
+    .month-calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .month-calendar-header {
+      text-align: center;
+      font-weight: 700;
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 6px 2px;
+    }
+    .month-calendar-day {
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: 6px;
+      font-size: 11px;
+      border: 1px solid transparent;
+      min-height: 50px;
+    }
+    .month-calendar-day.today {
+      border-color: var(--accent);
+      background: rgba(59, 130, 246, 0.08);
+    }
+    .month-calendar-day.has-data {
+      background: var(--bg-hover);
+    }
+    .month-calendar-day .day-num {
+      font-weight: 600;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    .month-calendar-day .day-stats {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+    }
+    .month-calendar-day .day-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    /* ========== LOGIN SCREEN ========== */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: var(--bg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s;
+    }
+    .login-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+    .login-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .login-logo .logo-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .login-logo h2 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .login-logo h2 span { color: #6366f1; }
+    .login-logo p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .login-field {
+      margin-bottom: 16px;
+    }
+    .login-field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .login-field input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      background: var(--input-bg);
+      color: var(--text-primary);
+      transition: border-color 0.2s;
+    }
+    .login-field input:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .login-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    [data-theme="dark"] .login-error {
+      background: rgba(220,38,38,0.1);
+      border-color: rgba(220,38,38,0.3);
+    }
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .login-btn:hover { opacity: 0.9; }
+    .login-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .login-setup-link {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 12px;
+    }
+    .login-setup-link a {
+      color: #6366f1;
+      cursor: pointer;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
+  <!-- LOGIN OVERLAY -->
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
+        <p>Sistema de Gestión Logística</p>
+      </div>
+
+      <!-- Login Form -->
+      <div id="login-form-container">
+        <div class="login-error" id="login-error"></div>
+        <div class="login-field">
+          <label>Email</label>
+          <input type="email" id="login-email" placeholder="tu@email.com" autocomplete="email">
+        </div>
+        <div class="login-field">
+          <label>Contraseña</label>
+          <div style="position:relative;">
+            <input type="password" id="login-password" placeholder="Ingresa tu contraseña" autocomplete="current-password" style="padding-right:40px;">
+            <button type="button" onclick="togglePasswordVisibility('login-password', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;">
+              <i data-lucide="eye" style="width:18px;height:18px;"></i>
+            </button>
+          </div>
+        </div>
+        <button class="login-btn" id="login-btn" onclick="doLogin()">Iniciar Sesión</button>
+        <div class="login-setup-link" id="login-setup-link" style="display:none;">
+          <a onclick="showSetupForm()">Primera vez? Configurar administrador</a>
+        </div>
+      </div>
+
+      <!-- Setup Form (first time) -->
+      <div id="setup-form-container" style="display:none;">
+        <div style="text-align:center;margin-bottom:16px;">
+          <span style="background:#fef3c7;color:#92400e;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:500;">Configuración Inicial</span>
+        </div>
+        <div class="login-error" id="setup-error"></div>
+        <div class="login-field">
+          <label>Email del Administrador</label>
+          <input type="email" id="setup-email" placeholder="admin@leker.cl" autocomplete="email">
+        </div>
+        <div class="login-field">
+          <label>Nueva Contraseña</label>
+          <div style="position:relative;">
+            <input type="password" id="setup-password" placeholder="Mínimo 4 caracteres" style="padding-right:40px;">
+            <button type="button" onclick="togglePasswordVisibility('setup-password', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;">
+              <i data-lucide="eye" style="width:18px;height:18px;"></i>
+            </button>
+          </div>
+        </div>
+        <div class="login-field">
+          <label>Confirmar Contraseña</label>
+          <div style="position:relative;">
+            <input type="password" id="setup-password-confirm" placeholder="Repite la contraseña" style="padding-right:40px;">
+            <button type="button" onclick="togglePasswordVisibility('setup-password-confirm', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;">
+              <i data-lucide="eye" style="width:18px;height:18px;"></i>
+            </button>
+          </div>
+        </div>
+        <button class="login-btn" id="setup-btn" onclick="doSetup()">Configurar y Entrar</button>
+        <div class="login-setup-link">
+          <a onclick="showLoginForm()">Volver al login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div style="cursor: pointer;" onclick="expandSidebar()">
         <div class="logo">
-          <div class="logo-icon">
-            <i data-lucide="truck" style="width: 22px; height: 22px; color: white;"></i>
-          </div>
-          <div class="logo-text">LEKER<span>.</span></div>
+          <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.2.8</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.3.8</div>
       </div>
       <button class="sidebar-collapse-btn" onclick="toggleCollapseSidebar()" title="Contraer menú (Ctrl+B)">
         <i data-lucide="panel-left-close" style="width: 16px; height: 16px;"></i>
@@ -2263,19 +2599,21 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div style="cursor: pointer; padding: 12px; background: var(--bg-hover); border-radius: 8px;" onclick="document.querySelector('[data-tab=users]').click()">
+      <div style="padding: 12px; background: var(--bg-hover); border-radius: 8px;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <div id="sidebar-admin-avatar" style="width: 36px; height: 36px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);">
             <i data-lucide="crown" style="width: 18px; height: 18px;"></i>
           </div>
           <div style="flex: 1; min-width: 0;">
             <div id="sidebar-admin-name" style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Administrador</div>
-            <div style="font-size: 10px; color: #a78bfa; display: flex; align-items: center; gap: 4px;">
+            <div id="sidebar-admin-role" style="font-size: 10px; color: #a78bfa; display: flex; align-items: center; gap: 4px;">
               <i data-lucide="shield-check" style="width: 10px; height: 10px;"></i>
-              Control Maestro
+              <span>Control Maestro</span>
             </div>
           </div>
-          <i data-lucide="chevron-right" style="width: 16px; height: 16px; color: var(--text-muted);"></i>
+          <button onclick="doLogout()" title="Cerrar Sesión" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;">
+            <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -2540,6 +2878,85 @@
             </div>
           </div>
         </div>
+
+        <!-- Fila 5: Segmentación de Clientes -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3><i data-lucide="pie-chart" style="width: 18px; height: 18px;"></i> Segmentación de Clientes</h3>
+            <button class="btn btn-secondary" onclick="syncSegmentation()" id="btn-sync-seg" style="font-size: 12px; padding: 6px 14px;">
+              <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Sincronizar Segmentación
+            </button>
+          </div>
+          <div class="card-body">
+            <div id="segmentation-stats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+              <div style="text-align: center; padding: 16px; background: rgba(239, 68, 68, 0.08); border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                <div style="font-size: 28px; font-weight: 700; color: #dc2626;" id="seg-8020-count">-</div>
+                <div style="font-size: 12px; color: var(--text-muted);">80-20 (Clave)</div>
+              </div>
+              <div style="text-align: center; padding: 16px; background: rgba(59, 130, 246, 0.08); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                <div style="font-size: 28px; font-weight: 700; color: #2563eb;" id="seg-L-count">-</div>
+                <div style="font-size: 12px; color: var(--text-muted);">L (Con ventas)</div>
+              </div>
+              <div style="text-align: center; padding: 16px; background: rgba(107, 114, 128, 0.08); border-radius: 10px; border: 1px solid rgba(107, 114, 128, 0.2);">
+                <div style="font-size: 28px; font-weight: 700; color: #6b7280;" id="seg-N-count">-</div>
+                <div style="font-size: 12px; color: var(--text-muted);">N (Nuevos)</div>
+              </div>
+              <div style="text-align: center; padding: 16px; background: var(--bg-hover); border-radius: 10px; border: 1px solid var(--border);">
+                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);" id="seg-total-count">-</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Total Clientes</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fila 6: Rendimiento por Vendedor -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <h3><i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i> Rendimiento por Vendedor</h3>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="month" id="vendor-stats-month" class="form-control" style="width: 180px; font-size: 13px;" onchange="loadVendorDashboard()">
+              <button class="btn btn-secondary" onclick="loadVendorDashboard()" style="font-size: 12px; padding: 6px 12px;">
+                <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="vendor-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+              <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px; grid-column: 1 / -1;">
+                <i data-lucide="users" style="width: 36px; height: 36px; margin-bottom: 8px;"></i>
+                <p>Selecciona un mes para ver rendimiento de vendedores</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fila 7: Calendario de Visitas -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <h3><i data-lucide="calendar" style="width: 18px; height: 18px;"></i> Calendario Mensual de Visitas</h3>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <select id="calendar-vendor" class="form-control" style="width: 200px; font-size: 13px;" onchange="loadVendorCalendar()">
+                <option value="">-- Seleccionar Vendedor --</option>
+              </select>
+              <input type="month" id="calendar-month" class="form-control" style="width: 180px; font-size: 13px;" onchange="loadVendorCalendar()">
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="calendar-grid" style="min-height: 200px;">
+              <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px;">
+                <i data-lucide="calendar-days" style="width: 36px; height: 36px; margin-bottom: 8px;"></i>
+                <p>Selecciona vendedor y mes para ver el calendario</p>
+              </div>
+            </div>
+            <div style="margin-top: 12px; display: flex; gap: 16px; justify-content: center; font-size: 11px;">
+              <span><span style="display: inline-block; width: 10px; height: 10px; background: #dc2626; border-radius: 50%;"></span> 80-20</span>
+              <span><span style="display: inline-block; width: 10px; height: 10px; background: #2563eb; border-radius: 50%;"></span> L</span>
+              <span><span style="display: inline-block; width: 10px; height: 10px; background: #6b7280; border-radius: 50%;"></span> N</span>
+              <span><span style="display: inline-block; width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></span> Completada</span>
+              <span><span style="display: inline-block; width: 10px; height: 10px; background: #f59e0b; border-radius: 50%;"></span> Pendiente</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Routes Panel -->
@@ -2794,6 +3211,32 @@
             </table>
           </div>
         </div>
+
+        <!-- Route Planner Card -->
+        <div class="card" style="margin-top: 20px;">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <h3><i data-lucide="calendar-range" style="width: 18px; height: 18px;"></i> Planificador de Rutas</h3>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <select id="schedule-vendor" class="form-control" style="width: 200px; font-size: 13px;">
+                <option value="">-- Seleccionar Vendedor --</option>
+              </select>
+              <input type="date" id="schedule-start" class="form-control" style="width: 150px; font-size: 13px;">
+              <input type="date" id="schedule-end" class="form-control" style="width: 150px; font-size: 13px;">
+              <button class="btn btn-primary" onclick="generateWeeklySchedule()" style="font-size: 13px; padding: 8px 14px;">
+                <i data-lucide="calendar-plus" style="width: 14px; height: 14px;"></i> Generar Plan
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="schedule-result" style="min-height: 100px;">
+              <div class="empty-state" style="padding: 24px;">
+                <i data-lucide="calendar-days" style="width: 36px; height: 36px;"></i>
+                <p style="font-size: 13px;">Selecciona vendedor y rango de fechas para generar un plan semanal</p>
+                <p style="font-size: 11px; color: var(--text-muted);">Prioriza 80-20, agrupa por comuna, 8-10 clientes/día</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Visits Panel -->
@@ -2891,6 +3334,97 @@
                   </div>
                 </div>
 
+                <!-- Checklist de Visita -->
+                <div id="checklist-panel" class="checklist-panel" style="display: none;">
+                  <div style="font-weight: 700; font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="clipboard-check" style="width: 18px; height: 18px; color: var(--accent);"></i>
+                    Checklist de Visita
+                  </div>
+
+                  <!-- 1. Cobranzas -->
+                  <div class="checklist-item" id="checklist-cobranzas">
+                    <input type="checkbox" id="chk-cobranzas" onchange="updateChecklistState()">
+                    <div style="flex: 1;">
+                      <div class="checklist-item-label">Cobranzas</div>
+                      <div class="checklist-item-detail" id="chk-cobranzas-detail">Verificar facturas vencidas o próximas a vencer</div>
+                    </div>
+                  </div>
+
+                  <!-- 2. Última compra -->
+                  <div class="checklist-item" id="checklist-compra">
+                    <input type="checkbox" id="chk-compra" onchange="updateChecklistState()">
+                    <div style="flex: 1;">
+                      <div class="checklist-item-label">Última Compra</div>
+                      <div class="checklist-item-detail" id="chk-compra-detail">Verificar mes de última compra del cliente</div>
+                    </div>
+                  </div>
+
+                  <!-- 3. Última visita -->
+                  <div class="checklist-item" id="checklist-visita">
+                    <input type="checkbox" id="chk-visita" onchange="updateChecklistState()">
+                    <div style="flex: 1;">
+                      <div class="checklist-item-label">Última Visita</div>
+                      <div class="checklist-item-detail" id="chk-visita-detail">Verificar fecha de última visita registrada</div>
+                    </div>
+                  </div>
+
+                  <!-- Ficha del cliente (editable) -->
+                  <div style="margin-top: 12px; padding: 12px; background: var(--bg-hover); border-radius: 8px;">
+                    <div style="font-weight: 600; font-size: 12px; margin-bottom: 8px; text-transform: uppercase; color: var(--text-muted);">Ficha del Cliente</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                      <div>
+                        <label style="font-size: 11px; color: var(--text-muted);">Dueño</label>
+                        <input type="text" id="chk-owner" class="form-control" placeholder="Nombre dueño" style="font-size: 12px; padding: 6px 10px;">
+                      </div>
+                      <div>
+                        <label style="font-size: 11px; color: var(--text-muted);">Comprador</label>
+                        <input type="text" id="chk-buyer" class="form-control" placeholder="Nombre comprador" style="font-size: 12px; padding: 6px 10px;">
+                      </div>
+                      <div>
+                        <label style="font-size: 11px; color: var(--text-muted);">Teléfono 1</label>
+                        <input type="text" id="chk-phone" class="form-control" placeholder="Teléfono" style="font-size: 12px; padding: 6px 10px;">
+                      </div>
+                      <div>
+                        <label style="font-size: 11px; color: var(--text-muted);">Teléfono 2</label>
+                        <input type="text" id="chk-phone2" class="form-control" placeholder="Teléfono 2" style="font-size: 12px; padding: 6px 10px;">
+                      </div>
+                      <div>
+                        <label style="font-size: 11px; color: var(--text-muted);">Email</label>
+                        <input type="email" id="chk-email" class="form-control" placeholder="correo@email.com" style="font-size: 12px; padding: 6px 10px;">
+                      </div>
+                      <div>
+                        <label style="font-size: 11px; color: var(--text-muted);">Segmentación</label>
+                        <select id="chk-segmentation" class="form-control" style="font-size: 12px; padding: 6px 10px;">
+                          <option value="N">N (Nuevo)</option>
+                          <option value="L">L (Con ventas)</option>
+                          <option value="80-20">80-20 (Clave)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                      <label style="font-size: 11px; color: var(--text-muted);">Observaciones</label>
+                      <textarea id="chk-observations" class="form-control" rows="2" placeholder="Observaciones de la visita..." style="font-size: 12px; padding: 6px 10px;"></textarea>
+                    </div>
+
+                    <!-- Competencia -->
+                    <div style="margin-top: 10px; padding: 10px; background: var(--bg-card); border-radius: 6px; border: 1px solid var(--border);">
+                      <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px;">Competencia</div>
+                      <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px; cursor: pointer;">
+                        <input type="checkbox" id="chk-is-competitor" style="width: 16px; height: 16px;">
+                        <span>Compra a proveedor competencia</span>
+                      </label>
+                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                        <input type="text" id="chk-competitor1" class="form-control" placeholder="Proveedor 1" style="font-size: 11px; padding: 5px 8px;">
+                        <input type="text" id="chk-competitor2" class="form-control" placeholder="Proveedor 2" style="font-size: 11px; padding: 5px 8px;">
+                      </div>
+                    </div>
+
+                    <button type="button" class="btn btn-secondary" onclick="saveClientProfile()" style="margin-top: 10px; font-size: 12px; padding: 6px 14px; width: 100%;">
+                      <i data-lucide="save" style="width: 14px; height: 14px;"></i> Guardar Ficha
+                    </button>
+                  </div>
+                </div>
+
                 <div class="form-group">
                   <label>Resultado de Visita</label>
                   <select id="checkin-outcome" class="form-control">
@@ -2904,7 +3438,11 @@
                   <i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px; color: var(--text-muted);"></i>
                   <span>Obteniendo ubicación GPS...</span>
                 </div>
-                <button type="submit" class="btn btn-success btn-block">
+                <div id="checklist-warning" style="display: none; padding: 8px 12px; border-radius: 8px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #d97706; font-size: 12px; margin-bottom: 12px;">
+                  <i data-lucide="alert-triangle" style="width: 14px; height: 14px; vertical-align: middle;"></i>
+                  Completa los 3 puntos del checklist antes de registrar el check-in
+                </div>
+                <button type="submit" class="btn btn-success btn-block" id="btn-checkin-submit">
                   <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i>
                   Registrar Check-in con GPS
                 </button>
@@ -3786,7 +4324,7 @@
               <i data-lucide="users" style="width: 14px; height: 14px;"></i> Vendedores <span class="gs-tab-badge" id="gs-badge-vendedores"></span>
             </button>
             <button class="data-tab" data-gstab="gs-8020" onclick="switchGsheetsTab('gs-8020')">
-              <i data-lucide="pie-chart" style="width: 14px; height: 14px;"></i> 80-20
+              <i data-lucide="pie-chart" style="width: 14px; height: 14px;"></i> 80-20 <span id="gs-badge-8020" class="badge-count"></span>
             </button>
             <button class="data-tab" data-gstab="gs-direcciones" onclick="switchGsheetsTab('gs-direcciones')">
               <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i> Direcciones <span class="gs-tab-badge" id="gs-badge-direcciones"></span>
@@ -4138,7 +4676,7 @@
         </div>
 
         <!-- Stats -->
-        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 20px;">
           <div class="card" style="text-align: center; padding: 16px;">
             <div style="font-size: 24px; font-weight: 700; color: var(--text-primary);" id="stat-users-total">0</div>
             <div style="font-size: 11px; color: var(--text-muted);">Total</div>
@@ -4151,6 +4689,10 @@
             <div style="font-size: 24px; font-weight: 700; color: #7c3aed;" id="stat-users-supervisor">0</div>
             <div style="font-size: 11px; color: var(--text-muted);">Supervisores</div>
           </div>
+          <div class="card" style="text-align: center; padding: 16px; border-left: 3px solid #0891b2;">
+            <div style="font-size: 24px; font-weight: 700; color: #0891b2;" id="stat-users-zonal">0</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Zonales</div>
+          </div>
           <div class="card" style="text-align: center; padding: 16px; border-left: 3px solid #1e40af;">
             <div style="font-size: 24px; font-weight: 700; color: #1e40af;" id="stat-users-exec">0</div>
             <div style="font-size: 11px; color: var(--text-muted);">Vendedores</div>
@@ -4159,6 +4701,17 @@
             <div style="font-size: 24px; font-weight: 700; color: #059669;" id="stat-users-viewer">0</div>
             <div style="font-size: 11px; color: var(--text-muted);">Lectura</div>
           </div>
+        </div>
+
+        <!-- Permissions Matrix -->
+        <div class="card" id="permissions-matrix-card" style="margin-bottom: 20px;">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3><i data-lucide="settings" style="width: 18px; height: 18px;"></i> Permisos por Rol</h3>
+            <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="resetRolePermissions()">
+              <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i> Restaurar Predeterminados
+            </button>
+          </div>
+          <div id="permissions-matrix-body" style="padding: 16px; overflow-x: auto;"></div>
         </div>
 
         <!-- Users Table -->
@@ -4171,6 +4724,7 @@
                   <option value="">Todos los roles</option>
                   <option value="admin">Administradores</option>
                   <option value="supervisor">Supervisores</option>
+                  <option value="zonal">Zonales</option>
                   <option value="executive">Vendedores</option>
                   <option value="viewer">Solo Lectura</option>
                 </select>
@@ -4776,6 +5330,340 @@
     document.documentElement.setAttribute('data-theme', getStoredTheme());
 
     const API = '';
+
+    // =============================================
+    // AUTH SYSTEM
+    // =============================================
+    const DEFAULT_ROLE_PANELS = {
+      admin:      ['dashboard', 'routes', 'visits', 'intelligence', 'marketing', 'data', 'gsheets', 'users'],
+      supervisor: ['dashboard', 'routes', 'visits', 'data', 'gsheets'],
+      zonal:      ['dashboard', 'routes', 'visits', 'gsheets'],
+      executive:  ['dashboard', 'visits', 'routes'],
+      viewer:     ['dashboard']
+    };
+
+    // Load overrides from localStorage if present
+    let ROLE_PANELS = JSON.parse(JSON.stringify(DEFAULT_ROLE_PANELS));
+    try {
+      const saved = localStorage.getItem('leker_role_panels');
+      if (saved) {
+        const overrides = JSON.parse(saved);
+        for (const role of Object.keys(ROLE_PANELS)) {
+          if (overrides[role]) ROLE_PANELS[role] = overrides[role];
+        }
+      }
+    } catch(e) { /* ignore bad data */ }
+
+    const PANEL_LABELS = {
+      dashboard: 'Dashboard',
+      routes: 'Rutas y Mapa',
+      visits: 'Visitas',
+      intelligence: 'Precios Mercado',
+      marketing: 'Marketing',
+      data: 'Base de Datos',
+      gsheets: 'Google Sheets',
+      users: 'Usuarios y Roles'
+    };
+    const ROLE_LABELS = {
+      admin: 'Administrador',
+      supervisor: 'Supervisor',
+      zonal: 'Zonal',
+      executive: 'Ejecutivo',
+      viewer: 'Solo Lectura'
+    };
+
+    let currentUser = null;
+
+    // Override fetch to inject auth token
+    const _originalFetch = window.fetch;
+    window.fetch = function(url, options = {}) {
+      const token = localStorage.getItem('leker_token');
+      if (token) {
+        options.headers = options.headers || {};
+        if (options.headers instanceof Headers) {
+          if (!options.headers.has('Authorization')) {
+            options.headers.set('Authorization', 'Bearer ' + token);
+          }
+        } else {
+          if (!options.headers['Authorization']) {
+            options.headers['Authorization'] = 'Bearer ' + token;
+          }
+        }
+      }
+      return _originalFetch.call(this, url, options).then(response => {
+        if (response.status === 401 && token && !url.includes('/api/auth/')) {
+          localStorage.removeItem('leker_token');
+          localStorage.removeItem('leker_user');
+          location.reload();
+        }
+        return response;
+      });
+    };
+
+    function showLoginError(msg) {
+      const el = document.getElementById('login-error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+    function hideLoginError() {
+      document.getElementById('login-error').style.display = 'none';
+    }
+    function showSetupError(msg) {
+      const el = document.getElementById('setup-error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function showSetupForm() {
+      document.getElementById('login-form-container').style.display = 'none';
+      document.getElementById('setup-form-container').style.display = 'block';
+    }
+    function showLoginForm() {
+      document.getElementById('setup-form-container').style.display = 'none';
+      document.getElementById('login-form-container').style.display = 'block';
+    }
+
+    async function checkSetupNeeded() {
+      try {
+        const res = await _originalFetch(API + '/api/auth/check-setup');
+        const data = await res.json();
+        if (data.needsSetup) {
+          document.getElementById('login-setup-link').style.display = 'block';
+        }
+      } catch(e) { /* ignore */ }
+    }
+
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      btn.innerHTML = `<i data-lucide="${isPassword ? 'eye-off' : 'eye'}" style="width:18px;height:18px;"></i>`;
+      lucide.createIcons();
+    }
+
+    async function doLogin() {
+      hideLoginError();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      if (!email || !password) return showLoginError('Ingresa email y contraseña');
+
+      const btn = document.getElementById('login-btn');
+      btn.disabled = true;
+      btn.textContent = 'Ingresando...';
+
+      try {
+        const res = await _originalFetch(API + '/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          showLoginError(data.error || 'Error al iniciar sesión');
+          btn.disabled = false;
+          btn.textContent = 'Iniciar Sesión';
+          return;
+        }
+        localStorage.setItem('leker_token', data.data.token);
+        localStorage.setItem('leker_user', JSON.stringify(data.data.user));
+        currentUser = data.data.user;
+        onLoginSuccess();
+      } catch(e) {
+        showLoginError('Error de conexión');
+        btn.disabled = false;
+        btn.textContent = 'Iniciar Sesión';
+      }
+    }
+
+    async function doSetup() {
+      const email = document.getElementById('setup-email').value.trim();
+      const password = document.getElementById('setup-password').value;
+      const confirm = document.getElementById('setup-password-confirm').value;
+
+      if (!email || !password) return showSetupError('Completa todos los campos');
+      if (password !== confirm) return showSetupError('Las contraseñas no coinciden');
+      if (password.length < 4) return showSetupError('Mínimo 4 caracteres');
+
+      const btn = document.getElementById('setup-btn');
+      btn.disabled = true;
+      btn.textContent = 'Configurando...';
+
+      try {
+        const res = await _originalFetch(API + '/api/auth/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          showSetupError(data.error || 'Error en setup');
+          btn.disabled = false;
+          btn.textContent = 'Configurar y Entrar';
+          return;
+        }
+        localStorage.setItem('leker_token', data.data.token);
+        localStorage.setItem('leker_user', JSON.stringify(data.data.user));
+        currentUser = data.data.user;
+        onLoginSuccess();
+      } catch(e) {
+        showSetupError('Error de conexión');
+        btn.disabled = false;
+        btn.textContent = 'Configurar y Entrar';
+      }
+    }
+
+    function doLogout() {
+      localStorage.removeItem('leker_token');
+      localStorage.removeItem('leker_user');
+      currentUser = null;
+      location.reload();
+    }
+
+    function onLoginSuccess() {
+      document.getElementById('login-overlay').classList.add('hidden');
+      applyRolePermissions();
+      updateSidebarUser();
+      // Now load data
+      loadData();
+      updateGpsStatus();
+      loadDashboardComparativoSummary();
+      setInterval(updateGpsStatus, 30000);
+
+      // Restore saved tab
+      const savedTab = localStorage.getItem('leker_active_tab');
+      const savedSubtab = localStorage.getItem('leker_active_subtab');
+      if (savedTab && savedTab !== 'dashboard') {
+        setTimeout(() => {
+          const allowed = ROLE_PANELS[currentUser.role] || ['dashboard'];
+          if (allowed.includes(savedTab)) {
+            let tabItem = document.querySelector(`.nav-subitem[data-tab="${savedTab}"][data-subtab="${savedSubtab}"]`);
+            if (!tabItem) {
+              tabItem = document.querySelector(`.nav-item[data-tab="${savedTab}"]`) ||
+                        document.querySelector(`.nav-subitem[data-tab="${savedTab}"]`);
+            }
+            if (tabItem) tabItem.click();
+          }
+        }, 100);
+      }
+    }
+
+    function applyRolePermissions() {
+      if (!currentUser) return;
+      const allowed = ROLE_PANELS[currentUser.role] || ['dashboard'];
+
+      // Hide/show nav items based on role
+      document.querySelectorAll('.nav-item[data-tab], .nav-subitem[data-tab]').forEach(item => {
+        const tab = item.getAttribute('data-tab');
+        const section = item.closest('.nav-section');
+        if (!allowed.includes(tab)) {
+          item.style.display = 'none';
+        } else {
+          item.style.display = '';
+        }
+      });
+
+      // Hide/show parent expandable items if all children are hidden
+      document.querySelectorAll('.nav-item-expandable').forEach(expItem => {
+        const visibleChildren = expItem.querySelectorAll('.nav-subitem[style=""], .nav-subitem:not([style])');
+        const allChildren = expItem.querySelectorAll('.nav-subitem');
+        let anyVisible = false;
+        allChildren.forEach(ch => {
+          if (ch.style.display !== 'none') anyVisible = true;
+        });
+        if (!anyVisible) {
+          expItem.style.display = 'none';
+        } else {
+          expItem.style.display = '';
+        }
+      });
+
+      // Hide entire nav sections if all items are hidden
+      document.querySelectorAll('.nav-section').forEach(section => {
+        const items = section.querySelectorAll('.nav-item[data-tab], .nav-subitem[data-tab], .nav-item-expandable');
+        let anyVisible = false;
+        items.forEach(item => {
+          if (item.style.display !== 'none') anyVisible = true;
+        });
+        if (!anyVisible) {
+          section.style.display = 'none';
+        } else {
+          section.style.display = '';
+        }
+      });
+    }
+
+    function updateSidebarUser() {
+      if (!currentUser) return;
+      const nameEl = document.getElementById('sidebar-admin-name');
+      const roleEl = document.getElementById('sidebar-admin-role');
+      const avatarEl = document.getElementById('sidebar-admin-avatar');
+      const topAvatarEl = document.querySelector('.user-avatar');
+
+      if (nameEl) nameEl.textContent = currentUser.full_name || 'Usuario';
+      if (roleEl) {
+        const roleLabel = ROLE_LABELS[currentUser.role] || currentUser.role;
+        roleEl.innerHTML = `<i data-lucide="shield-check" style="width: 10px; height: 10px;"></i><span>${roleLabel}</span>`;
+      }
+
+      // Update top-bar avatar title
+      if (topAvatarEl) topAvatarEl.title = currentUser.full_name || 'Usuario';
+
+      // Initials in avatar
+      if (avatarEl && currentUser.full_name) {
+        const parts = currentUser.full_name.split(' ');
+        const initials = parts.length >= 2
+          ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+          : parts[0].substring(0,2).toUpperCase();
+        avatarEl.innerHTML = initials;
+      }
+
+      // Update admin panel display
+      const adminNameEl = document.getElementById('current-admin-name');
+      const adminEmailEl = document.getElementById('current-admin-email');
+      if (adminNameEl) adminNameEl.textContent = currentUser.full_name || 'Usuario';
+      if (adminEmailEl) adminEmailEl.textContent = currentUser.email || '';
+
+      lucide.createIcons();
+    }
+
+    // Password management for admin
+    async function setUserPassword(userId, userName) {
+      const password = prompt(`Nueva contraseña para ${userName}:\n(mínimo 4 caracteres)`);
+      if (!password) return;
+      if (password.length < 4) return alert('La contraseña debe tener al menos 4 caracteres');
+
+      try {
+        const res = await fetch(API + '/api/auth/set-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Contraseña actualizada para ' + userName);
+        } else {
+          alert('Error: ' + (data.error || 'No se pudo actualizar'));
+        }
+      } catch(e) {
+        alert('Error de conexión');
+      }
+    }
+
+    // Enter key triggers login/setup
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const overlay = document.getElementById('login-overlay');
+        if (overlay && !overlay.classList.contains('hidden')) {
+          if (document.getElementById('setup-form-container').style.display !== 'none') {
+            doSetup();
+          } else {
+            doLogin();
+          }
+        }
+      }
+    });
+
     let mainMap, routeMap;
     let mainMapMarkers = [];
     let routeMapMarkers = [];
@@ -5575,6 +6463,9 @@
         // Load Google Sheets data for all panels (dashboard + datos comerciales)
         await loadGoogleSheetsData(false, true);
 
+        // Initialize new dashboard components (segmentation, vendor stats, calendar, planner)
+        initNewDashboardComponents();
+
       } catch (error) {
         console.error('Error loading data:', error);
         updateDashLoadingProgress(100, 'Error al cargar datos');
@@ -5702,13 +6593,21 @@
         };
       }
 
+      // Gather checklist data
+      const checklistData = {
+        cobranzas_ok: document.getElementById('chk-cobranzas')?.checked || false,
+        ultima_compra_ok: document.getElementById('chk-compra')?.checked || false,
+        ultima_visita_ok: document.getElementById('chk-visita')?.checked || false
+      };
+
       const body = {
         routeId: document.getElementById('checkin-route').value,
         clientId,
         outcome: document.getElementById('checkin-outcome').value,
         lat,
         lng,
-        addressUpdate
+        addressUpdate,
+        checklistData
       };
 
       try {
@@ -5727,10 +6626,16 @@
           }
           showToast('success', 'Check-in registrado', successMsg);
 
-          // Reset address verification
+          // Reset address verification and checklist
           document.getElementById('address-verification').style.display = 'none';
           document.getElementById('correct-address-check').checked = false;
           correctedAddress = null;
+          document.getElementById('checklist-panel').style.display = 'none';
+          document.getElementById('checklist-warning').style.display = 'none';
+          ['chk-cobranzas', 'chk-compra', 'chk-visita'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.checked = false;
+          });
         }
 
         showResponse('response-checkin', data, data.success);
@@ -7937,6 +8842,9 @@
       // Trigger address verification
       selectedClientData = client;
       onClientSelectChange();
+
+      // Show checklist panel and load data
+      loadChecklistForClient(clientId, client);
     }
 
     function clearSelectedClient() {
@@ -7944,6 +8852,9 @@
       document.getElementById('checkin-client-search').value = '';
       document.getElementById('selected-client-card').style.display = 'none';
       document.getElementById('address-verification').style.display = 'none';
+      document.getElementById('checklist-panel').style.display = 'none';
+      document.getElementById('checklist-warning').style.display = 'none';
+      document.getElementById('btn-checkin-submit').disabled = false;
       selectedClientData = null;
     }
 
@@ -9607,10 +10518,11 @@
 
     // Role configuration
     const ROLE_CONFIG = {
-      admin: { label: 'Administrador', color: '#374151', permissions: 'Completo', icon: 'shield-check' },
+      admin:      { label: 'Administrador', color: '#374151', permissions: 'Completo', icon: 'shield-check' },
       supervisor: { label: 'Supervisor', color: '#7c3aed', permissions: 'Gestión', icon: 'user-cog' },
-      executive: { label: 'Vendedor', color: '#1e40af', permissions: 'Básico', icon: 'briefcase' },
-      viewer: { label: 'Lectura', color: '#059669', permissions: 'Solo ver', icon: 'eye' }
+      zonal:      { label: 'Zonal', color: '#0891b2', permissions: 'Zona', icon: 'map' },
+      executive:  { label: 'Vendedor', color: '#1e40af', permissions: 'Básico', icon: 'briefcase' },
+      viewer:     { label: 'Lectura', color: '#059669', permissions: 'Solo ver', icon: 'eye' }
     };
 
     function getRoleConfig(role) {
@@ -9638,8 +10550,8 @@
         const initials = getInitials(user.full_name);
         const roleConfig = getRoleConfig(user.role);
         const isAdmin = user.role === 'admin';
-        const canHaveClients = ['executive', 'supervisor'].includes(user.role);
-        const canHaveRoutes = ['executive', 'supervisor'].includes(user.role);
+        const canHaveClients = ['executive', 'supervisor', 'zonal'].includes(user.role);
+        const canHaveRoutes = ['executive', 'supervisor', 'zonal'].includes(user.role);
 
         // Enrich with Google Sheets data
         const gsData = findVendedorData(user.full_name);
@@ -9680,6 +10592,7 @@
               <select class="form-control" style="padding: 4px 8px; font-size: 12px; width: 130px;" onchange="changeUserRole('${user.id}', this.value)" ${isAdmin && allUsers.filter(u => u.role === 'admin').length === 1 ? 'disabled title="Debe haber al menos un administrador"' : ''}>
                 <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Administrador</option>
                 <option value="supervisor" ${user.role === 'supervisor' ? 'selected' : ''}>Supervisor</option>
+                <option value="zonal" ${user.role === 'zonal' ? 'selected' : ''}>Zonal</option>
                 <option value="executive" ${user.role === 'executive' ? 'selected' : ''}>Vendedor</option>
                 <option value="viewer" ${user.role === 'viewer' ? 'selected' : ''}>Lectura</option>
               </select>
@@ -9691,6 +10604,9 @@
               <div style="display: flex; gap: 4px; justify-content: center;">
                 ${canHaveRoutes ? `<button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="showPanel('executives'); setTimeout(() => { document.getElementById('filter-executive')?.querySelectorAll('option').forEach(o => { if(o.value === '${user.id}') o.selected = true; }); filterByExecutive(); }, 100);" title="Ver en mapa">
                   <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
+                </button>` : ''}
+                ${currentUser && currentUser.role === 'admin' ? `<button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; color: #6366f1;" onclick="setUserPassword('${user.id}', '${user.full_name.replace(/'/g, "\\'")}')" title="Cambiar Contraseña">
+                  <i data-lucide="key" style="width: 12px; height: 12px;"></i>
                 </button>` : ''}
                 <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; color: var(--danger);" onclick="deleteUserConfirm('${user.id}', '${user.full_name}')" ${isAdmin && allUsers.filter(u => u.role === 'admin').length === 1 ? 'disabled title="No se puede eliminar el único administrador"' : ''} title="Eliminar">
                   <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i>
@@ -9708,17 +10624,94 @@
       const totalUsers = allUsers.length;
       const admins = allUsers.filter(u => u.role === 'admin').length;
       const supervisors = allUsers.filter(u => u.role === 'supervisor').length;
+      const zonals = allUsers.filter(u => u.role === 'zonal').length;
       const executives = allUsers.filter(u => u.role === 'executive').length;
       const viewers = allUsers.filter(u => u.role === 'viewer').length;
 
       document.getElementById('stat-users-total').textContent = totalUsers;
       document.getElementById('stat-users-admin').textContent = admins;
       document.getElementById('stat-users-supervisor').textContent = supervisors;
+      document.getElementById('stat-users-zonal').textContent = zonals;
       document.getElementById('stat-users-exec').textContent = executives;
       document.getElementById('stat-users-viewer').textContent = viewers;
 
       // Update current admin info
       updateCurrentAdminInfo();
+
+      // Render permissions matrix if on users panel
+      renderPermissionsMatrix();
+    }
+
+    // =============================================
+    // PERMISSIONS MATRIX
+    // =============================================
+
+    function renderPermissionsMatrix() {
+      const container = document.getElementById('permissions-matrix-body');
+      if (!container) return;
+
+      const allPanels = Object.keys(PANEL_LABELS);
+      const roles = ['admin', 'supervisor', 'zonal', 'executive', 'viewer'];
+      const roleHeaders = { admin: 'Admin', supervisor: 'Sup.', zonal: 'Zonal', executive: 'Ejec.', viewer: 'View' };
+
+      let html = `<table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border-color);">
+            <th style="text-align: left; padding: 8px 12px; font-weight: 600;">Panel</th>
+            ${roles.map(r => `<th style="text-align: center; padding: 8px 6px; font-weight: 600; color: ${ROLE_CONFIG[r]?.color || '#333'};">${roleHeaders[r]}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>`;
+
+      allPanels.forEach(panel => {
+        html += `<tr style="border-bottom: 1px solid var(--border-color);">
+          <td style="padding: 8px 12px; font-weight: 500;">${PANEL_LABELS[panel]}</td>`;
+        roles.forEach(role => {
+          const checked = (ROLE_PANELS[role] || []).includes(panel);
+          const isAdmin = role === 'admin';
+          html += `<td style="text-align: center; padding: 8px 6px;">
+            <input type="checkbox" ${checked ? 'checked' : ''} ${isAdmin ? 'disabled' : ''}
+              onchange="toggleRolePanel('${role}', '${panel}', this.checked)"
+              style="width: 16px; height: 16px; cursor: ${isAdmin ? 'not-allowed' : 'pointer'}; accent-color: ${ROLE_CONFIG[role]?.color || '#333'};">
+          </td>`;
+        });
+        html += `</tr>`;
+      });
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
+
+    function toggleRolePanel(role, panel, checked) {
+      if (role === 'admin') return; // admin always has all panels
+
+      if (checked) {
+        if (!ROLE_PANELS[role].includes(panel)) {
+          ROLE_PANELS[role].push(panel);
+        }
+      } else {
+        ROLE_PANELS[role] = ROLE_PANELS[role].filter(p => p !== panel);
+        // Ensure at least dashboard
+        if (!ROLE_PANELS[role].includes('dashboard')) {
+          ROLE_PANELS[role].unshift('dashboard');
+        }
+      }
+
+      // Save to localStorage
+      localStorage.setItem('leker_role_panels', JSON.stringify(ROLE_PANELS));
+
+      // Re-apply if current user is affected
+      applyRolePermissions();
+
+      showToast('Permisos actualizados', 'success');
+    }
+
+    function resetRolePermissions() {
+      ROLE_PANELS = JSON.parse(JSON.stringify(DEFAULT_ROLE_PANELS));
+      localStorage.removeItem('leker_role_panels');
+      renderPermissionsMatrix();
+      applyRolePermissions();
+      showToast('Permisos restaurados a valores predeterminados', 'success');
     }
 
     // =============================================
@@ -10899,12 +11892,19 @@
     }
 
     function renderAllGsheetsData(data) {
+      // Log sheet names for debugging
+      if (Array.isArray(data)) {
+        console.log('[GSheets] Hojas encontradas:', data.map(s => s.name));
+      } else if (data && typeof data === 'object') {
+        console.log('[GSheets] Hojas encontradas:', Object.keys(data));
+      }
+
       // Find and render each sheet
       const ventas = findSheetData(data, ['ventas por mes', 'ventas']);
       const cobranzas = findSheetData(data, ['cobranza']);
       const vendedores = findSheetData(data, ['vendedores', 'zonales']);
-      const v8020 = findSheetData(data, ['80-20 vendedores', '80-20 vend']);
-      const z8020 = findSheetData(data, ['80-20 zonales', '80-20 zon']);
+      const v8020 = findSheetData(data, ['80-20 vendedores', '80-20 vend', '80-20', '80/20', 'pareto', 'analisis 80']);
+      const z8020 = findSheetData(data, ['80-20 zonales', '80-20 zon', '80-20 zonal']);
       const direcciones = findSheetData(data, ['direcciones validadas']);
       const direccionesRaw = findSheetData(data, ['direccion']);
       const reasignacion = findSheetData(data, ['reasignacion', 'reasignación']);
@@ -10927,8 +11927,11 @@
       setBadge('gs-badge-ventas', ventas);
       setBadge('gs-badge-cobranzas', cobranzas);
       setBadge('gs-badge-vendedores', vendedores);
+      setBadge('gs-badge-8020', v8020);
       setBadge('gs-badge-direcciones', direccionesRaw);
       setBadge('gs-badge-reasignacion', reasignacion);
+      console.log('[GSheets] 80-20 vendedores:', v8020 ? (v8020.length - 1) + ' rows' : 'NO ENCONTRADA');
+      console.log('[GSheets] 80-20 zonales:', z8020 ? (z8020.length - 1) + ' rows' : 'NO ENCONTRADA');
 
       // Update dashboard summary with fresh data
       renderDashboardSummary();
@@ -11332,15 +12335,19 @@
     let gs8020ZonClean = null;
 
     function renderGsheets8020(vendedoresData, zonalesData) {
+      console.log('[GSheets 80-20] vendedoresData:', vendedoresData ? vendedoresData.length + ' rows' : 'null');
+      console.log('[GSheets 80-20] zonalesData:', zonalesData ? zonalesData.length + ' rows' : 'null');
       if (vendedoresData && vendedoresData.length > 0) {
         gs8020VendClean = cleanSheetData(vendedoresData);
-        // Remove empty columns
         gs8020VendClean = removeEmptyCols(gs8020VendClean);
+        console.log('[GSheets 80-20] Vend headers:', gs8020VendClean[0]);
+        console.log('[GSheets 80-20] Vend sample row:', gs8020VendClean[1]);
         render8020Vendedores(gs8020VendClean);
       }
       if (zonalesData && zonalesData.length > 0) {
         gs8020ZonClean = cleanSheetData(zonalesData);
         gs8020ZonClean = removeEmptyCols(gs8020ZonClean);
+        console.log('[GSheets 80-20] Zon headers:', gs8020ZonClean[0]);
         render8020Zonales(gs8020ZonClean);
       }
       render8020Summary();
@@ -12102,30 +13109,619 @@
       sheetToTable(data, containerId, opts);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      initMaps();
-      loadData();
-      updateGpsStatus();
-      loadDashboardComparativoSummary();
-      // Update GPS every 30 seconds
-      setInterval(updateGpsStatus, 30000);
+    // =============================================
+    // SEGMENTACIÓN DE CLIENTES
+    // =============================================
 
-      // Restore saved tab from localStorage
-      const savedTab = localStorage.getItem('leker_active_tab');
-      const savedSubtab = localStorage.getItem('leker_active_subtab');
-      if (savedTab && savedTab !== 'dashboard') {
-        setTimeout(() => {
-          // Try subitem first (for data subtabs)
-          let tabItem = document.querySelector(`.nav-subitem[data-tab="${savedTab}"][data-subtab="${savedSubtab}"]`);
-          if (!tabItem) {
-            tabItem = document.querySelector(`.nav-item[data-tab="${savedTab}"]`) ||
-                      document.querySelector(`.nav-subitem[data-tab="${savedTab}"]`);
-          }
-          if (tabItem) {
-            tabItem.click();
-          }
-        }, 100);
+    function getSegBadge(segmentation) {
+      const seg = segmentation || 'N';
+      const labels = { '80-20': '80-20', 'L': 'L', 'N': 'N' };
+      const classes = { '80-20': 'seg-badge-8020', 'L': 'seg-badge-L', 'N': 'seg-badge-N' };
+      return `<span class="seg-badge ${classes[seg] || 'seg-badge-N'}">${labels[seg] || 'N'}</span>`;
+    }
+
+    function findCodeColumn(headers) {
+      if (!headers) return 0;
+      const idx = headers.findIndex(h => {
+        if (!h) return false;
+        const low = String(h).toLowerCase().trim();
+        return low === 'cliente' || low.includes('codigo') || low.includes('código') || low === 'cod' || low === 'cod.' || low.includes('cod cliente') || low.includes('cod. cliente');
+      });
+      return idx >= 0 ? idx : 0;
+    }
+
+    async function syncSegmentation() {
+      const btn = document.getElementById('btn-sync-seg');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width: 14px; height: 14px;"></i> Sincronizando...'; lucide.createIcons(); }
+
+      try {
+        // Ensure Google Sheets data is loaded
+        if (!gsheetsLoaded) {
+          showToast('info', 'Cargando', 'Descargando datos de Google Sheets primero...');
+          await loadGoogleSheetsData(true);
+        }
+
+        // Extract 80-20 codes from loaded sheets (clientes clave)
+        const codes8020 = [];
+        if (gs8020VendClean && gs8020VendClean.length > 1) {
+          const codeCol = findCodeColumn(gs8020VendClean[0]);
+          console.log('[Segmentación] 80-20 Vend headers:', gs8020VendClean[0], '| codeCol:', codeCol, '| rows:', gs8020VendClean.length - 1);
+          gs8020VendClean.slice(1).forEach(row => {
+            const code = String(row[codeCol] || '').trim();
+            if (code && code !== '0') codes8020.push(code);
+          });
+        } else {
+          console.log('[Segmentación] gs8020VendClean no disponible:', gs8020VendClean);
+        }
+        if (gs8020ZonClean && gs8020ZonClean.length > 1) {
+          const codeCol = findCodeColumn(gs8020ZonClean[0]);
+          console.log('[Segmentación] 80-20 Zon headers:', gs8020ZonClean[0], '| codeCol:', codeCol, '| rows:', gs8020ZonClean.length - 1);
+          gs8020ZonClean.slice(1).forEach(row => {
+            const code = String(row[codeCol] || '').trim();
+            if (code && code !== '0') codes8020.push(code);
+          });
+        }
+        const unique8020 = [...new Set(codes8020)];
+
+        // Todos los clientes existentes son L por defecto.
+        // Solo necesitamos enviar los 80-20 para sobreescribir.
+        console.log('[Segmentación] Códigos 80-20 encontrados:', unique8020.length, '| Muestra:', unique8020.slice(0, 10));
+
+        const res = await fetch(`${API}/api/clients/sync-segmentation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codes8020: unique8020 })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Segmentación', data.message);
+          loadSegmentationStats();
+          loadData();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (err) {
+        console.error('[Segmentación] Error:', err);
+        showToast('error', 'Error', err.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Sincronizar Segmentación'; lucide.createIcons(); }
       }
+    }
+
+    async function loadSegmentationStats() {
+      try {
+        const res = await fetch(`${API}/api/clients/segmentation-stats`);
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('seg-8020-count').textContent = data.data['80-20'] || 0;
+          document.getElementById('seg-L-count').textContent = data.data.L || 0;
+          document.getElementById('seg-N-count').textContent = data.data.N || 0;
+          document.getElementById('seg-total-count').textContent = data.data.total || 0;
+        }
+      } catch (err) {
+        console.warn('Error loading segmentation stats:', err);
+      }
+    }
+
+    // =============================================
+    // CHECKLIST DE VISITA
+    // =============================================
+
+    async function loadChecklistForClient(clientId, clientData) {
+      const panel = document.getElementById('checklist-panel');
+      const warning = document.getElementById('checklist-warning');
+      panel.style.display = 'block';
+      warning.style.display = 'block';
+
+      // Reset checkboxes
+      ['chk-cobranzas', 'chk-compra', 'chk-visita'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.checked = false; }
+      });
+      updateChecklistState();
+
+      // Fill profile fields from client data
+      document.getElementById('chk-owner').value = clientData.owner_name || '';
+      document.getElementById('chk-buyer').value = clientData.buyer_name || '';
+      document.getElementById('chk-phone').value = clientData.phone || '';
+      document.getElementById('chk-phone2').value = clientData.phone2 || '';
+      document.getElementById('chk-email').value = clientData.email || '';
+      document.getElementById('chk-observations').value = clientData.observations || '';
+      document.getElementById('chk-segmentation').value = clientData.segmentation || 'N';
+      document.getElementById('chk-is-competitor').checked = clientData.is_competitor_client || false;
+      document.getElementById('chk-competitor1').value = clientData.competitor_provider1 || '';
+      document.getElementById('chk-competitor2').value = clientData.competitor_provider2 || '';
+
+      // Load checklist data from API
+      try {
+        const res = await fetch(`${API}/api/clients/${clientId}/checklist-data`);
+        const data = await res.json();
+        if (data.success) {
+          const cd = data.data;
+
+          // Update cobranzas detail
+          document.getElementById('chk-cobranzas-detail').textContent =
+            'Verificar facturas vencidas o próximas a vencer';
+
+          // Update last purchase detail
+          if (cd.client?.last_sale_date) {
+            const d = new Date(cd.client.last_sale_date);
+            document.getElementById('chk-compra-detail').textContent =
+              `Última venta: ${d.toLocaleDateString('es-CL')}`;
+          } else {
+            document.getElementById('chk-compra-detail').textContent = 'Sin registro de última venta';
+          }
+
+          // Update last visit detail
+          if (cd.lastVisit) {
+            const d = new Date(cd.lastVisit.check_in);
+            const vendedor = cd.lastVisit.route?.user?.full_name || '';
+            document.getElementById('chk-visita-detail').textContent =
+              `Última visita: ${d.toLocaleDateString('es-CL')} ${vendedor ? '(' + vendedor + ')' : ''} - ${cd.lastVisit.outcome || 'pendiente'}`;
+          } else {
+            document.getElementById('chk-visita-detail').textContent = 'Sin visitas anteriores registradas';
+          }
+
+          // Update profile fields from API data (may have more updated data)
+          if (cd.client) {
+            if (cd.client.owner_name) document.getElementById('chk-owner').value = cd.client.owner_name;
+            if (cd.client.buyer_name) document.getElementById('chk-buyer').value = cd.client.buyer_name;
+            if (cd.client.phone) document.getElementById('chk-phone').value = cd.client.phone;
+            if (cd.client.phone2) document.getElementById('chk-phone2').value = cd.client.phone2;
+            if (cd.client.email) document.getElementById('chk-email').value = cd.client.email;
+            if (cd.client.observations) document.getElementById('chk-observations').value = cd.client.observations;
+            if (cd.client.segmentation) document.getElementById('chk-segmentation').value = cd.client.segmentation;
+            document.getElementById('chk-is-competitor').checked = cd.client.is_competitor_client || false;
+            if (cd.client.competitor_provider1) document.getElementById('chk-competitor1').value = cd.client.competitor_provider1;
+            if (cd.client.competitor_provider2) document.getElementById('chk-competitor2').value = cd.client.competitor_provider2;
+          }
+        }
+      } catch (err) {
+        console.warn('Error loading checklist data:', err);
+      }
+
+      lucide.createIcons();
+    }
+
+    function updateChecklistState() {
+      const chks = ['chk-cobranzas', 'chk-compra', 'chk-visita'];
+      let allChecked = true;
+
+      chks.forEach(id => {
+        const el = document.getElementById(id);
+        const item = el?.closest('.checklist-item');
+        if (el && item) {
+          item.classList.toggle('checked', el.checked);
+          if (!el.checked) allChecked = false;
+        }
+      });
+
+      const warning = document.getElementById('checklist-warning');
+      const btn = document.getElementById('btn-checkin-submit');
+      if (warning) warning.style.display = allChecked ? 'none' : 'block';
+      if (btn) btn.disabled = !allChecked;
+    }
+
+    async function saveClientProfile() {
+      const clientId = document.getElementById('checkin-client').value;
+      if (!clientId) {
+        showToast('warning', 'Sin cliente', 'Selecciona un cliente primero');
+        return;
+      }
+
+      const profileData = {
+        owner_name: document.getElementById('chk-owner').value,
+        buyer_name: document.getElementById('chk-buyer').value,
+        phone: document.getElementById('chk-phone').value,
+        phone2: document.getElementById('chk-phone2').value,
+        email: document.getElementById('chk-email').value,
+        observations: document.getElementById('chk-observations').value,
+        segmentation: document.getElementById('chk-segmentation').value,
+        is_competitor_client: document.getElementById('chk-is-competitor').checked,
+        competitor_provider1: document.getElementById('chk-competitor1').value,
+        competitor_provider2: document.getElementById('chk-competitor2').value
+      };
+
+      try {
+        const res = await fetch(`${API}/api/clients/${clientId}/profile`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(profileData)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Ficha guardada', 'Datos del cliente actualizados');
+          // Update local client data
+          const idx = allClients.findIndex(c => c.id === clientId);
+          if (idx >= 0) Object.assign(allClients[idx], profileData);
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+      }
+    }
+
+    // =============================================
+    // PLANIFICADOR DE RUTAS
+    // =============================================
+
+    async function generateWeeklySchedule() {
+      const userId = document.getElementById('schedule-vendor').value;
+      const startDate = document.getElementById('schedule-start').value;
+      const endDate = document.getElementById('schedule-end').value;
+
+      if (!userId || !startDate || !endDate) {
+        showToast('warning', 'Datos faltantes', 'Selecciona vendedor y rango de fechas');
+        return;
+      }
+
+      const resultDiv = document.getElementById('schedule-result');
+      resultDiv.innerHTML = '<div style="text-align: center; padding: 24px;"><i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px;"></i><p style="font-size: 12px; margin-top: 8px;">Generando plan...</p></div>';
+      lucide.createIcons();
+
+      try {
+        const res = await fetch(`${API}/api/routes/generate-schedule`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, startDate, endDate })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', 'Plan generado', data.message);
+          renderScheduleResult(data.data, userId);
+        } else {
+          showToast('error', 'Error', data.error);
+          resultDiv.innerHTML = `<div class="empty-state" style="padding: 24px;"><p style="color: var(--danger); font-size: 13px;">${data.error}</p></div>`;
+        }
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+        resultDiv.innerHTML = `<div class="empty-state" style="padding: 24px;"><p style="color: var(--danger); font-size: 13px;">${err.message}</p></div>`;
+      }
+    }
+
+    function renderScheduleResult(scheduleData, userId) {
+      const resultDiv = document.getElementById('schedule-result');
+      const schedule = scheduleData.schedule;
+      const days = Object.keys(schedule).sort();
+
+      if (days.length === 0) {
+        resultDiv.innerHTML = '<div class="empty-state" style="padding: 24px;"><p>No hay clientes que necesiten visita en este período</p></div>';
+        return;
+      }
+
+      const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+      let html = `
+        <div style="margin-bottom: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <span style="font-size: 13px; font-weight: 600;">${scheduleData.totalClients} clientes en ${scheduleData.days} días</span>
+        </div>
+        <div class="schedule-calendar">
+      `;
+
+      days.forEach(date => {
+        const dayData = schedule[date];
+        const d = new Date(date + 'T12:00:00');
+        const dayName = dayNames[d.getDay()];
+        const dateFormatted = d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+
+        html += `
+          <div class="schedule-day">
+            <div class="schedule-day-header">
+              <div>
+                <div style="font-size: 11px; color: var(--text-muted);">${dayName}</div>
+                <div>${dateFormatted}</div>
+              </div>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <span style="font-size: 11px; font-weight: 700; color: var(--accent);">${dayData.clients.length}</span>
+                <button onclick="rescheduleDay('${userId}', '${date}')" title="Reprogramar pendientes" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px;">
+                  <i data-lucide="calendar-clock" style="width: 14px; height: 14px;"></i>
+                </button>
+              </div>
+            </div>
+            <div style="max-height: 250px; overflow-y: auto;">
+        `;
+
+        dayData.clients.forEach((client, idx) => {
+          html += `
+            <div class="schedule-day-client">
+              <span style="font-size: 10px; color: var(--text-muted); min-width: 16px;">${idx + 1}.</span>
+              ${getSegBadge(client.segmentation)}
+              <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${client.name}">${client.fantasy_name || client.name}</span>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+            ${dayData.totalDistance > 0 ? `<div style="margin-top: 8px; font-size: 10px; color: var(--text-muted); text-align: center;">~${dayData.totalDistance} km | ~${dayData.estimatedTime} min</div>` : ''}
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      resultDiv.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    async function rescheduleDay(userId, date) {
+      if (!confirm(`¿Reprogramar visitas pendientes del ${date} al siguiente día hábil?`)) return;
+
+      try {
+        const res = await fetch(`${API}/api/routes/reschedule-incomplete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, date })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Reprogramado', data.message);
+          // Reload schedule
+          generateWeeklySchedule();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+      }
+    }
+
+    // =============================================
+    // DASHBOARD VENDEDOR + CALENDARIO
+    // =============================================
+
+    async function loadVendorDashboard() {
+      const monthInput = document.getElementById('vendor-stats-month');
+      if (!monthInput.value) {
+        monthInput.value = new Date().toISOString().slice(0, 7);
+      }
+      const month = monthInput.value;
+      const grid = document.getElementById('vendor-stats-grid');
+      grid.innerHTML = '<div style="text-align: center; padding: 24px; grid-column: 1 / -1;"><i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px;"></i><p style="font-size: 12px; margin-top: 8px;">Cargando estadísticas...</p></div>';
+      lucide.createIcons();
+
+      try {
+        const res = await fetch(`${API}/api/dashboard/vendor-stats?month=${month}`);
+        const data = await res.json();
+
+        if (data.success && data.data.length > 0) {
+          let html = '';
+          data.data.forEach(vendor => {
+            let weeklyHtml = '';
+            vendor.weekly.forEach(w => {
+              weeklyHtml += `<div style="display: flex; justify-content: space-between; font-size: 11px; padding: 3px 0; border-bottom: 1px solid var(--border);">
+                <span>${w.week}</span>
+                <span>${w.clients} clientes, ${w.days} días</span>
+              </div>`;
+            });
+
+            html += `
+              <div class="vendor-stat-card">
+                <h4>
+                  <i data-lucide="user" style="width: 16px; height: 16px; color: var(--accent);"></i>
+                  ${vendor.name}
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                  <div style="text-align: center; padding: 8px; background: var(--bg-hover); border-radius: 8px;">
+                    <div style="font-size: 18px; font-weight: 700; color: var(--accent);">${vendor.clientsWithSale}</div>
+                    <div style="font-size: 10px; color: var(--text-muted);">Clientes con vta</div>
+                  </div>
+                  <div style="text-align: center; padding: 8px; background: var(--bg-hover); border-radius: 8px;">
+                    <div style="font-size: 18px; font-weight: 700; color: var(--success);">${vendor.totalVisits}</div>
+                    <div style="font-size: 10px; color: var(--text-muted);">Visitas</div>
+                  </div>
+                </div>
+                <div style="font-size: 12px; margin-bottom: 6px;">
+                  <span style="color: var(--text-muted);">Días trabajados:</span>
+                  <strong>${vendor.daysWorked}</strong>
+                </div>
+                ${weeklyHtml}
+              </div>
+            `;
+          });
+
+          grid.innerHTML = html;
+        } else {
+          grid.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-muted); grid-column: 1 / -1;">No hay datos para este mes</div>';
+        }
+      } catch (err) {
+        grid.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--danger); grid-column: 1 / -1;">${err.message}</div>`;
+      }
+
+      lucide.createIcons();
+    }
+
+    async function loadVendorCalendar() {
+      const userId = document.getElementById('calendar-vendor').value;
+      const monthInput = document.getElementById('calendar-month');
+      if (!monthInput.value) {
+        monthInput.value = new Date().toISOString().slice(0, 7);
+      }
+      const month = monthInput.value;
+      const grid = document.getElementById('calendar-grid');
+
+      if (!userId) {
+        grid.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-muted);">Selecciona un vendedor</div>';
+        return;
+      }
+
+      grid.innerHTML = '<div style="text-align: center; padding: 24px;"><i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px;"></i></div>';
+      lucide.createIcons();
+
+      try {
+        const res = await fetch(`${API}/api/dashboard/calendar/${userId}?month=${month}`);
+        const data = await res.json();
+
+        if (data.success) {
+          renderMonthCalendar(data.data, month);
+        } else {
+          grid.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--danger);">${data.error || 'Error al cargar'}</div>`;
+        }
+      } catch (err) {
+        grid.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--danger);">${err.message}</div>`;
+      }
+    }
+
+    function renderMonthCalendar(calendarData, month) {
+      const grid = document.getElementById('calendar-grid');
+      const [year, mon] = month.split('-').map(Number);
+      const firstDay = new Date(year, mon - 1, 1);
+      const lastDay = new Date(year, mon, 0);
+      const today = new Date().toISOString().split('T')[0];
+
+      const dayHeaders = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+      let html = '<div class="month-calendar">';
+
+      // Headers
+      dayHeaders.forEach(d => {
+        html += `<div class="month-calendar-header">${d}</div>`;
+      });
+
+      // Empty cells for days before first of month (Monday = 0)
+      let startDay = firstDay.getDay();
+      startDay = startDay === 0 ? 6 : startDay - 1; // Convert to Mon=0
+
+      for (let i = 0; i < startDay; i++) {
+        html += '<div class="month-calendar-day"></div>';
+      }
+
+      // Days
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        const dateStr = `${year}-${String(mon).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayData = calendarData[dateStr] || { scheduled: 0, completed: 0, pending: 0, segmentation: {} };
+        const isToday = dateStr === today;
+        const hasData = dayData.scheduled > 0 || dayData.completed > 0;
+
+        html += `<div class="month-calendar-day ${isToday ? 'today' : ''} ${hasData ? 'has-data' : ''}">
+          <div class="day-num">${d}</div>`;
+
+        if (hasData) {
+          html += `<div style="font-size: 9px;">
+            ${dayData.completed > 0 ? `<span style="color: #10b981;">${dayData.completed}v</span>` : ''}
+            ${dayData.pending > 0 ? `<span style="color: #f59e0b;">${dayData.pending}p</span>` : ''}
+          </div>
+          <div class="day-stats">
+            ${(dayData.segmentation['80-20'] || 0) > 0 ? `<div class="day-dot" style="background: #dc2626;" title="80-20: ${dayData.segmentation['80-20']}"></div>` : ''}
+            ${(dayData.segmentation.L || 0) > 0 ? `<div class="day-dot" style="background: #2563eb;" title="L: ${dayData.segmentation.L}"></div>` : ''}
+            ${(dayData.segmentation.N || 0) > 0 ? `<div class="day-dot" style="background: #6b7280;" title="N: ${dayData.segmentation.N}"></div>` : ''}
+          </div>`;
+        }
+
+        html += '</div>';
+      }
+
+      html += '</div>';
+      grid.innerHTML = html;
+    }
+
+    // =============================================
+    // INITIALIZATION HELPERS
+    // =============================================
+
+    function initNewDashboardComponents() {
+      // Set default month for vendor stats
+      const monthInput = document.getElementById('vendor-stats-month');
+      if (monthInput && !monthInput.value) {
+        monthInput.value = new Date().toISOString().slice(0, 7);
+      }
+      const calMonth = document.getElementById('calendar-month');
+      if (calMonth && !calMonth.value) {
+        calMonth.value = new Date().toISOString().slice(0, 7);
+      }
+
+      // Set default dates for schedule planner
+      const startInput = document.getElementById('schedule-start');
+      const endInput = document.getElementById('schedule-end');
+      if (startInput && !startInput.value) {
+        const today = new Date();
+        // Next Monday
+        const nextMon = new Date(today);
+        nextMon.setDate(today.getDate() + (1 + 7 - today.getDay()) % 7);
+        startInput.value = nextMon.toISOString().split('T')[0];
+        // Friday of that week
+        const fri = new Date(nextMon);
+        fri.setDate(nextMon.getDate() + 4);
+        if (endInput) endInput.value = fri.toISOString().split('T')[0];
+      }
+
+      // Populate vendor selects for new features
+      if (allUsers && allUsers.length > 0) {
+        const vendorExecs = allUsers.filter(u => u.role === 'executive' || u.role === 'zonal' || u.role === 'supervisor');
+
+        const scheduleVendor = document.getElementById('schedule-vendor');
+        const calendarVendor = document.getElementById('calendar-vendor');
+
+        [scheduleVendor, calendarVendor].forEach(sel => {
+          if (!sel) return;
+          const current = sel.value;
+          sel.innerHTML = '<option value="">-- Seleccionar Vendedor --</option>' +
+            vendorExecs.map(u => `<option value="${u.id}">${u.full_name}</option>`).join('');
+          if (current) sel.value = current;
+        });
+      }
+
+      // Load segmentation stats
+      loadSegmentationStats();
+
+      // Auto-load vendor dashboard
+      loadVendorDashboard();
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initMaps();
+
+      // Check if user is already logged in
+      const savedToken = localStorage.getItem('leker_token');
+      const savedUser = localStorage.getItem('leker_user');
+
+      if (savedToken && savedUser) {
+        try {
+          // Verify token is still valid
+          const res = await _originalFetch(API + '/api/auth/me', {
+            headers: { 'Authorization': 'Bearer ' + savedToken }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            currentUser = data.data;
+            localStorage.setItem('leker_user', JSON.stringify(currentUser));
+            document.getElementById('login-overlay').classList.add('hidden');
+            applyRolePermissions();
+            updateSidebarUser();
+            loadData();
+            updateGpsStatus();
+            loadDashboardComparativoSummary();
+            setInterval(updateGpsStatus, 30000);
+
+            // Restore saved tab
+            const savedTab = localStorage.getItem('leker_active_tab');
+            const savedSubtab = localStorage.getItem('leker_active_subtab');
+            if (savedTab && savedTab !== 'dashboard') {
+              setTimeout(() => {
+                let tabItem = document.querySelector(`.nav-subitem[data-tab="${savedTab}"][data-subtab="${savedSubtab}"]`);
+                if (!tabItem) {
+                  tabItem = document.querySelector(`.nav-item[data-tab="${savedTab}"]`) ||
+                            document.querySelector(`.nav-subitem[data-tab="${savedTab}"]`);
+                }
+                if (tabItem) tabItem.click();
+              }, 100);
+            }
+            return;
+          } else {
+            // Token expired
+            localStorage.removeItem('leker_token');
+            localStorage.removeItem('leker_user');
+          }
+        } catch(e) {
+          localStorage.removeItem('leker_token');
+          localStorage.removeItem('leker_user');
+        }
+      }
+
+      // Show login screen
+      document.getElementById('login-overlay').classList.remove('hidden');
+      checkSetupNeeded();
+      lucide.createIcons();
     });
   </script>
 </body>
