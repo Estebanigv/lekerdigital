@@ -176,10 +176,25 @@
     /* Collapsed sidebar */
     .sidebar.collapsed {
       width: 68px;
+      overflow-x: hidden;
     }
     .sidebar.collapsed .sidebar-header {
-      padding: 24px 14px;
+      padding: 16px 10px;
       justify-content: center;
+      flex-direction: column;
+      align-items: center;
+    }
+    .sidebar.collapsed .logo-isotipo {
+      display: block !important;
+      cursor: pointer;
+    }
+    .sidebar.collapsed .logo-expand-arrow {
+      display: block !important;
+      cursor: pointer;
+      text-align: center;
+    }
+    .sidebar.collapsed .logo-expand-arrow:hover {
+      color: var(--accent) !important;
     }
     .sidebar.collapsed .logo-img,
     .sidebar.collapsed .logo-text,
@@ -192,15 +207,17 @@
     .sidebar.collapsed .nav-submenu,
     .sidebar.collapsed .sidebar-footer > div > div > div:nth-child(2),
     .sidebar.collapsed .sidebar-footer > div > div > i:last-child {
-      display: none;
+      display: none !important;
     }
     .sidebar.collapsed .logo {
       gap: 0;
+      justify-content: center;
     }
     .sidebar.collapsed .nav-item {
       justify-content: center;
       padding: 11px;
       position: relative;
+      overflow: hidden;
     }
     .sidebar.collapsed .nav-item i {
       margin: 0;
@@ -389,6 +406,13 @@
     .nav-subitem.active {
       background: rgba(59, 130, 246, 0.15);
       color: var(--accent);
+      font-weight: 600;
+    }
+
+    .nav-item-expandable.has-active-child > .nav-item-parent {
+      background: rgba(59, 130, 246, 0.08);
+      color: var(--accent);
+      border-left: 3px solid var(--accent);
     }
 
     .sidebar-footer {
@@ -2447,8 +2471,12 @@
       <div style="cursor: pointer;" onclick="expandSidebar()">
         <div class="logo">
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
+          <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
         <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.3.8</div>
+        <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
+          <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
+        </div>
       </div>
       <button class="sidebar-collapse-btn" onclick="toggleCollapseSidebar()" title="Contraer menú (Ctrl+B)">
         <i data-lucide="panel-left-close" style="width: 16px; height: 16px;"></i>
@@ -2890,19 +2918,19 @@
           </div>
           <div class="card-body">
             <div id="segmentation-stats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-              <div style="text-align: center; padding: 16px; background: rgba(239, 68, 68, 0.08); border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2);">
+              <div style="text-align: center; padding: 16px; background: rgba(239, 68, 68, 0.08); border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2); cursor: pointer;" onclick="goToClientsBySegmentation('80-20')">
                 <div style="font-size: 28px; font-weight: 700; color: #dc2626;" id="seg-8020-count">-</div>
                 <div style="font-size: 12px; color: var(--text-muted);">80-20 (Clave)</div>
               </div>
-              <div style="text-align: center; padding: 16px; background: rgba(59, 130, 246, 0.08); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.2);">
+              <div style="text-align: center; padding: 16px; background: rgba(59, 130, 246, 0.08); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.2); cursor: pointer;" onclick="goToClientsBySegmentation('L')">
                 <div style="font-size: 28px; font-weight: 700; color: #2563eb;" id="seg-L-count">-</div>
                 <div style="font-size: 12px; color: var(--text-muted);">L (Con ventas)</div>
               </div>
-              <div style="text-align: center; padding: 16px; background: rgba(107, 114, 128, 0.08); border-radius: 10px; border: 1px solid rgba(107, 114, 128, 0.2);">
+              <div style="text-align: center; padding: 16px; background: rgba(107, 114, 128, 0.08); border-radius: 10px; border: 1px solid rgba(107, 114, 128, 0.2); cursor: pointer;" onclick="goToClientsBySegmentation('N')">
                 <div style="font-size: 28px; font-weight: 700; color: #6b7280;" id="seg-N-count">-</div>
                 <div style="font-size: 12px; color: var(--text-muted);">N (Nuevos)</div>
               </div>
-              <div style="text-align: center; padding: 16px; background: var(--bg-hover); border-radius: 10px; border: 1px solid var(--border);">
+              <div style="text-align: center; padding: 16px; background: var(--bg-hover); border-radius: 10px; border: 1px solid var(--border); cursor: pointer;" onclick="goToClientsBySegmentation('')">
                 <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);" id="seg-total-count">-</div>
                 <div style="font-size: 12px; color: var(--text-muted);">Total Clientes</div>
               </div>
@@ -3973,6 +4001,12 @@
                   <option value="A">Segmento A</option>
                   <option value="B">Segmento B</option>
                   <option value="C">Segmento C</option>
+                </select>
+                <select id="filter-segmentation" class="form-control" onchange="filterClients()" style="max-width: 130px; width:100%;">
+                  <option value="">Segmentación</option>
+                  <option value="80-20">80-20 (Clave)</option>
+                  <option value="L">L (Con ventas)</option>
+                  <option value="N">N (Nuevos)</option>
                 </select>
                 <select id="filter-priority" class="form-control" onchange="filterClients()" style="width: 100px;">
                   <option value="">Todos</option>
@@ -5803,6 +5837,7 @@
 
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         document.querySelectorAll('.nav-subitem').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.nav-item-expandable').forEach(i => i.classList.remove('has-active-child'));
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
 
         item.classList.add('active');
@@ -5810,6 +5845,7 @@
 
         // Save current tab to localStorage
         localStorage.setItem('leker_active_tab', tab);
+        localStorage.removeItem('leker_active_subtab');
 
         // Update page title
         const titles = {
@@ -8393,6 +8429,8 @@
       } else {
         // Fallback: manually switch panels
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.nav-subitem').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.nav-item-expandable').forEach(i => i.classList.remove('has-active-child'));
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         const panel = document.getElementById(`panel-${tabName}`);
         if (panel) panel.classList.add('active');
@@ -8905,10 +8943,27 @@
     }
 
     // Filter functions
+    function goToClientsBySegmentation(seg) {
+      showPanel('data');
+      setTimeout(() => {
+        const subtab = document.querySelector('.nav-subitem[data-subtab="clients"]');
+        if (subtab) subtab.click();
+        setTimeout(() => {
+          document.getElementById('filter-segmentation').value = seg;
+          document.getElementById('search-clients').value = '';
+          document.getElementById('filter-zone').value = '';
+          document.getElementById('filter-segment').value = '';
+          document.getElementById('filter-priority').value = '';
+          filterClients();
+        }, 100);
+      }, 100);
+    }
+
     function filterClients() {
       const search = document.getElementById('search-clients').value.toLowerCase();
       const zone = document.getElementById('filter-zone').value;
       const segment = document.getElementById('filter-segment').value;
+      const segmentation = document.getElementById('filter-segmentation').value;
       const priority = document.getElementById('filter-priority').value;
 
       filteredClients = allClients.filter(c => {
@@ -8918,8 +8973,9 @@
           (c.fantasy_name && c.fantasy_name.toLowerCase().includes(search));
         const matchZone = !zone || c.zone === zone || c.commune === zone;
         const matchSegment = !segment || c.segment === segment;
+        const matchSegmentation = !segmentation || c.segmentation === segmentation;
         const matchPriority = !priority || c.priority === priority;
-        return matchSearch && matchZone && matchSegment && matchPriority;
+        return matchSearch && matchZone && matchSegment && matchSegmentation && matchPriority;
       });
 
       currentClientsPage = 1;
@@ -10163,10 +10219,15 @@
         // Update nav items
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         document.querySelectorAll('.nav-subitem').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.nav-item-expandable').forEach(i => i.classList.remove('has-active-child'));
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
 
         item.classList.add('active');
         document.getElementById(`panel-${tab}`).classList.add('active');
+
+        // Highlight parent expandable
+        const parentExpandable = item.closest('.nav-item-expandable');
+        if (parentExpandable) parentExpandable.classList.add('has-active-child');
 
         // Save current tab to localStorage
         localStorage.setItem('leker_active_tab', tab);
