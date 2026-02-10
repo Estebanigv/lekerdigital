@@ -2196,7 +2196,7 @@
       margin-top: 2px;
     }
 
-    /* Route planner calendar */
+    /* Route planner calendar V2 */
     .schedule-calendar {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -2207,7 +2207,13 @@
       border-radius: 10px;
       padding: 12px;
       background: var(--bg-card);
+      cursor: pointer;
+      transition: box-shadow 0.2s, border-color 0.2s;
     }
+    .schedule-day:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .schedule-day.day-green { border-left: 4px solid #10b981; }
+    .schedule-day.day-yellow { border-left: 4px solid #f59e0b; }
+    .schedule-day.day-red { border-left: 4px solid #ef4444; }
     .schedule-day-header {
       font-weight: 700;
       font-size: 13px;
@@ -2218,6 +2224,11 @@
       justify-content: space-between;
       align-items: center;
     }
+    .schedule-day-stats {
+      display: flex; gap: 8px; font-size: 11px; color: var(--text-muted);
+      margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed var(--border);
+    }
+    .schedule-day-stats span { display: flex; align-items: center; gap: 3px; }
     .schedule-day-client {
       font-size: 12px;
       padding: 6px 8px;
@@ -2227,6 +2238,66 @@
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+    .schedule-day-client .time-badge {
+      font-size: 10px; font-weight: 600; color: var(--accent);
+      min-width: 36px; text-align: right;
+    }
+    .schedule-day-client.client-8020 { background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; }
+
+    /* Day detail expanded */
+    .day-detail-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4); z-index: 9000; display: flex;
+      justify-content: center; align-items: center; padding: 20px;
+    }
+    .day-detail-panel {
+      background: var(--bg-card); border-radius: 16px; width: 100%; max-width: 700px;
+      max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+    .day-detail-panel .detail-header {
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .day-detail-panel .detail-body { padding: 16px 24px; }
+    .day-detail-client {
+      display: flex; align-items: flex-start; gap: 12px; padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .day-detail-client:last-child { border-bottom: none; }
+    .day-detail-client .client-time {
+      min-width: 50px; text-align: center; font-weight: 700; font-size: 13px; color: var(--accent);
+    }
+    .day-detail-client .client-info { flex: 1; }
+    .day-detail-client .client-info .client-name { font-weight: 600; font-size: 13px; }
+    .day-detail-client .client-info .client-address { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .day-detail-client .client-actions { display: flex; gap: 6px; }
+
+    /* Alerts badge */
+    .alert-badge {
+      position: absolute; top: 4px; right: 4px;
+      background: #ef4444; color: white; font-size: 10px; font-weight: 700;
+      min-width: 18px; height: 18px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; padding: 0 4px;
+    }
+    .route-alert-item {
+      padding: 12px; border-radius: 8px; background: var(--bg-hover);
+      margin-bottom: 8px; font-size: 12px; display: flex; gap: 10px; align-items: flex-start;
+    }
+    .route-alert-item.unread { background: rgba(59, 130, 246, 0.08); border-left: 3px solid #3b82f6; }
+    .route-alert-item .alert-time { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+
+    /* Week navigator */
+    .week-nav { display: flex; align-items: center; gap: 8px; }
+    .week-nav button {
+      background: var(--bg-hover); border: 1px solid var(--border); border-radius: 6px;
+      padding: 4px 8px; cursor: pointer; display: flex; align-items: center;
+    }
+    .week-nav button:hover { background: var(--accent); color: white; border-color: var(--accent); }
+    .week-nav .week-label { font-size: 13px; font-weight: 600; min-width: 150px; text-align: center; }
+
+    @media (max-width: 900px) {
+      .schedule-calendar { grid-template-columns: 1fr; }
     }
 
     /* Vendor stats cards */
@@ -2412,7 +2483,7 @@
       <div class="login-logo">
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
         <p>Sistema de Gestión Logística</p>
-        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.3.9</div>
+        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.4.5</div>
       </div>
 
       <!-- Login Form -->
@@ -2481,7 +2552,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.3.9</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.4.5</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -2509,7 +2580,7 @@
 
       <div class="nav-section">
         <div class="nav-section-title">Datos Comerciales</div>
-        <div class="nav-item-expandable open">
+        <div class="nav-item-expandable">
           <div class="nav-item nav-item-parent" data-tooltip="Datos Comerciales" onclick="toggleSubmenu(this)">
             <i data-lucide="sheet"></i>
             <span>Google Sheets</span>
@@ -2550,9 +2621,10 @@
 
       <div class="nav-section">
         <div class="nav-section-title">Logística</div>
-        <div class="nav-item" data-tab="routes" data-tooltip="Rutas y Mapa">
+        <div class="nav-item" data-tab="routes" data-tooltip="Rutas y Mapa" style="position: relative;">
           <i data-lucide="map-pin"></i>
           <span>Rutas y Mapa</span>
+          <span id="nav-route-alerts-badge" class="alert-badge" style="display: none;">0</span>
         </div>
         <div class="nav-item" data-tab="visits" data-tooltip="Visitas">
           <i data-lucide="clipboard-check"></i>
@@ -2920,8 +2992,8 @@
         <div class="card" style="margin-top: 20px;">
           <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <h3><i data-lucide="pie-chart" style="width: 18px; height: 18px;"></i> Segmentación de Clientes</h3>
-            <button class="btn btn-secondary" onclick="syncSegmentation()" id="btn-sync-seg" style="font-size: 12px; padding: 6px 14px;">
-              <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Sincronizar Segmentación
+            <button onclick="syncSegmentation()" id="btn-sync-seg" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 16px; border: 1px solid #10b981; background: rgba(16, 185, 129, 0.08); color: #10b981; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#10b981';this.style.color='white'" onmouseout="this.style.background='rgba(16,185,129,0.08)';this.style.color='#10b981'">
+              <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Sincronizar
             </button>
           </div>
           <div class="card-body">
@@ -3066,61 +3138,62 @@
         </div>
 
         <!-- Optimized Route Info Panel -->
-        <div id="optimized-route-panel" class="card" style="display: none; margin-bottom: 20px; background: linear-gradient(135deg, #10b981, #059669); color: white;">
-          <div class="card-body" style="padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+        <div id="optimized-route-panel" class="card" style="display: none; margin-bottom: 20px; border: 1px solid var(--border); overflow: hidden;">
+          <!-- Header compacto -->
+          <div style="padding: 12px 16px; background: var(--bg-hover); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 32px; height: 32px; border-radius: 8px; background: #10b981; display: flex; align-items: center; justify-content: center;">
+                <i data-lucide="route" style="width: 16px; height: 16px; color: white;"></i>
+              </div>
               <div>
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                  <i data-lucide="route" style="width: 24px; height: 24px;"></i>
-                  <h3 style="margin: 0; font-size: 18px;">Ruta Optimizada</h3>
-                  <span id="opt-vendor-name" style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 12px;"></span>
-                </div>
-                <p style="margin: 0; opacity: 0.9; font-size: 14px;">Recorrido más eficiente calculado con algoritmo TSP</p>
+                <div style="font-weight: 600; font-size: 14px; color: var(--text);">Ruta Optimizada</div>
+                <div style="font-size: 11px; color: var(--text-muted);" id="opt-vendor-name">Vendedor</div>
               </div>
-              <button onclick="closeOptimizedRoutePanel()" style="background: rgba(255,255,255,0.2); border: none; padding: 8px; border-radius: 8px; color: white; cursor: pointer;">
-                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button onclick="scheduleOptimizedRoute()" class="btn btn-sm" style="background: #10b981; color: white; border: none; padding: 6px 12px; font-size: 11px; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                <i data-lucide="calendar-plus" style="width: 13px; height: 13px;"></i> Programar
+              </button>
+              <button onclick="generateOptimizedRoute()" class="btn btn-sm" style="background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border); padding: 6px 10px; font-size: 11px; border-radius: 6px; cursor: pointer;" title="Recalcular">
+                <i data-lucide="refresh-cw" style="width: 13px; height: 13px;"></i>
+              </button>
+              <button onclick="closeOptimizedRoutePanel()" class="btn btn-sm" style="background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border); padding: 6px 10px; font-size: 11px; border-radius: 6px; cursor: pointer;" title="Cerrar">
+                <i data-lucide="x" style="width: 13px; height: 13px;"></i>
               </button>
             </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-top: 20px;">
-              <div style="background: rgba(255,255,255,0.15); padding: 16px; border-radius: 12px; text-align: center;">
-                <div style="font-size: 28px; font-weight: 700;" id="opt-total-clients">0</div>
-                <div style="font-size: 12px; opacity: 0.9;">Clientes a visitar</div>
-              </div>
-              <div style="background: rgba(255,255,255,0.15); padding: 16px; border-radius: 12px; text-align: center;">
-                <div style="font-size: 28px; font-weight: 700;" id="opt-distance">0 km</div>
-                <div style="font-size: 12px; opacity: 0.9;">Distancia total</div>
-              </div>
-              <div style="background: rgba(255,255,255,0.15); padding: 16px; border-radius: 12px; text-align: center;">
-                <div style="font-size: 28px; font-weight: 700;" id="opt-liters">0 L</div>
-                <div style="font-size: 12px; opacity: 0.9;">Combustible estimado</div>
-              </div>
-              <div style="background: rgba(255,255,255,0.15); padding: 16px; border-radius: 12px; text-align: center;">
-                <div style="font-size: 28px; font-weight: 700;" id="opt-cost">$0</div>
-                <div style="font-size: 12px; opacity: 0.9;">Costo estimado</div>
-              </div>
-              <div style="background: rgba(255,255,255,0.15); padding: 16px; border-radius: 12px; text-align: center;">
-                <div style="font-size: 28px; font-weight: 700;" id="opt-time">0 min</div>
-                <div style="font-size: 12px; opacity: 0.9;">Tiempo estimado</div>
-              </div>
+          </div>
+          <!-- Stats en fila compacta -->
+          <div style="padding: 12px 16px; display: flex; gap: 0; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 90px; text-align: center; padding: 8px 4px; border-right: 1px solid var(--border);">
+              <div style="font-size: 20px; font-weight: 700; color: var(--primary);" id="opt-total-clients">0</div>
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Clientes</div>
             </div>
-
-            <div style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 12px;">
-              <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                <span><i data-lucide="car" style="width: 14px; height: 14px; vertical-align: middle;"></i> Vehículo: <strong id="opt-efficiency">10 km/L</strong></span>
-                <span><i data-lucide="fuel" style="width: 14px; height: 14px; vertical-align: middle;"></i> Bencina: <strong id="opt-fuel-type">93 octanos</strong></span>
-                <span><i data-lucide="dollar-sign" style="width: 14px; height: 14px; vertical-align: middle;"></i> Precio: <strong id="opt-fuel-price">$1,150/L</strong></span>
-              </div>
+            <div style="flex: 1; min-width: 90px; text-align: center; padding: 8px 4px; border-right: 1px solid var(--border);">
+              <div style="font-size: 20px; font-weight: 700; color: var(--text);" id="opt-distance">0 km</div>
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Distancia</div>
             </div>
-
-            <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
-              <button onclick="generateOptimizedRoute()" style="flex: 1; min-width: 140px; padding: 10px 16px; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3); color: white; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Recalcular Ruta
-              </button>
-              <button onclick="closeOptimizedRoutePanel()" style="flex: 1; min-width: 140px; padding: 10px 16px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Limpiar Ruta
-              </button>
+            <div style="flex: 1; min-width: 90px; text-align: center; padding: 8px 4px; border-right: 1px solid var(--border);">
+              <div style="font-size: 20px; font-weight: 700; color: var(--warning);" id="opt-time">0 min</div>
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Jornada Est.</div>
             </div>
+            <div style="flex: 1; min-width: 90px; text-align: center; padding: 8px 4px; border-right: 1px solid var(--border);">
+              <div style="font-size: 20px; font-weight: 700; color: var(--text-muted);" id="opt-liters">0 L</div>
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Bencina</div>
+            </div>
+            <div style="flex: 1; min-width: 90px; text-align: center; padding: 8px 4px;">
+              <div style="font-size: 20px; font-weight: 700; color: var(--danger);" id="opt-cost">$0</div>
+              <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Costo</div>
+            </div>
+          </div>
+          <!-- Footer: vehicle info -->
+          <div style="padding: 6px 16px 8px; background: var(--bg-hover); border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap;">
+            <span><i data-lucide="car" style="width: 12px; height: 12px; vertical-align: middle;"></i> <span id="opt-efficiency">10 km/L</span></span>
+            <span><i data-lucide="fuel" style="width: 12px; height: 12px; vertical-align: middle;"></i> <span id="opt-fuel-type">93 oct</span></span>
+            <span><i data-lucide="dollar-sign" style="width: 12px; height: 12px; vertical-align: middle;"></i> <span id="opt-fuel-price">$1.150/L</span></span>
+            <span style="margin-left: auto; color: #10b981; font-weight: 500;">TSP optimizado</span>
+          </div>
+          <!-- Day tabs for multi-day route -->
+          <div id="opt-day-tabs" style="display:none; padding: 8px 12px; border-top: 1px solid var(--border); overflow-x: auto; white-space: nowrap;">
           </div>
         </div>
 
@@ -3189,6 +3262,78 @@
               </div>
             </div>
 
+            <!-- Modal: Finalizar Ruta (KM Final) -->
+            <div id="end-route-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+              <div style="background:var(--bg-card); border-radius:12px; padding:24px; width:380px; max-width:90vw; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                <h3 style="margin:0 0 16px 0; display:flex; align-items:center; gap:8px; color:var(--text);">
+                  <i data-lucide="flag" style="width:20px;height:20px;color:var(--danger);"></i> Finalizar Jornada
+                </h3>
+                <div style="background:var(--bg-hover); padding:12px; border-radius:8px; margin-bottom:16px;">
+                  <div style="display:flex; justify-content:space-between; font-size:13px;">
+                    <span style="color:var(--text-muted);">KM Inicial:</span>
+                    <strong id="end-route-start-km">0</strong>
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                  <label style="font-weight:600; margin-bottom:4px; display:block;">Kilometraje Final</label>
+                  <input type="number" id="end-route-km-input" class="form-control" placeholder="Ej: 45120" min="0" style="font-size:16px; padding:10px;">
+                </div>
+                <div id="end-route-km-diff" style="text-align:center; padding:10px; background:var(--bg-hover); border-radius:8px; margin-bottom:16px; font-size:14px; color:var(--text-muted);">
+                  Ingresa el KM final para ver el recorrido
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button onclick="closeEndRouteModal()" class="btn btn-secondary" style="flex:1;">Cancelar</button>
+                  <button onclick="confirmEndRoute()" class="btn btn-primary" style="flex:1; background:var(--danger); border-color:var(--danger);">
+                    <i data-lucide="flag" style="width:14px;height:14px;"></i> Finalizar
+                  </button>
+                </div>
+                <input type="hidden" id="end-route-id">
+              </div>
+            </div>
+
+            <!-- Modal: Programar Ruta Optimizada (Multi-día) -->
+            <div id="schedule-route-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+              <div style="background:var(--bg-card); border-radius:12px; padding:24px; width:440px; max-width:90vw; box-shadow:0 20px 60px rgba(0,0,0,0.3); max-height:80vh; overflow-y:auto;">
+                <h3 style="margin:0 0 16px 0; display:flex; align-items:center; gap:8px; color:var(--text);">
+                  <i data-lucide="calendar-plus" style="width:20px;height:20px;color:var(--success);"></i> Programar Ruta
+                </h3>
+                <div style="background:var(--bg-hover); padding:12px; border-radius:8px; margin-bottom:16px; font-size:13px;">
+                  <div><strong id="schedule-vendor-name">Vendedor</strong></div>
+                  <div style="color:var(--text-muted);" id="schedule-client-count">0 clientes en orden optimizado</div>
+                </div>
+                <!-- Multi-day: start date picker + summary -->
+                <div id="schedule-multi-summary" style="display:none; margin-bottom:16px;">
+                  <div class="form-group" style="margin-bottom:12px;">
+                    <label style="font-weight:600; margin-bottom:4px; display:block;">Iniciar desde</label>
+                    <input type="date" id="schedule-multi-start-date" class="form-control" style="font-size:14px; padding:10px;" onchange="recalcMultiDayDates()">
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Cambia la fecha de inicio y los días se ajustarán automáticamente (solo lunes a viernes)</div>
+                  </div>
+                  <table style="width:100%; font-size:12px; border-collapse:collapse;">
+                    <thead>
+                      <tr style="background:var(--bg-hover);">
+                        <th style="padding:6px 8px; text-align:left; border-bottom:1px solid var(--border);">Fecha</th>
+                        <th style="padding:6px 8px; text-align:center; border-bottom:1px solid var(--border);">Clientes</th>
+                        <th style="padding:6px 8px; text-align:center; border-bottom:1px solid var(--border);">Distancia</th>
+                        <th style="padding:6px 8px; text-align:center; border-bottom:1px solid var(--border);">Horas</th>
+                      </tr>
+                    </thead>
+                    <tbody id="schedule-multi-tbody"></tbody>
+                  </table>
+                </div>
+                <!-- Single day fallback -->
+                <div id="schedule-single-date" class="form-group" style="margin-bottom:16px;">
+                  <label style="font-weight:600; margin-bottom:4px; display:block;">Fecha de programación</label>
+                  <input type="date" id="schedule-route-date" class="form-control" style="font-size:14px; padding:10px;">
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button onclick="closeScheduleRouteModal()" class="btn btn-secondary" style="flex:1;">Cancelar</button>
+                  <button onclick="confirmScheduleRoute()" class="btn btn-primary" style="flex:1; background:var(--success); border-color:var(--success);">
+                    <i data-lucide="check" style="width:14px;height:14px;"></i> Programar Todo
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <!-- Assigned Clients Card -->
             <div class="card">
               <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -3249,29 +3394,52 @@
           </div>
         </div>
 
-        <!-- Route Planner Card -->
-        <div class="card" style="margin-top: 20px;">
+        <!-- Route Planner V2 Card -->
+        <div class="card" id="weekly-planner-card" style="margin-top: 20px;">
           <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <h3><i data-lucide="calendar-range" style="width: 18px; height: 18px;"></i> Planificador de Rutas</h3>
+            <h3><i data-lucide="calendar-range" style="width: 18px; height: 18px;"></i> Planificador Semanal</h3>
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
               <select id="schedule-vendor" class="form-control" style="width: 200px; font-size: 13px;">
                 <option value="">-- Seleccionar Vendedor --</option>
               </select>
-              <input type="date" id="schedule-start" class="form-control" style="width: 150px; font-size: 13px;">
-              <input type="date" id="schedule-end" class="form-control" style="width: 150px; font-size: 13px;">
+              <div class="week-nav">
+                <button onclick="navigateWeek(-1)" title="Semana anterior"><i data-lucide="chevron-left" style="width: 14px; height: 14px;"></i></button>
+                <span class="week-label" id="week-label">Semana actual</span>
+                <button onclick="navigateWeek(1)" title="Semana siguiente"><i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i></button>
+              </div>
               <button class="btn btn-primary" onclick="generateWeeklySchedule()" style="font-size: 13px; padding: 8px 14px;">
-                <i data-lucide="calendar-plus" style="width: 14px; height: 14px;"></i> Generar Plan
+                <i data-lucide="calendar-plus" style="width: 14px; height: 14px;"></i> Generar Ruta
+              </button>
+              <button class="btn" onclick="loadExistingSchedule()" style="font-size: 13px; padding: 8px 14px; background: var(--bg-hover); border: 1px solid var(--border);">
+                <i data-lucide="download" style="width: 14px; height: 14px;"></i> Cargar
               </button>
             </div>
           </div>
           <div class="card-body">
+            <!-- Alerts section (admin only) -->
+            <div id="route-alerts-section" style="display: none; margin-bottom: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h4 style="font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                  <i data-lucide="bell" style="width: 16px; height: 16px; color: #f59e0b;"></i> Alertas de Rutas
+                  <span id="alerts-count-badge" class="badge" style="background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; display: none;">0</span>
+                </h4>
+                <button onclick="markAllRouteAlertsRead()" style="font-size: 11px; background: none; border: none; color: var(--accent); cursor: pointer; text-decoration: underline;">
+                  Marcar todas como leídas
+                </button>
+              </div>
+              <div id="route-alerts-list" style="max-height: 200px; overflow-y: auto;"></div>
+            </div>
+
             <div id="schedule-result" style="min-height: 100px;">
               <div class="empty-state" style="padding: 24px;">
                 <i data-lucide="calendar-days" style="width: 36px; height: 36px;"></i>
-                <p style="font-size: 13px;">Selecciona vendedor y rango de fechas para generar un plan semanal</p>
-                <p style="font-size: 11px; color: var(--text-muted);">Prioriza 80-20, agrupa por comuna, 8-10 clientes/día</p>
+                <p style="font-size: 13px;">Selecciona vendedor y semana para planificar rutas</p>
+                <p style="font-size: 11px; color: var(--text-muted);">Prioriza 80-20, agrupa por comuna, calcula tiempos (09:00–17:00), 8-10 clientes/día</p>
               </div>
             </div>
+            <!-- Hidden date inputs for week tracking -->
+            <input type="hidden" id="schedule-start" value="">
+            <input type="hidden" id="schedule-end" value="">
           </div>
         </div>
       </div>
@@ -3367,6 +3535,7 @@
                         <i data-lucide="crosshair" style="width: 12px; height: 12px;"></i>
                         Usar mi ubicación actual
                       </button>
+                      <div id="address-map-picker" style="height: 300px; border-radius: 8px; margin-top: 12px; border: 1px solid var(--border); display: none;"></div>
                     </div>
                   </div>
                 </div>
@@ -4320,7 +4489,7 @@
             <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Datos sincronizados desde Google Sheets</p>
           </div>
           <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
-            <a href="https://docs.google.com/spreadsheets/d/1iZQyuGfJ8MXbH9hi_DBrF7uSyoKBHBt_S1if6KVYpQA/edit" target="_blank" rel="noopener" class="btn btn-success" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+            <a href="https://docs.google.com/spreadsheets/d/1W8yim9i13YN3lUx0saEkVplT0MhJm8XYwZKhyK_nzvI/edit?usp=sharing" target="_blank" rel="noopener" class="btn btn-success" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
               <i data-lucide="file-spreadsheet" style="width:16px;height:16px;"></i>
               Abrir Excel
             </a>
@@ -5931,6 +6100,9 @@
       // Route map
       routeMap = new google.maps.Map(document.getElementById('map-route'), mapOptions);
       routeInfoWindow = new google.maps.InfoWindow();
+
+      // Directions service for real street routes
+      directionsService = new google.maps.DirectionsService();
     }
 
     // Add client markers to map using lat/lng from client data
@@ -6384,14 +6556,20 @@
     async function loadData() {
       try {
         updateDashLoadingProgress(5, 'Conectando con servidor...');
-        const [users, vehicles, clients, products, routes, prices] = await Promise.all([
+        const [users, vehicles, clients, products, routes, prices, fuelConfig] = await Promise.all([
           fetch(`${API}/api/users`).then(r => r.json()),
           fetch(`${API}/api/vehicles`).then(r => r.json()),
           fetch(`${API}/api/clients`).then(r => r.json()),
           fetch(`${API}/api/products`).then(r => r.json()),
           fetch(`${API}/api/daily-routes`).then(r => r.json()),
-          fetch(`${API}/api/price-intelligence`).then(r => r.json())
+          fetch(`${API}/api/price-intelligence`).then(r => r.json()),
+          fetch(`${API}/api/config/fuel-price`).then(r => r.json()).catch(() => null)
         ]);
+
+        // Update fuel price from server config
+        if (fuelConfig?.data?.price) {
+          FUEL_PRICE_PER_LITER = fuelConfig.data.price;
+        }
 
         updateDashLoadingProgress(20, 'Datos del servidor cargados...');
 
@@ -6454,7 +6632,7 @@
         updateDataTabCounts();
 
         // Render tables
-        renderUsersTable(allUsers);
+        renderUsersTable(allUsers.filter(u => u.role !== 'admin'));
         renderVehiclesTable(allVehicles);
         populateZoneFilter();
         initReassignSection();
@@ -6588,7 +6766,7 @@
               vehicle: { license_plate: data.data.vehicle.plate },
               visits: assignedClients.map(client => ({ client, outcome: 'pending' }))
             };
-            displayRouteOnMap(mockRoute);
+            await displayRouteOnMap(mockRoute);
           }
         } else {
           // Show error toast
@@ -6728,6 +6906,8 @@
     // Route Map Functions
     let routePolyline = null;
     let routeMarkers = [];
+    let directionsService = null;
+    const directionsCache = new Map();
 
     async function loadTodayRoutes() {
       try {
@@ -6736,7 +6916,7 @@
 
         if (data.success && data.data.length > 0) {
           // Load first route by default
-          displayRouteOnMap(data.data[0]);
+          await displayRouteOnMap(data.data[0]);
         } else {
           // No routes today, show all clients
           clearRouteFromMap();
@@ -6761,13 +6941,96 @@
         if (data.success && data.data.length > 0) {
           // Get most recent/active route
           const activeRoute = data.data.find(r => r.status === 'active') || data.data[0];
-          displayRouteOnMap(activeRoute);
+          await displayRouteOnMap(activeRoute);
         } else {
           showToast('warning', 'Sin rutas', 'No hay rutas activas para este vendedor');
           clearRouteFromMap();
         }
       } catch (error) {
         console.error('Error loading executive route:', error);
+      }
+    }
+
+    // Split coordinates into chunks for Directions API (max 25 points per request)
+    function chunkWaypoints(latLngs, maxPerRequest = 25) {
+      if (latLngs.length <= maxPerRequest) return [latLngs];
+      const chunks = [];
+      let start = 0;
+      while (start < latLngs.length - 1) {
+        const end = Math.min(start + maxPerRequest, latLngs.length);
+        chunks.push(latLngs.slice(start, end));
+        start = end - 1; // overlap: last point of chunk N = first of chunk N+1
+      }
+      return chunks;
+    }
+
+    // Get real street route via Google Directions API with caching
+    async function getDirectionsRoute(coordinates) {
+      if (!directionsService || coordinates.length < 2) return null;
+
+      // Build cache key from rounded coordinates
+      const cacheKey = coordinates.map(c => `${c.lat.toFixed(5)},${c.lng.toFixed(5)}`).join('|');
+      if (directionsCache.has(cacheKey)) {
+        console.log('Directions cache hit');
+        return directionsCache.get(cacheKey);
+      }
+
+      try {
+        const chunks = chunkWaypoints(coordinates);
+        let fullPath = [];
+        let totalDistanceM = 0;
+        let totalDurationS = 0;
+
+        for (const chunk of chunks) {
+          const origin = chunk[0];
+          const destination = chunk[chunk.length - 1];
+          const waypoints = chunk.slice(1, -1).map(c => ({
+            location: new google.maps.LatLng(c.lat, c.lng),
+            stopover: true
+          }));
+
+          const result = await new Promise((resolve, reject) => {
+            directionsService.route({
+              origin: new google.maps.LatLng(origin.lat, origin.lng),
+              destination: new google.maps.LatLng(destination.lat, destination.lng),
+              waypoints: waypoints,
+              travelMode: google.maps.TravelMode.DRIVING,
+              region: 'cl'
+            }, (response, status) => {
+              if (status === 'OK') resolve(response);
+              else reject(new Error(`Directions API: ${status}`));
+            });
+          });
+
+          // Extract path and metrics from all legs
+          const route = result.routes[0];
+          for (const leg of route.legs) {
+            totalDistanceM += leg.distance.value;
+            totalDurationS += leg.duration.value;
+          }
+
+          // Decode full polyline path from overview
+          const chunkPath = route.overview_path;
+          if (fullPath.length > 0) {
+            // Skip first point of subsequent chunks (it's the overlap)
+            fullPath = fullPath.concat(chunkPath.slice(1));
+          } else {
+            fullPath = chunkPath;
+          }
+        }
+
+        const result = {
+          path: fullPath,
+          totalDistanceKm: Math.round((totalDistanceM / 1000) * 10) / 10,
+          totalDurationMin: Math.round(totalDurationS / 60)
+        };
+
+        directionsCache.set(cacheKey, result);
+        console.log(`Directions: ${result.totalDistanceKm} km, ${result.totalDurationMin} min`);
+        return result;
+      } catch (error) {
+        console.warn('Directions API failed, falling back to straight lines:', error.message);
+        return null;
       }
     }
 
@@ -6780,7 +7043,7 @@
       routeMarkers = [];
     }
 
-    function displayRouteOnMap(route) {
+    async function displayRouteOnMap(route) {
       clearRouteFromMap();
 
       if (!route || !route.visits || route.visits.length === 0) {
@@ -6854,6 +7117,10 @@
               <span style="background: ${color}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${statusLabel}</span>
               ${visit.ai_summary ? `<p style="margin-top: 6px; font-size: 11px; color: #9ca3af;">${visit.ai_summary}</p>` : ''}
             </div>
+            <a href="https://waze.com/ul?ll=${position.lat},${position.lng}&navigate=yes" target="_blank" rel="noopener"
+               style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 6px 12px; background: #33ccff; color: #000; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;">
+              🚗 Ir con Waze
+            </a>
           </div>
         `;
 
@@ -6865,15 +7132,37 @@
         routeMarkers.push(marker);
       });
 
-      // Draw route polyline
+      // Draw route polyline (real streets via Directions API)
       if (coordinates.length > 1) {
-        routePolyline = new google.maps.Polyline({
-          path: coordinates,
-          geodesic: true,
-          strokeColor: '#3b82f6',
-          strokeOpacity: 0.8,
-          strokeWeight: 4
-        });
+        const directions = await getDirectionsRoute(coordinates);
+        if (directions && directions.path.length > 0) {
+          routePolyline = new google.maps.Polyline({
+            path: directions.path,
+            geodesic: false,
+            strokeColor: '#3b82f6',
+            strokeOpacity: 0.8,
+            strokeWeight: 4
+          });
+          route._directionsMetrics = {
+            distanceKm: directions.totalDistanceKm,
+            durationMin: directions.totalDurationMin
+          };
+        } else {
+          // Fallback: straight dashed lines
+          routePolyline = new google.maps.Polyline({
+            path: coordinates,
+            geodesic: true,
+            strokeColor: '#3b82f6',
+            strokeOpacity: 0,
+            strokeWeight: 0,
+            icons: [{
+              icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.7, strokeWeight: 3, scale: 3 },
+              offset: '0',
+              repeat: '15px'
+            }]
+          });
+          route._directionsMetrics = null;
+        }
         routePolyline.setMap(routeMap);
       }
 
@@ -6908,7 +7197,7 @@
     // =============================================
 
     let currentActiveRoute = null;
-    const FUEL_PRICE_PER_LITER = 1200; // CLP
+    let FUEL_PRICE_PER_LITER = 1141; // CLP - ENAP Bencina 93 feb 2026
     const AVERAGE_SPEED_KMH = 30; // Average city driving speed
 
     // Calculate distance between two points using Haversine formula
@@ -6924,25 +7213,52 @@
     }
 
     // Calculate total route distance from clients
-    function calculateRouteMetrics(clients, vehicle) {
+    function calculateRouteMetrics(clients, vehicle, directionsMetrics = null) {
       if (!clients || clients.length === 0) {
-        return { distance: 0, duration: 0, fuelCost: 0 };
+        return { distance: 0, duration: 0, fuelCost: 0, source: 'none' };
       }
 
-      // Filter clients with valid coordinates (handle null, undefined, empty string)
+      const fuelEfficiency = vehicle?.fuel_efficiency_kml || 12; // km per liter
+
+      // If we have real Directions API metrics, use them
+      if (directionsMetrics) {
+        const totalDistance = directionsMetrics.distanceKm;
+        const travelTime = directionsMetrics.durationMin / 60; // hours
+        const validClients = clients.filter(c => c.lat != null && c.lng != null && c.lat !== '' && c.lng !== '');
+        const visitTime = validClients.length * 1; // 1 hour per client visit
+        const totalDuration = travelTime + visitTime;
+        const fuelUsed = totalDistance / fuelEfficiency;
+        const fuelCost = Math.round(fuelUsed * FUEL_PRICE_PER_LITER);
+
+        return {
+          distance: totalDistance,
+          duration: totalDuration,
+          fuelCost: fuelCost,
+          source: 'directions'
+        };
+      }
+
+      // Fallback: Haversine estimation
+      // Filter clients with valid coordinates within Chile bounds
       const validClients = clients.filter(c => {
         const lat = parseFloat(c.lat);
         const lng = parseFloat(c.lng);
-        return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+        if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return false;
+        // Validate Chile bounds: Lat -56 to -17, Lng -76 to -66
+        if (lat < -56 || lat > -17 || lng < -76 || lng > -66) {
+          console.warn(`Client ${c.name || c.id} excluded: coords out of Chile bounds (${lat}, ${lng})`);
+          return false;
+        }
+        return true;
       });
       console.log('Valid clients with coords:', validClients.length, 'of', clients.length);
       if (validClients.length === 0) {
-        return { distance: 0, duration: 0, fuelCost: 0 };
+        return { distance: 0, duration: 0, fuelCost: 0, source: 'haversine' };
       }
 
       let totalDistance = 0;
 
-      // Calculate distance between consecutive clients
+      // Calculate distance between consecutive clients, cap 300km per segment
       for (let i = 0; i < validClients.length - 1; i++) {
         const dist = calculateDistance(
           parseFloat(validClients[i].lat),
@@ -6950,6 +7266,10 @@
           parseFloat(validClients[i+1].lat),
           parseFloat(validClients[i+1].lng)
         );
+        if (dist > 300) {
+          console.warn(`Segment ${i}→${i+1} skipped: ${dist.toFixed(1)}km exceeds 300km cap`);
+          continue;
+        }
         totalDistance += dist;
       }
 
@@ -6962,14 +7282,14 @@
       const totalDuration = travelTime + visitTime;
 
       // Calculate fuel cost
-      const fuelEfficiency = vehicle?.fuel_efficiency_kml || 12; // km per liter
       const fuelUsed = totalDistance / fuelEfficiency;
       const fuelCost = Math.round(fuelUsed * FUEL_PRICE_PER_LITER);
 
       return {
         distance: Math.round(totalDistance * 10) / 10,
         duration: totalDuration,
-        fuelCost: fuelCost
+        fuelCost: fuelCost,
+        source: 'haversine'
       };
     }
 
@@ -7052,8 +7372,9 @@
       // Check how many have coordinates (handle string or number)
       const clientsWithCoords = clients.filter(c => c.lat != null && c.lng != null && c.lat !== '' && c.lng !== '');
 
-      // Calculate metrics
-      const metrics = calculateRouteMetrics(clients, route.vehicle);
+      // Calculate metrics (use Directions data if available, or haversine)
+      let metrics = calculateRouteMetrics(clients, route.vehicle, route._directionsMetrics);
+      let metricsSource = metrics.source;
 
       // Show warning if no coordinates
       if (clients.length > 0 && clientsWithCoords.length === 0) {
@@ -7066,12 +7387,20 @@
         document.getElementById('route-fuel-cost').textContent = '$' + metrics.fuelCost.toLocaleString();
       }
 
+      // Update metric source labels
+      const distLabel = document.querySelector('#route-distance + div') || document.querySelector('[id="route-distance"]')?.parentElement?.querySelector('div:last-child');
+      if (distLabel && distLabel.textContent.includes('Km')) {
+        distLabel.textContent = metricsSource === 'directions' ? 'Km (Ruta Real)' : 'Km Estimados';
+      }
+
       // Update display
+      const kmRecorridos = (route.status === 'completed' && route.end_km) ? (route.end_km - (route.start_km || 0)) : null;
       details.innerHTML = `
         <div style="display: flex; gap: 16px; flex-wrap: wrap;">
           <div><strong>Vehículo:</strong> ${route.vehicle?.license_plate || 'N/A'} (${route.vehicle?.model || ''})</div>
           <div><strong>Inicio:</strong> ${new Date(route.created_at).toLocaleTimeString('es-CL', {hour: '2-digit', minute: '2-digit'})}</div>
           <div><strong>Km inicial:</strong> ${route.start_km?.toLocaleString() || 0}</div>
+          ${kmRecorridos !== null ? `<div><strong>Km recorridos:</strong> <span style="color:var(--success);font-weight:700;">${kmRecorridos.toLocaleString()} km</span></div>` : ''}
           <div><strong>Clientes:</strong> ${clients.length} ${clientsWithCoords.length < clients.length ? `(${clientsWithCoords.length} con GPS)` : ''}</div>
         </div>
       `;
@@ -7080,7 +7409,7 @@
     }
 
     // View active route on map
-    function viewActiveRouteOnMap() {
+    async function viewActiveRouteOnMap() {
       if (currentActiveRoute) {
         // If no visits, create a mock route with assigned clients
         let routeToDisplay = currentActiveRoute;
@@ -7099,7 +7428,7 @@
           };
         }
 
-        displayRouteOnMap(routeToDisplay);
+        await displayRouteOnMap(routeToDisplay);
 
         // Trigger map resize in case it wasn't visible
         if (routeMap) {
@@ -7217,6 +7546,7 @@
 
     let optimizedRouteData = null;
     let selectedZone = null;
+    let selectedOptDay = null;
 
     async function generateOptimizedRoute() {
       if (!selectedExecutiveId) {
@@ -7247,9 +7577,13 @@
       const exec = executives.find(e => e.id === selectedExecutiveId);
       const vendorName = exec ? exec.full_name : 'Vendedor';
 
-      // Calcular totales
+      // Filtrar zonas con al menos 2 clientes con GPS (zonas con 1 solo cliente no generan ruta útil)
+      const validZones = zones.filter(z => (z.withGps || 0) >= 2);
+      const singleClientZones = zones.filter(z => (z.withGps || 0) === 1);
+
+      // Calcular totales (sobre zonas válidas)
       const totalClients = zones.reduce((sum, z) => sum + z.clientCount, 0);
-      const totalWithGps = zones.reduce((sum, z) => sum + (z.withGps || 0), 0);
+      const totalWithGps = validZones.reduce((sum, z) => sum + (z.withGps || 0), 0);
 
       // Crear modal de selección de zona
       const modal = document.createElement('div');
@@ -7286,31 +7620,33 @@
           ` : ''}
 
           <div style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto;">
-            ${zones.map(z => {
-              const hasGps = (z.withGps || 0) > 0;
-              const gpsColor = hasGps ? '#10b981' : '#ef4444';
-              return `
-              <button onclick="${hasGps ? `selectZoneAndGenerateRoute('${z.zone}')` : `showToast('warning', 'Sin GPS', 'Esta zona no tiene clientes con ubicación')`}" style="
+            ${validZones.map(z => `
+              <button onclick="selectZoneAndGenerateRoute('${z.zone}')" style="
                 display: flex; justify-content: space-between; align-items: center;
-                padding: 14px 16px; border: 2px solid ${hasGps ? '#e5e7eb' : '#fee2e2'}; border-radius: 10px;
-                background: ${hasGps ? 'white' : '#fef2f2'}; cursor: ${hasGps ? 'pointer' : 'not-allowed'}; transition: all 0.2s;
-                font-size: 14px; opacity: ${hasGps ? '1' : '0.7'};
-              " ${hasGps ? `onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff';"
-                 onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white';"` : ''}>
+                padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 10px;
+                background: white; cursor: pointer; transition: all 0.2s;
+                font-size: 14px;
+              " onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff';"
+                 onmouseout="this.style.borderColor='#e5e7eb'; this.style.background='white';">
                 <div style="text-align: left;">
                   <div style="font-weight: 600; color: #1f2937;">${z.zone}</div>
-                  <div style="font-size: 11px; color: ${gpsColor};">
-                    ${z.withGps || 0}/${z.clientCount} con GPS ${!hasGps ? '⚠️ Sin ubicaciones' : ''}
+                  <div style="font-size: 11px; color: #10b981;">
+                    ${z.withGps}/${z.clientCount} con GPS
                   </div>
                 </div>
-                <span style="background: ${hasGps ? '#3b82f6' : '#9ca3af'}; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px;">
+                <span style="background: #3b82f6; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px;">
                   ${z.clientCount} clientes
                 </span>
               </button>
-            `}).join('')}
+            `).join('')}
           </div>
 
-          <div style="margin-top: 12px; padding: 10px; background: #fef3c7; border-radius: 8px; font-size: 11px; color: #92400e;">
+          ${singleClientZones.length > 0 ? `
+          <div style="margin-top: 8px; padding: 8px 10px; background: #fef2f2; border-radius: 8px; font-size: 11px; color: #991b1b;">
+            <strong>Zonas excluidas</strong> (1 solo cliente con GPS): ${singleClientZones.map(z => z.zone).join(', ')}
+          </div>` : ''}
+
+          <div style="margin-top: 8px; padding: 10px; background: #fef3c7; border-radius: 8px; font-size: 11px; color: #92400e;">
             <strong>💡 Tip:</strong> Los clientes sin GPS necesitan geocodificación. Ve a Dashboard → "Cargar Ubicaciones"
           </div>
 
@@ -7355,8 +7691,21 @@
 
         optimizedRouteData = data.data;
         displayOptimizedRoute(vendorName, zone);
-        drawOptimizedRouteOnMap();
-        showToast('success', 'Ruta Optimizada', `${data.data.route.length} clientes, ${data.data.stats.distanceKm} km`);
+
+        // Draw first day if multi-day, or all if single
+        const firstDay = optimizedRouteData.days ? Object.keys(optimizedRouteData.days).sort()[0] : null;
+        await drawOptimizedRouteOnMap(firstDay);
+
+        // Mostrar warning de dispersión geográfica si existe
+        if (data.data.geoWarning) {
+          showToast('warning', 'Clientes dispersos', data.data.geoWarning);
+        } else {
+          const totalDays = data.data.totalStats?.totalDays;
+          const msg = totalDays > 1
+            ? `${data.data.totalStats.totalClients} clientes en ${totalDays} días, ${data.data.totalStats.distanceKm} km total`
+            : `${data.data.route.length} clientes, ${data.data.stats.distanceKm} km`;
+          showToast('success', 'Ruta Optimizada', msg);
+        }
 
       } catch (error) {
         console.error('Error generating optimized route:', error);
@@ -7366,109 +7715,444 @@
 
     function displayOptimizedRoute(vendorName, zone = null) {
       const panel = document.getElementById('optimized-route-panel');
-      const stats = optimizedRouteData.stats;
+      const isMultiDay = optimizedRouteData.days && Object.keys(optimizedRouteData.days).length > 0;
+      const stats = isMultiDay ? optimizedRouteData.totalStats : optimizedRouteData.stats;
 
       document.getElementById('opt-vendor-name').textContent = zone ? `${vendorName} - ${zone}` : vendorName;
-      document.getElementById('opt-total-clients').textContent = stats.totalClients;
-      document.getElementById('opt-distance').textContent = `${stats.distanceKm} km`;
-      document.getElementById('opt-liters').textContent = `${stats.litersUsed} L`;
-      document.getElementById('opt-cost').textContent = `$${stats.costCLP.toLocaleString('es-CL')}`;
-      document.getElementById('opt-time').textContent = `${stats.estimatedTime} min`;
-      document.getElementById('opt-efficiency').textContent = `${stats.fuelEfficiency} km/L`;
-      document.getElementById('opt-fuel-type').textContent = stats.vehicleConfig.FUEL_TYPE;
-      document.getElementById('opt-fuel-price').textContent = `$${stats.fuelPriceCLP.toLocaleString('es-CL')}/L`;
+
+      // Day tabs
+      const tabsContainer = document.getElementById('opt-day-tabs');
+      if (isMultiDay) {
+        const dayKeys = Object.keys(optimizedRouteData.days).sort();
+        selectedOptDay = dayKeys[0];
+
+        // Show total stats header
+        document.getElementById('opt-total-clients').textContent = stats.totalClients;
+        document.getElementById('opt-distance').textContent = `${stats.distanceKm} km`;
+        document.getElementById('opt-liters').textContent = `${stats.litersUsed} L`;
+        document.getElementById('opt-cost').textContent = `$${stats.costCLP.toLocaleString('es-CL')}`;
+        const totalMin = stats.estimatedTime;
+        if (totalMin >= 60) {
+          const h = Math.floor(totalMin / 60);
+          const m = totalMin % 60;
+          document.getElementById('opt-time').textContent = `${stats.totalDays} días`;
+        } else {
+          document.getElementById('opt-time').textContent = `${totalMin} min`;
+        }
+
+        // Render day tabs
+        const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+        tabsContainer.innerHTML = dayKeys.map((date, i) => {
+          const d = new Date(date + 'T12:00:00');
+          const dayName = dayNames[d.getDay()];
+          const dayNum = d.getDate();
+          const dayData = optimizedRouteData.days[date];
+          const nClients = dayData.stats.totalClients;
+          const km = dayData.stats.distanceKm;
+          const isActive = date === selectedOptDay;
+          return `<button onclick="selectOptDay('${date}')" style="
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 12px; margin-right: 6px; border-radius: 8px; border: 1px solid ${isActive ? '#10b981' : 'var(--border)'};
+            background: ${isActive ? '#10b981' : 'var(--bg-card)'}; color: ${isActive ? 'white' : 'var(--text)'};
+            font-size: 12px; font-weight: ${isActive ? '700' : '500'}; cursor: pointer; white-space: nowrap;
+          ">
+            <span style="font-weight:700;">${dayName} ${dayNum}</span>
+            <span style="opacity:0.8;">${nClients}cl</span>
+            <span style="opacity:0.6;">${km}km</span>
+          </button>`;
+        }).join('');
+        tabsContainer.style.display = 'block';
+      } else {
+        tabsContainer.style.display = 'none';
+        selectedOptDay = null;
+        document.getElementById('opt-total-clients').textContent = stats.totalClients;
+        document.getElementById('opt-distance').textContent = `${stats.distanceKm} km`;
+        document.getElementById('opt-liters').textContent = `${stats.litersUsed} L`;
+        document.getElementById('opt-cost').textContent = `$${stats.costCLP.toLocaleString('es-CL')}`;
+        const totalMin = stats.estimatedTime;
+        if (totalMin >= 60) {
+          const h = Math.floor(totalMin / 60);
+          const m = totalMin % 60;
+          document.getElementById('opt-time').textContent = m > 0 ? `${h}h ${m}m` : `${h}h`;
+        } else {
+          document.getElementById('opt-time').textContent = `${totalMin} min`;
+        }
+      }
+
+      document.getElementById('opt-efficiency').textContent = `${stats.fuelEfficiency || stats.vehicleConfig?.FUEL_EFFICIENCY_KML || 10} km/L`;
+      document.getElementById('opt-fuel-type').textContent = stats.vehicleConfig?.FUEL_TYPE || '93 octanos';
+      document.getElementById('opt-fuel-price').textContent = `$${(stats.fuelPriceCLP || stats.vehicleConfig?.FUEL_PRICE_CLP || 1141).toLocaleString('es-CL')}/L`;
 
       panel.style.display = 'block';
       lucide.createIcons();
     }
 
+    function selectOptDay(date) {
+      selectedOptDay = date;
+      // Update tab styling
+      const tabsContainer = document.getElementById('opt-day-tabs');
+      tabsContainer.querySelectorAll('button').forEach(btn => {
+        const isActive = btn.getAttribute('onclick').includes(date);
+        btn.style.background = isActive ? '#10b981' : 'var(--bg-card)';
+        btn.style.color = isActive ? 'white' : 'var(--text)';
+        btn.style.borderColor = isActive ? '#10b981' : 'var(--border)';
+        btn.style.fontWeight = isActive ? '700' : '500';
+      });
+      // Update day stats in panel
+      if (optimizedRouteData.days && optimizedRouteData.days[date]) {
+        const dayStats = optimizedRouteData.days[date].stats;
+        document.getElementById('opt-total-clients').textContent = dayStats.totalClients;
+        document.getElementById('opt-distance').textContent = `${dayStats.distanceKm} km`;
+        document.getElementById('opt-liters').textContent = `${dayStats.litersUsed} L`;
+        document.getElementById('opt-cost').textContent = `$${dayStats.costCLP.toLocaleString('es-CL')}`;
+        const totalMin = dayStats.estimatedTime;
+        if (totalMin >= 60) {
+          const h = Math.floor(totalMin / 60);
+          const m = totalMin % 60;
+          document.getElementById('opt-time').textContent = m > 0 ? `${h}h ${m}m` : `${h}h`;
+        } else {
+          document.getElementById('opt-time').textContent = `${totalMin} min`;
+        }
+      }
+      // Redraw map for this day
+      drawOptimizedRouteOnMap(date);
+    }
+
     function closeOptimizedRoutePanel() {
       document.getElementById('optimized-route-panel').style.display = 'none';
       optimizedRouteData = null;
+      selectedOptDay = null;
+      // Hide day tabs
+      const tabsEl = document.getElementById('opt-day-tabs');
+      if (tabsEl) tabsEl.style.display = 'none';
       // Clear route line from map
       if (window.routePolyline) {
-        routeMap.removeLayer(window.routePolyline);
+        window.routePolyline.setMap(null);
         window.routePolyline = null;
       }
     }
 
-    function drawOptimizedRouteOnMap() {
-      if (!optimizedRouteData || !optimizedRouteData.route.length) return;
+    function scheduleOptimizedRoute() {
+      if (!optimizedRouteData || !optimizedRouteData.route || !optimizedRouteData.route.length) {
+        showToast('warning', 'Sin ruta', 'Genera una ruta optimizada primero');
+        return;
+      }
+      if (!selectedExecutiveId) {
+        showToast('warning', 'Sin vendedor', 'Selecciona un vendedor primero');
+        return;
+      }
+
+      const vendor = allUsers.find(u => u.id === selectedExecutiveId);
+      document.getElementById('schedule-vendor-name').textContent = vendor?.full_name || 'Vendedor';
+
+      const isMultiDay = optimizedRouteData.days && Object.keys(optimizedRouteData.days).length > 0;
+
+      if (isMultiDay) {
+        const dayKeys = Object.keys(optimizedRouteData.days).sort();
+        const totalClients = optimizedRouteData.totalStats?.totalClients || optimizedRouteData.route.length;
+        document.getElementById('schedule-client-count').textContent = `${totalClients} clientes en ${dayKeys.length} días`;
+        document.getElementById('schedule-single-date').style.display = 'none';
+        document.getElementById('schedule-multi-summary').style.display = 'block';
+
+        // Set default start date
+        document.getElementById('schedule-multi-start-date').value = dayKeys[0];
+
+        renderMultiDaySummaryTable(dayKeys);
+      } else {
+        // Fallback: single day
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        while (tomorrow.getDay() === 0 || tomorrow.getDay() === 6) {
+          tomorrow.setDate(tomorrow.getDate() + 1);
+        }
+        document.getElementById('schedule-client-count').textContent = `${optimizedRouteData.route.length} clientes en orden optimizado`;
+        document.getElementById('schedule-single-date').style.display = 'block';
+        document.getElementById('schedule-multi-summary').style.display = 'none';
+        document.getElementById('schedule-route-date').value = tomorrow.toISOString().split('T')[0];
+      }
+
+      document.getElementById('schedule-route-modal').style.display = 'flex';
+      lucide.createIcons();
+    }
+
+    function closeScheduleRouteModal() {
+      document.getElementById('schedule-route-modal').style.display = 'none';
+    }
+
+    function renderMultiDaySummaryTable(dayKeys) {
+      const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      const originalKeys = Object.keys(optimizedRouteData.days).sort();
+      const tbody = document.getElementById('schedule-multi-tbody');
+      tbody.innerHTML = dayKeys.map((date, i) => {
+        const d = new Date(date + 'T12:00:00');
+        const origKey = originalKeys[i];
+        const dayData = optimizedRouteData.days[origKey];
+        if (!dayData) return '';
+        return `<tr data-orig-date="${origKey}" data-new-date="${date}">
+          <td style="padding:6px 8px; border-bottom:1px solid var(--border);">${dayNames[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}</td>
+          <td style="padding:6px 8px; text-align:center; border-bottom:1px solid var(--border); font-weight:600;">${dayData.stats.totalClients}</td>
+          <td style="padding:6px 8px; text-align:center; border-bottom:1px solid var(--border);">${dayData.stats.distanceKm} km</td>
+          <td style="padding:6px 8px; text-align:center; border-bottom:1px solid var(--border);">${dayData.stats.totalHours || Math.round(dayData.stats.estimatedTime/60*10)/10}h</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function recalcMultiDayDates() {
+      if (!optimizedRouteData || !optimizedRouteData.days) return;
+      const startStr = document.getElementById('schedule-multi-start-date').value;
+      if (!startStr) return;
+
+      const originalKeys = Object.keys(optimizedRouteData.days).sort();
+      const numDays = originalKeys.length;
+
+      // Generate new weekdays starting from selected date
+      const newDays = [];
+      const cursor = new Date(startStr + 'T12:00:00');
+      while (newDays.length < numDays) {
+        if (cursor.getDay() >= 1 && cursor.getDay() <= 5) {
+          newDays.push(cursor.toISOString().split('T')[0]);
+        }
+        cursor.setDate(cursor.getDate() + 1);
+      }
+
+      renderMultiDaySummaryTable(newDays);
+    }
+
+    function getShiftedDaysMapping() {
+      // Returns mapping: { newDate: originalDayData } based on modal table
+      const rows = document.querySelectorAll('#schedule-multi-tbody tr[data-orig-date]');
+      const mapping = {};
+      rows.forEach(row => {
+        const origDate = row.getAttribute('data-orig-date');
+        const newDate = row.getAttribute('data-new-date');
+        if (origDate && newDate && optimizedRouteData.days[origDate]) {
+          mapping[newDate] = optimizedRouteData.days[origDate];
+        }
+      });
+      return mapping;
+    }
+
+    async function confirmScheduleRoute() {
+      const isMultiDay = optimizedRouteData.days && Object.keys(optimizedRouteData.days).length > 0;
+
+      try {
+        let firstDate;
+
+        if (isMultiDay) {
+          // Build multi-day payload using shifted dates from modal
+          const shiftedMapping = getShiftedDaysMapping();
+          const daysPayload = {};
+          const newDates = Object.keys(shiftedMapping).sort();
+          firstDate = newDates[0];
+
+          for (const newDate of newDates) {
+            const dayData = shiftedMapping[newDate];
+            daysPayload[newDate] = dayData.route.map(c => ({
+              id: c.id,
+              estimatedArrival: c.estimatedArrival || null
+            }));
+          }
+
+          const res = await fetch(`${API}/api/routes/schedule-optimized-multi`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: selectedExecutiveId, days: daysPayload })
+          });
+          const data = await res.json();
+          if (!data.success) {
+            showToast('error', 'Error', data.error || 'No se pudo programar la ruta');
+            return;
+          }
+
+          closeScheduleRouteModal();
+          const totalClients = optimizedRouteData.totalStats?.totalClients || optimizedRouteData.route.length;
+          showToast('success', 'Ruta programada', `${totalClients} clientes en ${newDates.length} días programados. Mira el Planificador abajo.`);
+
+        } else {
+          // Single day fallback
+          const date = document.getElementById('schedule-route-date').value;
+          if (!date) {
+            showToast('warning', 'Sin fecha', 'Selecciona una fecha');
+            return;
+          }
+          firstDate = date;
+          const clients = optimizedRouteData.route.map(c => ({ id: c.id }));
+
+          const res = await fetch(`${API}/api/routes/schedule-optimized`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: selectedExecutiveId, date, clients })
+          });
+          const data = await res.json();
+          if (!data.success) {
+            showToast('error', 'Error', data.error || 'No se pudo programar la ruta');
+            return;
+          }
+
+          closeScheduleRouteModal();
+          const dateObj = new Date(date + 'T12:00:00');
+          const dateLabel = dateObj.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
+          showToast('success', 'Ruta programada', `${optimizedRouteData.route.length} clientes para ${dateLabel}. Mira el Planificador abajo.`);
+        }
+
+        // Navigate planner to the first scheduled date
+        const scheduleVendor = document.getElementById('schedule-vendor');
+        if (scheduleVendor) {
+          scheduleVendor.value = selectedExecutiveId;
+        }
+
+        const targetDate = new Date(firstDate + 'T12:00:00');
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const thisMonday = new Date(now);
+        thisMonday.setDate(now.getDate() + mondayOffset);
+        thisMonday.setHours(0,0,0,0);
+        const diffDays = Math.floor((targetDate - thisMonday) / (1000 * 60 * 60 * 24));
+        const weekOffset = Math.floor(diffDays / 7);
+        setWeekFromOffset(weekOffset);
+
+        await loadExistingSchedule();
+
+        const plannerCard = document.getElementById('weekly-planner-card');
+        if (plannerCard) {
+          plannerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } catch (e) {
+        console.error('Error scheduling route:', e);
+        showToast('error', 'Error', 'Error al programar la ruta');
+      }
+    }
+
+    async function drawOptimizedRouteOnMap(dayDate) {
+      if (!optimizedRouteData) return;
+
+      // Determine which clients to draw
+      let routeClients;
+      if (dayDate && optimizedRouteData.days && optimizedRouteData.days[dayDate]) {
+        routeClients = optimizedRouteData.days[dayDate].route;
+      } else if (optimizedRouteData.route && optimizedRouteData.route.length) {
+        routeClients = optimizedRouteData.route;
+      } else {
+        return;
+      }
+      if (!routeMap) return;
 
       // Clear existing route line
       if (window.routePolyline) {
-        routeMap.removeLayer(window.routePolyline);
+        window.routePolyline.setMap(null);
+        window.routePolyline = null;
       }
 
       // Clear existing markers
-      routeMarkers.forEach(m => routeMap.removeLayer(m));
+      routeMarkers.forEach(m => m.setMap(null));
       routeMarkers = [];
 
       // Build coordinates array and add numbered markers
-      const coords = [];
-      optimizedRouteData.route.forEach((client, idx) => {
-        if (client.lat && client.lng) {
-          coords.push([client.lat, client.lng]);
+      const path = [];
+      const bounds = new google.maps.LatLngBounds();
 
-          // Create numbered marker
-          const icon = L.divIcon({
-            className: 'custom-marker',
-            html: `<div style="
-              background: ${idx === 0 ? '#10b981' : '#3b82f6'};
-              color: white;
-              width: 28px;
-              height: 28px;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-weight: 700;
-              font-size: 12px;
-              border: 3px solid white;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            ">${idx + 1}</div>`,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14]
+      routeClients.forEach((client, idx) => {
+        if (client.lat && client.lng) {
+          const pos = { lat: parseFloat(client.lat), lng: parseFloat(client.lng) };
+          path.push(pos);
+          bounds.extend(pos);
+
+          // Create numbered marker with label
+          const marker = new google.maps.Marker({
+            position: pos,
+            map: routeMap,
+            label: {
+              text: String(idx + 1),
+              color: 'white',
+              fontWeight: 'bold',
+              fontSize: '12px'
+            },
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              fillColor: idx === 0 ? '#10b981' : '#3b82f6',
+              fillOpacity: 1,
+              strokeColor: 'white',
+              strokeWeight: 3,
+              scale: 14
+            },
+            title: `${idx + 1}. ${client.fantasy_name || client.name}`
           });
 
-          const marker = L.marker([client.lat, client.lng], { icon })
-            .bindPopup(`
-              <div style="min-width: 200px;">
-                <div style="font-weight: 700; font-size: 14px; color: #1e40af; margin-bottom: 8px;">
-                  ${idx + 1}. ${client.fantasy_name || client.name}
-                </div>
-                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">
-                  <strong>Dirección:</strong> ${client.address || 'Sin dirección'}
-                </div>
-                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">
-                  <strong>Comuna:</strong> ${client.commune || '-'}
-                </div>
-                <div style="font-size: 12px;">
-                  <span style="background: ${client.segment === 'A' ? '#10b981' : client.segment === 'B' ? '#3b82f6' : '#f59e0b'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">Segmento ${client.segment || '-'}</span>
-                  ${client.priority === 'FOCO' ? '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-left: 4px;">FOCO</span>' : ''}
-                </div>
+          const infoContent = `
+            <div style="min-width: 200px;">
+              <div style="font-weight: 700; font-size: 14px; color: #1e40af; margin-bottom: 8px;">
+                ${idx + 1}. ${client.fantasy_name || client.name}
               </div>
-            `);
+              <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">
+                <strong>Dirección:</strong> ${client.address || 'Sin dirección'}
+              </div>
+              <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">
+                <strong>Comuna:</strong> ${client.commune || '-'}
+              </div>
+              <div style="font-size: 12px;">
+                <span style="background: ${client.segment === 'A' ? '#10b981' : client.segment === 'B' ? '#3b82f6' : '#f59e0b'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">Segmento ${client.segment || '-'}</span>
+                ${client.priority === 'FOCO' ? '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-left: 4px;">FOCO</span>' : ''}
+              </div>
+              <a href="https://waze.com/ul?ll=${pos.lat},${pos.lng}&navigate=yes" target="_blank" rel="noopener"
+                 style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 6px 12px; background: #33ccff; color: #000; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;">
+                🚗 Ir con Waze
+              </a>
+            </div>
+          `;
 
-          marker.addTo(routeMap);
+          marker.addListener('click', () => {
+            routeInfoWindow.setContent(infoContent);
+            routeInfoWindow.open(routeMap, marker);
+          });
+
           routeMarkers.push(marker);
         }
       });
 
-      // Draw route polyline
-      if (coords.length > 1) {
-        window.routePolyline = L.polyline(coords, {
-          color: '#10b981',
-          weight: 4,
-          opacity: 0.8,
-          dashArray: '10, 10'
-        }).addTo(routeMap);
+      // Draw route polyline (real streets via Directions API)
+      if (path.length > 1) {
+        const directions = await getDirectionsRoute(path);
+        if (directions && directions.path.length > 0) {
+          window.routePolyline = new google.maps.Polyline({
+            path: directions.path,
+            geodesic: false,
+            strokeColor: '#10b981',
+            strokeOpacity: 0.8,
+            strokeWeight: 4
+          });
+          // Update stats panel with real Directions data
+          const fuelEff = optimizedRouteData?.totalStats?.vehicleConfig?.FUEL_EFFICIENCY_KML || optimizedRouteData?.stats?.vehicleConfig?.FUEL_EFFICIENCY_KML || 10;
+          const liters = (directions.totalDistanceKm / fuelEff).toFixed(1);
+          const cost = Math.round((directions.totalDistanceKm / fuelEff) * FUEL_PRICE_PER_LITER);
+          const clientCount = routeClients.length;
+          const totalTimeMin = directions.totalDurationMin + (clientCount * 30); // + 30min per visit
+          document.getElementById('opt-distance').textContent = `${directions.totalDistanceKm} km`;
+          document.getElementById('opt-liters').textContent = `${liters} L`;
+          document.getElementById('opt-cost').textContent = `$${cost.toLocaleString('es-CL')}`;
+          if (totalTimeMin >= 60) {
+            const h = Math.floor(totalTimeMin / 60);
+            const m = totalTimeMin % 60;
+            document.getElementById('opt-time').textContent = m > 0 ? `${h}h ${m}m` : `${h}h`;
+          } else {
+            document.getElementById('opt-time').textContent = `${totalTimeMin} min`;
+          }
+        } else {
+          // Fallback: straight lines
+          window.routePolyline = new google.maps.Polyline({
+            path: path,
+            geodesic: true,
+            strokeColor: '#10b981',
+            strokeOpacity: 0.6,
+            strokeWeight: 3
+          });
+        }
+        window.routePolyline.setMap(routeMap);
       }
 
       // Fit map to show all markers
-      if (coords.length > 0) {
-        const bounds = L.latLngBounds(coords);
-        routeMap.fitBounds(bounds, { padding: [50, 50] });
+      if (path.length > 0) {
+        routeMap.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
       }
     }
 
@@ -7745,7 +8429,7 @@
           const res = await fetch(`${API}/api/daily-routes/${execRoute.id}`);
           const data = await res.json();
           if (data.success) {
-            displayRouteOnMap(data.data);
+            await displayRouteOnMap(data.data);
           }
         } catch (e) {
           console.error('Error loading route:', e);
@@ -8100,8 +8784,11 @@
       const pending = visits.length - completed - inProgress;
       const sales = visits.filter(v => v.outcome === 'sale').length;
 
-      // Calculate route metrics
-      const metrics = calculateRouteMetrics(clients, route.vehicle);
+      // Calculate route metrics (use Directions data if available)
+      const metrics = calculateRouteMetrics(clients, route.vehicle, route._directionsMetrics);
+      const sourceLabel = metrics.source === 'directions'
+        ? '<span style="font-size: 9px; color: #10b981;">&#10003; Ruta real</span>'
+        : '<span style="font-size: 9px; color: #f59e0b;">~ Estimado</span>';
 
       info.innerHTML = `
         <div style="margin-bottom: 8px;">
@@ -8128,7 +8815,29 @@
             <div style="color: var(--text-muted); font-size: 9px;">Bencina</div>
           </div>
         </div>
+        <div style="text-align: center; margin-top: 4px;">${sourceLabel}</div>
+        <button onclick="openWazeNextPending()" style="width: 100%; margin-top: 8px; padding: 8px; background: #33ccff; color: #000; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          🚗 Navegar en Waze
+        </button>
       `;
+    }
+
+    function openWazeNextPending() {
+      // If optimized route exists, navigate to first client
+      if (optimizedRouteData && optimizedRouteData.route.length > 0) {
+        const first = optimizedRouteData.route[0];
+        if (first.lat && first.lng) {
+          window.open(`https://waze.com/ul?ll=${first.lat},${first.lng}&navigate=yes`, '_blank');
+          return;
+        }
+      }
+      // Otherwise use first route marker
+      if (routeMarkers.length > 0) {
+        const pos = routeMarkers[0].getPosition();
+        window.open(`https://waze.com/ul?ll=${pos.lat()},${pos.lng()}&navigate=yes`, '_blank');
+        return;
+      }
+      showToast('warning', 'Sin destino', 'No hay puntos de ruta para navegar');
     }
 
     // Load Comparison
@@ -9180,10 +9889,12 @@
       const roleFilter = document.getElementById('filter-user-role')?.value || '';
       const zoneFilter = document.getElementById('filter-user-zone')?.value || '';
 
-      let filtered = allUsers.filter(u =>
-        u.full_name.toLowerCase().includes(search) ||
-        u.email.toLowerCase().includes(search)
-      );
+      let filtered = allUsers.filter(u => {
+        // Exclude admin unless specifically filtering for admin role
+        if (!roleFilter && u.role === 'admin') return false;
+        return u.full_name.toLowerCase().includes(search) ||
+          u.email.toLowerCase().includes(search);
+      });
 
       if (roleFilter) {
         filtered = filtered.filter(u => u.role === roleFilter);
@@ -9278,7 +9989,12 @@
             </td>
             <td><code style="font-size: 11px;">${r.vehicle?.license_plate || '-'}</code></td>
             <td>${startTime}</td>
-            <td>${r.start_km?.toLocaleString() || 0} km</td>
+            <td>
+              ${r.status === 'completed' && r.end_km ? `
+                <div style="font-size:12px;">${r.start_km?.toLocaleString() || 0} → ${r.end_km.toLocaleString()} km</div>
+                <div style="font-size:11px; color:var(--success); font-weight:600;">${(r.end_km - (r.start_km || 0)).toLocaleString()} km recorridos</div>
+              ` : `${r.start_km?.toLocaleString() || 0} km`}
+            </td>
             <td style="font-weight: 600;">${visits}</td>
             <td style="min-width: 120px;">
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -9307,19 +10023,58 @@
       lucide.createIcons();
     }
 
-    async function endRoute(routeId) {
-      const endKm = prompt('Ingrese el kilometraje final:');
-      if (!endKm || isNaN(endKm)) return;
+    function endRoute(routeId) {
+      // Find the route to show start_km
+      const route = todayRoutesData.find(r => r.id === routeId);
+      const startKm = route?.start_km || 0;
+      document.getElementById('end-route-id').value = routeId;
+      document.getElementById('end-route-start-km').textContent = startKm.toLocaleString() + ' km';
+      document.getElementById('end-route-km-input').value = '';
+      document.getElementById('end-route-km-diff').textContent = 'Ingresa el KM final para ver el recorrido';
+      document.getElementById('end-route-km-input').min = startKm;
+      const modal = document.getElementById('end-route-modal');
+      modal.style.display = 'flex';
+      lucide.createIcons();
+
+      // Live diff calculation
+      document.getElementById('end-route-km-input').oninput = function() {
+        const val = parseInt(this.value);
+        if (!isNaN(val) && val >= startKm) {
+          const diff = val - startKm;
+          document.getElementById('end-route-km-diff').innerHTML = `<span style="font-size:20px;font-weight:700;color:var(--primary);">${diff.toLocaleString()} km</span><br><span style="font-size:11px;">recorridos hoy</span>`;
+        } else if (!isNaN(val) && val < startKm) {
+          document.getElementById('end-route-km-diff').innerHTML = '<span style="color:var(--danger);">KM final debe ser mayor al inicial</span>';
+        } else {
+          document.getElementById('end-route-km-diff').textContent = 'Ingresa el KM final para ver el recorrido';
+        }
+      };
+    }
+
+    function closeEndRouteModal() {
+      document.getElementById('end-route-modal').style.display = 'none';
+    }
+
+    async function confirmEndRoute() {
+      const routeId = document.getElementById('end-route-id').value;
+      const endKm = parseInt(document.getElementById('end-route-km-input').value);
+      const route = todayRoutesData.find(r => r.id === routeId);
+      const startKm = route?.start_km || 0;
+
+      if (isNaN(endKm) || endKm < startKm) {
+        showToast('warning', 'KM inválido', 'Ingresa un kilometraje final válido');
+        return;
+      }
 
       try {
-        const res = await fetch(`${API}/routes/end`, {
+        const res = await fetch(`${API}/routes/${routeId}/end`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ routeId, endKm: parseInt(endKm) })
+          body: JSON.stringify({ endKm })
         });
         const data = await res.json();
         if (data.success) {
-          showToast('success', 'Ruta finalizada', 'La jornada ha sido completada');
+          closeEndRouteModal();
+          showToast('success', 'Ruta finalizada', `Jornada completada — ${(endKm - startKm).toLocaleString()} km recorridos`);
           loadData();
         } else {
           showToast('error', 'Error', data.error || 'No se pudo finalizar la ruta');
@@ -10047,7 +10802,7 @@
     }
 
     function updateDataTabCounts() {
-      const usersCount = allUsers.length;
+      const usersCount = allUsers.filter(u => u.role !== 'admin').length;
       const vehiclesCount = allVehicles.length;
       const clientsCount = allClients.length;
 
@@ -10337,6 +11092,14 @@
 
           document.getElementById('new-lat').textContent = correctedAddress.lat.toFixed(6);
           document.getElementById('new-lng').textContent = correctedAddress.lng.toFixed(6);
+
+          // Sync map picker marker
+          if (addressMapMarker) {
+            addressMapMarker.setPosition({ lat: correctedAddress.lat, lng: correctedAddress.lng });
+          }
+          if (addressMapPicker) {
+            addressMapPicker.panTo({ lat: correctedAddress.lat, lng: correctedAddress.lng });
+          }
         }
       });
     }
@@ -10370,12 +11133,16 @@
 
       document.getElementById('client-address-text').textContent = addressText;
 
-      // Reset correction fields
+      // Reset correction fields and map picker
       document.getElementById('correct-address-check').checked = false;
       document.getElementById('address-correction-fields').style.display = 'none';
       document.getElementById('address-search').value = '';
       document.getElementById('address-commune').value = '';
       correctedAddress = null;
+      addressMapPicker = null;
+      addressMapMarker = null;
+      const mapDiv = document.getElementById('address-map-picker');
+      if (mapDiv) mapDiv.style.display = 'none';
 
       // Check distance if we have both locations
       checkDistanceToClient();
@@ -10455,37 +11222,80 @@
       return R * c;
     }
 
-    // Toggle address correction fields
-    function toggleAddressCorrection() {
-      const checked = document.getElementById('correct-address-check').checked;
-      const fieldsDiv = document.getElementById('address-correction-fields');
-      fieldsDiv.style.display = checked ? 'block' : 'none';
+    // Map picker variables
+    let addressMapPicker = null;
+    let addressMapMarker = null;
 
-      if (checked && !addressAutocomplete) {
-        setTimeout(initAddressAutocomplete, 100);
+    function initAddressMapPicker() {
+      const mapDiv = document.getElementById('address-map-picker');
+      if (!mapDiv || addressMapPicker) return;
+      mapDiv.style.display = 'block';
+
+      // Center: GPS position > client coords > Santiago default
+      let center = { lat: -33.4489, lng: -70.6693 };
+      if (currentGpsPosition) {
+        center = { lat: currentGpsPosition.lat, lng: currentGpsPosition.lng };
+      } else if (selectedClientData?.lat && selectedClientData?.lng) {
+        const clat = parseFloat(selectedClientData.lat);
+        const clng = parseFloat(selectedClientData.lng);
+        if (!isNaN(clat) && !isNaN(clng) && clat !== 0) {
+          center = { lat: clat, lng: clng };
+        }
       }
+
+      addressMapPicker = new google.maps.Map(mapDiv, {
+        center,
+        zoom: 15,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false
+      });
+
+      addressMapMarker = new google.maps.Marker({
+        position: center,
+        map: addressMapPicker,
+        draggable: true,
+        title: 'Arrastra para corregir ubicación'
+      });
+
+      // Click on map → move marker → reverse geocode
+      addressMapPicker.addListener('click', (e) => {
+        const lat = e.latLng.lat();
+        const lng = e.latLng.lng();
+        addressMapMarker.setPosition(e.latLng);
+        updatePickedLocation(lat, lng);
+      });
+
+      // Drag marker end → reverse geocode
+      addressMapMarker.addListener('dragend', (e) => {
+        const lat = e.latLng.lat();
+        const lng = e.latLng.lng();
+        updatePickedLocation(lat, lng);
+      });
     }
 
-    // Use current GPS location as new address
-    function useCurrentGpsLocation() {
-      if (!currentGpsPosition) {
-        showToast('warning', 'Sin GPS', 'No hay ubicación GPS disponible');
-        return;
-      }
-
+    function updatePickedLocation(lat, lng) {
       correctedAddress = {
-        lat: currentGpsPosition.lat,
-        lng: currentGpsPosition.lng,
+        lat: lat,
+        lng: lng,
         address: null,
         commune: null
       };
 
-      document.getElementById('new-lat').textContent = correctedAddress.lat.toFixed(6);
-      document.getElementById('new-lng').textContent = correctedAddress.lng.toFixed(6);
+      document.getElementById('new-lat').textContent = lat.toFixed(6);
+      document.getElementById('new-lng').textContent = lng.toFixed(6);
 
-      // Reverse geocode to get address
+      // Move marker and center map if they exist
+      if (addressMapMarker) {
+        addressMapMarker.setPosition({ lat, lng });
+      }
+      if (addressMapPicker) {
+        addressMapPicker.panTo({ lat, lng });
+      }
+
+      // Reverse geocode
       const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ location: { lat: correctedAddress.lat, lng: correctedAddress.lng } }, (results, status) => {
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
         if (status === 'OK' && results[0]) {
           document.getElementById('address-search').value = results[0].formatted_address;
           correctedAddress.address = results[0].formatted_address;
@@ -10499,8 +11309,40 @@
           }
         }
       });
+    }
 
-      showToast('success', 'Ubicación capturada', `${correctedAddress.lat.toFixed(4)}, ${correctedAddress.lng.toFixed(4)}`);
+    // Toggle address correction fields
+    function toggleAddressCorrection() {
+      const checked = document.getElementById('correct-address-check').checked;
+      const fieldsDiv = document.getElementById('address-correction-fields');
+      fieldsDiv.style.display = checked ? 'block' : 'none';
+
+      if (checked) {
+        if (!addressAutocomplete) {
+          setTimeout(initAddressAutocomplete, 100);
+        }
+        // Initialize map picker
+        setTimeout(initAddressMapPicker, 200);
+      } else {
+        // Hide map and reset
+        const mapDiv = document.getElementById('address-map-picker');
+        if (mapDiv) mapDiv.style.display = 'none';
+        addressMapPicker = null;
+        addressMapMarker = null;
+      }
+    }
+
+    // Use current GPS location as new address
+    function useCurrentGpsLocation() {
+      if (!currentGpsPosition) {
+        showToast('warning', 'Sin GPS', 'No hay ubicación GPS disponible');
+        return;
+      }
+
+      // Use shared updatePickedLocation to update everything (coords, map, reverse geocode)
+      updatePickedLocation(currentGpsPosition.lat, currentGpsPosition.lng);
+
+      showToast('success', 'Ubicación capturada', `${currentGpsPosition.lat.toFixed(4)}, ${currentGpsPosition.lng.toFixed(4)}`);
     }
 
     // GPS Status monitoring
@@ -13427,34 +14269,84 @@
     }
 
     // =============================================
-    // PLANIFICADOR DE RUTAS
+    // PLANIFICADOR DE RUTAS V2
     // =============================================
+
+    let currentWeekOffset = 0;
+    let lastScheduleData = null;
+    let lastScheduleUserId = null;
+
+    // Initialize week dates on load
+    function initWeekDates() {
+      setWeekFromOffset(0);
+    }
+
+    function getWeekDates(offset = 0) {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + mondayOffset + (offset * 7));
+      const friday = new Date(monday);
+      friday.setDate(monday.getDate() + 4);
+      return {
+        start: monday.toISOString().split('T')[0],
+        end: friday.toISOString().split('T')[0],
+        monday, friday
+      };
+    }
+
+    function setWeekFromOffset(offset) {
+      currentWeekOffset = offset;
+      const { start, end, monday, friday } = getWeekDates(offset);
+      document.getElementById('schedule-start').value = start;
+      document.getElementById('schedule-end').value = end;
+
+      const label = `${monday.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })} — ${friday.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}`;
+      document.getElementById('week-label').textContent = offset === 0 ? `Esta semana` : label;
+    }
+
+    function navigateWeek(direction) {
+      setWeekFromOffset(currentWeekOffset + direction);
+      // Auto-load if vendor selected
+      const userId = document.getElementById('schedule-vendor').value;
+      if (userId) loadExistingSchedule();
+    }
 
     async function generateWeeklySchedule() {
       const userId = document.getElementById('schedule-vendor').value;
       const startDate = document.getElementById('schedule-start').value;
       const endDate = document.getElementById('schedule-end').value;
 
-      if (!userId || !startDate || !endDate) {
-        showToast('warning', 'Datos faltantes', 'Selecciona vendedor y rango de fechas');
+      if (!userId) {
+        showToast('warning', 'Datos faltantes', 'Selecciona un vendedor');
         return;
+      }
+      if (!startDate || !endDate) {
+        setWeekFromOffset(0);
       }
 
       const resultDiv = document.getElementById('schedule-result');
-      resultDiv.innerHTML = '<div style="text-align: center; padding: 24px;"><i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px;"></i><p style="font-size: 12px; margin-top: 8px;">Generando plan...</p></div>';
+      resultDiv.innerHTML = '<div style="text-align: center; padding: 24px;"><i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px;"></i><p style="font-size: 12px; margin-top: 8px;">Generando plan semanal...</p></div>';
       lucide.createIcons();
 
       try {
         const res = await fetch(`${API}/api/routes/generate-schedule`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, startDate, endDate })
+          body: JSON.stringify({
+            userId,
+            startDate: document.getElementById('schedule-start').value,
+            endDate: document.getElementById('schedule-end').value
+          })
         });
         const data = await res.json();
 
         if (data.success) {
           showToast('success', 'Plan generado', data.message);
-          renderScheduleResult(data.data, userId);
+          lastScheduleData = data.data;
+          lastScheduleUserId = userId;
+          renderWeeklyPlanner(data.data, userId);
         } else {
           showToast('error', 'Error', data.error);
           resultDiv.innerHTML = `<div class="empty-state" style="padding: 24px;"><p style="color: var(--danger); font-size: 13px;">${data.error}</p></div>`;
@@ -13465,21 +14357,116 @@
       }
     }
 
-    function renderScheduleResult(scheduleData, userId) {
+    async function loadExistingSchedule() {
+      const userId = document.getElementById('schedule-vendor').value;
+      if (!userId) {
+        showToast('warning', 'Selecciona vendedor', 'Elige un vendedor para cargar su plan');
+        return;
+      }
+      const startDate = document.getElementById('schedule-start').value;
+      const endDate = document.getElementById('schedule-end').value;
+      if (!startDate || !endDate) setWeekFromOffset(0);
+
+      const resultDiv = document.getElementById('schedule-result');
+      resultDiv.innerHTML = '<div style="text-align: center; padding: 24px;"><i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px;"></i><p style="font-size: 12px; margin-top: 8px;">Cargando plan...</p></div>';
+      lucide.createIcons();
+
+      try {
+        const s = document.getElementById('schedule-start').value;
+        const e = document.getElementById('schedule-end').value;
+        const res = await fetch(`${API}/api/routes/schedule/${userId}?startDate=${s}&endDate=${e}`);
+        const data = await res.json();
+
+        if (data.success) {
+          // Transform from grouped-by-date format to schedule format
+          const schedule = {};
+          const dates = Object.keys(data.data).sort();
+          if (dates.length === 0) {
+            resultDiv.innerHTML = '<div class="empty-state" style="padding: 24px;"><i data-lucide="calendar-x" style="width: 36px; height: 36px;"></i><p style="font-size: 13px;">No hay rutas planificadas para esta semana</p><p style="font-size: 11px; color: var(--text-muted);">Haz click en "Generar Ruta" para crear un plan</p></div>';
+            lucide.createIcons();
+            return;
+          }
+          let totalClients = 0;
+          dates.forEach(date => {
+            const routes = data.data[date];
+            const clients = routes.map(r => ({
+              ...r.client,
+              estimatedArrival: r.estimated_arrival || null,
+              scheduledRouteId: r.id,
+              routeStatus: r.status
+            }));
+            // Calculate distances
+            let totalDist = 0;
+            for (let i = 1; i < clients.length; i++) {
+              const prev = clients[i-1];
+              const curr = clients[i];
+              if (prev.lat && prev.lng && curr.lat && curr.lng) {
+                const R = 6371;
+                const dLat = (curr.lat - prev.lat) * Math.PI / 180;
+                const dLng = (curr.lng - prev.lng) * Math.PI / 180;
+                const a = Math.sin(dLat/2)**2 + Math.cos(prev.lat*Math.PI/180)*Math.cos(curr.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+                totalDist += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+              }
+            }
+            // Estimate hours: travel at 40km/h + 30min per client
+            const travelH = totalDist / 40;
+            const visitH = clients.length * 0.5;
+            const totalH = Math.round((travelH + visitH) * 10) / 10;
+
+            schedule[date] = {
+              clients: clients,
+              totalDistance: Math.round(totalDist * 10) / 10,
+              totalHours: totalH,
+              estimatedTime: Math.round(totalH * 60),
+              overloaded: totalH > 8
+            };
+            totalClients += clients.length;
+          });
+
+          const scheduleData = { totalClients, days: dates.length, schedule };
+          lastScheduleData = scheduleData;
+          lastScheduleUserId = userId;
+          renderWeeklyPlanner(scheduleData, userId);
+        } else {
+          resultDiv.innerHTML = `<div class="empty-state" style="padding: 24px;"><p style="color: var(--danger);">${data.error}</p></div>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<div class="empty-state" style="padding: 24px;"><p style="color: var(--danger);">${err.message}</p></div>`;
+      }
+    }
+
+    function renderWeeklyPlanner(scheduleData, userId) {
       const resultDiv = document.getElementById('schedule-result');
       const schedule = scheduleData.schedule;
       const days = Object.keys(schedule).sort();
+      const isExec = currentUser && currentUser.role === 'executive';
 
       if (days.length === 0) {
-        resultDiv.innerHTML = '<div class="empty-state" style="padding: 24px;"><p>No hay clientes que necesiten visita en este período</p></div>';
+        resultDiv.innerHTML = '<div class="empty-state" style="padding: 24px;"><p>No hay clientes programados en este período</p></div>';
         return;
       }
 
       const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
+      // Summary row
+      const totalClients = days.reduce((s, d) => s + schedule[d].clients.length, 0);
+      const totalKm = days.reduce((s, d) => s + (schedule[d].totalDistance || 0), 0);
+      const totalH = days.reduce((s, d) => s + (schedule[d].totalHours || 0), 0);
+
       let html = `
-        <div style="margin-bottom: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-          <span style="font-size: 13px; font-weight: 600;">${scheduleData.totalClients} clientes en ${scheduleData.days} días</span>
+        <div style="margin-bottom: 14px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+          <span style="font-size: 13px; font-weight: 700;">${totalClients} clientes en ${days.length} días</span>
+          <span style="font-size: 12px; color: var(--text-muted);">~${Math.round(totalKm)} km total</span>
+          <span style="font-size: 12px; color: var(--text-muted);">~${Math.round(totalH * 10)/10}h total</span>
+          ${!isExec ? `
+          <div style="margin-left: auto; display: flex; gap: 6px;">
+            <button class="btn" onclick="deleteAllScheduledDays()" style="font-size: 11px; padding: 4px 10px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #ef4444;">
+              <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Eliminar Todo
+            </button>
+            <button class="btn" onclick="rescheduleAllPending()" style="font-size: 11px; padding: 4px 10px; background: var(--bg-hover); border: 1px solid var(--border);">
+              <i data-lucide="clock" style="width: 12px; height: 12px;"></i> Reprogramar Pendientes
+            </button>
+          </div>` : ''}
         </div>
         <div class="schedule-calendar">
       `;
@@ -13489,37 +14476,44 @@
         const d = new Date(date + 'T12:00:00');
         const dayName = dayNames[d.getDay()];
         const dateFormatted = d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+        const h = dayData.totalHours || 0;
+        const colorClass = h < 7 ? 'day-green' : h <= 8 ? 'day-yellow' : 'day-red';
+        const count8020 = dayData.clients.filter(c => c.segmentation === '80-20').length;
 
         html += `
-          <div class="schedule-day">
+          <div class="schedule-day ${colorClass}" onclick="expandDayDetail('${date}', '${userId}')">
             <div class="schedule-day-header">
               <div>
                 <div style="font-size: 11px; color: var(--text-muted);">${dayName}</div>
                 <div>${dateFormatted}</div>
               </div>
-              <div style="display: flex; gap: 4px; align-items: center;">
-                <span style="font-size: 11px; font-weight: 700; color: var(--accent);">${dayData.clients.length}</span>
-                <button onclick="rescheduleDay('${userId}', '${date}')" title="Reprogramar pendientes" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px;">
-                  <i data-lucide="calendar-clock" style="width: 14px; height: 14px;"></i>
-                </button>
-              </div>
+              <span style="font-size: 16px; font-weight: 800; color: var(--accent);">${dayData.clients.length}</span>
             </div>
-            <div style="max-height: 250px; overflow-y: auto;">
+            <div class="schedule-day-stats">
+              <span><i data-lucide="navigation" style="width: 10px; height: 10px;"></i> ${dayData.totalDistance || 0}km</span>
+              <span><i data-lucide="clock" style="width: 10px; height: 10px;"></i> ${h}h</span>
+              ${count8020 > 0 ? `<span style="color: #f59e0b; font-weight: 700;">${count8020} clave</span>` : ''}
+            </div>
+            <div style="max-height: 220px; overflow-y: auto;">
         `;
 
-        dayData.clients.forEach((client, idx) => {
+        dayData.clients.forEach((client) => {
+          const is8020 = client.segmentation === '80-20';
+          const arrival = client.estimatedArrival || '';
+          const statusIcon = client.routeStatus === 'completed' ? '<i data-lucide="check-circle" style="width: 11px; height: 11px; color: #10b981;"></i>' :
+                             client.routeStatus === 'skipped' ? '<i data-lucide="x-circle" style="width: 11px; height: 11px; color: #ef4444;"></i>' : '';
           html += `
-            <div class="schedule-day-client">
-              <span style="font-size: 10px; color: var(--text-muted); min-width: 16px;">${idx + 1}.</span>
+            <div class="schedule-day-client ${is8020 ? 'client-8020' : ''}">
+              <span class="time-badge">${arrival ? arrival.substring(0,5) : ''}</span>
               ${getSegBadge(client.segmentation)}
-              <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${client.name}">${client.fantasy_name || client.name}</span>
+              <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${client.name}${client.address ? ' — ' + client.address : ''}">${client.fantasy_name || client.name}</span>
+              ${statusIcon}
             </div>
           `;
         });
 
         html += `
             </div>
-            ${dayData.totalDistance > 0 ? `<div style="margin-top: 8px; font-size: 10px; color: var(--text-muted); text-align: center;">~${dayData.totalDistance} km | ~${dayData.estimatedTime} min</div>` : ''}
           </div>
         `;
       });
@@ -13527,6 +14521,134 @@
       html += '</div>';
       resultDiv.innerHTML = html;
       lucide.createIcons();
+    }
+
+    function expandDayDetail(date, userId) {
+      if (!lastScheduleData || !lastScheduleData.schedule[date]) return;
+      const dayData = lastScheduleData.schedule[date];
+      const d = new Date(date + 'T12:00:00');
+      const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const isExec = currentUser && currentUser.role === 'executive';
+      const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'supervisor');
+
+      let html = `
+        <div class="day-detail-overlay" onclick="if(event.target===this) this.remove()">
+          <div class="day-detail-panel">
+            <div class="detail-header">
+              <div>
+                <div style="font-size: 18px; font-weight: 800;">${dayNames[d.getDay()]} ${d.toLocaleDateString('es-CL', { day: 'numeric', month: 'long' })}</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">${dayData.clients.length} clientes | ~${dayData.totalDistance || 0} km | ~${dayData.totalHours || 0}h</div>
+              </div>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                ${isAdmin ? `
+                <button class="btn" onclick="deleteScheduledDay('${userId}', '${date}')" style="font-size: 11px; padding: 6px 12px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #ef4444;" title="Eliminar todas las rutas pendientes de este día">
+                  <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Eliminar día
+                </button>
+                <button class="btn" onclick="rescheduleDay('${userId}', '${date}')" style="font-size: 11px; padding: 6px 12px; background: var(--bg-hover); border: 1px solid var(--border);">
+                  <i data-lucide="calendar-clock" style="width: 12px; height: 12px;"></i> Reprogramar día
+                </button>` : ''}
+                <button onclick="this.closest('.day-detail-overlay').remove()" style="background: none; border: none; cursor: pointer; padding: 4px;">
+                  <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                </button>
+              </div>
+            </div>
+            <div class="detail-body">
+      `;
+
+      dayData.clients.forEach((client, idx) => {
+        const arrival = client.estimatedArrival || '';
+        const is8020 = client.segmentation === '80-20';
+        const statusLabel = client.routeStatus === 'completed' ? '<span style="color: #10b981; font-size: 10px; font-weight: 600;">COMPLETADO</span>' :
+                            client.routeStatus === 'skipped' ? '<span style="color: #ef4444; font-size: 10px; font-weight: 600;">SALTADO</span>' : '';
+        html += `
+          <div class="day-detail-client">
+            <div class="client-time">${arrival ? arrival.substring(0,5) : (idx+1)+'.'}</div>
+            <div class="client-info">
+              <div class="client-name" style="${is8020 ? 'color: #f59e0b;' : ''}">
+                ${getSegBadge(client.segmentation)} ${client.fantasy_name || client.name} ${statusLabel}
+              </div>
+              <div class="client-address">${client.address || ''} ${client.commune ? '— ' + client.commune : ''}</div>
+              ${client.travelDistKm ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">${client.travelDistKm}km de viaje (~${client.travelTimeMin || 0} min)</div>` : ''}
+            </div>
+            <div class="client-actions">
+              ${client.routeStatus === 'pending' && client.scheduledRouteId ? `
+                ${isAdmin ? `
+                  <button onclick="event.stopPropagation(); deleteScheduledRoute('${client.scheduledRouteId}')" title="Eliminar de la ruta" style="background: none; border: none; cursor: pointer; color: #ef4444; padding: 4px;">
+                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                  </button>
+                ` : ''}
+                ${isExec ? `
+                  <button onclick="event.stopPropagation(); skipRouteClient('${client.scheduledRouteId}')" title="Saltar cliente" style="background: none; border: none; cursor: pointer; color: #ef4444; padding: 4px;">
+                    <i data-lucide="x-circle" style="width: 16px; height: 16px;"></i>
+                  </button>
+                  <button onclick="event.stopPropagation(); rescheduleRouteClient('${client.scheduledRouteId}')" title="Reagendar" style="background: none; border: none; cursor: pointer; color: #f59e0b; padding: 4px;">
+                    <i data-lucide="calendar-clock" style="width: 16px; height: 16px;"></i>
+                  </button>
+                ` : ''}
+              ` : ''}
+            </div>
+          </div>
+        `;
+      });
+
+      html += `
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML('beforeend', html);
+      lucide.createIcons();
+    }
+
+    // Executive: skip a client
+    async function skipRouteClient(routeId) {
+      const reason = prompt('Razón para saltar este cliente:');
+      if (reason === null) return;
+
+      try {
+        const res = await fetch(`${API}/api/routes/schedule/${routeId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'skip', reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Cliente saltado', 'Se notificó al admin');
+          document.querySelector('.day-detail-overlay')?.remove();
+          loadExistingSchedule();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+      }
+    }
+
+    // Executive: reschedule a client
+    async function rescheduleRouteClient(routeId) {
+      const reason = prompt('Razón para reagendar:');
+      if (reason === null) return;
+      const newDate = prompt('Nueva fecha (YYYY-MM-DD):');
+      if (!newDate) return;
+
+      try {
+        const res = await fetch(`${API}/api/routes/schedule/${routeId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reschedule', reason, newDate })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Cliente reagendado', 'Se notificó al admin');
+          document.querySelector('.day-detail-overlay')?.remove();
+          loadExistingSchedule();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+      }
     }
 
     async function rescheduleDay(userId, date) {
@@ -13541,14 +14663,202 @@
         const data = await res.json();
         if (data.success) {
           showToast('success', 'Reprogramado', data.message);
-          // Reload schedule
-          generateWeeklySchedule();
+          document.querySelector('.day-detail-overlay')?.remove();
+          loadExistingSchedule();
         } else {
           showToast('error', 'Error', data.error);
         }
       } catch (err) {
         showToast('error', 'Error', err.message);
       }
+    }
+
+    async function rescheduleAllPending() {
+      const userId = document.getElementById('schedule-vendor').value;
+      if (!userId) return;
+      const today = new Date().toISOString().split('T')[0];
+      if (!confirm(`¿Reprogramar todas las visitas pendientes de hoy (${today})?`)) return;
+
+      try {
+        const res = await fetch(`${API}/api/routes/auto-reschedule`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Auto-reprogramación', data.message);
+          loadExistingSchedule();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+      }
+    }
+
+    // Admin: delete all scheduled days for this vendor/week
+    async function deleteAllScheduledDays() {
+      const userId = document.getElementById('schedule-vendor').value;
+      if (!userId) return;
+      if (!lastScheduleData || !lastScheduleData.schedule) return;
+
+      const days = Object.keys(lastScheduleData.schedule).sort();
+      if (days.length === 0) return;
+
+      const totalClients = days.reduce((s, d) => s + (lastScheduleData.schedule[d]?.clients?.length || 0), 0);
+      if (!confirm(`¿Eliminar TODAS las rutas programadas de la semana?\n\n${totalClients} clientes en ${days.length} días serán eliminados.\nEsta acción no se puede deshacer.`)) return;
+
+      try {
+        let totalDeleted = 0;
+        for (const date of days) {
+          const res = await fetch(`${API}/api/routes/schedule/${userId}/${date}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (data.success) totalDeleted += data.data.deleted;
+        }
+        showToast('success', 'Eliminado', `${totalDeleted} rutas eliminadas`);
+        loadExistingSchedule();
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+      }
+    }
+
+    // Admin: delete all pending routes for a day
+    async function deleteScheduledDay(userId, date) {
+      const d = new Date(date + 'T12:00:00');
+      const dateLabel = d.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
+      if (!confirm(`¿Eliminar TODAS las rutas pendientes del ${dateLabel}?\n\nEsta acción no se puede deshacer.`)) return;
+
+      try {
+        const res = await fetch(`${API}/api/routes/schedule/${userId}/${date}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Eliminado', `${data.data.deleted} rutas eliminadas del ${dateLabel}`);
+          document.querySelector('.day-detail-overlay')?.remove();
+          loadExistingSchedule();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+      }
+    }
+
+    // Admin: delete individual scheduled route
+    async function deleteScheduledRoute(routeId) {
+      if (!confirm('¿Eliminar este cliente de la ruta programada?')) return;
+
+      try {
+        const res = await fetch(`${API}/api/routes/schedule-route/${routeId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Eliminado', 'Cliente eliminado de la ruta');
+          document.querySelector('.day-detail-overlay')?.remove();
+          loadExistingSchedule();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+      }
+    }
+
+    // =============================================
+    // ALERTAS DE RUTAS
+    // =============================================
+
+    async function loadRouteAlerts() {
+      if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'supervisor')) {
+        document.getElementById('route-alerts-section').style.display = 'none';
+        return;
+      }
+      document.getElementById('route-alerts-section').style.display = '';
+
+      try {
+        const res = await fetch(`${API}/api/routes/alerts`);
+        const data = await res.json();
+        if (data.success) {
+          renderRouteAlerts(data.data || []);
+        }
+      } catch (err) { /* silent */ }
+
+      updateAlertBadge();
+    }
+
+    function renderRouteAlerts(alerts) {
+      const list = document.getElementById('route-alerts-list');
+      const unread = alerts.filter(a => !a.read);
+      const countBadge = document.getElementById('alerts-count-badge');
+
+      if (unread.length > 0) {
+        countBadge.textContent = unread.length;
+        countBadge.style.display = '';
+      } else {
+        countBadge.style.display = 'none';
+      }
+
+      if (alerts.length === 0) {
+        list.innerHTML = '<div style="text-align: center; padding: 16px; font-size: 12px; color: var(--text-muted);">Sin alertas recientes</div>';
+        return;
+      }
+
+      let html = '';
+      alerts.slice(0, 20).forEach(alert => {
+        const time = new Date(alert.created_at).toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const icon = alert.alert_type === 'visit_skipped' ? 'x-circle' :
+                     alert.alert_type === 'route_rescheduled' ? 'calendar-clock' : 'bell';
+        const iconColor = alert.alert_type === 'visit_skipped' ? '#ef4444' : '#f59e0b';
+        html += `
+          <div class="route-alert-item ${alert.read ? '' : 'unread'}" onclick="markRouteAlertRead('${alert.id}', this)">
+            <i data-lucide="${icon}" style="width: 16px; height: 16px; color: ${iconColor}; flex-shrink: 0; margin-top: 1px;"></i>
+            <div style="flex: 1;">${alert.message}</div>
+            <div class="alert-time">${time}</div>
+          </div>
+        `;
+      });
+      list.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    async function markRouteAlertRead(alertId, el) {
+      try {
+        await fetch(`${API}/api/routes/alerts/${alertId}/read`, { method: 'PUT' });
+        if (el) el.classList.remove('unread');
+        updateAlertBadge();
+      } catch (err) { /* silent */ }
+    }
+
+    async function markAllRouteAlertsRead() {
+      try {
+        await fetch(`${API}/api/routes/alerts/read-all`, { method: 'PUT' });
+        document.querySelectorAll('.route-alert-item.unread').forEach(el => el.classList.remove('unread'));
+        document.getElementById('alerts-count-badge').style.display = 'none';
+        updateAlertBadge();
+        showToast('success', 'Alertas', 'Todas marcadas como leídas');
+      } catch (err) { /* silent */ }
+    }
+
+    async function updateAlertBadge() {
+      if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'supervisor')) {
+        const navBadge = document.getElementById('nav-route-alerts-badge');
+        if (navBadge) navBadge.style.display = 'none';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/api/routes/alerts/count`);
+        const data = await res.json();
+        const count = data.count || 0;
+
+        const navBadge = document.getElementById('nav-route-alerts-badge');
+        if (navBadge) {
+          if (count > 0) {
+            navBadge.textContent = count > 99 ? '99+' : count;
+            navBadge.style.display = '';
+          } else {
+            navBadge.style.display = 'none';
+          }
+        }
+      } catch (err) { /* silent */ }
     }
 
     // =============================================
@@ -13739,14 +15049,24 @@
         [scheduleVendor, calendarVendor].forEach(sel => {
           if (!sel) return;
           const current = sel.value;
-          sel.innerHTML = '<option value="">-- Seleccionar Vendedor --</option>' +
-            vendorExecs.map(u => `<option value="${u.id}">${u.full_name}</option>`).join('');
-          if (current) sel.value = current;
+          // If executive, only show their own entry and pre-select
+          if (currentUser && currentUser.role === 'executive') {
+            sel.innerHTML = `<option value="${currentUser.id}">${currentUser.full_name}</option>`;
+            sel.value = currentUser.id;
+          } else {
+            sel.innerHTML = '<option value="">-- Seleccionar Vendedor --</option>' +
+              vendorExecs.map(u => `<option value="${u.id}">${u.full_name}</option>`).join('');
+            if (current) sel.value = current;
+          }
         });
       }
 
       // Load segmentation stats
       loadSegmentationStats();
+
+      // Init week planner dates and alerts
+      initWeekDates();
+      loadRouteAlerts();
 
       // Auto-load vendor dashboard
       loadVendorDashboard();

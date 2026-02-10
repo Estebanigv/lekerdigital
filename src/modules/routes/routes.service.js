@@ -5,7 +5,7 @@ const { supabase } = require('../../config/database');
 // =============================================
 const VEHICLE_CONFIG = {
   FUEL_EFFICIENCY_KML: 10,        // 10 km por litro (vehículo estándar)
-  FUEL_PRICE_CLP: 1150,           // Precio bencina 93 octanos (CLP/litro)
+  FUEL_PRICE_CLP: 1141,           // Precio bencina 93 octanos ENAP feb 2026 (CLP/litro)
   FUEL_TYPE: '93 octanos'
 };
 
@@ -890,23 +890,101 @@ class RoutesService {
       };
     }
 
-    // Optimizar orden de visitas
-    const { route, totalDistance } = optimizeRouteOrder(clients, startPoint);
+    // Si es "Todas las zonas", verificar dispersión geográfica
+    let geoWarning = null;
+    if (!zone || zone.trim() === '') {
+      // Calcular bounding box
+      let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+      clients.forEach(c => {
+        const lat = parseFloat(c.lat);
+        const lng = parseFloat(c.lng);
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+      });
+      const maxSpan = haversineDistance(minLat, minLng, maxLat, maxLng);
+      if (maxSpan > 100) {
+        geoWarning = `Los clientes están dispersos en ${Math.round(maxSpan)} km. Se recomienda filtrar por zona para una ruta más eficiente.`;
+      }
+    }
 
-    // Calcular costos (ida y vuelta)
-    const distanceWithReturn = totalDistance * 2; // Ida y vuelta
-    const fuelStats = calculateFuelCost(distanceWithReturn);
+    // Generate weekdays starting from next business day
+    const startDate = new Date();
+    // Advance to next business day
+    do {
+      startDate.setDate(startDate.getDate() + 1);
+    } while (startDate.getDay() === 0 || startDate.getDay() === 6);
+
+    // Calculate how many weekdays we need (ceil(clients / 10) + 2 buffer)
+    const neededDays = Math.ceil(clients.length / 10) + 2;
+    const weekdays = [];
+    const cursor = new Date(startDate);
+    while (weekdays.length < neededDays) {
+      if (cursor.getDay() >= 1 && cursor.getDay() <= 5) {
+        weekdays.push(cursor.toISOString().split('T')[0]);
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    // Use shared helper to split into days with TSP per day
+    const { schedule: days, sortedDates } = this._splitIntoDays(clients, weekdays);
+
+    // Build per-day route with stats and fuel costs
+    const daysResult = {};
+    let totalClients = 0;
+    let totalDistanceKm = 0;
+    let totalEstimatedTime = 0;
+
+    for (const date of sortedDates) {
+      const dayData = days[date];
+      const fuelStats = calculateFuelCost(dayData.totalDistance);
+      daysResult[date] = {
+        route: dayData.clients.map((client, idx) => ({ order: idx + 1, ...client })),
+        stats: {
+          totalClients: dayData.clients.length,
+          ...fuelStats,
+          estimatedTime: dayData.estimatedTime,
+          totalHours: dayData.totalHours,
+          endTime: dayData.endTime
+        },
+        communes: dayData.communes || []
+      };
+      totalClients += dayData.clients.length;
+      totalDistanceKm += dayData.totalDistance;
+      totalEstimatedTime += dayData.estimatedTime;
+    }
+
+    const totalFuelStats = calculateFuelCost(totalDistanceKm);
+
+    // Flatten all routes for backward compat
+    const allRoute = [];
+    for (const date of sortedDates) {
+      allRoute.push(...daysResult[date].route);
+    }
+    // Re-number flattened route
+    allRoute.forEach((c, i) => { c.order = i + 1; });
 
     return {
       zone: zone || 'Todas las zonas',
-      route: route.map((client, index) => ({
-        order: index + 1,
-        ...client
-      })),
+      geoWarning: geoWarning || null,
+      // Multi-day structure
+      days: daysResult,
+      totalStats: {
+        totalClients,
+        totalDays: sortedDates.length,
+        ...totalFuelStats,
+        estimatedTime: totalEstimatedTime,
+        vehicleConfig: VEHICLE_CONFIG,
+        startDate: sortedDates[0],
+        endDate: sortedDates[sortedDates.length - 1]
+      },
+      // Backward compat
+      route: allRoute,
       stats: {
-        totalClients: route.length,
-        ...fuelStats,
-        estimatedTime: Math.round(distanceWithReturn / 30 * 60), // ~30 km/h promedio ciudad, en minutos
+        totalClients,
+        ...totalFuelStats,
+        estimatedTime: totalEstimatedTime,
         vehicleConfig: VEHICLE_CONFIG
       }
     };
@@ -1256,11 +1334,254 @@ class RoutesService {
   }
 
   // =============================================
-  // RUTAS PLANIFICADAS (Fase 3)
+  // RUTAS PLANIFICADAS (Fase 3) — V2
   // =============================================
 
   /**
-   * Genera plan semanal L-V para un vendedor
+   * Rellena comunas donde hay solo 1 cliente 80-20 con clientes L/N de la misma comuna
+   * para que no se viaje a una comuna por un solo cliente
+   */
+  fillLonely8020Communes(byCommune, allClientsByCommune) {
+    const MIN_PER_COMMUNE = 3;
+    const MAX_FILL = 5;
+
+    for (const [commune, clients] of Object.entries(byCommune)) {
+      const has8020 = clients.some(c => c.segmentation === '80-20');
+      if (!has8020 || clients.length >= MIN_PER_COMMUNE) continue;
+
+      // Buscar clientes L/N en la misma comuna que no están ya asignados
+      const assignedIds = new Set(clients.map(c => c.id));
+      const available = (allClientsByCommune[commune] || [])
+        .filter(c => !assignedIds.has(c.id) && c.segmentation !== '80-20');
+
+      // Sort: L first, then N
+      available.sort((a, b) => {
+        const pa = a.segmentation === 'L' ? 0 : 1;
+        const pb = b.segmentation === 'L' ? 0 : 1;
+        return pa - pb;
+      });
+
+      const needed = Math.min(MAX_FILL - clients.length, available.length);
+      for (let i = 0; i < needed; i++) {
+        clients.push(available[i]);
+      }
+    }
+    return byCommune;
+  }
+
+  /**
+   * Calcula timeline del día con hora estimada de llegada a cada cliente
+   * Velocidad promedio: 40 km/h, 30 min por visita, inicio 09:00
+   */
+  calculateDayTimeline(orderedClients, startTime = '09:00') {
+    const SPEED_KMH = 40;
+    const VISIT_DURATION_MIN = 30;
+    const END_OF_DAY = '17:00';
+
+    const [startH, startM] = startTime.split(':').map(Number);
+    let currentMinutes = startH * 60 + startM;
+    const endMinutes = 17 * 60; // 17:00
+
+    const timeline = [];
+    let totalDistanceKm = 0;
+    let overloaded = false;
+
+    for (let i = 0; i < orderedClients.length; i++) {
+      const client = orderedClients[i];
+
+      // Calculate travel time from previous client
+      let travelTimeMin = 0;
+      let travelDistKm = 0;
+      if (i > 0) {
+        const prev = orderedClients[i - 1];
+        if (prev.lat && prev.lng && client.lat && client.lng) {
+          travelDistKm = haversineDistance(prev.lat, prev.lng, client.lat, client.lng);
+          travelTimeMin = Math.round((travelDistKm / SPEED_KMH) * 60);
+        } else {
+          travelTimeMin = 15; // default if no coords
+        }
+      }
+
+      totalDistanceKm += travelDistKm;
+      currentMinutes += travelTimeMin;
+
+      const arrivalH = Math.floor(currentMinutes / 60);
+      const arrivalM = currentMinutes % 60;
+      const arrivalTime = `${String(arrivalH).padStart(2, '0')}:${String(arrivalM).padStart(2, '0')}`;
+
+      const departureMinutes = currentMinutes + VISIT_DURATION_MIN;
+      const departH = Math.floor(departureMinutes / 60);
+      const departM = departureMinutes % 60;
+      const departureTime = `${String(departH).padStart(2, '0')}:${String(departM).padStart(2, '0')}`;
+
+      if (currentMinutes > endMinutes) {
+        overloaded = true;
+      }
+
+      timeline.push({
+        client,
+        estimatedArrival: arrivalTime,
+        estimatedDeparture: departureTime,
+        travelTimeMin,
+        travelDistKm: Math.round(travelDistKm * 10) / 10
+      });
+
+      currentMinutes = departureMinutes;
+    }
+
+    const totalHours = Math.round((currentMinutes - (startH * 60 + startM)) / 6) / 10; // 1 decimal
+
+    return {
+      timeline,
+      totalDistanceKm: Math.round(totalDistanceKm * 10) / 10,
+      totalHours,
+      overloaded,
+      endTime: `${String(Math.floor(currentMinutes / 60)).padStart(2, '0')}:${String(currentMinutes % 60).padStart(2, '0')}`
+    };
+  }
+
+  /**
+   * Divide una lista de clientes en días hábiles de 8-10 clientes, agrupando por comuna.
+   * Reutilizable por generateSchedule() y getOptimizedRoute().
+   * @param {Array} clientsToVisit - Clientes a distribuir (ya filtrados y priorizados)
+   * @param {Array} weekdays - Fechas hábiles ['YYYY-MM-DD', ...]
+   * @param {Object} allClientsByCommune - Índice de todos los clientes por comuna (para fill lonely 80-20)
+   * @returns {Object} { schedule: {date: {clients, totalDistance, totalHours, ...}}, sortedDates }
+   */
+  _splitIntoDays(clientsToVisit, weekdays, allClientsByCommune = null) {
+    const MAX_PER_DAY = 10;
+    const MIN_PER_DAY = 8;
+
+    // Group clients by commune
+    const byCommune = {};
+    clientsToVisit.forEach(c => {
+      const key = c.commune || 'Sin Comuna';
+      if (!byCommune[key]) byCommune[key] = [];
+      byCommune[key].push(c);
+    });
+
+    // Fill lonely 80-20 communes if index provided
+    if (allClientsByCommune) {
+      this.fillLonely8020Communes(byCommune, allClientsByCommune);
+    }
+
+    // Distribute clients across days
+    const schedule = {};
+    weekdays.forEach(d => { schedule[d] = []; });
+
+    // Sort communes: put larger groups first to keep them together in a day
+    const sortedCommunes = Object.entries(byCommune)
+      .sort((a, b) => b[1].length - a[1].length);
+
+    for (const [commune, communeClients] of sortedCommunes) {
+      let bestDay = null;
+      let bestFit = -1;
+
+      for (const d of weekdays) {
+        const remaining = MAX_PER_DAY - schedule[d].length;
+        if (remaining > 0 && remaining >= bestFit) {
+          bestDay = d;
+          bestFit = remaining;
+        }
+      }
+
+      if (!bestDay) continue;
+
+      for (const client of communeClients) {
+        if (schedule[bestDay].length < MAX_PER_DAY) {
+          schedule[bestDay].push(client);
+        } else {
+          const overflowDay = weekdays.reduce((best, d) =>
+            schedule[d].length < schedule[best].length ? d : best, weekdays[0]);
+          if (schedule[overflowDay].length < MAX_PER_DAY) {
+            schedule[overflowDay].push(client);
+          }
+        }
+      }
+    }
+
+    // Optimize route order and calculate timeline for each day
+    const optimizedSchedule = {};
+    for (const [date, dayClients] of Object.entries(schedule)) {
+      if (dayClients.length === 0) continue;
+      const clientsWithCoords = dayClients.filter(c => c.lat && c.lng);
+      const clientsWithoutCoords = dayClients.filter(c => !c.lat || !c.lng);
+
+      let orderedClients;
+      let totalDistance = 0;
+      if (clientsWithCoords.length > 0) {
+        const result = optimizeRouteOrder(clientsWithCoords);
+        orderedClients = [...result.route, ...clientsWithoutCoords];
+        totalDistance = result.totalDistance;
+      } else {
+        orderedClients = dayClients;
+      }
+
+      const dayTimeline = this.calculateDayTimeline(orderedClients);
+
+      // Unique communes for this day
+      const communes = [...new Set(orderedClients.map(c => c.commune || 'Sin Comuna'))];
+
+      optimizedSchedule[date] = {
+        clients: dayTimeline.timeline.map(t => ({
+          ...t.client,
+          estimatedArrival: t.estimatedArrival,
+          estimatedDeparture: t.estimatedDeparture,
+          travelTimeMin: t.travelTimeMin,
+          travelDistKm: t.travelDistKm
+        })),
+        totalDistance: dayTimeline.totalDistanceKm,
+        totalHours: dayTimeline.totalHours,
+        estimatedTime: Math.round(dayTimeline.totalHours * 60),
+        endTime: dayTimeline.endTime,
+        overloaded: dayTimeline.overloaded,
+        communes
+      };
+    }
+
+    // Move overloaded clients to next available day
+    const sortedDates = Object.keys(optimizedSchedule).sort();
+    for (let i = 0; i < sortedDates.length; i++) {
+      const dayData = optimizedSchedule[sortedDates[i]];
+      if (!dayData.overloaded) continue;
+
+      const overflow = [];
+      const keep = [];
+      for (const client of dayData.clients) {
+        const [h] = client.estimatedArrival.split(':').map(Number);
+        if (h >= 17 && keep.length >= MIN_PER_DAY) {
+          overflow.push(client);
+        } else {
+          keep.push(client);
+        }
+      }
+
+      if (overflow.length > 0) {
+        for (let j = i + 1; j < sortedDates.length && overflow.length > 0; j++) {
+          const nextDay = optimizedSchedule[sortedDates[j]];
+          while (nextDay.clients.length < MAX_PER_DAY && overflow.length > 0) {
+            nextDay.clients.push(overflow.shift());
+          }
+        }
+        const recalc = this.calculateDayTimeline(keep);
+        dayData.clients = keep.map((c, idx) => ({
+          ...c,
+          estimatedArrival: recalc.timeline[idx]?.estimatedArrival || c.estimatedArrival,
+          estimatedDeparture: recalc.timeline[idx]?.estimatedDeparture || c.estimatedDeparture
+        }));
+        dayData.totalDistance = recalc.totalDistanceKm;
+        dayData.totalHours = recalc.totalHours;
+        dayData.estimatedTime = Math.round(recalc.totalHours * 60);
+        dayData.endTime = recalc.endTime;
+        dayData.overloaded = recalc.overloaded;
+      }
+    }
+
+    return { schedule: optimizedSchedule, sortedDates };
+  }
+
+  /**
+   * Genera plan semanal L-V para un vendedor (V2 con timeline y relleno de comunas)
    */
   async generateSchedule(userId, startDate, endDate) {
     // Get vendor's clients with segmentation
@@ -1282,13 +1603,21 @@ class RoutesService {
       return pa - pb;
     });
 
+    // Build full commune index (for filling lonely 80-20 communes)
+    const allClientsByCommune = {};
+    clients.forEach(c => {
+      const key = c.commune || 'Sin Comuna';
+      if (!allClientsByCommune[key]) allClientsByCommune[key] = [];
+      allClientsByCommune[key].push(c);
+    });
+
     // Filter clients that need a visit (based on frequency and last visit)
     const now = new Date();
     const clientsToVisit = clients.filter(c => {
       if (!c.last_visit_at) return true;
       const lastVisit = new Date(c.last_visit_at);
       const daysSince = Math.floor((now - lastVisit) / (1000 * 60 * 60 * 24));
-      return daysSince >= (c.visit_frequency_days || 30) * 0.7; // 70% of frequency threshold
+      return daysSince >= (c.visit_frequency_days || 30) * 0.7;
     });
 
     // Generate weekdays between start and end
@@ -1298,7 +1627,7 @@ class RoutesService {
     const current = new Date(start);
     while (current <= end) {
       const day = current.getDay();
-      if (day >= 1 && day <= 5) { // Mon-Fri
+      if (day >= 1 && day <= 5) {
         weekdays.push(new Date(current).toISOString().split('T')[0]);
       }
       current.setDate(current.getDate() + 1);
@@ -1308,70 +1637,8 @@ class RoutesService {
       throw new Error('No hay días hábiles en el rango seleccionado');
     }
 
-    // Group clients by commune for optimizing travel
-    const byCommune = {};
-    clientsToVisit.forEach(c => {
-      const key = c.commune || 'Sin Comuna';
-      if (!byCommune[key]) byCommune[key] = [];
-      byCommune[key].push(c);
-    });
-
-    // Distribute clients across days (8-10 per day)
-    const MAX_PER_DAY = 10;
-    const schedule = {};
-    weekdays.forEach(d => { schedule[d] = []; });
-
-    let dayIdx = 0;
-    // First pass: distribute by commune groups to minimize travel
-    Object.values(byCommune).forEach(communeClients => {
-      communeClients.forEach(client => {
-        // Find day with least clients
-        let bestDay = weekdays[dayIdx % weekdays.length];
-        let minCount = Infinity;
-        weekdays.forEach(d => {
-          if (schedule[d].length < minCount) {
-            minCount = schedule[d].length;
-            bestDay = d;
-          }
-        });
-
-        if (schedule[bestDay].length < MAX_PER_DAY) {
-          schedule[bestDay].push(client);
-        } else {
-          // Find any day with space
-          const availableDay = weekdays.find(d => schedule[d].length < MAX_PER_DAY);
-          if (availableDay) {
-            schedule[availableDay].push(client);
-          }
-        }
-        dayIdx++;
-      });
-    });
-
-    // Optimize route order for each day
-    const optimizedSchedule = {};
-    for (const [date, dayClients] of Object.entries(schedule)) {
-      if (dayClients.length === 0) continue;
-      const clientsWithCoords = dayClients.filter(c => c.lat && c.lng);
-      const clientsWithoutCoords = dayClients.filter(c => !c.lat || !c.lng);
-
-      let orderedClients;
-      if (clientsWithCoords.length > 0) {
-        const { route, totalDistance } = optimizeRouteOrder(clientsWithCoords);
-        orderedClients = [...route, ...clientsWithoutCoords];
-        optimizedSchedule[date] = {
-          clients: orderedClients,
-          totalDistance: Math.round(totalDistance * 10) / 10,
-          estimatedTime: Math.round(totalDistance / 30 * 60) // 30km/h avg
-        };
-      } else {
-        optimizedSchedule[date] = {
-          clients: dayClients,
-          totalDistance: 0,
-          estimatedTime: 0
-        };
-      }
-    }
+    // Use shared helper to split into days
+    const { schedule: optimizedSchedule } = this._splitIntoDays(clientsToVisit, weekdays, allClientsByCommune);
 
     // Delete existing pending scheduled routes for this user in the date range
     await supabase
@@ -1382,7 +1649,7 @@ class RoutesService {
       .gte('scheduled_date', startDate)
       .lte('scheduled_date', endDate);
 
-    // Insert new scheduled routes
+    // Insert new scheduled routes with estimated arrival
     const inserts = [];
     for (const [date, dayData] of Object.entries(optimizedSchedule)) {
       dayData.clients.forEach((client, idx) => {
@@ -1392,7 +1659,9 @@ class RoutesService {
           client_id: client.id,
           priority: idx,
           status: 'pending',
-          original_date: date
+          original_date: date,
+          estimated_arrival: client.estimatedArrival || null,
+          estimated_duration: 30
         });
       });
     }
@@ -1682,6 +1951,364 @@ class RoutesService {
     });
 
     return calendar;
+  }
+
+  // =============================================
+  // MODIFICACIÓN DE RUTAS Y ALERTAS (V2)
+  // =============================================
+
+  /**
+   * Modifica una ruta planificada (ejecutivo skip/reschedule)
+   */
+  async modifyScheduledRoute(routeId, userId, { action, reason, newDate }) {
+    const { data: route, error } = await supabase
+      .from('scheduled_routes')
+      .select('*, client:clients(id, name)')
+      .eq('id', routeId)
+      .single();
+
+    if (error || !route) throw new Error('Ruta planificada no encontrada');
+
+    // Verify ownership
+    if (route.user_id !== userId) {
+      throw new Error('No tienes permiso para modificar esta ruta');
+    }
+
+    const oldValue = { status: route.status, scheduled_date: route.scheduled_date };
+    let newValue = {};
+
+    if (action === 'skip') {
+      newValue = { status: 'skipped' };
+      await supabase
+        .from('scheduled_routes')
+        .update({ status: 'skipped', modified_by: userId, notes: reason, updated_at: new Date().toISOString() })
+        .eq('id', routeId);
+    } else if (action === 'reschedule' && newDate) {
+      newValue = { status: 'rescheduled', scheduled_date: newDate };
+      await supabase
+        .from('scheduled_routes')
+        .update({ status: 'rescheduled', modified_by: userId, notes: reason, updated_at: new Date().toISOString() })
+        .eq('id', routeId);
+
+      // Create new pending entry for the new date
+      await supabase.from('scheduled_routes').insert({
+        user_id: userId,
+        scheduled_date: newDate,
+        client_id: route.client_id,
+        priority: 99,
+        status: 'pending',
+        original_date: route.original_date || route.scheduled_date,
+        estimated_duration: 30
+      });
+    } else {
+      throw new Error('Acción no válida');
+    }
+
+    // Log modification
+    await supabase.from('route_modifications').insert({
+      scheduled_route_id: routeId,
+      user_id: userId,
+      modification_type: action,
+      reason: reason || null,
+      old_value: oldValue,
+      new_value: newValue
+    });
+
+    // Get user name for alert message
+    const { data: user } = await supabase.from('users').select('full_name').eq('id', userId).single();
+    const userName = user?.full_name || 'Ejecutivo';
+    const clientName = route.client?.name || 'Cliente';
+
+    // Create alert for all admins
+    const { data: admins } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'admin')
+      .not('id', 'is', null);
+
+    const alertType = action === 'skip' ? 'visit_skipped' : 'route_rescheduled';
+    const message = action === 'skip'
+      ? `${userName} saltó cliente "${clientName}" del ${route.scheduled_date} — "${reason || 'Sin razón'}"`
+      : `${userName} reagendó "${clientName}" del ${route.scheduled_date} al ${newDate} — "${reason || 'Sin razón'}"`;
+
+    const alertInserts = (admins || []).map(admin => ({
+      alert_type: alertType,
+      user_id: userId,
+      admin_id: admin.id,
+      message,
+      metadata: { route_id: routeId, client_id: route.client_id, action, old_value: oldValue, new_value: newValue }
+    }));
+
+    if (alertInserts.length > 0) {
+      await supabase.from('route_alerts').insert(alertInserts);
+    }
+
+    return { success: true, action, routeId };
+  }
+
+  /**
+   * Obtiene alertas de ruta para un admin
+   */
+  async getRouteAlerts(adminId, unreadOnly = false) {
+    let query = supabase
+      .from('route_alerts')
+      .select('*')
+      .eq('admin_id', adminId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (unreadOnly) {
+      query = query.eq('read', false);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      // Table may not exist yet — return empty gracefully
+      console.warn('getRouteAlerts error (table may not exist):', error.message);
+      return [];
+    }
+    return data || [];
+  }
+
+  /**
+   * Marca alerta como leída
+   */
+  async markAlertRead(alertId) {
+    const { error } = await supabase
+      .from('route_alerts')
+      .update({ read: true })
+      .eq('id', alertId);
+    if (error && !error.message?.includes('does not exist')) throw error;
+    return true;
+  }
+
+  /**
+   * Marca todas las alertas como leídas para un admin
+   */
+  async markAllAlertsRead(adminId) {
+    const { error } = await supabase
+      .from('route_alerts')
+      .update({ read: true })
+      .eq('admin_id', adminId)
+      .eq('read', false);
+    if (error && !error.message?.includes('does not exist')) throw error;
+    return true;
+  }
+
+  /**
+   * Cuenta alertas no leídas para un admin
+   */
+  async getUnreadAlertCount(adminId) {
+    const { count, error } = await supabase
+      .from('route_alerts')
+      .select('*', { count: 'exact', head: true })
+      .eq('admin_id', adminId)
+      .eq('read', false);
+    if (error) {
+      console.warn('getUnreadAlertCount error (table may not exist):', error.message);
+      return 0;
+    }
+    return count || 0;
+  }
+
+  /**
+   * Auto-reprogramación de rutas pendientes al final del día
+   */
+  async autoRescheduleEndOfDay() {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Get all pending routes for today
+    const { data: pending, error } = await supabase
+      .from('scheduled_routes')
+      .select('*, user:users(id, full_name)')
+      .eq('scheduled_date', today)
+      .eq('status', 'pending');
+
+    if (error) throw error;
+    if (!pending || pending.length === 0) return { rescheduled: 0 };
+
+    // Find next business day
+    const todayDate = new Date(today);
+    let nextDay = new Date(todayDate);
+    do {
+      nextDay.setDate(nextDay.getDate() + 1);
+    } while (nextDay.getDay() === 0 || nextDay.getDay() === 6);
+    const nextDateStr = nextDay.toISOString().split('T')[0];
+
+    // Group by user
+    const byUser = {};
+    pending.forEach(p => {
+      if (!byUser[p.user_id]) byUser[p.user_id] = [];
+      byUser[p.user_id].push(p);
+    });
+
+    let totalRescheduled = 0;
+
+    for (const [userId, userPending] of Object.entries(byUser)) {
+      const ids = userPending.map(p => p.id);
+
+      // Mark old as rescheduled
+      await supabase
+        .from('scheduled_routes')
+        .update({ status: 'rescheduled', updated_at: new Date().toISOString() })
+        .in('id', ids);
+
+      // Create new entries
+      const newEntries = userPending.map((p, idx) => ({
+        user_id: userId,
+        scheduled_date: nextDateStr,
+        client_id: p.client_id,
+        priority: 50 + idx,
+        status: 'pending',
+        original_date: p.original_date || today,
+        estimated_duration: 30
+      }));
+
+      await supabase.from('scheduled_routes').insert(newEntries);
+      totalRescheduled += userPending.length;
+
+      // Create alert for admins
+      const { data: admins } = await supabase.from('users').select('id').eq('role', 'admin');
+      const userName = userPending[0]?.user?.full_name || 'Vendedor';
+      const alertInserts = (admins || []).map(admin => ({
+        alert_type: 'route_rescheduled',
+        user_id: userId,
+        admin_id: admin.id,
+        message: `Auto-reprogramación: ${userPending.length} visitas de ${userName} del ${today} → ${nextDateStr}`,
+        metadata: { auto: true, count: userPending.length, from: today, to: nextDateStr }
+      }));
+      if (alertInserts.length > 0) {
+        await supabase.from('route_alerts').insert(alertInserts);
+      }
+    }
+
+    return { rescheduled: totalRescheduled, fromDate: today, toDate: nextDateStr };
+  }
+  /**
+   * Programa una ruta optimizada para un día específico.
+   * Borra scheduled_routes pendientes para ese user+fecha y re-inserta con orden TSP.
+   */
+  async scheduleOptimizedDay(userId, date, clients) {
+    if (!userId || !date || !clients || clients.length === 0) {
+      throw new Error('Se requiere userId, date y al menos un cliente');
+    }
+
+    // Delete existing pending scheduled routes for this user+date
+    await supabase
+      .from('scheduled_routes')
+      .delete()
+      .eq('user_id', userId)
+      .eq('status', 'pending')
+      .eq('scheduled_date', date);
+
+    // Insert each client preserving optimized order (only base columns)
+    const inserts = clients.map((c, idx) => ({
+      user_id: userId,
+      scheduled_date: date,
+      client_id: c.id,
+      priority: idx,
+      status: 'pending',
+      original_date: date
+    }));
+
+    const batchSize = 100;
+    for (let i = 0; i < inserts.length; i += batchSize) {
+      const batch = inserts.slice(i, i + batchSize);
+      const { error } = await supabase.from('scheduled_routes').insert(batch);
+      if (error) throw new Error(`Error insertando rutas programadas: ${error.message}`);
+    }
+
+    return { scheduled: inserts.length, date, userId };
+  }
+
+  /**
+   * Programa ruta optimizada multi-día. Acumulativo: solo borra pending del user+fecha de los días incluidos.
+   * @param {string} userId
+   * @param {Object} days - { "YYYY-MM-DD": [{id: "..."}, ...], ... }
+   */
+  async scheduleOptimizedMultiDay(userId, days) {
+    if (!userId || !days || Object.keys(days).length === 0) {
+      throw new Error('Se requiere userId y al menos un día con clientes');
+    }
+
+    let totalScheduled = 0;
+    const dates = Object.keys(days).sort();
+
+    for (const date of dates) {
+      const clients = days[date];
+      if (!clients || clients.length === 0) continue;
+
+      // Delete only pending for this user+date (accumulative - does NOT touch other dates)
+      await supabase
+        .from('scheduled_routes')
+        .delete()
+        .eq('user_id', userId)
+        .eq('status', 'pending')
+        .eq('scheduled_date', date);
+
+      const inserts = clients.map((c, idx) => {
+        const row = {
+          user_id: userId,
+          scheduled_date: date,
+          client_id: c.id,
+          priority: idx,
+          status: 'pending',
+          original_date: date
+        };
+        // V2 columns (may not exist if migration not run)
+        if (c.estimatedArrival) row.estimated_arrival = c.estimatedArrival;
+        return row;
+      });
+
+      const batchSize = 100;
+      for (let i = 0; i < inserts.length; i += batchSize) {
+        const batch = inserts.slice(i, i + batchSize);
+        let { error } = await supabase.from('scheduled_routes').insert(batch);
+        if (error && error.message && error.message.includes('estimated_arrival')) {
+          // Fallback: strip V2 columns and retry
+          const safeBatch = batch.map(({estimated_arrival, ...rest}) => rest);
+          const retry = await supabase.from('scheduled_routes').insert(safeBatch);
+          error = retry.error;
+        }
+        if (error) throw new Error(`Error insertando rutas para ${date}: ${error.message}`);
+      }
+
+      totalScheduled += inserts.length;
+    }
+
+    return { scheduled: totalScheduled, days: dates.length, dates, userId };
+  }
+
+  /**
+   * Elimina todas las rutas pendientes de un vendedor para una fecha específica.
+   */
+  async deleteScheduledDay(userId, date) {
+    const { data, error } = await supabase
+      .from('scheduled_routes')
+      .delete()
+      .eq('user_id', userId)
+      .eq('scheduled_date', date)
+      .eq('status', 'pending')
+      .select('id');
+
+    if (error) throw new Error(`Error eliminando rutas: ${error.message}`);
+    return { deleted: data?.length || 0, date, userId };
+  }
+
+  /**
+   * Elimina una ruta programada individual por su ID.
+   */
+  async deleteScheduledRoute(routeId) {
+    const { data, error } = await supabase
+      .from('scheduled_routes')
+      .delete()
+      .eq('id', routeId)
+      .eq('status', 'pending')
+      .select('id');
+
+    if (error) throw new Error(`Error eliminando ruta: ${error.message}`);
+    if (!data || data.length === 0) throw new Error('Ruta no encontrada o ya no está pendiente');
+    return { deleted: 1, routeId };
   }
 }
 

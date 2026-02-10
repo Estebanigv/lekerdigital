@@ -43,6 +43,36 @@ app.use('/api', (req, res, next) => {
 app.use('/routes', authenticate);
 
 // =============================================
+// CONFIGURACIÓN - Precio bencina (en memoria)
+// =============================================
+let fuelPriceConfig = {
+  price: 1141,        // CLP/litro - ENAP Bencina 93 feb 2026
+  updatedAt: new Date().toISOString(),
+  updatedBy: 'system'
+};
+
+app.get('/api/config/fuel-price', (req, res) => {
+  res.json({ success: true, data: fuelPriceConfig });
+});
+
+app.put('/api/config/fuel-price', authorize('admin'), (req, res) => {
+  try {
+    const { price } = req.body;
+    if (!price || typeof price !== 'number' || price < 0 || price > 5000) {
+      return res.status(400).json({ success: false, error: 'Precio inválido (debe ser 0-5000 CLP)' });
+    }
+    fuelPriceConfig = {
+      price: Math.round(price),
+      updatedAt: new Date().toISOString(),
+      updatedBy: req.user?.name || 'admin'
+    };
+    res.json({ success: true, data: fuelPriceConfig, message: 'Precio bencina actualizado' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// =============================================
 // API ENDPOINTS - DATOS AUXILIARES (para UI)
 // =============================================
 
@@ -1276,6 +1306,67 @@ app.post('/api/routes/generate-schedule', async (req, res) => {
   }
 });
 
+// Programar ruta optimizada para una fecha
+app.post('/api/routes/schedule-optimized', async (req, res) => {
+  try {
+    const { userId, date, clients } = req.body;
+    if (!userId || !date || !clients || clients.length === 0) {
+      return res.status(400).json({ success: false, error: 'Se requiere userId, date y clients[]' });
+    }
+    const result = await routesService.scheduleOptimizedDay(userId, date, clients);
+    res.json({
+      success: true,
+      message: `Ruta programada: ${result.scheduled} clientes para ${date}`,
+      data: result
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Programar ruta optimizada multi-día (acumulativo)
+app.post('/api/routes/schedule-optimized-multi', async (req, res) => {
+  try {
+    const { userId, days } = req.body;
+    if (!userId || !days || Object.keys(days).length === 0) {
+      return res.status(400).json({ success: false, error: `Se requiere userId y days. Recibido: userId=${userId}, days keys=${days ? Object.keys(days).join(',') : 'null'}` });
+    }
+    const result = await routesService.scheduleOptimizedMultiDay(userId, days);
+    res.json({
+      success: true,
+      message: `Ruta programada: ${result.scheduled} clientes en ${result.days} días`,
+      data: result
+    });
+  } catch (error) {
+    console.error('Error schedule-optimized-multi:', error);
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Eliminar todas las rutas pendientes de un día
+app.delete('/api/routes/schedule/:userId/:date', async (req, res) => {
+  try {
+    const { userId, date } = req.params;
+    if (!userId || !date) {
+      return res.status(400).json({ success: false, error: 'Se requiere userId y date' });
+    }
+    const result = await routesService.deleteScheduledDay(userId, date);
+    res.json({ success: true, message: `${result.deleted} rutas eliminadas`, data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Eliminar una ruta programada individual
+app.delete('/api/routes/schedule-route/:routeId', async (req, res) => {
+  try {
+    const result = await routesService.deleteScheduledRoute(req.params.routeId);
+    res.json({ success: true, message: 'Ruta eliminada', data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 // Reprogramar rutas pendientes
 app.post('/api/routes/reschedule-incomplete', async (req, res) => {
   try {
@@ -1296,6 +1387,79 @@ app.get('/api/routes/schedule/:userId', async (req, res) => {
     const { startDate, endDate } = req.query;
     const data = await routesService.getScheduledRoutes(req.params.userId, startDate, endDate);
     res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Modificar ruta planificada (ejecutivo: skip/reschedule)
+app.put('/api/routes/schedule/:routeId', async (req, res) => {
+  try {
+    const { action, reason, newDate } = req.body;
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, error: 'No autenticado' });
+    if (!action) return res.status(400).json({ success: false, error: 'Se requiere action (skip|reschedule)' });
+
+    const result = await routesService.modifyScheduledRoute(req.params.routeId, userId, { action, reason, newDate });
+    res.json({ success: true, message: `Ruta ${action === 'skip' ? 'saltada' : 'reagendada'}`, data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Obtener alertas de ruta (admin)
+app.get('/api/routes/alerts', async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.json({ success: true, data: [] });
+    const unreadOnly = req.query.unread === 'true';
+    const data = await routesService.getRouteAlerts(userId, unreadOnly);
+    res.json({ success: true, data });
+  } catch (error) {
+    // Graceful: return empty on any error (table may not exist)
+    res.json({ success: true, data: [] });
+  }
+});
+
+// Contar alertas no leídas
+app.get('/api/routes/alerts/count', async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.json({ success: true, count: 0 });
+    const count = await routesService.getUnreadAlertCount(userId);
+    res.json({ success: true, count });
+  } catch (error) {
+    res.json({ success: true, count: 0 });
+  }
+});
+
+// Marcar alerta como leída
+app.put('/api/routes/alerts/:id/read', async (req, res) => {
+  try {
+    await routesService.markAlertRead(req.params.id);
+    res.json({ success: true, message: 'Alerta marcada como leída' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Marcar todas las alertas como leídas
+app.put('/api/routes/alerts/read-all', async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, error: 'No autenticado' });
+    await routesService.markAllAlertsRead(userId);
+    res.json({ success: true, message: 'Todas las alertas marcadas como leídas' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Auto-reprogramar rutas pendientes del día
+app.post('/api/routes/auto-reschedule', authorize('admin'), async (req, res) => {
+  try {
+    const result = await routesService.autoRescheduleEndOfDay();
+    res.json({ success: true, message: `${result.rescheduled} rutas reprogramadas`, data: result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -1570,5 +1734,24 @@ app.get('/api/gsheets/:sheet', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// =============================================
+// AUTO-RESCHEDULE: check every 30 min, execute at 17:30
+// =============================================
+setInterval(async () => {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  if (h === 17 && m >= 25 && m <= 35) {
+    try {
+      const result = await routesService.autoRescheduleEndOfDay();
+      if (result.rescheduled > 0) {
+        console.log(`[Auto-reschedule] ${result.rescheduled} rutas reprogramadas de ${result.fromDate} a ${result.toDate}`);
+      }
+    } catch (err) {
+      console.error('[Auto-reschedule] Error:', err.message);
+    }
+  }
+}, 30 * 60 * 1000); // every 30 minutes
 
 module.exports = app;
