@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LEKER - Sistema de Gestión Logística</title>
+  <link rel="icon" type="image/png" href="/leker-isotipo.png">
 
   <!-- =============================================
        TRACKING SCRIPTS - CONFIGURAR IDs
@@ -3000,6 +3001,89 @@
       cursor: pointer;
       font-weight: 600;
     }
+
+    /* Geocoding Progress Panel */
+    .geocode-panel {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 360px;
+      max-width: calc(100vw - 40px);
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+      z-index: 9992;
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+    .geocode-panel.open { display: flex; }
+    .geocode-panel.minimized { height: auto; }
+    .geocode-panel.minimized .geocode-panel-body { display: none; }
+    .geocode-panel-header {
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .geocode-panel-header .geocode-header-actions { display: flex; gap: 6px; align-items: center; }
+    .geocode-panel-header button {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .geocode-panel-header button:hover { background: rgba(255,255,255,0.35); }
+    .geocode-panel-body {
+      max-height: 320px;
+      overflow-y: auto;
+      font-size: 12px;
+    }
+    .geocode-progress-bar {
+      height: 4px;
+      background: rgba(255,255,255,0.2);
+      position: relative;
+    }
+    .geocode-progress-bar .fill {
+      height: 100%;
+      background: #34d399;
+      transition: width 0.3s ease;
+      border-radius: 0 2px 2px 0;
+    }
+    .geocode-log-entry {
+      padding: 4px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+    .geocode-log-entry.success { color: #059669; }
+    .geocode-log-entry.error { color: #dc2626; }
+    .geocode-log-entry.info { color: #6b7280; }
+    .geocode-panel-stats {
+      padding: 8px 14px;
+      display: flex;
+      justify-content: space-between;
+      background: var(--bg-hover);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -3009,7 +3093,7 @@
       <div class="login-logo">
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
         <p>Sistema de Gestión Logística</p>
-        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.8.1</div>
+        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.8.5</div>
       </div>
 
       <!-- Login Form -->
@@ -3078,7 +3162,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.8.1</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.8.5</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -3392,11 +3476,11 @@
         <div class="card">
           <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <h3><i data-lucide="map" style="width: 18px; height: 18px;"></i> Mapa de Clientes</h3>
-            <div id="geocode-alert" style="display: none; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 8px 16px; border-radius: 8px; font-size: 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(217,119,6,0.3);">
-              <i data-lucide="alert-triangle" style="width: 18px; height: 18px;"></i>
-              <span><strong id="geocode-count">0</strong> clientes sin ubicación en mapa</span>
-              <button id="btn-geocode-header" onclick="geocodeClientsWithoutCoords()" style="background: white; color: #d97706; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;">
-                Cargar Ubicaciones
+            <div id="geocode-alert" style="display: none; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 8px 16px; border-radius: 8px; font-size: 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(29,78,216,0.3);">
+              <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i>
+              <span><strong id="geocode-count">0</strong> clientes sin ubicación</span>
+              <button id="btn-geocode-header" onclick="geocodeClientsWithoutCoords()" style="background: white; color: #1d4ed8; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                <i data-lucide="map-pin" style="width:13px;height:13px;color:#1d4ed8;"></i> Cargar Ubicaciones
               </button>
             </div>
           </div>
@@ -3763,13 +3847,18 @@
                     </div>
                   </div>
                   <!-- GPS warning + actions (shown when GPS% < 80) -->
-                  <div id="vendor-card-gps-warning" style="display: none; padding: 6px 14px; background: #fef3c7; border-top: 1px solid #fde68a; align-items: center; justify-content: space-between; gap: 8px;">
-                    <span style="font-size: 11px; color: #92400e; font-weight: 500;">
-                      <span id="vendor-card-no-gps-count">0</span> clientes sin GPS
+                  <div id="vendor-card-gps-warning" style="display: none; padding: 8px 14px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-top: 1px solid #fde68a; align-items: center; justify-content: space-between; gap: 8px;">
+                    <span style="font-size: 11px; color: #92400e; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                      <i data-lucide="alert-triangle" style="width:13px;height:13px;"></i>
+                      <span id="vendor-card-no-gps-count">0</span> sin GPS
                     </span>
                     <div style="display: flex; gap: 6px;">
-                      <button onclick="syncAddressesFromGSheets()" style="background: #f59e0b; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: 600;">Sync Direcciones</button>
-                      <button onclick="geocodeClientsWithoutCoords()" style="background: #3b82f6; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: 600;">Geocodificar</button>
+                      <button onclick="syncAddressesFromGSheets()" style="background: white; color: #92400e; border: 1px solid #f59e0b; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" onmouseover="this.style.background='#f59e0b';this.style.color='white'" onmouseout="this.style.background='white';this.style.color='#92400e'">
+                        <i data-lucide="refresh-cw" style="width:11px;height:11px;"></i> Sync
+                      </button>
+                      <button onclick="geocodeClientsWithoutCoords()" style="background: #3b82f6; color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 4px rgba(59,130,246,0.3); transition: all 0.15s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+                        <i data-lucide="map-pin" style="width:11px;height:11px;"></i> Geocodificar
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -7246,9 +7335,50 @@
     }
 
     let geocodingCancelled = false;
+    let geocodePanelMinimized = false;
+
+    function openGeocodePanel() {
+      const panel = document.getElementById('geocode-panel');
+      panel.classList.add('open');
+      panel.classList.remove('minimized');
+      geocodePanelMinimized = false;
+      lucide.createIcons();
+    }
+
+    function closeGeocodePanel() {
+      geocodingCancelled = true;
+      const panel = document.getElementById('geocode-panel');
+      panel.classList.remove('open');
+    }
+
+    function toggleGeocodePanel() {
+      const panel = document.getElementById('geocode-panel');
+      geocodePanelMinimized = !geocodePanelMinimized;
+      panel.classList.toggle('minimized', geocodePanelMinimized);
+    }
+
+    function geocodeLogEntry(text, type = 'info') {
+      const log = document.getElementById('geocode-panel-log');
+      if (!log) return;
+      const icons = { success: 'check-circle', error: 'x-circle', info: 'loader' };
+      const entry = document.createElement('div');
+      entry.className = `geocode-log-entry ${type}`;
+      entry.innerHTML = `<i data-lucide="${icons[type] || 'info'}" style="width:11px;height:11px;flex-shrink:0;"></i><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${text}</span>`;
+      log.insertBefore(entry, log.firstChild);
+      // Keep max 100 entries
+      while (log.children.length > 100) log.removeChild(log.lastChild);
+      lucide.createIcons();
+    }
+
+    function updateGeocodeStats(ok, err, pending, pct) {
+      document.getElementById('geocode-stat-ok').textContent = ok;
+      document.getElementById('geocode-stat-err').textContent = err;
+      document.getElementById('geocode-stat-pending').textContent = pending;
+      document.getElementById('geocode-progress-fill').style.width = `${pct}%`;
+      document.getElementById('geocode-panel-pct').textContent = `${pct}%`;
+    }
 
     async function geocodeClientsWithoutCoords() {
-      // Filter clients without coordinates that have some address info
       const clientsToGeocode = allClients.filter(c => !c.lat && !c.lng && (c.address || c.commune));
 
       if (clientsToGeocode.length === 0) {
@@ -7258,20 +7388,27 @@
 
       geocodingCancelled = false;
 
-      // Disable buttons during processing
+      // Open progress panel
+      openGeocodePanel();
+      document.getElementById('geocode-panel-log').innerHTML = '';
+      document.getElementById('geocode-panel-title').textContent = 'Geocodificando...';
+      document.getElementById('geocode-close-btn').style.display = 'none';
+
       const btn = document.getElementById('btn-geocode-header');
       const btnLegend = document.getElementById('btn-geocode');
       const geocodeAlert = document.getElementById('geocode-alert');
 
       if (btn) {
-        btn.disabled = false;
         btn.textContent = 'Cancelar';
+        btn.style.background = '#ef4444';
+        btn.style.color = 'white';
         btn.onclick = () => { geocodingCancelled = true; };
       }
       if (btnLegend) { btnLegend.disabled = true; }
 
-      const totalToProcess = Math.min(clientsToGeocode.length, 200); // Process max 200 at a time
-      showToast('info', 'Geocodificando', `Procesando ${totalToProcess} clientes (de ${clientsToGeocode.length}). Puedes cancelar en cualquier momento.`);
+      const totalToProcess = Math.min(clientsToGeocode.length, 200);
+      updateGeocodeStats(0, 0, totalToProcess, 0);
+      geocodeLogEntry(`Iniciando proceso: ${totalToProcess} clientes de ${clientsToGeocode.length}`, 'info');
 
       const geocoder = new google.maps.Geocoder();
       let processed = 0;
@@ -7279,17 +7416,16 @@
       let errors = 0;
       let rateLimitHits = 0;
 
-      // Chile bounds validation
       const isInChile = (lat, lng) => lat >= -56 && lat <= -17 && lng >= -76 && lng <= -66;
 
-      // Process clients in batches
       for (let i = 0; i < totalToProcess; i++) {
         if (geocodingCancelled) {
-          showToast('warning', 'Cancelado', `Proceso cancelado. ${success} clientes geocodificados.`);
+          geocodeLogEntry(`Cancelado por usuario. ${success} geocodificados.`, 'info');
           break;
         }
 
         const client = clientsToGeocode[i];
+        const clientName = client.fantasy_name || client.name || client.external_id;
         let addressParts = [];
         if (client.address) addressParts.push(client.address);
         if (client.commune) addressParts.push(client.commune);
@@ -7299,12 +7435,10 @@
         try {
           const result = await new Promise((resolve, reject) => {
             const timeout = setTimeout(() => reject('TIMEOUT'), 10000);
-
             geocoder.geocode({ address }, (results, status) => {
               clearTimeout(timeout);
               if (status === 'OK' && results[0]) {
                 const loc = results[0].geometry.location;
-                // Validate coordinates are in Chile
                 if (isInChile(loc.lat(), loc.lng())) {
                   resolve(loc);
                 } else {
@@ -7319,7 +7453,6 @@
             });
           });
 
-          // Update client in database
           await fetch(`${API}/api/clients/${client.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -7329,66 +7462,58 @@
           client.lat = result.lat();
           client.lng = result.lng();
           success++;
+          geocodeLogEntry(`${clientName} — ${client.commune || ''}`, 'success');
         } catch (e) {
           errors++;
-          // If rate limited, increase delay
+          const reason = e === 'OUTSIDE_CHILE' ? 'fuera de Chile' : e === 'RATE_LIMIT' ? 'límite API' : e === 'TIMEOUT' ? 'timeout' : 'sin resultado';
+          geocodeLogEntry(`${clientName} — ${reason}`, 'error');
           if (e === 'RATE_LIMIT' && rateLimitHits > 3) {
-            showToast('warning', 'Límite de Google', 'Esperando 5 segundos por límite de API...');
+            geocodeLogEntry('Esperando 5s por límite de Google...', 'info');
             await new Promise(r => setTimeout(r, 5000));
             rateLimitHits = 0;
           }
         }
 
         processed++;
-
-        // Update progress
         const pct = Math.round((processed / totalToProcess) * 100);
+        updateGeocodeStats(success, errors, totalToProcess - processed, pct);
+
         if (btn && !geocodingCancelled) btn.textContent = `${pct}% - Cancelar`;
         if (geocodeAlert) {
           const countEl = document.getElementById('geocode-count');
           if (countEl) countEl.textContent = clientsToGeocode.length - success;
         }
 
-        // Update map every 25 clients
         if (processed % 25 === 0 && success > 0) {
           addClientMarkers(allClients);
         }
 
-        // Delay between requests (500ms to avoid rate limits)
         await new Promise(r => setTimeout(r, 500));
       }
 
-      // Show completion message
-      if (errors > 0) {
-        showToast('warning', 'Geocodificación completada', `${success} exitosos, ${errors} con error de ${processed} procesados`);
-      } else {
-        showToast('success', 'Geocodificación completada', `${success} clientes ubicados en el mapa`);
-      }
+      // Completed
+      document.getElementById('geocode-panel-title').textContent = geocodingCancelled ? 'Geocodificación cancelada' : 'Geocodificación completa';
+      document.getElementById('geocode-close-btn').style.display = 'flex';
+      geocodeLogEntry(`Resultado: ${success} OK, ${errors} errores de ${processed} procesados`, 'info');
 
-      // Refresh markers and update stats
       addClientMarkers(allClients);
 
-      // Check remaining clients without coords
       const remaining = allClients.filter(c => !c.lat && !c.lng && (c.address || c.commune)).length;
 
       if (remaining === 0) {
-        // Hide geocode alert if no more clients to process
         if (geocodeAlert) geocodeAlert.style.display = 'none';
         if (btnLegend) btnLegend.style.display = 'none';
       } else {
-        // Re-enable buttons for remaining clients
         if (btn) {
-          btn.disabled = false;
           btn.textContent = 'Cargar Ubicaciones';
+          btn.style.background = 'white';
+          btn.style.color = '#d97706';
           btn.onclick = geocodeClientsWithoutCoords;
         }
         if (btnLegend) { btnLegend.disabled = false; }
         if (geocodeAlert) {
           const countEl = document.getElementById('geocode-count');
           if (countEl) countEl.textContent = remaining;
-        }
-        if (remaining > 0) {
-          showToast('info', 'Quedan pendientes', `${remaining} clientes aún sin ubicación. Puedes continuar después.`);
         }
       }
 
@@ -8070,7 +8195,7 @@
     // =============================================
 
     let currentActiveRoute = null;
-    let FUEL_PRICE_PER_LITER = 1141; // CLP - ENAP Bencina 93 feb 2026
+    let FUEL_PRICE_PER_LITER = 1141; // CLP - Bencina 93 octanos Chile
     const AVERAGE_SPEED_KMH = 30; // Average city driving speed
 
     // Calculate distance between two points using Haversine formula
@@ -8441,6 +8566,7 @@
 
     let selectedExecutiveId = null;
     let executiveClients = [];
+    let excludedClientIds = new Set(); // Clients excluded from route optimization
 
     // Executive search dropdown functions
     function showExecutiveDropdown() {
@@ -8525,6 +8651,9 @@
       dropdown.style.display = 'none';
       document.removeEventListener('click', closeExecutiveDropdownOnClickOutside);
 
+      // Clear excluded clients when switching vendor
+      excludedClientIds.clear();
+
       // Update vendor info card and show/hide sections
       updateSelectedVendorCard(execId);
 
@@ -8563,8 +8692,9 @@
       const hasCompletedRoute = execRoute && execRoute.status === 'completed';
       const visitsCount = execRoute ? (execRoute.visits?.length || execRoute.visits_count || 0) : 0;
 
-      // Get scheduled routes count
-      const scheduledCount = (window.allScheduledRoutes || []).filter(sr => sr.user_id === execId && sr.status === 'pending').length;
+      // Fetch scheduled routes count from API (async, updates after render)
+      const scheduledCount = 0;
+      fetchScheduledCountForVendor(execId);
 
       // Get zone info
       const gsData = findVendedorData(exec.full_name);
@@ -8612,6 +8742,27 @@
       }
 
       lucide.createIcons();
+    }
+
+    async function fetchScheduledCountForVendor(execId) {
+      try {
+        // Get date range: today to 3 months ahead
+        const today = new Date();
+        const future = new Date();
+        future.setMonth(future.getMonth() + 3);
+        const startDate = today.toISOString().split('T')[0];
+        const endDate = future.toISOString().split('T')[0];
+        const res = await fetch(`${API}/api/routes/schedule/${execId}?startDate=${startDate}&endDate=${endDate}`);
+        const data = await res.json();
+        if (data.success) {
+          let count = 0;
+          Object.values(data.data).forEach(dayRoutes => { count += dayRoutes.length; });
+          const el = document.getElementById('vendor-card-scheduled');
+          if (el) el.textContent = count;
+        }
+      } catch (e) {
+        console.error('Error fetching scheduled count:', e);
+      }
     }
 
     // =============================================
@@ -8750,7 +8901,8 @@
       try {
         showToast('info', 'Calculando', `Generando ruta para ${zone}...`);
 
-        const res = await fetch(`${API}/routes/optimize/${selectedExecutiveId}?zone=${encodeURIComponent(zone)}`);
+        const excludeParam = excludedClientIds.size > 0 ? `&exclude=${[...excludedClientIds].join(',')}` : '';
+        const res = await fetch(`${API}/routes/optimize/${selectedExecutiveId}?zone=${encodeURIComponent(zone)}${excludeParam}`);
         const data = await res.json();
 
         if (!data.success) {
@@ -8800,12 +8952,20 @@
         const dayKeys = Object.keys(optimizedRouteData.days).sort();
         selectedOptDay = dayKeys[0];
 
-        // Show total stats header (always totals, never per-day)
-        document.getElementById('opt-total-clients').textContent = stats.totalClients;
-        document.getElementById('opt-distance').textContent = `${stats.distanceKm} km`;
-        document.getElementById('opt-liters').textContent = `${stats.litersUsed} L`;
-        document.getElementById('opt-cost').textContent = `$${stats.costCLP.toLocaleString('es-CL')}`;
-        document.getElementById('opt-time').textContent = `${stats.totalDays} días`;
+        // Show first day stats in header (updates when switching tabs)
+        const firstDayStats = optimizedRouteData.days[dayKeys[0]].stats;
+        document.getElementById('opt-total-clients').textContent = firstDayStats.totalClients;
+        document.getElementById('opt-distance').textContent = `${firstDayStats.distanceKm} km`;
+        document.getElementById('opt-liters').textContent = `${firstDayStats.litersUsed} L`;
+        document.getElementById('opt-cost').textContent = `$${firstDayStats.costCLP.toLocaleString('es-CL')}`;
+        const firstDayMin = firstDayStats.estimatedTime || 0;
+        if (firstDayMin >= 60) {
+          const h = Math.floor(firstDayMin / 60);
+          const m = firstDayMin % 60;
+          document.getElementById('opt-time').textContent = m > 0 ? `${h}h ${m}m` : `${h}h`;
+        } else {
+          document.getElementById('opt-time').textContent = `${firstDayMin} min`;
+        }
         // Add "Total Semana" label
         const weeklyTotals = document.getElementById('opt-weekly-totals');
         if (weeklyTotals) weeklyTotals.setAttribute('title', `Total ${stats.totalDays} días de ruta`);
@@ -8879,6 +9039,22 @@
         btn.style.borderColor = isActive ? '#10b981' : 'var(--border)';
         btn.style.fontWeight = isActive ? '700' : '500';
       });
+      // Update header stats to show selected day's data
+      if (optimizedRouteData?.days?.[date]) {
+        const dayStats = optimizedRouteData.days[date].stats;
+        document.getElementById('opt-total-clients').textContent = dayStats.totalClients;
+        document.getElementById('opt-distance').textContent = `${dayStats.distanceKm} km`;
+        document.getElementById('opt-liters').textContent = `${dayStats.litersUsed} L`;
+        document.getElementById('opt-cost').textContent = `$${dayStats.costCLP.toLocaleString('es-CL')}`;
+        const totalMin = dayStats.estimatedTime || 0;
+        if (totalMin >= 60) {
+          const h = Math.floor(totalMin / 60);
+          const m = totalMin % 60;
+          document.getElementById('opt-time').textContent = m > 0 ? `${h}h ${m}m` : `${h}h`;
+        } else {
+          document.getElementById('opt-time').textContent = `${totalMin} min`;
+        }
+      }
       // Show day detail with clients
       renderOptDayDetail(date);
       // Redraw map for this day
@@ -9207,16 +9383,25 @@
       const isMultiDay = optimizedRouteData.days && Object.keys(optimizedRouteData.days).length > 0;
       const vendorId = selectedExecutiveId;
 
-      // Loading feedback
-      const btn = document.getElementById('btn-confirm-schedule');
-      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:-2px;"></span> Programando...'; }
+      // Read data from modal BEFORE replacing content with overlay
+      const shiftedMapping = isMultiDay ? getShiftedDaysMapping() : null;
+      const singleDate = !isMultiDay ? document.getElementById('schedule-route-date').value : null;
+
+      // Show full loading overlay on modal
+      const modalContent = document.querySelector('#schedule-route-modal > div');
+      const originalContent = modalContent.innerHTML;
+      modalContent.innerHTML = `
+        <div style="text-align:center; padding:48px 24px;">
+          <div class="spinner" style="width:40px;height:40px;border-width:3px;margin:0 auto 16px;"></div>
+          <h3 style="margin:0 0 8px 0; color:var(--text); font-size:16px;">Programando ruta...</h3>
+          <p style="color:var(--text-muted); font-size:13px; margin:0;">Guardando clientes y horarios en el plan</p>
+        </div>`;
 
       try {
         let firstDate;
+        let scheduledClientCount = 0;
 
         if (isMultiDay) {
-          // Build multi-day payload using shifted dates from modal
-          const shiftedMapping = getShiftedDaysMapping();
           const daysPayload = {};
           const newDates = Object.keys(shiftedMapping).sort();
           firstDate = newDates[0];
@@ -9227,6 +9412,7 @@
               id: c.id,
               estimatedArrival: c.estimatedArrival || null
             }));
+            scheduledClientCount += dayData.route.length;
           }
 
           const res = await fetch(`${API}/api/routes/schedule-optimized-multi`, {
@@ -9237,22 +9423,33 @@
           const data = await res.json();
           if (!data.success) {
             showToast('error', 'Error', data.error || 'No se pudo programar la ruta');
+            modalContent.innerHTML = originalContent;
+            lucide.createIcons();
             return;
           }
 
-          closeScheduleRouteModal();
-          const totalClients = optimizedRouteData.totalStats?.totalClients || (optimizedRouteData.route && optimizedRouteData.route.length) || 0;
-          showToast('success', 'Ruta programada', `${totalClients} clientes en ${newDates.length} días programados.`);
+          // Show success in modal briefly
+          modalContent.innerHTML = `
+            <div style="text-align:center; padding:48px 24px;">
+              <div style="width:48px;height:48px;border-radius:50%;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <i data-lucide="check" style="width:28px;height:28px;color:var(--success);"></i>
+              </div>
+              <h3 style="margin:0 0 8px 0; color:var(--success); font-size:16px;">Ruta programada</h3>
+              <p style="color:var(--text-muted); font-size:13px; margin:0;">${scheduledClientCount} clientes en ${newDates.length} días</p>
+            </div>`;
+          lucide.createIcons();
 
         } else {
-          // Single day fallback
-          const date = document.getElementById('schedule-route-date').value;
+          const date = singleDate;
           if (!date) {
             showToast('warning', 'Sin fecha', 'Selecciona una fecha');
+            modalContent.innerHTML = originalContent;
+            lucide.createIcons();
             return;
           }
           firstDate = date;
           const clients = optimizedRouteData.route.map(c => ({ id: c.id }));
+          scheduledClientCount = clients.length;
 
           const res = await fetch(`${API}/api/routes/schedule-optimized`, {
             method: 'POST',
@@ -9262,28 +9459,31 @@
           const data = await res.json();
           if (!data.success) {
             showToast('error', 'Error', data.error || 'No se pudo programar la ruta');
+            modalContent.innerHTML = originalContent;
+            lucide.createIcons();
             return;
           }
 
-          closeScheduleRouteModal();
           const dateObj = new Date(date + 'T12:00:00');
           const dateLabel = dateObj.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
-          showToast('success', 'Ruta programada', `${optimizedRouteData.route.length} clientes para ${dateLabel}.`);
+          modalContent.innerHTML = `
+            <div style="text-align:center; padding:48px 24px;">
+              <div style="width:48px;height:48px;border-radius:50%;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <i data-lucide="check" style="width:28px;height:28px;color:var(--success);"></i>
+              </div>
+              <h3 style="margin:0 0 8px 0; color:var(--success); font-size:16px;">Ruta programada</h3>
+              <p style="color:var(--text-muted); font-size:13px; margin:0;">${clients.length} clientes para ${dateLabel}</p>
+            </div>`;
+          lucide.createIcons();
         }
 
-        // 1. Reset wizard so "Gestionar" starts fresh next time
-        resetRouteWizard();
+        // Brief pause to show success animation
+        await new Promise(r => setTimeout(r, 1200));
+        closeScheduleRouteModal();
+        modalContent.innerHTML = originalContent;
+        lucide.createIcons();
 
-        // 2. Switch to Planner Semanal tab
-        switchRouteTab('planner');
-
-        // 3. Set vendor dropdown (must happen after tab switch)
-        const scheduleVendor = document.getElementById('schedule-vendor');
-        if (scheduleVendor) {
-          scheduleVendor.value = vendorId;
-        }
-
-        // 4. Navigate to the correct week
+        // 1. Calculate target week BEFORE switching tab
         const targetDate = new Date(firstDate + 'T12:00:00');
         const now = new Date();
         const dayOfWeek = now.getDay();
@@ -9293,24 +9493,26 @@
         thisMonday.setHours(0,0,0,0);
         const diffDays = Math.floor((targetDate - thisMonday) / (1000 * 60 * 60 * 24));
         const weekOffset = Math.floor(diffDays / 7);
+
+        // 2. Set correct week dates FIRST
         setWeekFromOffset(weekOffset);
 
-        // 5. Load schedule passing vendorId directly (avoids dropdown timing issues)
-        await loadExistingSchedule(vendorId);
+        // 3. Reset wizard (clears route data, goes to step 1)
+        resetRouteWizard();
 
-        // 6. Scroll to planner
+        // 4. Switch to Planner (auto-calls loadWeeklyAllExecs with correct dates)
+        switchRouteTab('planner');
+
+        // 5. Scroll to planner
         setTimeout(() => {
           const plannerCard = document.getElementById('weekly-planner-card');
-          if (plannerCard) {
-            plannerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 200);
+          if (plannerCard) plannerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
       } catch (e) {
         console.error('Error scheduling route:', e);
         showToast('error', 'Error', 'Error al programar: ' + (e.message || 'Error desconocido'));
-      } finally {
-        const btn2 = document.getElementById('btn-confirm-schedule');
-        if (btn2) { btn2.disabled = false; btn2.innerHTML = '<i data-lucide="check" style="width:14px;height:14px;"></i> Programar Todo'; lucide.createIcons(); }
+        modalContent.innerHTML = originalContent;
+        lucide.createIcons();
       }
     }
 
@@ -9453,7 +9655,7 @@
           const liters = (directions.totalDistanceKm / fuelEff).toFixed(1);
           const cost = Math.round((directions.totalDistanceKm / fuelEff) * FUEL_PRICE_PER_LITER);
           const clientCount = routeClients.length;
-          const totalTimeMin = directions.totalDurationMin + (clientCount * 30); // + 30min per visit
+          const totalTimeMin = directions.totalDurationMin + (clientCount * 35); // + 35min per visit
           document.getElementById('opt-distance').textContent = `${directions.totalDistanceKm} km`;
           document.getElementById('opt-liters').textContent = `${liters} L`;
           document.getElementById('opt-cost').textContent = `$${cost.toLocaleString('es-CL')}`;
@@ -9587,20 +9789,150 @@
         return;
       }
 
-      listDiv.innerHTML = executiveClients.slice(0, 50).map(c => {
+      // If optimized route exists, show clients grouped by day in route order
+      if (optimizedRouteData && optimizedRouteData.days) {
+        renderRouteOrderedClients(listDiv);
+        return;
+      }
+
+      // No optimized route — show plain list with exclude buttons
+      renderPlainClientList(listDiv);
+    }
+
+    function renderRouteOrderedClients(listDiv) {
+      const dayKeys = Object.keys(optimizedRouteData.days).sort();
+      const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      const excludedCount = excludedClientIds.size;
+
+      // Build set of all route client IDs
+      const routeClientIds = new Set();
+      dayKeys.forEach(date => {
+        (optimizedRouteData.days[date].route || []).forEach(c => routeClientIds.add(c.id));
+      });
+
+      // Clients not in route (no GPS or excluded)
+      const notInRoute = executiveClients.filter(c => !routeClientIds.has(c.id));
+
+      let html = '';
+
+      // Header
+      html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(59,130,246,0.08)); border-bottom: 1px solid var(--border);">
+        <span style="font-size: 11px; font-weight: 600; color: var(--text);"><i data-lucide="route" style="width:12px;height:12px;display:inline-block;vertical-align:middle;"></i> Ruta optimizada · ${routeClientIds.size} clientes</span>
+        ${excludedCount > 0 ? `<button onclick="restoreAllClients()" style="background: none; border: 1px solid #10b981; color: #10b981; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: 600;">Restaurar excluidos (${excludedCount})</button>` : ''}
+      </div>`;
+
+      // Render each day as collapsible
+      dayKeys.forEach((date, dayIdx) => {
+        const d = new Date(date + 'T12:00:00');
+        const dayName = dayNames[d.getDay()];
+        const dayNum = d.getDate();
+        const dayData = optimizedRouteData.days[date];
+        const clients = dayData.route || [];
+        const stats = dayData.stats;
+        const panelId = `day-clients-${date}`;
+        const isFirst = dayIdx === 0;
+
+        // Day header — clickable to toggle
+        html += `<div onclick="toggleDayClients('${panelId}', this); selectOptDay('${date}')" style="padding: 8px 12px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; font-size: 11px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <span style="display:flex;align-items:center;gap:6px;">
+            <i data-lucide="${isFirst ? 'chevron-down' : 'chevron-right'}" class="day-toggle-icon" style="width:14px;height:14px;transition:transform 0.2s;"></i>
+            <i data-lucide="calendar" style="width:12px;height:12px;"></i>
+            ${dayName} ${dayNum} — ${clients.length} clientes
+          </span>
+          <span style="opacity: 0.85; font-weight: 500; font-size: 10px;">${stats.distanceKm}km · $${stats.costCLP.toLocaleString('es-CL')}</span>
+        </div>`;
+
+        // Client rows — first day expanded, rest collapsed
+        html += `<div id="${panelId}" style="${isFirst ? '' : 'display:none;'}">`;
+        clients.forEach((c, i) => {
+          const hasGps = c.lat && c.lng;
+          const isStart = i === 0;
+          html += `<div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--border); font-size: 12px;">
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: ${isStart ? '#10b981' : '#3b82f6'}; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0;">${i + 1}</span>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.fantasy_name || c.name}</div>
+              <div style="font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.commune || ''} ${c.address ? '· ' + c.address : ''}</div>
+            </div>
+            <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+              ${hasGps ? `<button onclick="event.stopPropagation(); openWazeToClient(${c.lat},${c.lng})" style="background: none; border: none; cursor: pointer; padding: 2px; display:flex;" title="Waze"><i data-lucide="navigation" style="width:12px;height:12px;color:#33ccff;"></i></button>` : ''}
+              <button onclick="event.stopPropagation(); removeClientFromRoute('${c.id}','${date}')" style="background: none; border: none; cursor: pointer; padding: 2px; display:flex;" title="Quitar de la ruta"><i data-lucide="x" style="width:13px;height:13px;color:#ef4444;"></i></button>
+            </div>
+          </div>`;
+        });
+        html += `</div>`;
+      });
+
+      // Clients not in route (sin GPS) — also collapsible
+      if (notInRoute.length > 0) {
+        html += `<div onclick="toggleDayClients('no-gps-clients', this)" style="padding: 8px 12px; background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+          <i data-lucide="chevron-right" class="day-toggle-icon" style="width:14px;height:14px;transition:transform 0.2s;"></i>
+          <i data-lucide="alert-triangle" style="width:12px;height:12px;"></i> ${notInRoute.length} clientes sin GPS (no incluidos)
+        </div>`;
+        html += `<div id="no-gps-clients" style="display:none;">`;
+        notInRoute.slice(0, 20).forEach(c => {
+          html += `<div style="display: flex; align-items: center; gap: 8px; padding: 5px 12px; border-bottom: 1px solid var(--border); font-size: 11px; opacity: 0.6;">
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: #d1d5db; color: white; display: flex; align-items: center; justify-content: center; font-size: 9px; flex-shrink: 0;">—</span>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.fantasy_name || c.name}</div>
+              <div style="font-size: 9px; color: var(--text-muted);">${c.commune || 'Sin comuna'} · ${c.address || 'Sin dirección'}</div>
+            </div>
+            <button onclick="event.stopPropagation(); openEditLocationModal('${c.id}', '${(c.fantasy_name || c.name).replace(/'/g, "\\'")}', '${c.address || ''}')" style="background: #fbbf24; color: #78350f; border: none; padding: 2px 6px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: 600;">+ GPS</button>
+          </div>`;
+        });
+        if (notInRoute.length > 20) {
+          html += `<div style="padding: 4px 12px; text-align: center; color: var(--text-muted); font-size: 10px;">... y ${notInRoute.length - 20} más sin GPS</div>`;
+        }
+        html += `</div>`;
+      }
+
+      listDiv.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function toggleDayClients(panelId, headerEl) {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const isOpen = panel.style.display !== 'none';
+      panel.style.display = isOpen ? 'none' : 'block';
+      // Update chevron icon
+      const icon = headerEl.querySelector('.day-toggle-icon');
+      if (icon) {
+        icon.setAttribute('data-lucide', isOpen ? 'chevron-right' : 'chevron-down');
+        lucide.createIcons();
+      }
+    }
+
+    function renderPlainClientList(listDiv) {
+      const sortedClients = [...executiveClients].sort((a, b) => {
+        const aExcl = excludedClientIds.has(a.id) ? 1 : 0;
+        const bExcl = excludedClientIds.has(b.id) ? 1 : 0;
+        return aExcl - bExcl;
+      });
+
+      const activeCount = executiveClients.filter(c => !excludedClientIds.has(c.id)).length;
+      const excludedCount = excludedClientIds.size;
+
+      let headerHtml = `<div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: var(--bg-hover); border-bottom: 1px solid var(--border);">
+        <span style="font-size: 11px; font-weight: 600; color: var(--text);">${activeCount} en ruta${excludedCount > 0 ? ` · <span style="color:#ef4444;">${excludedCount} excluidos</span>` : ''}</span>
+        ${excludedCount > 0 ? `<button onclick="restoreAllClients()" style="background: none; border: 1px solid #10b981; color: #10b981; padding: 2px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: 600;">Restaurar todos</button>` : ''}
+      </div>`;
+
+      listDiv.innerHTML = headerHtml + sortedClients.slice(0, 50).map(c => {
         const segmentColors = { A: '#22c55e', B: '#3b82f6', C: '#6b7280' };
         const segment = c.segment || 'C';
         const segmentColor = segmentColors[segment] || '#6b7280';
         const isFoco = c.priority === 'FOCO';
         const hasGps = c.lat && c.lng;
+        const isExcluded = excludedClientIds.has(c.id);
         return `
-        <div style="padding: 10px 12px; border-bottom: 1px solid var(--border); ${isFoco ? 'background: rgba(239,68,68,0.05);' : ''} ${!hasGps ? 'background: rgba(251,191,36,0.1);' : ''}">
+        <div style="padding: 10px 12px; border-bottom: 1px solid var(--border); ${isExcluded ? 'opacity: 0.4; background: rgba(239,68,68,0.05);' : ''} ${!isExcluded && isFoco ? 'background: rgba(239,68,68,0.05);' : ''} ${!isExcluded && !hasGps ? 'background: rgba(251,191,36,0.1);' : ''}">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
             <div style="flex: 1; min-width: 0;">
               <div style="font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                <span style="color: ${hasGps ? 'var(--text)' : '#b45309'};">${c.fantasy_name || c.name}</span>
-                ${isFoco ? '<span style="background: #ef4444; color: white; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: 600;">FOCO</span>' : ''}
-                ${!hasGps ? '<span title="Sin ubicación GPS"><i data-lucide="map-pin-off" style="width:12px;height:12px;color:#f59e0b;"></i></span>' : '<span title="Con GPS"><i data-lucide="map-pin" style="width:12px;height:12px;color:#10b981;"></i></span>'}
+                <span style="color: ${isExcluded ? '#9ca3af' : hasGps ? 'var(--text)' : '#b45309'}; ${isExcluded ? 'text-decoration: line-through;' : ''}">${c.fantasy_name || c.name}</span>
+                ${isExcluded ? '<span style="background: #ef4444; color: white; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: 600;">EXCLUIDO</span>' : ''}
+                ${!isExcluded && isFoco ? '<span style="background: #ef4444; color: white; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: 600;">FOCO</span>' : ''}
+                ${!isExcluded && !hasGps ? '<span title="Sin ubicación GPS"><i data-lucide="map-pin-off" style="width:12px;height:12px;color:#f59e0b;"></i></span>' : !isExcluded ? '<span title="Con GPS"><i data-lucide="map-pin" style="width:12px;height:12px;color:#10b981;"></i></span>' : ''}
               </div>
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
                 <code style="background: var(--bg-hover); padding: 1px 4px; border-radius: 3px; font-size: 10px;">${c.external_id}</code>
@@ -9609,16 +9941,141 @@
               <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.address || ''}">${c.address || 'Sin dirección'}</div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+              ${isExcluded
+                ? `<button onclick="toggleExcludeClient('${c.id}')" style="background: #10b981; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: 600; display:inline-flex; align-items:center; gap:3px;" title="Restaurar cliente"><i data-lucide="plus" style="width:10px;height:10px;"></i> Incluir</button>`
+                : `<button onclick="toggleExcludeClient('${c.id}')" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: 600; display:inline-flex; align-items:center; gap:3px;" title="Quitar de la ruta"><i data-lucide="x" style="width:10px;height:10px;"></i> Quitar</button>`
+              }
               <span style="background: ${segmentColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">${segment}</span>
-              ${hasGps ? `<button onclick="openWazeToClient(${c.lat}, ${c.lng})" style="background: #33ccff; color: #000; border: none; padding: 2px 6px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: 600; display:inline-flex; align-items:center; gap:2px;" title="Ir con Waze"><i data-lucide="navigation" style="width:10px;height:10px;"></i></button>` : `<button onclick="openEditLocationModal('${c.id}', '${(c.fantasy_name || c.name).replace(/'/g, "\\'")}', '${c.address || ''}')" style="background: #fbbf24; color: #78350f; border: none; padding: 2px 6px; border-radius: 4px; font-size: 9px; cursor: pointer;" title="Agregar ubicación">+ GPS</button>`}
+              ${!isExcluded && hasGps ? `<button onclick="openWazeToClient(${c.lat}, ${c.lng})" style="background: #33ccff; color: #000; border: none; padding: 2px 6px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: 600; display:inline-flex; align-items:center; gap:2px;" title="Ir con Waze"><i data-lucide="navigation" style="width:10px;height:10px;"></i></button>` : !isExcluded ? `<button onclick="openEditLocationModal('${c.id}', '${(c.fantasy_name || c.name).replace(/'/g, "\\'")}', '${c.address || ''}')" style="background: #fbbf24; color: #78350f; border: none; padding: 2px 6px; border-radius: 4px; font-size: 9px; cursor: pointer;" title="Agregar ubicación">+ GPS</button>` : ''}
             </div>
           </div>
         </div>`;
       }).join('');
 
-      if (executiveClients.length > 50) {
-        listDiv.innerHTML += `<div style="padding: 8px; text-align: center; color: var(--text-muted); font-size: 12px;">... y ${executiveClients.length - 50} más</div>`;
+      if (sortedClients.length > 50) {
+        listDiv.innerHTML += `<div style="padding: 8px; text-align: center; color: var(--text-muted); font-size: 12px;">... y ${sortedClients.length - 50} más</div>`;
       }
+      lucide.createIcons();
+    }
+
+    function removeClientFromRoute(clientId, date) {
+      if (!optimizedRouteData || !optimizedRouteData.days || !optimizedRouteData.days[date]) return;
+
+      const dayData = optimizedRouteData.days[date];
+      const removedClient = dayData.route.find(c => c.id === clientId);
+      if (!removedClient) return;
+
+      // Remove client from the day's route
+      dayData.route = dayData.route.filter(c => c.id !== clientId);
+
+      // Recalculate day stats
+      recalcDayStats(dayData);
+
+      // If day has no clients, remove the day
+      if (dayData.route.length === 0) {
+        delete optimizedRouteData.days[date];
+      }
+
+      // Recalculate total stats
+      recalcTotalStats();
+
+      // Also add to excluded so regeneration won't include this client
+      excludedClientIds.add(clientId);
+
+      // Refresh UI
+      const exec = executives.find(e => e.id === selectedExecutiveId);
+      const vendorName = exec ? exec.full_name : 'Vendedor';
+      displayOptimizedRoute(vendorName, selectedZone);
+
+      // Refresh step 3 list
+      loadExecutiveClients();
+
+      // Redraw map
+      const remainingDays = Object.keys(optimizedRouteData.days).sort();
+      if (remainingDays.length > 0) {
+        if (!remainingDays.includes(selectedOptDay)) {
+          selectedOptDay = remainingDays[0];
+        }
+        drawOptimizedRouteOnMap(selectedOptDay);
+      }
+
+      showToast('success', 'Cliente removido', `${removedClient.fantasy_name || removedClient.name} fue quitado de la ruta.`);
+    }
+
+    function recalcDayStats(dayData) {
+      const route = dayData.route;
+      let totalDist = 0;
+      const AVG_VISIT_MIN = 35;
+      const AVG_SPEED = 30; // km/h
+
+      for (let i = 1; i < route.length; i++) {
+        const prev = route[i - 1];
+        const curr = route[i];
+        if (prev.lat && prev.lng && curr.lat && curr.lng) {
+          totalDist += haversineDistanceFront(parseFloat(prev.lat), parseFloat(prev.lng), parseFloat(curr.lat), parseFloat(curr.lng));
+        }
+      }
+
+      const distKm = Math.round(totalDist * 10) / 10;
+      const travelMin = Math.round((totalDist / AVG_SPEED) * 60);
+      const visitMin = route.length * AVG_VISIT_MIN;
+      const totalMin = travelMin + visitMin;
+      const liters = Math.round((distKm / 10) * 100) / 100;
+      const cost = Math.round(liters * 1141);
+
+      dayData.stats.totalClients = route.length;
+      dayData.stats.distanceKm = distKm;
+      dayData.stats.estimatedTime = totalMin;
+      dayData.stats.litersUsed = liters;
+      dayData.stats.costCLP = cost;
+    }
+
+    function recalcTotalStats() {
+      const days = optimizedRouteData.days;
+      const dayKeys = Object.keys(days);
+      let totalClients = 0, totalDist = 0, totalTime = 0, totalLiters = 0, totalCost = 0;
+
+      dayKeys.forEach(date => {
+        const s = days[date].stats;
+        totalClients += s.totalClients;
+        totalDist += s.distanceKm;
+        totalTime += s.estimatedTime;
+        totalLiters += s.litersUsed;
+        totalCost += s.costCLP;
+      });
+
+      if (!optimizedRouteData.totalStats) optimizedRouteData.totalStats = {};
+      optimizedRouteData.totalStats.totalClients = totalClients;
+      optimizedRouteData.totalStats.totalDays = dayKeys.length;
+      optimizedRouteData.totalStats.distanceKm = Math.round(totalDist * 10) / 10;
+      optimizedRouteData.totalStats.estimatedTime = totalTime;
+      optimizedRouteData.totalStats.litersUsed = Math.round(totalLiters * 100) / 100;
+      optimizedRouteData.totalStats.costCLP = Math.round(totalCost);
+    }
+
+    // Frontend haversine for recalculating distances
+    function haversineDistanceFront(lat1, lng1, lat2, lng2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function toggleExcludeClient(clientId) {
+      if (excludedClientIds.has(clientId)) {
+        excludedClientIds.delete(clientId);
+      } else {
+        excludedClientIds.add(clientId);
+      }
+      loadExecutiveClients();
+    }
+
+    function restoreAllClients() {
+      excludedClientIds.clear();
+      loadExecutiveClients();
     }
 
     // Modal para editar ubicación de cliente manualmente
@@ -12299,6 +12756,11 @@
       const content = document.getElementById(`wizard-step-${step}`);
       if (content) content.classList.add('active');
 
+      // Step 3: refresh client list with route order
+      if (step === 3) {
+        loadExecutiveClients();
+      }
+
       // Step 4: populate summary
       if (step === 4 && optimizedRouteData) {
         buildStep4Summary();
@@ -12324,9 +12786,17 @@
 
     // Navigate to gestionar tab with specific vendor pre-selected
     function goToVendorRoute(userId) {
+      // Go to Planner Semanal to VIEW the exec's routes
+      switchRouteTab('planner');
+      const vendorSel = document.getElementById('schedule-vendor');
+      if (vendorSel) vendorSel.value = userId;
+      if (!document.getElementById('schedule-start').value) setWeekFromOffset(0);
+      showExecWeekDetail(userId);
+    }
+
+    function goToVendorGestionar(userId) {
       switchRouteTab('gestionar');
       goToRouteStep(1);
-      // Select this vendor
       const user = allUsers.find(u => u.id === userId);
       if (user) {
         const searchInput = document.getElementById('executive-search');
@@ -16430,9 +16900,9 @@
                 totalDist += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
               }
             }
-            // Estimate hours: travel at 40km/h + 30min per client
+            // Estimate hours: travel at 40km/h + 35min per client
             const travelH = totalDist / 40;
-            const visitH = clients.length * 0.5;
+            const visitH = clients.length * (35 / 60);
             const totalH = Math.round((travelH + visitH) * 10) / 10;
 
             schedule[date] = {
@@ -17863,5 +18333,34 @@
       <button onclick="sendAiMessage()">Enviar</button>
     </div>
   </div> -->
+
+  <!-- Geocoding Progress Panel -->
+  <div class="geocode-panel" id="geocode-panel">
+    <div class="geocode-panel-header" onclick="toggleGeocodePanel()">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i>
+        <span id="geocode-panel-title">Geocodificación</span>
+      </div>
+      <div class="geocode-header-actions">
+        <span id="geocode-panel-pct" style="font-size: 11px; opacity: 0.85;">0%</span>
+        <button onclick="event.stopPropagation(); toggleGeocodePanel()" title="Minimizar/Expandir">
+          <i data-lucide="minus" style="width: 14px; height: 14px;" id="geocode-toggle-icon"></i>
+        </button>
+        <button onclick="event.stopPropagation(); closeGeocodePanel()" title="Cerrar" id="geocode-close-btn">
+          <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+        </button>
+      </div>
+    </div>
+    <div class="geocode-progress-bar">
+      <div class="fill" id="geocode-progress-fill" style="width: 0%;"></div>
+    </div>
+    <div class="geocode-panel-stats">
+      <span style="color: #059669;"><i data-lucide="check-circle" style="width:11px;height:11px;display:inline-block;vertical-align:middle;"></i> <span id="geocode-stat-ok">0</span> OK</span>
+      <span style="color: #dc2626;"><i data-lucide="x-circle" style="width:11px;height:11px;display:inline-block;vertical-align:middle;"></i> <span id="geocode-stat-err">0</span> Error</span>
+      <span style="color: #6b7280;"><i data-lucide="loader" style="width:11px;height:11px;display:inline-block;vertical-align:middle;"></i> <span id="geocode-stat-pending">0</span> Pendientes</span>
+    </div>
+    <div class="geocode-panel-body" id="geocode-panel-log">
+    </div>
+  </div>
 </body>
 </html>

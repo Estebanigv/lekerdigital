@@ -49,7 +49,7 @@ app.use('/routes', authenticate);
 // CONFIGURACIÓN - Precio bencina (en memoria)
 // =============================================
 let fuelPriceConfig = {
-  price: 1141,        // CLP/litro - ENAP Bencina 93 feb 2026
+  price: 1141,        // CLP/litro - Bencina 93 octanos Chile
   updatedAt: new Date().toISOString(),
   updatedBy: 'system'
 };
@@ -915,12 +915,13 @@ app.get('/routes/zones/:userId', async (req, res) => {
 // Obtener ruta optimizada para un vendedor (filtrada por zona)
 app.get('/routes/optimize/:userId', async (req, res) => {
   try {
-    const { zone, startLat, startLng } = req.query;
+    const { zone, startLat, startLng, exclude } = req.query;
     let startPoint = null;
     if (startLat && startLng) {
       startPoint = { lat: parseFloat(startLat), lng: parseFloat(startLng) };
     }
-    const result = await routesService.getOptimizedRoute(req.params.userId, zone, startPoint);
+    const excludeIds = exclude ? exclude.split(',').filter(Boolean) : [];
+    const result = await routesService.getOptimizedRoute(req.params.userId, zone, startPoint, excludeIds);
     res.json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

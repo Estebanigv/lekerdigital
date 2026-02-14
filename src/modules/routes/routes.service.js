@@ -5,7 +5,7 @@ const { supabase } = require('../../config/database');
 // =============================================
 let VEHICLE_CONFIG = {
   FUEL_EFFICIENCY_KML: 10,        // 10 km por litro (vehículo estándar)
-  FUEL_PRICE_CLP: 1141,           // Precio bencina 93 octanos ENAP feb 2026 (CLP/litro)
+  FUEL_PRICE_CLP: 1141,           // Precio bencina 93 octanos Chile (CLP/litro)
   FUEL_TYPE: '93 octanos'
 };
 
@@ -140,9 +140,9 @@ function optimizeRouteOrder(clients, startPoint = null) {
  * al centroide, y para cuando se agota el presupuesto de tiempo (480 min).
  */
 function clusterClientsByProximity(clients) {
-  const TIME_BUDGET_MIN = 480; // 8 horas
+  const TIME_BUDGET_MIN = 540; // 9 horas (09:00 a 18:00)
   const SPEED_KMH = 40;
-  const VISIT_DURATION_MIN = 30;
+  const VISIT_DURATION_MIN = 35;
   const MAX_PER_CLUSTER = 15;
 
   if (!clients || clients.length === 0) return [];
@@ -1039,7 +1039,7 @@ class RoutesService {
     })).sort((a, b) => b.withGps - a.withGps); // Ordenar por los que tienen más GPS
   }
 
-  async getOptimizedRoute(userId, zone = null, startPoint = null) {
+  async getOptimizedRoute(userId, zone = null, startPoint = null, excludeIds = []) {
     // Construir query base
     let query = supabase
       .from('clients')
@@ -1053,7 +1053,10 @@ class RoutesService {
       query = query.eq('zone', zone);
     }
 
-    const { data: clients, error } = await query;
+    const { data: allClients, error } = await query;
+
+    // Filter out excluded clients
+    const clients = (allClients || []).filter(c => !excludeIds.includes(c.id));
 
     if (error) throw error;
 
@@ -1526,16 +1529,16 @@ class RoutesService {
 
   /**
    * Calcula timeline del día con hora estimada de llegada a cada cliente
-   * Velocidad promedio: 40 km/h, 30 min por visita, inicio 09:00
+   * Velocidad promedio: 40 km/h, 35 min por visita, inicio 09:00
    */
   calculateDayTimeline(orderedClients, startTime = '09:00') {
     const SPEED_KMH = 40;
-    const VISIT_DURATION_MIN = 30;
-    const END_OF_DAY = '17:00';
+    const VISIT_DURATION_MIN = 35;
+    const END_OF_DAY = '18:00';
 
     const [startH, startM] = startTime.split(':').map(Number);
     let currentMinutes = startH * 60 + startM;
-    const endMinutes = 17 * 60; // 17:00
+    const endMinutes = 18 * 60; // 18:00
 
     const timeline = [];
     let totalDistanceKm = 0;
@@ -1823,7 +1826,7 @@ class RoutesService {
           status: 'pending',
           original_date: date,
           estimated_arrival: client.estimatedArrival || null,
-          estimated_duration: 30
+          estimated_duration: 35
         });
       });
     }
@@ -2209,7 +2212,7 @@ class RoutesService {
         priority: 99,
         status: 'pending',
         original_date: route.original_date || route.scheduled_date,
-        estimated_duration: 30
+        estimated_duration: 35
       });
     } else {
       throw new Error('Acción no válida');
@@ -2372,7 +2375,7 @@ class RoutesService {
         priority: 50 + idx,
         status: 'pending',
         original_date: p.original_date || today,
-        estimated_duration: 30
+        estimated_duration: 35
       }));
 
       await supabase.from('scheduled_routes').insert(newEntries);
