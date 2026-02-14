@@ -3,7 +3,7 @@ const { supabase } = require('../../config/database');
 // =============================================
 // CONFIGURACIÓN DE VEHÍCULO ESTÁNDAR
 // =============================================
-const VEHICLE_CONFIG = {
+let VEHICLE_CONFIG = {
   FUEL_EFFICIENCY_KML: 10,        // 10 km por litro (vehículo estándar)
   FUEL_PRICE_CLP: 1141,           // Precio bencina 93 octanos ENAP feb 2026 (CLP/litro)
   FUEL_TYPE: '93 octanos'
@@ -25,11 +25,19 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
   return R * c;
 }
 
+// Calcula distancia total de una ruta ordenada
+function routeTotalDistance(route) {
+  let total = 0;
+  for (let i = 0; i < route.length - 1; i++) {
+    total += haversineDistance(route[i].lat, route[i].lng, route[i + 1].lat, route[i + 1].lng);
+  }
+  return total;
+}
+
 // Algoritmo Nearest Neighbor para TSP (optimización de ruta)
-function optimizeRouteOrder(clients, startPoint = null) {
+function nearestNeighborTSP(clients, startPoint = null) {
   if (!clients || clients.length === 0) return { route: [], totalDistance: 0 };
 
-  // Filtrar clientes con coordenadas válidas
   const validClients = clients.filter(c => c.lat && c.lng);
   if (validClients.length === 0) return { route: [], totalDistance: 0 };
 
@@ -37,7 +45,6 @@ function optimizeRouteOrder(clients, startPoint = null) {
   const route = [];
   let totalDistance = 0;
 
-  // Punto de inicio (si se proporciona, o el primer cliente)
   let current = startPoint && startPoint.lat && startPoint.lng
     ? startPoint
     : unvisited.shift();
@@ -46,7 +53,6 @@ function optimizeRouteOrder(clients, startPoint = null) {
     route.push(current);
   }
 
-  // Algoritmo Nearest Neighbor: siempre ir al cliente más cercano
   while (unvisited.length > 0) {
     let nearestIdx = 0;
     let nearestDist = Infinity;
@@ -67,7 +73,6 @@ function optimizeRouteOrder(clients, startPoint = null) {
     route.push(current);
   }
 
-  // Agregar distancia de retorno al punto inicial
   if (route.length > 1 && startPoint) {
     totalDistance += haversineDistance(
       current.lat, current.lng,
@@ -76,6 +81,179 @@ function optimizeRouteOrder(clients, startPoint = null) {
   }
 
   return { route, totalDistance: Math.round(totalDistance * 10) / 10 };
+}
+
+// Mejora 2-opt sobre ruta existente: intercambia aristas para reducir distancia
+function twoOptImprovement(route) {
+  if (!route || route.length < 4) return route;
+
+  let improved = true;
+  let iterations = 0;
+  const MAX_ITERATIONS = 100;
+  let bestRoute = [...route];
+
+  while (improved && iterations < MAX_ITERATIONS) {
+    improved = false;
+    iterations++;
+
+    for (let i = 0; i < bestRoute.length - 2; i++) {
+      for (let j = i + 2; j < bestRoute.length - 1; j++) {
+        const a = bestRoute[i], b = bestRoute[i + 1];
+        const c = bestRoute[j], d = bestRoute[j + 1];
+
+        const currentDist = haversineDistance(a.lat, a.lng, b.lat, b.lng) +
+                           haversineDistance(c.lat, c.lng, d.lat, d.lng);
+        const newDist = haversineDistance(a.lat, a.lng, c.lat, c.lng) +
+                       haversineDistance(b.lat, b.lng, d.lat, d.lng);
+
+        if (newDist < currentDist - 0.001) {
+          // Reverse segment between i+1 and j
+          const segment = bestRoute.slice(i + 1, j + 1);
+          segment.reverse();
+          bestRoute.splice(i + 1, segment.length, ...segment);
+          improved = true;
+        }
+      }
+    }
+  }
+
+  return bestRoute;
+}
+
+// Nearest Neighbor + 2-opt improvement
+function optimizeRouteOrder(clients, startPoint = null) {
+  const nn = nearestNeighborTSP(clients, startPoint);
+  if (nn.route.length < 4) return nn;
+
+  const improvedRoute = twoOptImprovement(nn.route);
+  const improvedDistance = routeTotalDistance(improvedRoute);
+
+  return {
+    route: improvedRoute,
+    totalDistance: Math.round(improvedDistance * 10) / 10
+  };
+}
+
+/**
+ * Clustering geográfico por proximidad real (haversine).
+ * Greedy seed-based: elige semillas por prioridad 80-20, crece cluster por cercanía
+ * al centroide, y para cuando se agota el presupuesto de tiempo (480 min).
+ */
+function clusterClientsByProximity(clients) {
+  const TIME_BUDGET_MIN = 480; // 8 horas
+  const SPEED_KMH = 40;
+  const VISIT_DURATION_MIN = 30;
+  const MAX_PER_CLUSTER = 15;
+
+  if (!clients || clients.length === 0) return [];
+
+  // Sort by priority: 80-20 first, then L, then N
+  const priorityOrder = { '80-20': 0, 'L': 1, 'N': 2 };
+  const sorted = [...clients].sort((a, b) => {
+    const pa = priorityOrder[a.segmentation] ?? 2;
+    const pb = priorityOrder[b.segmentation] ?? 2;
+    return pa - pb;
+  });
+
+  const assigned = new Set();
+  const clusters = [];
+
+  // Helper: calculate cluster centroid
+  function centroid(members) {
+    let sumLat = 0, sumLng = 0;
+    members.forEach(m => { sumLat += parseFloat(m.lat); sumLng += parseFloat(m.lng); });
+    return { lat: sumLat / members.length, lng: sumLng / members.length };
+  }
+
+  // Helper: estimate total time for a cluster
+  function clusterTime(members) {
+    if (members.length <= 1) return members.length * VISIT_DURATION_MIN;
+    const { totalDistance } = nearestNeighborTSP(members);
+    const travelMin = (totalDistance / SPEED_KMH) * 60;
+    return travelMin + members.length * VISIT_DURATION_MIN;
+  }
+
+  while (assigned.size < sorted.length) {
+    // Pick seed: first unassigned 80-20, or most isolated unassigned client
+    let seed = null;
+
+    // Try 80-20 seeds first
+    for (const c of sorted) {
+      if (!assigned.has(c.id) && c.segmentation === '80-20' && c.lat && c.lng) {
+        seed = c;
+        break;
+      }
+    }
+
+    // If no 80-20 left, pick most isolated unassigned client
+    if (!seed) {
+      let maxMinDist = -1;
+      for (const c of sorted) {
+        if (assigned.has(c.id) || !c.lat || !c.lng) continue;
+        // Find distance to nearest assigned cluster centroid (or nearest other unassigned)
+        let minDist = Infinity;
+        for (const cluster of clusters) {
+          const ctr = centroid(cluster);
+          const d = haversineDistance(c.lat, c.lng, ctr.lat, ctr.lng);
+          if (d < minDist) minDist = d;
+        }
+        if (minDist > maxMinDist || clusters.length === 0) {
+          maxMinDist = minDist;
+          seed = c;
+        }
+      }
+    }
+
+    if (!seed) break; // All remaining have no coords
+
+    const cluster = [seed];
+    assigned.add(seed.id);
+
+    // Grow cluster: add nearest unassigned to centroid while within time budget
+    while (cluster.length < MAX_PER_CLUSTER) {
+      const ctr = centroid(cluster);
+      let nearestClient = null;
+      let nearestDist = Infinity;
+
+      for (const c of sorted) {
+        if (assigned.has(c.id) || !c.lat || !c.lng) continue;
+        const d = haversineDistance(ctr.lat, ctr.lng, parseFloat(c.lat), parseFloat(c.lng));
+        if (d < nearestDist) {
+          nearestDist = d;
+          nearestClient = c;
+        }
+      }
+
+      if (!nearestClient) break;
+
+      // Check if adding this client would exceed time budget
+      const testCluster = [...cluster, nearestClient];
+      const time = clusterTime(testCluster);
+      if (time > TIME_BUDGET_MIN) break;
+
+      cluster.push(nearestClient);
+      assigned.add(nearestClient.id);
+    }
+
+    clusters.push(cluster);
+  }
+
+  // Also collect clients without GPS coords (assign to smallest cluster or new one)
+  const noGps = sorted.filter(c => !assigned.has(c.id));
+  if (noGps.length > 0) {
+    for (const c of noGps) {
+      // Add to the smallest cluster that has room
+      let smallest = clusters.reduce((best, cl) =>
+        cl.length < best.length ? cl : best, clusters[0]);
+      if (smallest && smallest.length < MAX_PER_CLUSTER) {
+        smallest.push(c);
+      } else {
+        clusters.push([c]);
+      }
+    }
+  }
+
+  return clusters;
 }
 
 // Calcula costo estimado de combustible
@@ -1171,6 +1349,13 @@ class RoutesService {
     return { stats, totals };
   }
 
+  // Actualiza precio de combustible dinámicamente (desde CNE u otra fuente)
+  updateFuelPrice(price) {
+    if (price && typeof price === 'number' && price > 0) {
+      VEHICLE_CONFIG.FUEL_PRICE_CLP = Math.round(price);
+    }
+  }
+
   // Obtiene configuración de vehículo estándar
   getVehicleConfig() {
     return VEHICLE_CONFIG;
@@ -1337,37 +1522,7 @@ class RoutesService {
   // RUTAS PLANIFICADAS (Fase 3) — V2
   // =============================================
 
-  /**
-   * Rellena comunas donde hay solo 1 cliente 80-20 con clientes L/N de la misma comuna
-   * para que no se viaje a una comuna por un solo cliente
-   */
-  fillLonely8020Communes(byCommune, allClientsByCommune) {
-    const MIN_PER_COMMUNE = 3;
-    const MAX_FILL = 5;
-
-    for (const [commune, clients] of Object.entries(byCommune)) {
-      const has8020 = clients.some(c => c.segmentation === '80-20');
-      if (!has8020 || clients.length >= MIN_PER_COMMUNE) continue;
-
-      // Buscar clientes L/N en la misma comuna que no están ya asignados
-      const assignedIds = new Set(clients.map(c => c.id));
-      const available = (allClientsByCommune[commune] || [])
-        .filter(c => !assignedIds.has(c.id) && c.segmentation !== '80-20');
-
-      // Sort: L first, then N
-      available.sort((a, b) => {
-        const pa = a.segmentation === 'L' ? 0 : 1;
-        const pb = b.segmentation === 'L' ? 0 : 1;
-        return pa - pb;
-      });
-
-      const needed = Math.min(MAX_FILL - clients.length, available.length);
-      for (let i = 0; i < needed; i++) {
-        clients.push(available[i]);
-      }
-    }
-    return byCommune;
-  }
+  // fillLonely8020Communes removed — replaced by proximity-based clustering
 
   /**
    * Calcula timeline del día con hora estimada de llegada a cada cliente
@@ -1441,66 +1596,61 @@ class RoutesService {
   }
 
   /**
-   * Divide una lista de clientes en días hábiles de 8-10 clientes, agrupando por comuna.
-   * Reutilizable por generateSchedule() y getOptimizedRoute().
-   * @param {Array} clientsToVisit - Clientes a distribuir (ya filtrados y priorizados)
+   * Divide clientes en días hábiles usando clustering geográfico por proximidad.
+   * Reemplaza la lógica anterior de agrupación por comuna con clusters basados en haversine.
+   * @param {Array} clientsToVisit - Clientes a distribuir
    * @param {Array} weekdays - Fechas hábiles ['YYYY-MM-DD', ...]
-   * @param {Object} allClientsByCommune - Índice de todos los clientes por comuna (para fill lonely 80-20)
    * @returns {Object} { schedule: {date: {clients, totalDistance, totalHours, ...}}, sortedDates }
    */
-  _splitIntoDays(clientsToVisit, weekdays, allClientsByCommune = null) {
-    const MAX_PER_DAY = 10;
-    const MIN_PER_DAY = 8;
+  _splitIntoDays(clientsToVisit, weekdays) {
+    const MAX_PER_DAY = 15;
+    const MIN_PER_DAY = 5;
 
-    // Group clients by commune
-    const byCommune = {};
-    clientsToVisit.forEach(c => {
-      const key = c.commune || 'Sin Comuna';
-      if (!byCommune[key]) byCommune[key] = [];
-      byCommune[key].push(c);
-    });
+    // Step 1: Cluster clients by geographic proximity
+    const clusters = clusterClientsByProximity(clientsToVisit);
 
-    // Fill lonely 80-20 communes if index provided
-    if (allClientsByCommune) {
-      this.fillLonely8020Communes(byCommune, allClientsByCommune);
-    }
+    // Sort clusters: largest first (they get the earliest days)
+    clusters.sort((a, b) => b.length - a.length);
 
-    // Distribute clients across days
+    // Step 2: Assign clusters to days (bin-packing by time budget)
     const schedule = {};
     weekdays.forEach(d => { schedule[d] = []; });
 
-    // Sort communes: put larger groups first to keep them together in a day
-    const sortedCommunes = Object.entries(byCommune)
-      .sort((a, b) => b[1].length - a[1].length);
-
-    for (const [commune, communeClients] of sortedCommunes) {
+    for (const cluster of clusters) {
+      // Find day with most remaining capacity
       let bestDay = null;
-      let bestFit = -1;
-
+      let bestRemaining = -1;
       for (const d of weekdays) {
         const remaining = MAX_PER_DAY - schedule[d].length;
-        if (remaining > 0 && remaining >= bestFit) {
+        if (remaining >= cluster.length && remaining > bestRemaining) {
           bestDay = d;
-          bestFit = remaining;
+          bestRemaining = remaining;
         }
       }
 
-      if (!bestDay) continue;
-
-      for (const client of communeClients) {
-        if (schedule[bestDay].length < MAX_PER_DAY) {
-          schedule[bestDay].push(client);
-        } else {
-          const overflowDay = weekdays.reduce((best, d) =>
+      // If cluster fits entirely in a day, assign it
+      if (bestDay) {
+        schedule[bestDay].push(...cluster);
+      } else {
+        // Cluster too big or no day has enough room — split across days
+        let remaining = [...cluster];
+        for (const d of weekdays) {
+          if (remaining.length === 0) break;
+          const capacity = MAX_PER_DAY - schedule[d].length;
+          if (capacity <= 0) continue;
+          const batch = remaining.splice(0, capacity);
+          schedule[d].push(...batch);
+        }
+        // If still leftover, create overflow on least-loaded day
+        if (remaining.length > 0) {
+          const leastLoaded = weekdays.reduce((best, d) =>
             schedule[d].length < schedule[best].length ? d : best, weekdays[0]);
-          if (schedule[overflowDay].length < MAX_PER_DAY) {
-            schedule[overflowDay].push(client);
-          }
+          schedule[leastLoaded].push(...remaining);
         }
       }
     }
 
-    // Optimize route order and calculate timeline for each day
+    // Step 3: Optimize route order (NN + 2-opt) and calculate timeline per day
     const optimizedSchedule = {};
     for (const [date, dayClients] of Object.entries(schedule)) {
       if (dayClients.length === 0) continue;
@@ -1508,18 +1658,14 @@ class RoutesService {
       const clientsWithoutCoords = dayClients.filter(c => !c.lat || !c.lng);
 
       let orderedClients;
-      let totalDistance = 0;
       if (clientsWithCoords.length > 0) {
         const result = optimizeRouteOrder(clientsWithCoords);
         orderedClients = [...result.route, ...clientsWithoutCoords];
-        totalDistance = result.totalDistance;
       } else {
         orderedClients = dayClients;
       }
 
       const dayTimeline = this.calculateDayTimeline(orderedClients);
-
-      // Unique communes for this day
       const communes = [...new Set(orderedClients.map(c => c.commune || 'Sin Comuna'))];
 
       optimizedSchedule[date] = {
@@ -1539,7 +1685,7 @@ class RoutesService {
       };
     }
 
-    // Move overloaded clients to next available day
+    // Step 4: Move overloaded clients (arriving after 17:00) to next available day
     const sortedDates = Object.keys(optimizedSchedule).sort();
     for (let i = 0; i < sortedDates.length; i++) {
       const dayData = optimizedSchedule[sortedDates[i]];
@@ -1563,6 +1709,30 @@ class RoutesService {
             nextDay.clients.push(overflow.shift());
           }
         }
+        // If still overflow, add a new day
+        if (overflow.length > 0) {
+          const extraDate = sortedDates[sortedDates.length - 1];
+          const nextBiz = new Date(extraDate);
+          do { nextBiz.setDate(nextBiz.getDate() + 1); } while (nextBiz.getDay() === 0 || nextBiz.getDay() === 6);
+          const extraKey = nextBiz.toISOString().split('T')[0];
+          sortedDates.push(extraKey);
+          const extraTimeline = this.calculateDayTimeline(overflow);
+          optimizedSchedule[extraKey] = {
+            clients: overflow.map((c, idx) => ({
+              ...c,
+              estimatedArrival: extraTimeline.timeline[idx]?.estimatedArrival || '09:00',
+              estimatedDeparture: extraTimeline.timeline[idx]?.estimatedDeparture || '09:30'
+            })),
+            totalDistance: extraTimeline.totalDistanceKm,
+            totalHours: extraTimeline.totalHours,
+            estimatedTime: Math.round(extraTimeline.totalHours * 60),
+            endTime: extraTimeline.endTime,
+            overloaded: extraTimeline.overloaded,
+            communes: [...new Set(overflow.map(c => c.commune || 'Sin Comuna'))]
+          };
+          overflow.length = 0;
+        }
+
         const recalc = this.calculateDayTimeline(keep);
         dayData.clients = keep.map((c, idx) => ({
           ...c,
@@ -1603,14 +1773,6 @@ class RoutesService {
       return pa - pb;
     });
 
-    // Build full commune index (for filling lonely 80-20 communes)
-    const allClientsByCommune = {};
-    clients.forEach(c => {
-      const key = c.commune || 'Sin Comuna';
-      if (!allClientsByCommune[key]) allClientsByCommune[key] = [];
-      allClientsByCommune[key].push(c);
-    });
-
     // Filter clients that need a visit (based on frequency and last visit)
     const now = new Date();
     const clientsToVisit = clients.filter(c => {
@@ -1637,8 +1799,8 @@ class RoutesService {
       throw new Error('No hay días hábiles en el rango seleccionado');
     }
 
-    // Use shared helper to split into days
-    const { schedule: optimizedSchedule } = this._splitIntoDays(clientsToVisit, weekdays, allClientsByCommune);
+    // Use shared helper to split into days (proximity-based clustering)
+    const { schedule: optimizedSchedule } = this._splitIntoDays(clientsToVisit, weekdays);
 
     // Delete existing pending scheduled routes for this user in the date range
     await supabase
@@ -1764,6 +1926,55 @@ class RoutesService {
     });
 
     return byDate;
+  }
+
+  /**
+   * Obtiene TODAS las rutas planificadas de todos los vendedores para un rango de fechas
+   * Usado por el calendario mensual multi-ejecutivo
+   */
+  async getAllScheduledRoutes(startDate, endDate) {
+    // First, get all users for name lookup
+    const { data: users } = await supabase
+      .from('users')
+      .select('id, full_name, role');
+    const userMap = {};
+    (users || []).forEach(u => { userMap[u.id] = u; });
+
+    let allData = [];
+    let from = 0;
+    const pageSize = 1000;
+
+    while (true) {
+      let query = supabase
+        .from('scheduled_routes')
+        .select('*, client:clients(id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation)')
+        .order('scheduled_date')
+        .order('priority')
+        .range(from, from + pageSize - 1);
+
+      if (startDate) query = query.gte('scheduled_date', startDate);
+      if (endDate) query = query.lte('scheduled_date', endDate);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+
+      allData = allData.concat(data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+
+    // Group by userId → date → [routes]
+    const grouped = {};
+    allData.forEach(sr => {
+      const uid = sr.user_id;
+      const user = userMap[uid];
+      if (!grouped[uid]) grouped[uid] = { userName: user?.full_name || 'Sin nombre', dates: {} };
+      if (!grouped[uid].dates[sr.scheduled_date]) grouped[uid].dates[sr.scheduled_date] = [];
+      grouped[uid].dates[sr.scheduled_date].push(sr);
+    });
+
+    return grouped;
   }
 
   /**

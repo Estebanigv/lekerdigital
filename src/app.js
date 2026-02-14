@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -5,10 +6,12 @@ const multer = require('multer');
 const XLSX = require('xlsx');
 
 // Import services
+const { supabase } = require('./config/database');
 const routesService = require('./modules/routes/routes.service');
 const intelligenceService = require('./modules/market-intelligence/intelligence.service');
 const n8nService = require('./services/n8n.service');
 const googleSheetsService = require('./services/googleSheets.service');
+const cneService = require('./services/cne.service');
 
 // Auth
 const authRouter = require('./modules/auth/auth.controller');
@@ -51,8 +54,51 @@ let fuelPriceConfig = {
   updatedBy: 'system'
 };
 
-app.get('/api/config/fuel-price', (req, res) => {
-  res.json({ success: true, data: fuelPriceConfig });
+app.get('/api/config/fuel-price', async (req, res) => {
+  try {
+    // Try CNE API first (if configured)
+    if (cneService.isConfigured()) {
+      const cnePrice = await cneService.getFuelPrice();
+      if (cnePrice) {
+        fuelPriceConfig = {
+          price: cnePrice.price,
+          minPrice: cnePrice.minPrice,
+          maxPrice: cnePrice.maxPrice,
+          stationsCount: cnePrice.stationsCount,
+          source: 'CNE API',
+          updatedAt: cnePrice.updatedAt,
+          updatedBy: 'CNE API'
+        };
+        // Propagate to routes service
+        routesService.updateFuelPrice(cnePrice.price);
+      }
+    }
+    res.json({ success: true, data: fuelPriceConfig });
+  } catch (error) {
+    // Fallback to current config
+    res.json({ success: true, data: fuelPriceConfig });
+  }
+});
+
+app.get('/api/config/fuel-prices-by-region', async (req, res) => {
+  try {
+    // Try CNE API (if configured)
+    if (cneService.isConfigured()) {
+      const regionalData = await cneService.getFuelPricesByRegion();
+      if (regionalData) {
+        return res.json({ success: true, data: regionalData });
+      }
+    }
+    // Fallback: no regional data available
+    res.json({
+      success: false,
+      error: 'CNE API no configurado o sin datos regionales disponibles',
+      data: null
+    });
+  } catch (error) {
+    console.error('[API] Error fetching regional prices:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 app.put('/api/config/fuel-price', authorize('admin'), (req, res) => {
@@ -69,6 +115,120 @@ app.put('/api/config/fuel-price', authorize('admin'), (req, res) => {
     res.json({ success: true, data: fuelPriceConfig, message: 'Precio bencina actualizado' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// =============================================
+// AI ASSISTANT (OpenAI / ChatGPT)
+// =============================================
+app.post('/api/assistant/chat', authenticate, async (req, res) => {
+  try {
+    const { message, context, history } = req.body;
+
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(400).json({
+        success: false,
+        error: 'Asistente IA no configurado. Agrega OPENAI_API_KEY en .env'
+      });
+    }
+
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere un mensaje válido'
+      });
+    }
+
+    // Build system prompt with context
+    const systemPrompt = `Eres un asistente de IA para el sistema logístico de LEKER, una empresa de distribución en Chile.
+
+CONTEXTO DEL SISTEMA:
+- Base de datos: Supabase (PostgreSQL)
+- Tablas principales: users, clients, vehicles, daily_routes, visits, products, scheduled_routes
+- Funcionalidades: Gestión de vendedores, rutas optimizadas, tracking GPS, control de visitas, costos de combustible
+
+DATOS ACTUALES:
+${context ? `- Total vendedores: ${context.totalVendedores || 0}
+- Total clientes: ${context.totalClientes || 0}
+- Rutas activas hoy: ${context.rutasHoy || 0}
+- Fecha: ${context.fecha || new Date().toLocaleDateString('es-CL')}` : ''}
+
+CAPACIDADES:
+- Explicar funcionalidades del sistema
+- Consultas sobre vendedores, clientes, rutas y vehículos
+- Ayuda con planificación de rutas y optimización
+- Información sobre costos de combustible y rendimiento
+- Guía de uso del sistema
+
+IMPORTANTE:
+- Responde en español de forma concisa y profesional
+- Si no tienes información suficiente, indica qué datos necesitas
+- Sugiere acciones concretas cuando sea posible
+- Usa un tono amable pero profesional`;
+
+    // Build messages array (OpenAI format: system + user/assistant)
+    const messages = [
+      { role: 'system', content: systemPrompt }
+    ];
+
+    // Add conversation history if provided (last 10 messages)
+    if (history && Array.isArray(history) && history.length > 0) {
+      history.slice(-10).forEach(msg => {
+        if (msg.role === 'user' || msg.role === 'assistant') {
+          messages.push({
+            role: msg.role,
+            content: msg.content
+          });
+        }
+      });
+    }
+
+    // Add current message
+    messages.push({
+      role: 'user',
+      content: message
+    });
+
+    // Call OpenAI ChatGPT API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        max_tokens: 1024,
+        temperature: 0.7,
+        messages: messages
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('OpenAI API error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error al comunicarse con ChatGPT'
+      });
+    }
+
+    const data = await response.json();
+    const assistantMessage = data.choices[0].message.content;
+
+    res.json({
+      success: true,
+      data: {
+        response: assistantMessage
+      }
+    });
+
+  } catch (error) {
+    console.error('AI Assistant error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 });
 
@@ -1250,6 +1410,74 @@ app.post('/api/clients/sync-segmentation', async (req, res) => {
   }
 });
 
+// Sincronizar direcciones desde Google Sheets → Supabase
+app.post('/api/clients/sync-addresses', async (req, res) => {
+  try {
+    const { addresses } = req.body;
+    if (!addresses || !Array.isArray(addresses) || addresses.length === 0) {
+      return res.status(400).json({ success: false, error: 'Se requiere un array de addresses [{code, address, commune, city, region}]' });
+    }
+
+    let updated = 0, notFound = 0, skipped = 0, errors = [];
+
+    for (const addr of addresses) {
+      if (!addr.code) { skipped++; continue; }
+
+      const code = String(addr.code).trim();
+      if (!code) { skipped++; continue; }
+
+      // Find client by external_id
+      const { data: clients } = await supabase
+        .from('clients')
+        .select('id, address, commune, lat, lng')
+        .eq('external_id', code)
+        .limit(1);
+
+      if (!clients || clients.length === 0) { notFound++; continue; }
+
+      const client = clients[0];
+      const updateData = {};
+
+      // Only update if the field is empty or we have better data
+      if (addr.address && (!client.address || client.address === 'Sin dirección')) {
+        updateData.address = addr.address;
+      }
+      if (addr.commune && !client.commune) {
+        updateData.commune = addr.commune;
+      }
+      if (addr.city) {
+        updateData.city = addr.city;
+      }
+      if (addr.region) {
+        updateData.region = addr.region;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        const { error } = await supabase
+          .from('clients')
+          .update(updateData)
+          .eq('id', client.id);
+
+        if (error) {
+          errors.push(`${code}: ${error.message}`);
+        } else {
+          updated++;
+        }
+      } else {
+        skipped++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Sync completado: ${updated} actualizados, ${notFound} no encontrados, ${skipped} sin cambios`,
+      data: { updated, notFound, skipped, errors: errors.slice(0, 10) }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Estadísticas de segmentación
 app.get('/api/clients/segmentation-stats', async (req, res) => {
   try {
@@ -1367,6 +1595,20 @@ app.delete('/api/routes/schedule-route/:routeId', async (req, res) => {
   }
 });
 
+// Eliminar ruta diaria (daily_route)
+app.delete('/api/routes/daily/:routeId', async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('daily_routes')
+      .delete()
+      .eq('id', req.params.routeId);
+    if (error) throw error;
+    res.json({ success: true, message: 'Ruta eliminada' });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 // Reprogramar rutas pendientes
 app.post('/api/routes/reschedule-incomplete', async (req, res) => {
   try {
@@ -1378,6 +1620,21 @@ app.post('/api/routes/reschedule-incomplete', async (req, res) => {
     res.json({ success: true, message: `${result.rescheduled} rutas reprogramadas`, data: result });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
+  }
+});
+
+// Obtener TODAS las rutas planificadas (calendario mensual multi-ejecutivo)
+app.get('/api/routes/schedule-all', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    if (!startDate || !endDate) {
+      return res.status(400).json({ success: false, error: 'Se requiere startDate y endDate' });
+    }
+    const data = await routesService.getAllScheduledRoutes(startDate, endDate);
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error('[schedule-all] Error:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Error interno' });
   }
 });
 
