@@ -2024,22 +2024,38 @@
     /* Route legend */
     .route-legend {
       position: absolute;
-      bottom: 20px;
-      left: 20px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
+      bottom: 12px;
+      left: 12px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(0,0,0,0.1);
       border-radius: 8px;
-      padding: 12px 16px;
+      padding: 0;
       z-index: 1000;
-      min-width: 240px;
-      max-width: 280px;
+      min-width: 0;
+      max-width: 220px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      font-size: 11px;
+      transition: all 0.2s;
     }
+    [data-theme="dark"] .route-legend { background: rgba(30,30,40,0.9); }
+    .route-legend.collapsed { max-width: 44px; min-width: 0; overflow: hidden; border-radius: 8px; }
+    .route-legend.collapsed #route-info { display: none; }
+    .route-legend .legend-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 10px; cursor: pointer; gap: 6px;
+    }
+    .route-legend .legend-header:hover { background: rgba(0,0,0,0.04); border-radius: 8px 8px 0 0; }
+    .route-legend.collapsed .legend-header { border-radius: 8px; }
     .route-legend .legend-title {
       font-weight: 600;
-      margin-bottom: 8px;
+      font-size: 11px;
       color: var(--text-primary);
+      margin: 0;
+      white-space: nowrap;
     }
+    .route-legend.collapsed .legend-title { display: none; }
+    .route-legend #route-info { padding: 0 10px 8px; }
     .route-legend .legend-item {
       display: flex;
       align-items: center;
@@ -2845,10 +2861,16 @@
       flex-direction: column;
       gap: 8px;
       transition: box-shadow 0.2s, transform 0.15s;
+      cursor: pointer;
+      position: relative;
     }
     .route-stat-card:hover {
       box-shadow: 0 4px 16px rgba(0,0,0,0.07);
       transform: translateY(-2px);
+    }
+    .route-stat-card.active-card {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.15), 0 4px 12px rgba(0,0,0,0.06);
     }
     .route-stat-card .stat-icon {
       width: 38px;
@@ -2899,6 +2921,131 @@
       transition: background 0.1s;
     }
     .vendor-route-row:hover { background: var(--bg-hover); }
+    .vendor-route-row .chevron-icon { transition: transform 0.2s; color: var(--text-muted); }
+    .vendor-route-row.expanded {
+      background: #eef4ff;
+      border-left: 4px solid var(--primary-color);
+      font-weight: 600;
+    }
+    [data-theme="dark"] .vendor-route-row.expanded { background: rgba(59, 130, 246, 0.12); }
+    .vendor-route-row.expanded td:first-child { padding-left: 4px; }
+    .vendor-route-row.expanded .chevron-icon { transform: rotate(90deg); color: var(--primary-color); }
+    .exec-detail-row td { padding: 0 !important; border: none !important; }
+    .exec-detail-content {
+      background: linear-gradient(135deg, #f0f5ff 0%, #f8faff 100%);
+      border-left: 4px solid var(--primary-color);
+      border-bottom: 3px solid var(--primary-color);
+      padding: 16px 24px 20px;
+      margin: 0;
+      box-shadow: inset 0 6px 12px -6px rgba(59, 130, 246, 0.12), 0 2px 8px rgba(0,0,0,0.04);
+    }
+    [data-theme="dark"] .exec-detail-content {
+      background: linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(59,130,246,0.03) 100%);
+    }
+    .exec-detail-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid rgba(59, 130, 246, 0.15);
+    }
+    .exec-detail-header h4 {
+      margin: 0; font-size: 15px; color: var(--primary-color);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .exec-day-bar {
+      background: white;
+      border: 1px solid var(--border-color);
+      border-left: 4px solid #10b981;
+      padding: 10px 14px;
+      margin-bottom: 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px;
+      user-select: none;
+      transition: box-shadow 0.15s, background 0.15s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    [data-theme="dark"] .exec-day-bar { background: var(--bg-card); }
+    .exec-day-bar:hover { box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2); background: #f0fdf8; }
+    [data-theme="dark"] .exec-day-bar:hover { background: rgba(16,185,129,0.08); }
+    .exec-day-bar .day-chevron { transition: transform 0.2s; color: var(--text-muted); }
+    .exec-day-bar.expanded {
+      background: #ecfdf5; border-color: #10b981;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.15);
+    }
+    [data-theme="dark"] .exec-day-bar.expanded { background: rgba(16,185,129,0.12); }
+    .exec-day-bar.expanded .day-chevron { transform: rotate(90deg); color: #10b981; }
+    .exec-day-clients {
+      padding: 4px 0 10px 22px;
+      margin-bottom: 4px;
+      border-left: 2px solid rgba(16, 185, 129, 0.25);
+      margin-left: 10px;
+    }
+    .exec-day-client-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 12px;
+      font-size: 12px;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      margin-bottom: 4px;
+      transition: background 0.1s;
+    }
+    [data-theme="dark"] .exec-day-client-item { background: var(--bg-card); }
+    .exec-day-client-item:hover { background: #f8faff; }
+    [data-theme="dark"] .exec-day-client-item:hover { background: var(--bg-hover); }
+    .exec-day-client-num {
+      background: #3b82f6; color: #ffffff;
+      min-width: 26px; width: 26px; height: 26px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.35);
+      line-height: 1;
+    }
+    .exec-detail-title-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #dc2626; color: #ffffff;
+      padding: 6px 16px; border-radius: 6px;
+      font-size: 14px; font-weight: 700;
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+      letter-spacing: 0.3px;
+    }
+    .exec-detail-title-badge i { color: #ffffff; }
+    /* Stat card detail popup */
+    .dash-stat-detail-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      animation: slideDown 0.2s ease;
+    }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+    .dash-stat-detail-panel h4 {
+      margin: 0 0 10px; font-size: 13px;
+      display: flex; align-items: center; gap: 6px; justify-content: space-between;
+    }
+    .dash-stat-detail-list {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .dash-stat-detail-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--bg-hover); border: 1px solid var(--border-color);
+      border-radius: 20px; padding: 6px 14px; font-size: 12px; font-weight: 500;
+      transition: all 0.15s;
+    }
+    .dash-stat-detail-chip[style*="cursor:pointer"]:hover,
+    .dash-stat-detail-chip[onclick]:hover {
+      background: rgba(59,130,246,0.1);
+      border-color: rgba(59,130,246,0.3);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .dash-stat-detail-chip .chip-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
 
     /* =============== AI CHAT WIDGET =============== */
     .ai-chat-fab {
@@ -3706,35 +3853,35 @@
 
           <!-- Dashboard Stat Cards -->
           <div class="route-dashboard-stats">
-            <div class="route-stat-card">
+            <div class="route-stat-card" onclick="toggleStatDetail('with-route')">
               <div class="stat-icon" style="background: rgba(59,130,246,0.08);">
                 <i data-lucide="users" style="width: 18px; height: 18px; color: #3b82f6;"></i>
               </div>
               <div class="stat-value" style="color: #3b82f6;" id="dash-rt-active-vendors">0</div>
               <div class="stat-label">Con ruta hoy</div>
             </div>
-            <div class="route-stat-card">
+            <div class="route-stat-card" onclick="toggleStatDetail('without-route')">
               <div class="stat-icon" style="background: rgba(239,68,68,0.08);">
                 <i data-lucide="user-x" style="width: 18px; height: 18px; color: #ef4444;"></i>
               </div>
               <div class="stat-value" style="color: #ef4444;" id="dash-rt-no-route">0</div>
               <div class="stat-label">Sin ruta</div>
             </div>
-            <div class="route-stat-card">
+            <div class="route-stat-card" onclick="toggleStatDetail('completed')">
               <div class="stat-icon" style="background: rgba(16,185,129,0.08);">
                 <i data-lucide="check-circle" style="width: 18px; height: 18px; color: #10b981;"></i>
               </div>
               <div class="stat-value" style="color: #10b981;" id="dash-rt-completed">0</div>
               <div class="stat-label">Completadas</div>
             </div>
-            <div class="route-stat-card">
+            <div class="route-stat-card" onclick="toggleStatDetail('scheduled')">
               <div class="stat-icon" style="background: rgba(139,92,246,0.08);">
                 <i data-lucide="calendar-check" style="width: 18px; height: 18px; color: #8b5cf6;"></i>
               </div>
               <div class="stat-value" style="color: #8b5cf6;" id="dash-rt-scheduled">0</div>
               <div class="stat-label">Programadas</div>
             </div>
-            <div class="route-stat-card">
+            <div class="route-stat-card" onclick="toggleStatDetail('fuel')">
               <div class="stat-icon" style="background: rgba(245,158,11,0.08);">
                 <i data-lucide="fuel" style="width: 18px; height: 18px; color: #f59e0b;"></i>
               </div>
@@ -3742,6 +3889,9 @@
               <div class="stat-label">Costo bencina</div>
             </div>
           </div>
+
+          <!-- Stat Detail Panel (shows on card click) -->
+          <div id="dash-stat-detail" style="display:none;"></div>
 
           <!-- Dashboard Alerts -->
           <div id="dashboard-route-alerts" style="margin-bottom: 14px;"></div>
@@ -4178,7 +4328,10 @@
                   <div class="map-container" style="height: 400px; position: relative;">
                     <div id="map-route"></div>
                     <div id="route-legend" class="route-legend" style="display: none;">
-                      <div class="legend-title">Ruta del día</div>
+                      <div class="legend-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <div class="legend-title">Ruta del día</div>
+                        <i data-lucide="minimize-2" style="width:13px;height:13px;color:var(--text-muted);flex-shrink:0;"></i>
+                      </div>
                       <div id="route-info"></div>
                     </div>
                   </div>
@@ -4284,10 +4437,10 @@
             <div id="planner-vendor-controls" style="display: none; padding: 8px 18px; border-bottom: 1px solid var(--border); background: var(--bg-hover);">
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                 <button class="btn" onclick="loadWeeklyAllExecs()" style="font-size: 11px; padding: 5px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px;">
-                  <i data-lucide="arrow-left" style="width: 12px; height: 12px;"></i> Todos los ejecutivos
+                  <i data-lucide="arrow-left" style="width: 12px; height: 12px;"></i> Todos los vendedores
                 </button>
                 <select id="schedule-vendor" class="form-control" style="width: 220px; font-size: 13px; padding: 7px 12px;">
-                  <option value="">-- Seleccionar Ejecutivo --</option>
+                  <option value="">-- Seleccionar Vendedor --</option>
                 </select>
                 <button class="btn btn-primary" onclick="generateWeeklySchedule()" style="font-size: 11px; padding: 6px 14px;">
                   <i data-lucide="calendar-plus" style="width: 12px; height: 12px;"></i> Generar Ruta
@@ -4333,7 +4486,7 @@
               <h3 style="font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; margin: 0;">
                 <i data-lucide="calendar" style="width: 18px; height: 18px; color: var(--accent);"></i>
                 Calendario Mensual
-                <span style="font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 4px;">Todos los Ejecutivos</span>
+                <span style="font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 4px;">Todos los Vendedores</span>
               </h3>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <div class="month-nav">
@@ -5725,7 +5878,7 @@
             <!-- Reasignar zona a ejecutivo -->
             <div class="card" style="margin-bottom: 16px;">
               <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <h3><i data-lucide="shuffle" style="width: 18px; height: 18px;"></i> Reasignar Zona a Ejecutivo</h3>
+                <h3><i data-lucide="shuffle" style="width: 18px; height: 18px;"></i> Reasignar Zona a Vendedor</h3>
               </div>
               <div class="card-body">
                 <div class="gs-filter-bar" style="align-items: flex-end;">
@@ -5736,9 +5889,9 @@
                     </select>
                   </div>
                   <div style="flex: 1; min-width: 140px;">
-                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Ejecutivo destino</label>
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Vendedor destino</label>
                     <select id="reasign-exec-select" class="form-control">
-                      <option value="">-- Seleccionar ejecutivo --</option>
+                      <option value="">-- Seleccionar vendedor --</option>
                     </select>
                   </div>
                   <button class="btn btn-primary" onclick="executeZoneReassign()" style="padding: 10px 20px; white-space: nowrap; flex-shrink:0;">
@@ -6510,7 +6663,7 @@
       admin: 'Administrador',
       supervisor: 'Supervisor',
       zonal: 'Zonal',
-      executive: 'Ejecutivo',
+      executive: 'Vendedor',
       viewer: 'Solo Lectura'
     };
 
@@ -7596,7 +7749,7 @@
         populateSelect('compare-product', products.data, 'id', d => `${d.sku} - ${d.name}`);
 
         // Populate route executive select (vendedores)
-        executives = users.data.filter(u => u.role === 'executive' || u.role === 'supervisor');
+        executives = users.data.filter(u => u.role === 'executive');
 
         // Store data globally for filtering
         allUsers = users.data;
@@ -8593,6 +8746,7 @@
     function filterExecutiveDropdown(searchTerm) {
       const dropdown = document.getElementById('executive-dropdown-list');
       const search = searchTerm.toLowerCase().trim();
+      const schedData = window._dashboardScheduleData || {};
 
       let filtered = executives;
       if (search) {
@@ -8602,37 +8756,56 @@
         );
       }
 
+      // Separate: without routes first, then with routes
+      const withoutRoutes = filtered.filter(e => !schedData[e.id]);
+      const withRoutes = filtered.filter(e => !!schedData[e.id]);
+
       let html = '';
 
-      filtered.forEach(e => {
-        const isSelected = e.id === selectedExecutiveId;
-        const gsData = findVendedorData(e.full_name);
-        let zona = gsData ? gsData.zona : '';
-        // Fallback: get zone from assigned clients if GSheets data not available
-        if (!zona) {
-          const clientZones = allClients.filter(c => c.assigned_user_id === e.id && c.zone).map(c => c.zone);
-          if (clientZones.length > 0) {
-            const zoneCounts = {};
-            clientZones.forEach(z => { zoneCounts[z] = (zoneCounts[z] || 0) + 1; });
-            zona = Object.entries(zoneCounts).sort((a, b) => b[1] - a[1])[0][0];
-          }
-        }
-        const zc = ZONE_COLORS[(zona || '').toLowerCase()] || null;
-        const zoneTag = zona ? `<span style="background:${zc ? zc.bg : 'rgba(107,114,128,0.08)'};color:${zc ? zc.color : '#6b7280'};border:1px solid ${zc ? zc.border : 'rgba(107,114,128,0.2)'};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">${zona}</span>` : '';
-        const clientCount = allClients.filter(c => c.assigned_user_id === e.id).length;
-        html += `<div class="executive-option" onclick="selectExecutive('${e.id}')"
-          style="padding: 8px 14px; cursor: pointer; border-bottom: 1px solid #f0f0f0; ${isSelected ? 'background: var(--primary-light); font-weight: 500;' : ''}"
-          onmouseover="this.style.background='#f5f5f5'"
-          onmouseout="this.style.background='${isSelected ? 'var(--primary-light)' : 'white'}'">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-weight: 500; font-size: 13px;">${e.full_name}</span>${zoneTag}<span style="font-size:10px;color:var(--text-muted);">(${clientCount} clientes)</span></div>
-        </div>`;
-      });
+      if (withoutRoutes.length > 0) {
+        html += `<div style="padding:4px 14px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:#ef4444;font-weight:700;background:rgba(239,68,68,0.05);border-bottom:1px solid rgba(239,68,68,0.1);">Sin ruta programada</div>`;
+        withoutRoutes.forEach(e => { html += _buildExecDropdownItem(e, schedData); });
+      }
+      if (withRoutes.length > 0) {
+        html += `<div style="padding:4px 14px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:#10b981;font-weight:700;background:rgba(16,185,129,0.05);border-bottom:1px solid rgba(16,185,129,0.1);">Con ruta cargada</div>`;
+        withRoutes.forEach(e => { html += _buildExecDropdownItem(e, schedData); });
+      }
 
       if (filtered.length === 0) {
         html = `<div style="padding: 14px; text-align: center; color: var(--text-muted);">No se encontraron vendedores</div>`;
       }
 
       dropdown.innerHTML = html;
+    }
+
+    function _buildExecDropdownItem(e, schedData) {
+      const isSelected = e.id === selectedExecutiveId;
+      const gsData = findVendedorData(e.full_name);
+      let zona = gsData ? gsData.zona : '';
+      if (!zona) {
+        const clientZones = allClients.filter(c => c.assigned_user_id === e.id && c.zone).map(c => c.zone);
+        if (clientZones.length > 0) {
+          const zoneCounts = {};
+          clientZones.forEach(z => { zoneCounts[z] = (zoneCounts[z] || 0) + 1; });
+          zona = Object.entries(zoneCounts).sort((a, b) => b[1] - a[1])[0][0];
+        }
+      }
+      const zc = ZONE_COLORS[(zona || '').toLowerCase()] || null;
+      const zoneTag = zona ? `<span style="background:${zc ? zc.bg : 'rgba(107,114,128,0.08)'};color:${zc ? zc.color : '#6b7280'};border:1px solid ${zc ? zc.border : 'rgba(107,114,128,0.2)'};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">${zona}</span>` : '';
+      const clientCount = allClients.filter(c => c.assigned_user_id === e.id).length;
+      const hasRoute = !!schedData[e.id];
+      const schedInfo = hasRoute ? schedData[e.id] : null;
+      const schedDays = schedInfo ? Object.keys(schedInfo.dates).length : 0;
+      const schedClients = schedInfo ? Object.values(schedInfo.dates).flat().length : 0;
+      const routeTag = hasRoute
+        ? `<span style="background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.2);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">${schedDays}d · ${schedClients}cl</span>`
+        : '';
+      return `<div class="executive-option" onclick="selectExecutive('${e.id}')"
+        style="padding: 8px 14px; cursor: pointer; border-bottom: 1px solid #f0f0f0; ${isSelected ? 'background: var(--primary-light); font-weight: 500;' : ''} ${hasRoute ? 'opacity:0.6;' : ''}"
+        onmouseover="this.style.background='#f5f5f5'"
+        onmouseout="this.style.background='${isSelected ? 'var(--primary-light)' : 'white'}'">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-weight: 500; font-size: 13px;">${e.full_name}</span>${zoneTag}${routeTag}<span style="font-size:10px;color:var(--text-muted);">(${clientCount} clientes)</span></div>
+      </div>`;
     }
 
     function selectExecutive(execId) {
@@ -12805,8 +12978,193 @@
       }
     }
 
+    // =============================================
+    // DASHBOARD STAT CARD DRILLDOWN
+    // =============================================
+    let _activeStatDetail = null;
+    const _closeStatPanel = "document.getElementById('dash-stat-detail').style.display='none';_activeStatDetail=null;document.querySelectorAll('.route-stat-card').forEach(c=>c.classList.remove('active-card'));";
+
+    function scrollToExecRow(userId) {
+      const row = document.getElementById('dash-row-' + userId);
+      if (!row) return;
+      // Expand if not already expanded
+      if (!row.classList.contains('expanded')) {
+        toggleDashboardExecDetail(userId, row);
+      }
+      // Scroll into view with offset
+      setTimeout(() => {
+        row.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Flash highlight
+        row.style.transition = 'box-shadow 0.3s';
+        row.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.4)';
+        setTimeout(() => { row.style.boxShadow = ''; }, 1500);
+      }, 100);
+    }
+
+    function toggleStatDetail(type) {
+      const panel = document.getElementById('dash-stat-detail');
+      if (!panel) return;
+      // Toggle off if same type clicked
+      if (_activeStatDetail === type) {
+        panel.style.display = 'none';
+        _activeStatDetail = null;
+        document.querySelectorAll('.route-stat-card').forEach(c => c.classList.remove('active-card'));
+        return;
+      }
+      _activeStatDetail = type;
+      document.querySelectorAll('.route-stat-card').forEach(c => c.classList.remove('active-card'));
+      event.currentTarget.classList.add('active-card');
+
+      const st = window._dashboardState || {};
+      const execList = executives || allUsers.filter(u => u.role === 'executive');
+      let html = '';
+      const closeBtn = `<button onclick="${_closeStatPanel}" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:18px;padding:0 4px;line-height:1;">&times;</button>`;
+
+      if (type === 'with-route') {
+        const withRoute = execList.filter(u => st.executivesWithRoute && st.executivesWithRoute.has(u.id));
+        // Check which ones have a row in the scheduled table
+        html = `<div class="dash-stat-detail-panel">
+          <h4><span><i data-lucide="users" style="width:14px;height:14px;color:#3b82f6;"></i> Vendedores con ruta hoy (${withRoute.length})</span>${closeBtn}</h4>
+          <div class="dash-stat-detail-list">${withRoute.map(u => {
+            const hasRow = !!document.getElementById('dash-row-' + u.id);
+            return `<div class="dash-stat-detail-chip" style="cursor:pointer;" onclick="event.stopPropagation();scrollToExecRow('${u.id}')"><span class="chip-dot" style="background:#3b82f6;"></span>${u.full_name || u.name}${hasRow ? '<i data-lucide="arrow-down" style="width:11px;height:11px;color:#3b82f6;margin-left:2px;" title="Ver abajo"></i>' : ''}</div>`;
+          }).join('')}
+          ${withRoute.length === 0 ? '<span style="color:var(--text-muted);font-size:12px;">Ningún vendedor con ruta</span>' : ''}</div></div>`;
+      } else if (type === 'without-route') {
+        const withoutRoute = execList.filter(u => !st.executivesWithRoute || !st.executivesWithRoute.has(u.id));
+        html = `<div class="dash-stat-detail-panel">
+          <h4><span><i data-lucide="user-x" style="width:14px;height:14px;color:#ef4444;"></i> Vendedores sin ruta (${withoutRoute.length})</span>${closeBtn}</h4>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Haz clic en un vendedor para asignarle una ruta</div>
+          <div class="dash-stat-detail-list">${withoutRoute.map(u => `<div class="dash-stat-detail-chip" style="cursor:pointer;" onclick="event.stopPropagation();goToVendorGestionar('${u.id}')"><span class="chip-dot" style="background:#ef4444;"></span>${u.full_name || u.name}<i data-lucide="plus-circle" style="width:12px;height:12px;color:#3b82f6;margin-left:2px;" title="Asignar ruta"></i></div>`).join('')}
+          ${withoutRoute.length === 0 ? '<span style="color:var(--text-muted);font-size:12px;">Todos tienen ruta</span>' : ''}</div></div>`;
+      } else if (type === 'completed') {
+        const completed = (st.completedRoutes || []);
+        const completedExecs = completed.map(r => { const u = allUsers.find(x => x.id === r.user_id); return { name: u ? (u.full_name || u.name) : 'Desconocido', id: r.user_id }; });
+        html = `<div class="dash-stat-detail-panel">
+          <h4><span><i data-lucide="check-circle" style="width:14px;height:14px;color:#10b981;"></i> Rutas completadas hoy (${completed.length})</span>${closeBtn}</h4>
+          <div class="dash-stat-detail-list">${completedExecs.map(e => `<div class="dash-stat-detail-chip"><span class="chip-dot" style="background:#10b981;"></span>${e.name}</div>`).join('')}
+          ${completed.length === 0 ? '<span style="color:var(--text-muted);font-size:12px;">Sin rutas completadas hoy</span>' : ''}</div></div>`;
+      } else if (type === 'scheduled') {
+        const schedData = window._dashboardScheduleData || {};
+        const entries = Object.entries(schedData);
+        html = `<div class="dash-stat-detail-panel">
+          <h4><span><i data-lucide="calendar-check" style="width:14px;height:14px;color:#8b5cf6;"></i> Rutas programadas (${st.scheduledCount || 0} visitas)</span>${closeBtn}</h4>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Haz clic en un vendedor para ver su detalle abajo</div>
+          <div class="dash-stat-detail-list">${entries.map(([uid, info]) => { const days = Object.keys(info.dates).length; const clients = Object.values(info.dates).flat().length; return `<div class="dash-stat-detail-chip" style="cursor:pointer;" onclick="event.stopPropagation();scrollToExecRow('${uid}')"><span class="chip-dot" style="background:#8b5cf6;"></span>${info.userName || 'Sin nombre'} <span style="color:var(--text-muted);font-size:11px;">(${days}d / ${clients}cl)</span><i data-lucide="arrow-down" style="width:11px;height:11px;color:#8b5cf6;margin-left:2px;" title="Ver abajo"></i></div>`; }).join('')}
+          ${entries.length === 0 ? '<span style="color:var(--text-muted);font-size:12px;">Sin rutas programadas</span>' : ''}</div></div>`;
+      } else if (type === 'fuel') {
+        const totalCost = st.totalFuelCost || 0;
+        const schedData = window._dashboardScheduleData || {};
+        const eff = (window.vehicleConfig && window.vehicleConfig.FUEL_EFFICIENCY_KML) || 10;
+        const fp = (window.vehicleConfig && window.vehicleConfig.FUEL_PRICE_PER_LITER) || 1150;
+        let details = '';
+        Object.entries(schedData).forEach(([uid, info]) => {
+          const allR = Object.values(info.dates).flat();
+          const km = calcRoutesDistanceKm(allR);
+          const cost = Math.round((km / eff) * fp);
+          if (km > 0) details += `<div class="dash-stat-detail-chip" style="cursor:pointer;" onclick="event.stopPropagation();scrollToExecRow('${uid}')"><span class="chip-dot" style="background:#f59e0b;"></span>${info.userName || 'Sin nombre'} <span style="font-weight:600;color:#f59e0b;">$${cost.toLocaleString('es-CL')}</span> <span style="color:var(--text-muted);font-size:11px;">(${Math.round(km)}km)</span><i data-lucide="arrow-down" style="width:11px;height:11px;color:#f59e0b;margin-left:2px;" title="Ver abajo"></i></div>`;
+        });
+        html = `<div class="dash-stat-detail-panel">
+          <h4><span><i data-lucide="fuel" style="width:14px;height:14px;color:#f59e0b;"></i> Desglose costo bencina — Total: $${Math.round(totalCost).toLocaleString('es-CL')}</span>${closeBtn}</h4>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Rendimiento: ${eff} km/L · Precio: $${fp.toLocaleString('es-CL')}/L · Clic para ver detalle</div>
+          <div class="dash-stat-detail-list">${details || '<span style="color:var(--text-muted);font-size:12px;">Sin datos de distancia</span>'}</div></div>`;
+      }
+
+      panel.innerHTML = html;
+      panel.style.display = 'block';
+      lucide.createIcons();
+    }
+
+    // =============================================
+    // DASHBOARD EXPANDABLE ROWS
+    // =============================================
+    function toggleDashboardExecDetail(userId, rowEl) {
+      const detailRow = document.getElementById('exec-detail-' + userId);
+      if (!detailRow) return;
+      const isVisible = detailRow.style.display !== 'none';
+      if (isVisible) {
+        detailRow.style.display = 'none';
+        rowEl.classList.remove('expanded');
+      } else {
+        detailRow.style.display = '';
+        rowEl.classList.add('expanded');
+        const container = document.getElementById('exec-detail-content-' + userId);
+        if (container && !container.dataset.loaded) {
+          renderExecDetailContent(userId, container);
+          container.dataset.loaded = '1';
+        }
+      }
+      lucide.createIcons();
+    }
+
+    function renderExecDetailContent(userId, container) {
+      const schedData = window._dashboardScheduleData || {};
+      const info = schedData[userId];
+      if (!info) { container.innerHTML = '<div style="padding:10px;color:var(--text-muted);">Sin datos</div>'; return; }
+      const dates = Object.keys(info.dates).sort();
+      const execName = info.userName || 'Sin nombre';
+      const efficiency = (window.vehicleConfig && window.vehicleConfig.FUEL_EFFICIENCY_KML) || 10;
+      const price = (window.vehicleConfig && window.vehicleConfig.FUEL_PRICE_PER_LITER) || 1150;
+      let html = `<div class="exec-detail-header">
+        <span class="exec-detail-title-badge"><i data-lucide="map-pin" style="width:16px;height:16px;"></i> Detalle de Rutas — ${execName}</span>
+        <button onclick="event.stopPropagation(); goToVendorRoute('${userId}')" class="btn btn-primary" style="font-size:13px;padding:8px 18px;border-radius:8px;font-weight:600;">
+          <i data-lucide="calendar" style="width:14px;height:14px;"></i> Ver en Planner Semanal
+        </button>
+      </div>`;
+      dates.forEach((date, idx) => {
+        const dayRoutes = (info.dates[date] || []).slice().sort((a, b) => (a.priority || 999) - (b.priority || 999));
+        const dayKm = calcRoutesDistanceKm(dayRoutes);
+        const dayCost = Math.round((dayKm / efficiency) * price);
+        const dateLabel = new Date(date + 'T12:00:00').toLocaleDateString('es-CL', { weekday:'long', day:'numeric', month:'long' });
+        const panelId = 'exec-day-' + userId + '-' + date.replace(/-/g, '');
+        html += `<div class="exec-day-bar" onclick="toggleExecDayDetail('${panelId}', this)">
+          <div><i data-lucide="chevron-right" class="day-chevron" style="width:13px;height:13px;color:#10b981;"></i> <strong style="text-transform:capitalize;">${dateLabel}</strong> — ${dayRoutes.length} cliente${dayRoutes.length !== 1 ? 's' : ''}</div>
+          <div style="display:flex;gap:12px;font-size:12px;color:var(--text-muted);">
+            <span>${Math.round(dayKm)} km</span>
+            <span>$${dayCost.toLocaleString('es-CL')}</span>
+          </div>
+        </div>`;
+        html += `<div class="exec-day-clients" id="${panelId}" style="display:none;">`;
+        dayRoutes.forEach((r, i) => {
+          const client = r.client || r;
+          const name = client.business_name || client.name || 'Cliente';
+          const addr = client.address || '';
+          const arrival = r.estimated_arrival || '';
+          const lat = client.lat || '';
+          const lng = client.lng || '';
+          html += `<div class="exec-day-client-item">
+            <span class="exec-day-client-num">${i + 1}</span>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+              <div style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${addr}</div>
+            </div>
+            ${arrival ? `<span style="font-size:11px;color:var(--primary-color);white-space:nowrap;">${arrival}</span>` : ''}
+            ${lat && lng ? `<button onclick="event.stopPropagation(); openWazeToClient(${lat}, ${lng})" style="background:none;border:1px solid rgba(59,130,246,0.25);color:#3b82f6;padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;" title="Abrir en Waze"><i data-lucide="navigation" style="width:11px;height:11px;"></i> Waze</button>` : ''}
+          </div>`;
+        });
+        html += '</div>';
+      });
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function toggleExecDayDetail(panelId, headerEl) {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const isVisible = panel.style.display !== 'none';
+      panel.style.display = isVisible ? 'none' : 'block';
+      if (isVisible) headerEl.classList.remove('expanded');
+      else headerEl.classList.add('expanded');
+      lucide.createIcons();
+    }
+
     // Dashboard data updater
     async function updateRouteDashboard() {
+      // Reset stat detail panel and expanded rows
+      _activeStatDetail = null;
+      const sdp = document.getElementById('dash-stat-detail');
+      if (sdp) sdp.style.display = 'none';
+      document.querySelectorAll('.route-stat-card').forEach(c => c.classList.remove('active-card'));
       try {
         const todayStr = new Date().toISOString().split('T')[0];
         // End date: 60 days ahead to capture all upcoming scheduled routes
@@ -12820,6 +13178,7 @@
         ]);
         const data = await res.json();
         const schedData = await schedRes.json();
+        window._dashboardScheduleData = (schedData.success && schedData.data) ? schedData.data : {};
         const routes = (data.success && data.data) ? data.data : [];
 
         // Scheduled routes for today
@@ -12837,16 +13196,27 @@
         const totalExecs = executives ? executives.length : allUsers.filter(u => u.role === 'executive').length;
         const withoutRoute = Math.max(0, totalExecs - executivesWithRoute.size);
 
-        // Calculate total fuel cost
+        // Calculate total fuel cost (daily routes + scheduled routes)
+        const efficiency = (window.vehicleConfig && window.vehicleConfig.FUEL_EFFICIENCY_KML) || 10;
+        const fuelPrice = (window.vehicleConfig && window.vehicleConfig.FUEL_PRICE_PER_LITER) || 1150;
         let totalFuelCost = 0;
         routes.forEach(r => {
           if (r.total_distance) {
             const km = parseFloat(r.total_distance) || 0;
-            const efficiency = (window.vehicleConfig && window.vehicleConfig.FUEL_EFFICIENCY_KML) || 10;
-            const price = (window.vehicleConfig && window.vehicleConfig.FUEL_PRICE_PER_LITER) || 1150;
-            totalFuelCost += (km / efficiency) * price;
+            totalFuelCost += (km / efficiency) * fuelPrice;
           }
         });
+        // Add scheduled routes fuel cost
+        if (schedData.success && schedData.data) {
+          Object.values(schedData.data).forEach(info => {
+            const allSchedRoutes = Object.values(info.dates).flat();
+            const schedKm = calcRoutesDistanceKm(allSchedRoutes);
+            totalFuelCost += (schedKm / efficiency) * fuelPrice;
+          });
+        }
+
+        // Store dashboard state for stat card drilldown
+        window._dashboardState = { routes, activeRoutes, completedRoutes, executivesWithRoute, withoutRoute, totalExecs, scheduledExecs, scheduledCount, totalFuelCost };
 
         // Update stat cards
         const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
@@ -12880,7 +13250,7 @@
             alertsHtml += `<div class="route-alert-item alert-info">
               <i data-lucide="info" style="width:18px;height:18px;color:#3b82f6;flex-shrink:0;"></i>
               <div style="flex:1;"><strong>${withoutRoute}</strong> vendedor(es) sin ruta asignada hoy</div>
-              <button onclick="switchRouteTab('gestionar')" class="btn" style="background:#3b82f6;color:white;padding:4px 12px;font-size:11px;border:none;border-radius:4px;cursor:pointer;">Asignar</button>
+              <button onclick="switchRouteTab('gestionar')" class="btn" style="background:#3b82f6;color:white;padding:8px 20px;font-size:13px;font-weight:600;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 6px rgba(59,130,246,0.3);"><i data-lucide="plus-circle" style="width:14px;height:14px;vertical-align:-2px;"></i> Asignar Ruta</button>
             </div>`;
           }
           alertsDiv.innerHTML = alertsHtml;
@@ -12893,7 +13263,8 @@
           if (execEntries.length === 0) {
             schedTableDiv.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">No hay rutas programadas</div>';
           } else {
-            let tableHtml = '<table style="width:100%;"><thead><tr><th>Ejecutivo</th><th>Días</th><th>Clientes</th><th>KM aprox</th><th>Costo total recorrido</th><th>Acciones</th></tr></thead><tbody>';
+            const colCount = 7;
+            let tableHtml = '<table style="width:100%;"><thead><tr><th style="width:28px;"></th><th>Vendedor</th><th>Días</th><th>Clientes</th><th>KM aprox</th><th>Costo total recorrido</th><th>Acciones</th></tr></thead><tbody>';
             execEntries.forEach(([uid, info]) => {
               const dates = Object.keys(info.dates).sort();
               const allRoutes = Object.values(info.dates).flat();
@@ -12906,7 +13277,8 @@
               const dateRange = daysCount === 1
                 ? new Date(dates[0] + 'T12:00:00').toLocaleDateString('es-CL', { day:'numeric', month:'short' })
                 : new Date(dates[0] + 'T12:00:00').toLocaleDateString('es-CL', { day:'numeric', month:'short' }) + ' - ' + new Date(dates[dates.length-1] + 'T12:00:00').toLocaleDateString('es-CL', { day:'numeric', month:'short' });
-              tableHtml += `<tr class="vendor-route-row" onclick="goToVendorRoute('${uid}')" style="cursor:pointer;">
+              tableHtml += `<tr class="vendor-route-row" id="dash-row-${uid}" onclick="toggleDashboardExecDetail('${uid}', this)" style="cursor:pointer;">
+                <td style="text-align:center;"><i data-lucide="chevron-right" class="chevron-icon" style="width:14px;height:14px;"></i></td>
                 <td><strong>${info.userName || 'Sin nombre'}</strong></td>
                 <td><span style="font-size:12px;">${daysCount} día${daysCount>1?'s':''}</span> <span style="font-size:11px;color:var(--text-muted);">(${dateRange})</span></td>
                 <td>${clientCount}</td>
@@ -12914,15 +13286,13 @@
                 <td style="font-weight:600;">$${cost.toLocaleString('es-CL')}</td>
                 <td>
                   <div style="display:flex;gap:4px;align-items:center;">
-                    <button onclick="event.stopPropagation(); goToVendorRoute('${uid}')" class="btn btn-secondary" style="font-size:11px;padding:3px 10px;">
-                      <i data-lucide="eye" style="width:12px;height:12px;"></i> Ver
-                    </button>
                     <button onclick="event.stopPropagation(); deleteExecSchedule('${uid}', '${(info.userName || 'Sin nombre').replace(/'/g, "\\'")}', ${clientCount})" class="btn" style="font-size:11px;padding:3px 8px;background:none;border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:4px;cursor:pointer;" title="Eliminar rutas">
                       <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
                     </button>
                   </div>
                 </td>
               </tr>`;
+              tableHtml += `<tr class="exec-detail-row" id="exec-detail-${uid}" style="display:none;"><td colspan="${colCount}"><div class="exec-detail-content" id="exec-detail-content-${uid}"></div></td></tr>`;
             });
             tableHtml += '</tbody></table>';
             schedTableDiv.innerHTML = tableHtml;
@@ -15297,7 +15667,7 @@
                 <div style="font-weight:700;font-size:15px;color:var(--text-primary);">${z.name}</div>
                 <div style="font-size:12px;color:var(--text-muted);display:flex;gap:8px;align-items:center;margin-top:2px;">
                   <span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 8px;border-radius:12px;font-size:10px;font-weight:600;">${z.zona}</span>
-                  <span>${myExecs.length} ejecutivo${myExecs.length !== 1 ? 's' : ''}</span>
+                  <span>${myExecs.length} vendedor${myExecs.length !== 1 ? 'es' : ''}</span>
                   ${z.region ? `<span>| ${z.region}</span>` : ''}
                 </div>
               </div>
@@ -15314,7 +15684,7 @@
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">`;
           myExecs.forEach(e => { html += buildVendedorCard(e, false); });
           if (myExecs.length === 0) {
-            html += '<p style="color:var(--text-muted);font-size:13px;padding:8px;">Sin ejecutivos asignados</p>';
+            html += '<p style="color:var(--text-muted);font-size:13px;padding:8px;">Sin vendedores asignados</p>';
           }
           html += `</div></div></div>`;
         });
@@ -15337,7 +15707,7 @@
           html += '</div></div>';
         }
         if (execs.length > 0) {
-          html += '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:10px;padding:0 4px;">Ejecutivos</div>';
+          html += '<div><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-weight:600;margin-bottom:10px;padding:0 4px;">Vendedores</div>';
           html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">';
           execs.forEach(v => { html += buildVendedorCard(v, false); });
           html += '</div></div>';
@@ -15769,7 +16139,7 @@
       // Populate executive select grouped by zone
       const execSelect = document.getElementById('reasign-exec-select');
       if (execSelect && allUsers) {
-        let html = '<option value="">-- Seleccionar ejecutivo --</option>';
+        let html = '<option value="">-- Seleccionar vendedor --</option>';
         const ZONAS = ['Zona Norte', 'Zona Centro', 'Zona Centro Sur', 'Zona Sur'];
         ZONAS.forEach(zona => {
           const vendedoresInZone = gsheetsVendedoresParsed.filter(v => v.zona === zona);
@@ -15864,7 +16234,7 @@
       const preview = document.getElementById('reasign-preview');
 
       if (!zone || !execId) {
-        showToast('warning', 'Campos requeridos', 'Selecciona zona y ejecutivo');
+        showToast('warning', 'Campos requeridos', 'Selecciona zona y vendedor');
         return;
       }
 
@@ -15998,7 +16368,7 @@
         html += `<tr>
           <td style="padding:8px 12px;border-bottom:1px solid var(--border);">
             <div style="font-weight:600;">${s.name}</div>
-            <div style="font-size:11px;color:var(--text-muted);">${isZonal ? 'Zonal' : 'Ejecutivo'}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${isZonal ? 'Zonal' : 'Vendedor'}</div>
           </td>
           <td style="padding:8px 12px;border-bottom:1px solid var(--border);">
             ${zona ? `<span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;">${zona}</span>` : '<span style="font-size:12px;color:var(--text-muted);">Sin zona</span>'}
@@ -16067,7 +16437,7 @@
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
               <div>
                 <div style="font-weight: 700; font-size: 14px;">${exec.full_name}</div>
-                <div style="font-size: 12px; color: var(--text-muted);">${(() => { const gs = findVendedorData(exec.full_name); const z = gs ? gs.zona : ''; const isZ = gs ? gs.isZonal : false; const zcl = ZONE_COLORS[(z || '').toLowerCase()]; return (isZ ? 'Zonal' : 'Ejecutivo') + (z && zcl ? ' | <span style="background:' + zcl.bg + ';color:' + zcl.color + ';border:1px solid ' + zcl.border + ';padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">' + z + '</span>' : ''); })()}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">${(() => { const gs = findVendedorData(exec.full_name); const z = gs ? gs.zona : ''; const isZ = gs ? gs.isZonal : false; const zcl = ZONE_COLORS[(z || '').toLowerCase()]; return (isZ ? 'Zonal' : 'Vendedor') + (z && zcl ? ' | <span style="background:' + zcl.bg + ';color:' + zcl.color + ';border:1px solid ' + zcl.border + ';padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">' + z + '</span>' : ''); })()}</div>
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <span style="background: var(--bg-hover); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;">${totalClients} clientes</span>
@@ -16611,7 +16981,7 @@
       if (vendorControls) vendorControls.style.display = 'none';
 
       const resultDiv = document.getElementById('schedule-result');
-      resultDiv.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto 8px;"></div><div style="font-size: 12px; color: var(--text-muted);">Cargando ejecutivos...</div></div>';
+      resultDiv.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="margin: 0 auto 8px;"></div><div style="font-size: 12px; color: var(--text-muted);">Cargando vendedores...</div></div>';
 
       try {
         const res = await fetch(`/api/routes/schedule-all?startDate=${s}&endDate=${e}`);
@@ -16636,7 +17006,7 @@
           <div class="empty-state" style="padding: 40px;">
             <i data-lucide="calendar-x" style="width: 40px; height: 40px; color: var(--text-muted);"></i>
             <p style="font-size: 14px; margin-top: 8px;">No hay rutas planificadas esta semana</p>
-            <p style="font-size: 12px; color: var(--text-muted);">Selecciona un ejecutivo para generar su ruta</p>
+            <p style="font-size: 12px; color: var(--text-muted);">Selecciona un vendedor para generar su ruta</p>
             <button class="btn btn-primary" onclick="showExecWeekDetail(null)" style="margin-top: 12px; font-size: 12px; padding: 8px 16px;">
               <i data-lucide="calendar-plus" style="width: 14px; height: 14px;"></i> Generar Ruta
             </button>
@@ -16688,7 +17058,7 @@
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-bottom: 16px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border);">
           <div style="padding: 10px; text-align: center; background: var(--bg-hover); border-right: 1px solid var(--border);">
             <div style="font-size: 20px; font-weight: 800; color: var(--accent);">${execRows.length}</div>
-            <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Ejecutivos</div>
+            <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Vendedores</div>
           </div>
           <div style="padding: 10px; text-align: center; background: var(--bg-hover); border-right: 1px solid var(--border);">
             <div style="font-size: 20px; font-weight: 800;">${grandTotalClients}</div>
@@ -16704,7 +17074,7 @@
         <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px;">
           <thead>
             <tr style="background: var(--bg-hover);">
-              <th style="text-align: left; padding: 10px 14px; font-weight: 700; border-bottom: 2px solid var(--border); border-radius: 8px 0 0 0;">Ejecutivo</th>
+              <th style="text-align: left; padding: 10px 14px; font-weight: 700; border-bottom: 2px solid var(--border); border-radius: 8px 0 0 0;">Vendedor</th>
               ${weekDays.map((wd, i) => `<th style="text-align: center; padding: 10px 8px; font-weight: 700; border-bottom: 2px solid var(--border); min-width: 70px;">
                 <div style="font-size: 11px; color: var(--text-muted);">${wd.label}</div>
                 <div style="font-size: 14px;">${wd.dayNum}</div>
@@ -16760,7 +17130,7 @@
         </div>
         <div style="text-align: center; margin-top: 16px;">
           <button class="btn" onclick="showExecWeekDetail(null)" style="font-size: 12px; padding: 8px 16px; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 6px;">
-            <i data-lucide="calendar-plus" style="width: 14px; height: 14px;"></i> Generar Ruta para Ejecutivo
+            <i data-lucide="calendar-plus" style="width: 14px; height: 14px;"></i> Generar Ruta para Vendedor
           </button>
         </div>`;
 
@@ -16840,7 +17210,7 @@
         resultDiv.innerHTML = `
           <div class="empty-state" style="padding: 24px;">
             <i data-lucide="calendar-days" style="width: 36px; height: 36px;"></i>
-            <p style="font-size: 13px;">Selecciona un ejecutivo y haz click en "Generar Ruta"</p>
+            <p style="font-size: 13px;">Selecciona un vendedor y haz click en "Generar Ruta"</p>
           </div>`;
         lucide.createIcons();
       }
@@ -17457,7 +17827,7 @@
         }
 
         if (dates.length === 0) {
-          showToast('warning', 'Sin datos', 'No se encontraron rutas programadas para este ejecutivo');
+          showToast('warning', 'Sin datos', 'No se encontraron rutas programadas para este vendedor');
           return;
         }
 
@@ -17734,7 +18104,7 @@
       if (totalsEl) {
         totalsEl.innerHTML = `
           <div class="monthly-totals-bar">
-            <div class="mt-stat"><strong>${execCount}</strong> ejecutivos</div>
+            <div class="mt-stat"><strong>${execCount}</strong> vendedores</div>
             <div class="mt-stat"><strong>${totalClients}</strong> clientes</div>
             <div class="mt-stat" style="color: #dc2626; font-weight: 700;">
               Costo total recorrido aprox: <strong>$${Math.round(totalCost).toLocaleString('es-CL')}</strong>
