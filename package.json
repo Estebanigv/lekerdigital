@@ -1,6 +1,6 @@
 {
   "name": "leker-backend",
-  "version": "1.8.5",
+  "version": "1.8.8",
   "description": "Sistema de Gestión Logística y Comercial - LEKER",
   "main": "src/server.js",
   "scripts": {
