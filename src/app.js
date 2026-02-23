@@ -1639,6 +1639,17 @@ app.get('/api/routes/schedule-all', async (req, res) => {
   }
 });
 
+// Obtener rutas programadas de HOY para todos los vendedores (panel de Visitas)
+app.get('/api/routes/today-scheduled', async (req, res) => {
+  try {
+    const data = await routesService.getTodayScheduledRoutes();
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('[today-scheduled] Error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Obtener rutas planificadas de un vendedor
 app.get('/api/routes/schedule/:userId', async (req, res) => {
   try {

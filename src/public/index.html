@@ -3570,7 +3570,7 @@
       <div class="login-logo">
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
         <p>Sistema de Gestión Logística</p>
-        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.8.8</div>
+        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.8.9</div>
       </div>
 
       <!-- Login Form -->
@@ -3639,7 +3639,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.8.8</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.8.9</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -7338,6 +7338,7 @@
     let allRoutes = [];
     let filteredClients = [];
     let todayRoutesData = [];
+    let todayScheduledData = {}; // { userId: [scheduled_routes...] }
 
     // Pagination for clients
     const CLIENTS_PER_PAGE = 50;
@@ -8140,6 +8141,15 @@
           todayRoutesData = todayData.success ? todayData.data : [];
         } catch (e) {
           todayRoutesData = [];
+        }
+
+        // Load today's scheduled routes for visits panel
+        try {
+          const schedRes = await fetch(`${API}/api/routes/today-scheduled`);
+          const schedData = await schedRes.json();
+          todayScheduledData = schedData.success ? schedData.data : {};
+        } catch (e) {
+          todayScheduledData = {};
         }
 
         // Update dashboard stats from today's routes
@@ -10227,37 +10237,201 @@
       // Filter routes for this executive
       routeSelect.innerHTML = '';
 
+      // Remove any previous "Iniciar Jornada" button
+      const prevStartBtn = document.getElementById('visit-start-day-btn');
+      if (prevStartBtn) prevStartBtn.remove();
+
       if (!execId) {
         routeSelect.innerHTML = '<option value="">-- Selecciona un vendedor arriba --</option>';
         document.getElementById('client-count-label').textContent = '';
+        renderTodayVisits();
         return;
       }
 
       const execRoutes = todayRoutesData.filter(r => r.user_id === execId);
       const activeRoute = execRoutes.find(r => r.status === 'active');
+      const scheduledClients = todayScheduledData[execId] || [];
+
+      const statusEl = document.getElementById('visit-route-status');
+
+      // Reset inline styles that may persist from scheduled-route branch
+      statusEl.style.background = '';
+      statusEl.style.color = '';
 
       if (activeRoute) {
         routeSelect.innerHTML = `<option value="${activeRoute.id}">${activeRoute.user?.full_name || 'Vendedor'} - Ruta activa</option>`;
         document.getElementById('route-info-text').textContent = `Vehículo: ${activeRoute.vehicle?.license_plate || 'N/A'} | Inicio: ${activeRoute.start_km} km`;
         document.getElementById('route-info-text').style.display = 'block';
-        document.getElementById('visit-route-status').textContent = 'Ruta Activa';
-        document.getElementById('visit-route-status').className = 'badge badge-success';
-        document.getElementById('visit-route-status').style.display = 'inline-block';
+        statusEl.textContent = 'Ruta Activa';
+        statusEl.className = 'badge badge-success';
+        statusEl.style.display = 'inline-block';
       } else if (execRoutes.length > 0) {
         routeSelect.innerHTML = `<option value="">Ruta completada hoy</option>`;
-        document.getElementById('visit-route-status').textContent = 'Completada';
-        document.getElementById('visit-route-status').className = 'badge badge-secondary';
-        document.getElementById('visit-route-status').style.display = 'inline-block';
+        statusEl.textContent = 'Completada';
+        statusEl.className = 'badge badge-secondary';
+        statusEl.style.display = 'inline-block';
+      } else if (scheduledClients.length > 0) {
+        // Has scheduled route but no daily_route started
+        routeSelect.innerHTML = `<option value="">Ruta programada (${scheduledClients.length} clientes) — Inicie jornada</option>`;
+        document.getElementById('route-info-text').textContent = '';
+        document.getElementById('route-info-text').style.display = 'none';
+        statusEl.textContent = 'Ruta Programada';
+        statusEl.className = 'badge';
+        statusEl.style.display = 'inline-block';
+        statusEl.style.background = '#f59e0b';
+        statusEl.style.color = '#fff';
+
+        // Add "Iniciar Jornada" button after the route select
+        const startBtn = document.createElement('button');
+        startBtn.id = 'visit-start-day-btn';
+        startBtn.className = 'btn btn-success';
+        startBtn.style.cssText = 'margin-top: 10px; width: 100%; font-weight: 600;';
+        startBtn.innerHTML = '<i data-lucide="play-circle" style="width:16px;height:16px;"></i> Iniciar Jornada';
+        startBtn.onclick = () => startDayFromVisits(execId);
+        routeSelect.parentNode.appendChild(startBtn);
+        lucide.createIcons();
       } else {
         routeSelect.innerHTML = `<option value="">Sin ruta activa hoy</option>`;
-        document.getElementById('visit-route-status').textContent = 'Sin Ruta';
-        document.getElementById('visit-route-status').className = 'badge badge-warning';
-        document.getElementById('visit-route-status').style.display = 'inline-block';
+        statusEl.textContent = 'Sin Ruta';
+        statusEl.className = 'badge badge-warning';
+        statusEl.style.display = 'inline-block';
       }
 
       // Update client count for this executive's assigned clients
       const assignedClients = allClients.filter(c => c.assigned_user_id === execId);
       document.getElementById('client-count-label').textContent = `(${assignedClients.length} asignados)`;
+
+      // Render today's visits section
+      renderTodayVisits();
+    }
+
+    // Start daily route from Visits panel for an executive with scheduled routes
+    async function startDayFromVisits(execId) {
+      const btn = document.getElementById('visit-start-day-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:16px;height:16px;"></i> Iniciando...';
+        lucide.createIcons();
+      }
+
+      try {
+        // Find first active vehicle
+        const activeVehicle = allVehicles.find(v => v.status === 'active');
+        if (!activeVehicle) {
+          showToast('error', 'Sin vehículo', 'No hay vehículos activos disponibles');
+          return;
+        }
+
+        const res = await fetch(`${API}/routes/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: execId, vehicleId: activeVehicle.id, startKm: 0 })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', 'Jornada iniciada', `Ruta creada para ${data.data.user?.name || 'vendedor'}`);
+          // Reload today's routes and refresh the panel
+          try {
+            const todayRes = await fetch(`${API}/api/daily-routes/today`);
+            const todayData = await todayRes.json();
+            todayRoutesData = todayData.success ? todayData.data : [];
+          } catch (e) {
+            todayRoutesData = [];
+          }
+          filterVisitsByExecutive();
+        } else {
+          showToast('error', 'Error', data.error || 'No se pudo iniciar la jornada');
+        }
+      } catch (error) {
+        showToast('error', 'Error', error.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="play-circle" style="width:16px;height:16px;"></i> Iniciar Jornada';
+          lucide.createIcons();
+        }
+      }
+    }
+
+    // Render "Visitas de Hoy" section with completed visits and pending scheduled clients
+    function renderTodayVisits() {
+      const container = document.getElementById('today-visits');
+      if (!container) return;
+
+      const execId = document.getElementById('visit-executive-filter')?.value;
+      if (!execId) {
+        container.innerHTML = `<div class="empty-state">
+          <i data-lucide="clipboard" style="width: 48px; height: 48px;"></i>
+          <p>Selecciona un vendedor para ver sus visitas</p>
+        </div>`;
+        lucide.createIcons();
+        return;
+      }
+
+      // Get completed visits from daily_route
+      const execRoute = todayRoutesData.find(r => r.user_id === execId);
+      const completedVisits = execRoute?.visits || [];
+
+      // Get scheduled clients pending
+      const scheduledClients = (todayScheduledData[execId] || []);
+
+      // Build set of visited client IDs
+      const visitedClientIds = new Set(completedVisits.map(v => v.client_id));
+
+      // Separate scheduled into visited and pending
+      const pendingScheduled = scheduledClients.filter(sc => !visitedClientIds.has(sc.client_id));
+
+      if (completedVisits.length === 0 && pendingScheduled.length === 0) {
+        container.innerHTML = `<div class="empty-state">
+          <i data-lucide="clipboard" style="width: 48px; height: 48px;"></i>
+          <p>No hay visitas registradas ni clientes programados hoy</p>
+        </div>`;
+        lucide.createIcons();
+        return;
+      }
+
+      let html = '';
+
+      // Completed visits section
+      if (completedVisits.length > 0) {
+        html += `<div style="font-size: 12px; font-weight: 700; color: #10b981; padding: 8px 12px; background: rgba(16,185,129,0.08); border-radius: 8px; margin-bottom: 8px;">
+          <i data-lucide="check-circle" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i>
+          Visitas completadas (${completedVisits.length})
+        </div>`;
+        completedVisits.forEach((v, i) => {
+          const time = v.checked_in_at ? new Date(v.checked_in_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+          const outcomeColors = { 'venta': '#10b981', 'sin_venta': '#ef4444', 'no_contacto': '#6b7280', 'seguimiento': '#f59e0b' };
+          const outcomeLabels = { 'venta': 'Venta', 'sin_venta': 'Sin venta', 'no_contacto': 'No contacto', 'seguimiento': 'Seguimiento' };
+          const clientName = v.client?.fantasy_name || v.client?.name || 'Cliente';
+          html += `<div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px;">
+            <span style="min-width: 50px; color: var(--text-muted); font-size: 11px;">${time}</span>
+            <span style="flex: 1; font-weight: 500;">${clientName}</span>
+            <span style="padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: ${outcomeColors[v.outcome] || '#6b7280'}20; color: ${outcomeColors[v.outcome] || '#6b7280'};">${outcomeLabels[v.outcome] || v.outcome}</span>
+          </div>`;
+        });
+      }
+
+      // Pending scheduled section
+      if (pendingScheduled.length > 0) {
+        html += `<div style="font-size: 12px; font-weight: 700; color: #f59e0b; padding: 8px 12px; background: rgba(245,158,11,0.08); border-radius: 8px; margin: 8px 0;">
+          <i data-lucide="clock" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i>
+          Por visitar (${pendingScheduled.length})
+        </div>`;
+        pendingScheduled.forEach((sc, i) => {
+          const client = sc.client || {};
+          const clientName = client.fantasy_name || client.name || 'Cliente';
+          const commune = client.commune || '';
+          html += `<div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; opacity: 0.75;">
+            <span style="min-width: 50px; color: var(--text-muted); font-size: 11px; font-weight: 600;">#${i + 1}</span>
+            <span style="flex: 1; font-weight: 500;">${clientName} <span style="font-size: 11px; color: var(--text-muted);">${commune}</span></span>
+            <span style="padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: rgba(245,158,11,0.1); color: #f59e0b;">Pendiente</span>
+          </div>`;
+        });
+      }
+
+      container.innerHTML = html;
+      lucide.createIcons();
     }
 
     function onRouteSelected() {

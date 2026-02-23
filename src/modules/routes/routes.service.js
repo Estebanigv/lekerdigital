@@ -142,8 +142,8 @@ function optimizeRouteOrder(clients, startPoint = null) {
 function clusterClientsByProximity(clients) {
   const TIME_BUDGET_MIN = 540; // 9 horas (09:00 a 18:00)
   const SPEED_KMH = 40;
-  const VISIT_DURATION_MIN = 35;
-  const MAX_PER_CLUSTER = 15;
+  const VISIT_DURATION_MIN = 60;
+  const MAX_PER_CLUSTER = 9;
 
   if (!clients || clients.length === 0) return [];
 
@@ -1529,11 +1529,11 @@ class RoutesService {
 
   /**
    * Calcula timeline del día con hora estimada de llegada a cada cliente
-   * Velocidad promedio: 40 km/h, 35 min por visita, inicio 09:00
+   * Velocidad promedio: 40 km/h, 60 min por visita, inicio 09:00
    */
   calculateDayTimeline(orderedClients, startTime = '09:00') {
     const SPEED_KMH = 40;
-    const VISIT_DURATION_MIN = 35;
+    const VISIT_DURATION_MIN = 60;
     const END_OF_DAY = '18:00';
 
     const [startH, startM] = startTime.split(':').map(Number);
@@ -1826,7 +1826,7 @@ class RoutesService {
           status: 'pending',
           original_date: date,
           estimated_arrival: client.estimatedArrival || null,
-          estimated_duration: 35
+          estimated_duration: 60
         });
       });
     }
@@ -2212,7 +2212,7 @@ class RoutesService {
         priority: 99,
         status: 'pending',
         original_date: route.original_date || route.scheduled_date,
-        estimated_duration: 35
+        estimated_duration: 60
       });
     } else {
       throw new Error('Acción no válida');
@@ -2375,7 +2375,7 @@ class RoutesService {
         priority: 50 + idx,
         status: 'pending',
         original_date: p.original_date || today,
-        estimated_duration: 35
+        estimated_duration: 60
       }));
 
       await supabase.from('scheduled_routes').insert(newEntries);
@@ -2512,6 +2512,33 @@ class RoutesService {
   /**
    * Elimina una ruta programada individual por su ID.
    */
+  /**
+   * Obtiene todas las rutas programadas de HOY para todos los vendedores
+   * Usado por el panel de Visitas para saber quién tiene ruta programada
+   */
+  async getTodayScheduledRoutes() {
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('scheduled_routes')
+      .select('*, client:clients(id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation), user:users(id, full_name, role)')
+      .eq('scheduled_date', today)
+      .eq('status', 'pending')
+      .order('user_id')
+      .order('priority');
+
+    if (error) throw error;
+
+    // Group by user_id
+    const byUser = {};
+    (data || []).forEach(sr => {
+      if (!byUser[sr.user_id]) byUser[sr.user_id] = [];
+      byUser[sr.user_id].push(sr);
+    });
+
+    return byUser;
+  }
+
   async deleteScheduledRoute(routeId) {
     const { data, error } = await supabase
       .from('scheduled_routes')
