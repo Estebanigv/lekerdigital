@@ -8103,8 +8103,19 @@
 
         const visitExecFilterEl = document.getElementById('visit-executive-filter');
         if (visitExecFilterEl) {
-          visitExecFilterEl.innerHTML = '<option value="">-- Seleccionar Vendedor --</option>' +
-            executives.map(e => `<option value="${e.id}">${e.full_name}</option>`).join('');
+          // Build dropdown with route status indicators
+          let visitExecOpts = '<option value="">-- Seleccionar Vendedor --</option>';
+          executives.forEach(e => {
+            const hasActive = todayRoutesData.some(r => r.user_id === e.id && r.status === 'active');
+            const hasCompleted = todayRoutesData.some(r => r.user_id === e.id && r.status !== 'active');
+            const hasScheduled = (todayScheduledData[e.id] || []).length > 0;
+            let statusTag = '';
+            if (hasActive) statusTag = ' \u25CF En ruta';
+            else if (hasCompleted) statusTag = ' \u25CB Completada';
+            else if (hasScheduled) statusTag = ' \u25D4 Programada';
+            visitExecOpts += `<option value="${e.id}">${e.full_name}${statusTag}</option>`;
+          });
+          visitExecFilterEl.innerHTML = visitExecOpts;
         }
 
         // Update counts
@@ -10360,12 +10371,10 @@
       if (!container) return;
 
       const execId = document.getElementById('visit-executive-filter')?.value;
+
+      // No vendor selected → show overview of ALL vendors
       if (!execId) {
-        container.innerHTML = `<div class="empty-state">
-          <i data-lucide="clipboard" style="width: 48px; height: 48px;"></i>
-          <p>Selecciona un vendedor para ver sus visitas</p>
-        </div>`;
-        lucide.createIcons();
+        renderTodayVisitsOverview(container);
         return;
       }
 
@@ -10383,9 +10392,9 @@
       const pendingScheduled = scheduledClients.filter(sc => !visitedClientIds.has(sc.client_id));
 
       if (completedVisits.length === 0 && pendingScheduled.length === 0) {
-        container.innerHTML = `<div class="empty-state">
-          <i data-lucide="clipboard" style="width: 48px; height: 48px;"></i>
-          <p>No hay visitas registradas ni clientes programados hoy</p>
+        container.innerHTML = `<div class="empty-state" style="padding: 24px;">
+          <i data-lucide="clipboard" style="width: 40px; height: 40px;"></i>
+          <p style="font-size: 13px;">Sin visitas ni clientes programados para este vendedor</p>
         </div>`;
         lucide.createIcons();
         return;
@@ -10401,13 +10410,14 @@
         </div>`;
         completedVisits.forEach((v, i) => {
           const time = v.checked_in_at ? new Date(v.checked_in_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '--:--';
-          const outcomeColors = { 'venta': '#10b981', 'sin_venta': '#ef4444', 'no_contacto': '#6b7280', 'seguimiento': '#f59e0b' };
-          const outcomeLabels = { 'venta': 'Venta', 'sin_venta': 'Sin venta', 'no_contacto': 'No contacto', 'seguimiento': 'Seguimiento' };
+          const outcomeColors = { 'venta': '#10b981', 'sin_venta': '#ef4444', 'no_contacto': '#6b7280', 'seguimiento': '#f59e0b', 'sale': '#10b981', 'contacted': '#3b82f6', 'no_contact': '#6b7280', 'pending': '#f59e0b' };
+          const outcomeLabels = { 'venta': 'Venta', 'sin_venta': 'Sin venta', 'no_contacto': 'No contacto', 'seguimiento': 'Seguimiento', 'sale': 'Venta', 'contacted': 'Contactado', 'no_contact': 'Sin contacto', 'pending': 'Pendiente' };
           const clientName = v.client?.fantasy_name || v.client?.name || 'Cliente';
+          const oc = outcomeColors[v.outcome] || '#6b7280';
           html += `<div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px;">
             <span style="min-width: 50px; color: var(--text-muted); font-size: 11px;">${time}</span>
             <span style="flex: 1; font-weight: 500;">${clientName}</span>
-            <span style="padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: ${outcomeColors[v.outcome] || '#6b7280'}20; color: ${outcomeColors[v.outcome] || '#6b7280'};">${outcomeLabels[v.outcome] || v.outcome}</span>
+            <span style="padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: ${oc}20; color: ${oc};">${outcomeLabels[v.outcome] || v.outcome}</span>
           </div>`;
         });
       }
@@ -10429,6 +10439,84 @@
           </div>`;
         });
       }
+
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    // Overview of all vendors when no vendor is selected
+    function renderTodayVisitsOverview(container) {
+      let html = `<div style="font-size: 13px; font-weight: 700; padding: 10px 12px; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(16,185,129,0.08)); border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="users" style="width:16px;height:16px;display:inline-block;vertical-align:middle;"></i>
+        Resumen de Vendedores Hoy
+      </div>`;
+
+      const rows = [];
+
+      executives.forEach(exec => {
+        const dailyRoute = todayRoutesData.find(r => r.user_id === exec.id);
+        const scheduled = todayScheduledData[exec.id] || [];
+        const visitsCount = dailyRoute?.visits?.length || 0;
+        const scheduledCount = scheduled.length;
+
+        // Determine status
+        let statusHtml = '';
+        let sortOrder = 3; // default: no route (last)
+        if (dailyRoute && dailyRoute.status === 'active') {
+          statusHtml = `<span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; background: #10b98120; color: #10b981;">En Ruta</span>`;
+          sortOrder = 0;
+        } else if (dailyRoute) {
+          statusHtml = `<span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; background: #6b728020; color: #6b7280;">Completada</span>`;
+          sortOrder = 2;
+        } else if (scheduledCount > 0) {
+          statusHtml = `<span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; background: #f59e0b20; color: #f59e0b;">Programada</span>`;
+          sortOrder = 1;
+        } else {
+          statusHtml = `<span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; background: #ef444420; color: #ef4444;">Sin Ruta</span>`;
+          sortOrder = 3;
+        }
+
+        // Visits / scheduled info
+        let infoHtml = '';
+        if (visitsCount > 0 || scheduledCount > 0) {
+          const parts = [];
+          if (visitsCount > 0) parts.push(`<span style="color: #10b981; font-weight: 600;">${visitsCount} visita${visitsCount !== 1 ? 's' : ''}</span>`);
+          if (scheduledCount > 0) {
+            const pending = scheduledCount - visitsCount;
+            if (pending > 0) parts.push(`<span style="color: #f59e0b;">${pending} pendiente${pending !== 1 ? 's' : ''}</span>`);
+          }
+          infoHtml = parts.join(' · ');
+        }
+
+        rows.push({ exec, statusHtml, infoHtml, sortOrder, visitsCount, scheduledCount });
+      });
+
+      // Sort: active first, then scheduled, then completed, then no route
+      rows.sort((a, b) => a.sortOrder - b.sortOrder);
+
+      rows.forEach(row => {
+        html += `<div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s;"
+          onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background=''"
+          onclick="document.getElementById('visit-executive-filter').value='${row.exec.id}';filterVisitsByExecutive();">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 700; flex-shrink: 0;">${(row.exec.full_name || '?').charAt(0).toUpperCase()}</div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${row.exec.full_name}</div>
+            <div style="font-size: 11px; color: var(--text-muted);">${row.infoHtml || 'Sin actividad'}</div>
+          </div>
+          ${row.statusHtml}
+        </div>`;
+      });
+
+      // Global totals
+      const totalVisits = todayRoutesData.reduce((sum, r) => sum + (r.visits?.length || 0), 0);
+      const totalScheduled = Object.values(todayScheduledData).reduce((sum, arr) => sum + arr.length, 0);
+      const activeCount = todayRoutesData.filter(r => r.status === 'active').length;
+
+      html += `<div style="padding: 10px 12px; background: var(--bg-hover); border-radius: 0 0 8px 8px; display: flex; gap: 16px; font-size: 11px; color: var(--text-muted); justify-content: center; flex-wrap: wrap;">
+        <span><strong style="color: #10b981;">${activeCount}</strong> en ruta</span>
+        <span><strong style="color: #3b82f6;">${totalVisits}</strong> visitas</span>
+        <span><strong style="color: #f59e0b;">${totalScheduled}</strong> programados</span>
+      </div>`;
 
       container.innerHTML = html;
       lucide.createIcons();
