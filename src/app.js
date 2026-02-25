@@ -1503,6 +1503,21 @@ app.get('/api/clients/:clientId/checklist-data', async (req, res) => {
   }
 });
 
+// Confirmar dirección de cliente (validación en terreno)
+app.put('/api/clients/:clientId/confirm-address', async (req, res) => {
+  try {
+    const { lat, lng, address } = req.body;
+    const confirmedBy = req.body.confirmedBy || req.body.userId;
+    if (!confirmedBy) {
+      return res.status(400).json({ success: false, error: 'Se requiere userId del confirmador' });
+    }
+    const data = await routesService.confirmClientAddress(req.params.clientId, { lat, lng, address }, confirmedBy);
+    res.json({ success: true, message: 'Dirección confirmada', data });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+});
+
 // Actualizar ficha del cliente
 app.put('/api/clients/:clientId/profile', async (req, res) => {
   try {

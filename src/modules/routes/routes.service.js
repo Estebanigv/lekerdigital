@@ -1040,6 +1040,19 @@ class RoutesService {
   }
 
   async getOptimizedRoute(userId, zone = null, startPoint = null, excludeIds = []) {
+    // Auto-fetch home address as startPoint if not provided
+    if (!startPoint) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('home_lat, home_lng')
+        .eq('id', userId)
+        .single();
+
+      if (userData && userData.home_lat && userData.home_lng) {
+        startPoint = { lat: parseFloat(userData.home_lat), lng: parseFloat(userData.home_lng) };
+      }
+    }
+
     // Construir query base
     let query = supabase
       .from('clients')
@@ -1109,7 +1122,7 @@ class RoutesService {
     }
 
     // Use shared helper to split into days with TSP per day
-    const { schedule: days, sortedDates } = this._splitIntoDays(clients, weekdays);
+    const { schedule: days, sortedDates } = this._splitIntoDays(clients, weekdays, startPoint);
 
     // Build per-day route with stats and fuel costs
     const daysResult = {};
@@ -1496,7 +1509,8 @@ class RoutesService {
     const allowedFields = [
       'owner_name', 'buyer_name', 'phone', 'phone2', 'email',
       'observations', 'competitor_provider1', 'competitor_provider2',
-      'is_competitor_client', 'segmentation'
+      'is_competitor_client', 'segmentation',
+      'address_status'
     ];
 
     const updateData = {};
@@ -1531,7 +1545,7 @@ class RoutesService {
    * Calcula timeline del día con hora estimada de llegada a cada cliente
    * Velocidad promedio: 40 km/h, 60 min por visita, inicio 09:00
    */
-  calculateDayTimeline(orderedClients, startTime = '09:00') {
+  calculateDayTimeline(orderedClients, startTime = '09:00', startPoint = null) {
     const SPEED_KMH = 40;
     const VISIT_DURATION_MIN = 60;
     const END_OF_DAY = '18:00';
@@ -1547,10 +1561,14 @@ class RoutesService {
     for (let i = 0; i < orderedClients.length; i++) {
       const client = orderedClients[i];
 
-      // Calculate travel time from previous client
+      // Calculate travel time from previous client (or from startPoint for first client)
       let travelTimeMin = 0;
       let travelDistKm = 0;
-      if (i > 0) {
+      if (i === 0 && startPoint && startPoint.lat && startPoint.lng && client.lat && client.lng) {
+        // First client: travel from home/startPoint
+        travelDistKm = haversineDistance(startPoint.lat, startPoint.lng, client.lat, client.lng);
+        travelTimeMin = Math.round((travelDistKm / SPEED_KMH) * 60);
+      } else if (i > 0) {
         const prev = orderedClients[i - 1];
         if (prev.lat && prev.lng && client.lat && client.lng) {
           travelDistKm = haversineDistance(prev.lat, prev.lng, client.lat, client.lng);
@@ -1605,7 +1623,7 @@ class RoutesService {
    * @param {Array} weekdays - Fechas hábiles ['YYYY-MM-DD', ...]
    * @returns {Object} { schedule: {date: {clients, totalDistance, totalHours, ...}}, sortedDates }
    */
-  _splitIntoDays(clientsToVisit, weekdays) {
+  _splitIntoDays(clientsToVisit, weekdays, startPoint = null) {
     const MAX_PER_DAY = 15;
     const MIN_PER_DAY = 5;
 
@@ -1662,13 +1680,13 @@ class RoutesService {
 
       let orderedClients;
       if (clientsWithCoords.length > 0) {
-        const result = optimizeRouteOrder(clientsWithCoords);
+        const result = optimizeRouteOrder(clientsWithCoords, startPoint);
         orderedClients = [...result.route, ...clientsWithoutCoords];
       } else {
         orderedClients = dayClients;
       }
 
-      const dayTimeline = this.calculateDayTimeline(orderedClients);
+      const dayTimeline = this.calculateDayTimeline(orderedClients, '09:00', startPoint);
       const communes = [...new Set(orderedClients.map(c => c.commune || 'Sin Comuna'))];
 
       optimizedSchedule[date] = {
@@ -1719,7 +1737,7 @@ class RoutesService {
           do { nextBiz.setDate(nextBiz.getDate() + 1); } while (nextBiz.getDay() === 0 || nextBiz.getDay() === 6);
           const extraKey = nextBiz.toISOString().split('T')[0];
           sortedDates.push(extraKey);
-          const extraTimeline = this.calculateDayTimeline(overflow);
+          const extraTimeline = this.calculateDayTimeline(overflow, '09:00', startPoint);
           optimizedSchedule[extraKey] = {
             clients: overflow.map((c, idx) => ({
               ...c,
@@ -1736,7 +1754,7 @@ class RoutesService {
           overflow.length = 0;
         }
 
-        const recalc = this.calculateDayTimeline(keep);
+        const recalc = this.calculateDayTimeline(keep, '09:00', startPoint);
         dayData.clients = keep.map((c, idx) => ({
           ...c,
           estimatedArrival: recalc.timeline[idx]?.estimatedArrival || c.estimatedArrival,
@@ -1757,6 +1775,18 @@ class RoutesService {
    * Genera plan semanal L-V para un vendedor (V2 con timeline y relleno de comunas)
    */
   async generateSchedule(userId, startDate, endDate) {
+    // Get vendor's home address for route start/end point
+    const { data: userData } = await supabase
+      .from('users')
+      .select('home_lat, home_lng')
+      .eq('id', userId)
+      .single();
+
+    let startPoint = null;
+    if (userData && userData.home_lat && userData.home_lng) {
+      startPoint = { lat: parseFloat(userData.home_lat), lng: parseFloat(userData.home_lng) };
+    }
+
     // Get vendor's clients with segmentation
     const { data: clients, error } = await supabase
       .from('clients')
@@ -1803,7 +1833,7 @@ class RoutesService {
     }
 
     // Use shared helper to split into days (proximity-based clustering)
-    const { schedule: optimizedSchedule } = this._splitIntoDays(clientsToVisit, weekdays);
+    const { schedule: optimizedSchedule } = this._splitIntoDays(clientsToVisit, weekdays, startPoint);
 
     // Delete existing pending scheduled routes for this user in the date range
     await supabase
@@ -2550,6 +2580,39 @@ class RoutesService {
     if (error) throw new Error(`Error eliminando ruta: ${error.message}`);
     if (!data || data.length === 0) throw new Error('Ruta no encontrada o ya no está pendiente');
     return { deleted: 1, routeId };
+  }
+
+  /**
+   * Confirma la dirección de un cliente (validación en terreno)
+   * Actualiza lat/lng si se proporcionan, y marca address_status='confirmed'
+   */
+  async confirmClientAddress(clientId, addressData, confirmedByUserId) {
+    const updateData = {
+      address_status: 'confirmed',
+      address_confirmed_at: new Date().toISOString(),
+      address_confirmed_by: confirmedByUserId
+    };
+
+    // Update lat/lng if provided
+    if (addressData.lat !== undefined && addressData.lng !== undefined) {
+      updateData.lat = addressData.lat;
+      updateData.lng = addressData.lng;
+    }
+
+    // Update address text if provided
+    if (addressData.address) {
+      updateData.address = addressData.address;
+    }
+
+    const { data, error } = await supabase
+      .from('clients')
+      .update(updateData)
+      .eq('id', clientId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   }
 }
 
