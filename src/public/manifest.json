@@ -3,10 +3,12 @@
   "short_name": "LEKER",
   "description": "Sistema de gestión logística y rutas para vendedores",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "theme_color": "#6366f1",
   "background_color": "#1e1b4b",
+  "categories": ["business", "productivity"],
   "icons": [
     {
       "src": "/leker-isotipo.png",
@@ -14,5 +16,7 @@
       "type": "image/png",
       "purpose": "any"
     }
-  ]
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
 }

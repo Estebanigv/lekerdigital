@@ -216,9 +216,12 @@
     .sidebar.collapsed .nav-item-parent .submenu-arrow,
     .sidebar.collapsed .nav-submenu,
     .sidebar.collapsed .sidebar-footer > div > div > div:nth-child(2),
-    .sidebar.collapsed .sidebar-footer > div > div > i:last-child {
+    .sidebar.collapsed .sidebar-footer > div > div > i:last-child,
+    .sidebar.collapsed #install-btn-sidebar .install-btn-text {
       display: none !important;
     }
+    .sidebar.collapsed #install-btn-sidebar { padding: 0 8px 8px 8px; }
+    .sidebar.collapsed #install-btn-sidebar button { padding: 9px; justify-content: center; }
     .sidebar.collapsed .logo {
       gap: 0;
       justify-content: center;
@@ -3691,6 +3694,12 @@
         <div class="login-setup-link" id="login-setup-link" style="display:none;">
           <a onclick="showSetupForm()">Primera vez? Configurar administrador</a>
         </div>
+
+        <!-- Install PWA button -->
+        <button type="button" id="install-btn-login" onclick="installPWA()" style="display:none; width:100%; margin-top:12px; padding:10px 20px; background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%); color:#c7d2fe; border:1.5px solid rgba(99,102,241,0.3); border-radius:10px; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.2s; gap:8px; align-items:center; justify-content:center;">
+          <i data-lucide="download" style="width:16px;height:16px;"></i>
+          <span>Instalar App en este dispositivo</span>
+        </button>
       </form>
 
       <!-- Setup Form (first time) -->
@@ -3891,6 +3900,14 @@
         </div>
       </div>
     </nav>
+
+    <!-- Install PWA button in sidebar -->
+    <div id="install-btn-sidebar" style="display:none; padding: 0 16px 8px 16px;">
+      <button onclick="installPWA()" style="width:100%; padding:9px 14px; background:linear-gradient(135deg,#312e81 0%,#4338ca 100%); color:#e0e7ff; border:1px solid rgba(129,140,248,0.25); border-radius:10px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
+        <i data-lucide="download" style="width:15px;height:15px;"></i>
+        <span class="install-btn-text">Instalar App</span>
+      </button>
+    </div>
 
     <div class="sidebar-footer">
       <div style="padding: 12px; background: var(--bg-hover); border-radius: 8px;">
@@ -21012,6 +21029,42 @@
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/service-worker.js');
+}
+
+// PWA Install prompt
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  // Show install buttons
+  const loginBtn = document.getElementById('install-btn-login');
+  const sidebarBtn = document.getElementById('install-btn-sidebar');
+  if (loginBtn) loginBtn.style.display = 'flex';
+  if (sidebarBtn) sidebarBtn.style.display = 'block';
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  const loginBtn = document.getElementById('install-btn-login');
+  const sidebarBtn = document.getElementById('install-btn-sidebar');
+  if (loginBtn) loginBtn.style.display = 'none';
+  if (sidebarBtn) sidebarBtn.style.display = 'none';
+  showToast('App instalada correctamente', 'success');
+});
+
+function installPWA() {
+  if (!deferredInstallPrompt) {
+    showToast('La app ya está instalada o tu navegador no soporta instalación', 'info');
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then((result) => {
+    if (result.outcome === 'accepted') {
+      showToast('Instalando LEKER...', 'success');
+    }
+    deferredInstallPrompt = null;
+  });
 }
 </script>
 </body>
