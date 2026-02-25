@@ -10076,6 +10076,9 @@
       // Update vendor info card and show/hide sections
       updateSelectedVendorCard(execId);
 
+      // Show vendor start point + clients on map
+      showVendorPreviewOnMap(execId);
+
       // Trigger the filter
       filterByExecutive(execId);
     }
@@ -10084,6 +10087,7 @@
       selectedExecutiveId = null;
       document.getElementById('executive-search').value = '';
       updateSelectedVendorCard('');
+      clearPreviewMarkers();
       filterByExecutive('');
     }
 
@@ -10161,6 +10165,181 @@
       }
 
       lucide.createIcons();
+    }
+
+    // Preview: show vendor start point + all clients on map when selected
+    let previewMarkers = [];
+
+    function showVendorPreviewOnMap(execId) {
+      // Clear previous preview markers
+      previewMarkers.forEach(m => m.setMap(null));
+      previewMarkers = [];
+
+      // Also clear any existing route polyline
+      if (window.routePolyline) {
+        window.routePolyline.setMap(null);
+        window.routePolyline = null;
+      }
+      // Clear route markers too
+      if (typeof routeMarkers !== 'undefined') {
+        routeMarkers.forEach(m => m.setMap(null));
+        routeMarkers = [];
+      }
+
+      if (!execId || !routeMap) return;
+
+      const vendor = allUsers.find(u => u.id === execId);
+      if (!vendor) return;
+
+      const assignedClients = allClients.filter(c => c.assigned_user_id === execId);
+      const clientsWithGps = assignedClients.filter(c => c.lat && c.lng);
+
+      if (clientsWithGps.length === 0 && !vendor.home_lat) return;
+
+      const bounds = new google.maps.LatLngBounds();
+
+      // Home/start marker (purple house)
+      if (vendor.home_lat && vendor.home_lng) {
+        const homePos = { lat: parseFloat(vendor.home_lat), lng: parseFloat(vendor.home_lng) };
+        bounds.extend(homePos);
+
+        const homeSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="48" viewBox="0 0 40 48">
+          <path d="M20 0C10 0 0 9 0 20c0 15 20 28 20 28s20-13 20-28C40 9 30 0 20 0z" fill="#7c3aed" stroke="white" stroke-width="2.5"/>
+          <path d="M20 10l-9 8v9h6v-5h6v5h6v-9z" fill="white"/>
+        </svg>`;
+        const homeMarker = new google.maps.Marker({
+          position: homePos,
+          map: routeMap,
+          icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(homeSvg),
+            scaledSize: new google.maps.Size(40, 48),
+            anchor: new google.maps.Point(20, 48)
+          },
+          title: `Punto de inicio: ${vendor.home_address || vendor.full_name}`,
+          zIndex: 999
+        });
+        homeMarker.addListener('click', () => {
+          routeInfoWindow.setContent(`
+            <div style="min-width:200px;padding:6px;">
+              <div style="font-weight:700;font-size:14px;color:#7c3aed;margin-bottom:6px;">
+                <span style="margin-right:6px;">🏠</span> Punto de Inicio
+              </div>
+              <div style="font-size:13px;color:#374151;font-weight:600;">${vendor.full_name}</div>
+              <div style="font-size:12px;color:#6b7280;margin-top:4px;">${vendor.home_address || 'Sin dirección registrada'}</div>
+            </div>
+          `);
+          routeInfoWindow.open(routeMap, homeMarker);
+        });
+        previewMarkers.push(homeMarker);
+      }
+
+      // Client markers (blue dots)
+      const positionCounts = {};
+      clientsWithGps.forEach((client) => {
+        let lat = parseFloat(client.lat);
+        let lng = parseFloat(client.lng);
+
+        // Offset overlapping positions
+        const posKey = `${lat.toFixed(3)},${lng.toFixed(3)}`;
+        positionCounts[posKey] = (positionCounts[posKey] || 0);
+        const count = positionCounts[posKey];
+        if (count > 0) {
+          const angle = (count * (360 / 8)) * (Math.PI / 180);
+          const offset = 0.002;
+          lat += Math.cos(angle) * offset;
+          lng += Math.sin(angle) * offset;
+        }
+        positionCounts[posKey]++;
+
+        const pos = { lat, lng };
+        bounds.extend(pos);
+
+        // Determine color by segment
+        const seg = (client.segment || '').toUpperCase();
+        let color = '#3b82f6'; // blue default
+        if (seg === 'A') color = '#10b981';
+        else if (seg === 'B') color = '#f59e0b';
+        else if (seg === 'C') color = '#6366f1';
+        else if (seg === 'FOCO') color = '#ef4444';
+
+        const dotSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
+          <circle cx="7" cy="7" r="6" fill="${color}" stroke="white" stroke-width="1.5" opacity="0.85"/>
+        </svg>`;
+        const marker = new google.maps.Marker({
+          position: pos,
+          map: routeMap,
+          icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(dotSvg),
+            scaledSize: new google.maps.Size(14, 14),
+            anchor: new google.maps.Point(7, 7)
+          },
+          title: client.name || client.business_name,
+          zIndex: 10
+        });
+        marker.addListener('click', () => {
+          routeInfoWindow.setContent(`
+            <div style="min-width:200px;padding:6px;">
+              <div style="font-weight:700;font-size:13px;color:#1f2937;margin-bottom:4px;">${client.name || client.business_name}</div>
+              <div style="font-size:12px;color:#6b7280;">${client.address || 'Sin dirección'}</div>
+              ${client.commune ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px;">${client.commune}</div>` : ''}
+              ${seg ? `<span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;background:${color}20;color:${color};">Segmento ${seg}</span>` : ''}
+            </div>
+          `);
+          routeInfoWindow.open(routeMap, marker);
+        });
+        previewMarkers.push(marker);
+      });
+
+      // Fit map to show all markers
+      if (previewMarkers.length > 0) {
+        if (previewMarkers.length === 1) {
+          routeMap.setCenter(previewMarkers[0].getPosition());
+          routeMap.setZoom(13);
+        } else {
+          routeMap.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 });
+        }
+      }
+
+      // Show legend overlay on map
+      showPreviewLegend(clientsWithGps.length, assignedClients.length - clientsWithGps.length);
+    }
+
+    function showPreviewLegend(withGps, withoutGps) {
+      // Remove existing legend
+      const existing = document.getElementById('preview-map-legend');
+      if (existing) existing.remove();
+
+      const legend = document.createElement('div');
+      legend.id = 'preview-map-legend';
+      legend.style.cssText = 'position:absolute;bottom:24px;left:12px;background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);border-radius:10px;padding:10px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:12px;z-index:10;';
+      legend.innerHTML = `
+        <div style="font-weight:700;font-size:11px;color:#6b7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Clientes del vendedor</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;display:inline-block;"></span>
+          <span style="color:#374151;">${withGps} con ubicación</span>
+        </div>
+        ${withoutGps > 0 ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#d1d5db;display:inline-block;border:1px dashed #9ca3af;"></span>
+          <span style="color:#9ca3af;">${withoutGps} sin GPS</span>
+        </div>` : ''}
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#7c3aed;display:inline-block;"></span>
+          <span style="color:#374151;">Punto de inicio</span>
+        </div>
+      `;
+
+      const mapContainer = document.getElementById('map-route')?.parentElement;
+      if (mapContainer) {
+        mapContainer.style.position = 'relative';
+        mapContainer.appendChild(legend);
+      }
+    }
+
+    function clearPreviewMarkers() {
+      previewMarkers.forEach(m => m.setMap(null));
+      previewMarkers = [];
+      const legend = document.getElementById('preview-map-legend');
+      if (legend) legend.remove();
     }
 
     async function fetchScheduledCountForVendor(execId) {
@@ -11092,6 +11271,9 @@
 
     async function drawOptimizedRouteOnMap(dayDate) {
       if (!optimizedRouteData) return;
+
+      // Clear preview markers (from vendor selection)
+      clearPreviewMarkers();
 
       // Determine which clients to draw
       let routeClients;
