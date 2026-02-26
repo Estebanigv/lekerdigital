@@ -1,4 +1,5 @@
 const { supabase } = require('../../config/database');
+const googleSheetsService = require('../../services/googleSheets.service');
 
 // =============================================
 // CONFIGURACIÓN DE VEHÍCULO ESTÁNDAR
@@ -140,10 +141,10 @@ function optimizeRouteOrder(clients, startPoint = null) {
  * al centroide, y para cuando se agota el presupuesto de tiempo (480 min).
  */
 function clusterClientsByProximity(clients) {
-  const TIME_BUDGET_MIN = 540; // 9 horas (09:00 a 18:00)
+  const TIME_BUDGET_MIN = 480; // 8 horas (09:00 a 17:00)
   const SPEED_KMH = 40;
   const VISIT_DURATION_MIN = 60;
-  const MAX_PER_CLUSTER = 9;
+  const MAX_PER_CLUSTER = 8;
 
   if (!clients || clients.length === 0) return [];
 
@@ -491,9 +492,15 @@ class RoutesService {
     return data;
   }
 
-  async updateClient(clientId, clientData) {
+  async updateClient(clientId, clientData, updatedByUserId = null) {
     // Remove id from update data if present
     const { id, created_at, ...updateData } = clientData;
+
+    // If address or commune changed, add audit fields
+    if (updatedByUserId && (updateData.address !== undefined || updateData.commune !== undefined)) {
+      updateData.address_updated_at = new Date().toISOString();
+      updateData.address_updated_by = updatedByUserId;
+    }
 
     const { data, error } = await supabase
       .from('clients')
@@ -506,7 +513,49 @@ class RoutesService {
       if (error.code === '23505') throw new Error('Ya existe un cliente con ese código');
       throw error;
     }
+
+    // Sync address change to Google Sheet (non-blocking)
+    if (data && (updateData.address !== undefined || updateData.commune !== undefined)) {
+      this._syncAddressToSheet(data, updatedByUserId).catch(err =>
+        console.error('[Routes] Error sync address to sheet:', err.message)
+      );
+    }
+
     return data;
+  }
+
+  /**
+   * Helper: sincroniza dirección de un cliente al Google Sheet
+   * Se ejecuta de forma no-bloqueante para no retrasar la respuesta al usuario
+   */
+  async _syncAddressToSheet(client, updatedByUserId) {
+    if (!client.external_id) return;
+
+    // Get user email for audit
+    let updatedByName = 'sistema';
+    if (updatedByUserId) {
+      const { data: user } = await supabase
+        .from('users')
+        .select('email, full_name')
+        .eq('id', updatedByUserId)
+        .single();
+      if (user) updatedByName = user.email || user.full_name;
+    }
+
+    const result = await googleSheetsService.syncAddressToSheet(
+      client.external_id,
+      client.address,
+      client.commune,
+      updatedByName
+    );
+
+    if (result.success) {
+      console.log(`[Routes] Address synced to Sheet: ${client.external_id} (${result.updated} updated)`);
+    } else if (result.error) {
+      console.warn(`[Routes] Sheet sync failed for ${client.external_id}: ${result.error}`);
+    }
+
+    return result;
   }
 
   async reassignClients(fromUserId, toUserId) {
@@ -1543,16 +1592,16 @@ class RoutesService {
 
   /**
    * Calcula timeline del día con hora estimada de llegada a cada cliente
-   * Velocidad promedio: 40 km/h, 60 min por visita, inicio 09:00
+   * Velocidad promedio: 40 km/h, 60 min por visita, inicio 09:00, fin 17:00
    */
   calculateDayTimeline(orderedClients, startTime = '09:00', startPoint = null) {
     const SPEED_KMH = 40;
     const VISIT_DURATION_MIN = 60;
-    const END_OF_DAY = '18:00';
+    const END_OF_DAY = '17:00';
 
     const [startH, startM] = startTime.split(':').map(Number);
     let currentMinutes = startH * 60 + startM;
-    const endMinutes = 18 * 60; // 18:00
+    const endMinutes = 17 * 60; // 17:00
 
     const timeline = [];
     let totalDistanceKm = 0;
@@ -2590,7 +2639,9 @@ class RoutesService {
     const updateData = {
       address_status: 'confirmed',
       address_confirmed_at: new Date().toISOString(),
-      address_confirmed_by: confirmedByUserId
+      address_confirmed_by: confirmedByUserId,
+      address_updated_at: new Date().toISOString(),
+      address_updated_by: confirmedByUserId
     };
 
     // Update lat/lng if provided
@@ -2612,6 +2663,14 @@ class RoutesService {
       .single();
 
     if (error) throw error;
+
+    // Sync confirmed address to Google Sheet (non-blocking)
+    if (data) {
+      this._syncAddressToSheet(data, confirmedByUserId).catch(err =>
+        console.error('[Routes] Error sync confirmed address to sheet:', err.message)
+      );
+    }
+
     return data;
   }
 }

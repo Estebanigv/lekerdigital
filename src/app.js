@@ -283,7 +283,8 @@ app.post('/api/clients', async (req, res) => {
 
 app.put('/api/clients/:id', async (req, res) => {
   try {
-    const client = await routesService.updateClient(req.params.id, req.body);
+    const userId = req.user ? req.user.id : null;
+    const client = await routesService.updateClient(req.params.id, req.body, userId);
     res.json({ success: true, message: 'Cliente actualizado', data: client });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -2002,11 +2003,19 @@ app.get('/api/gsheets/status', (req, res) => {
 });
 
 app.get('/api/gsheets/all', async (req, res) => {
-  try {
-    const data = await googleSheetsService.getAllSheets();
-    res.json({ success: true, data });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+  // Retry up to 2 times on timeout/network errors
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const data = await googleSheetsService.getAllSheets();
+      return res.json({ success: true, data });
+    } catch (error) {
+      console.error(`[GSheets] Intento ${attempt} falló:`, error.message);
+      if (attempt >= 2 || !error.message.includes('ETIMEDOUT')) {
+        return res.status(500).json({ success: false, error: error.message });
+      }
+      // Wait 2s before retry
+      await new Promise(r => setTimeout(r, 2000));
+    }
   }
 });
 
@@ -2014,6 +2023,74 @@ app.get('/api/gsheets/:sheet', async (req, res) => {
   try {
     const data = await googleSheetsService.getSheet(req.params.sheet);
     res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Sync address(es) to Google Sheet (admin only)
+app.post('/api/clients/sync-to-sheet', authorize('admin'), async (req, res) => {
+  try {
+    const { clientId, updates } = req.body;
+    const userEmail = req.user ? req.user.email : 'admin';
+
+    if (updates && Array.isArray(updates)) {
+      // Batch mode: [{code, address, commune}]
+      const result = await googleSheetsService.postToSheet({
+        action: 'updateAddress',
+        rows: updates.map(u => ({
+          code: u.code,
+          address: u.address || '',
+          commune: u.commune || '',
+          updatedBy: userEmail,
+          updatedAt: new Date().toISOString()
+        }))
+      });
+      return res.json({ success: true, data: result });
+    }
+
+    if (clientId) {
+      // Single client mode
+      const { data: client, error } = await supabase
+        .from('clients')
+        .select('external_id, address, commune')
+        .eq('id', clientId)
+        .single();
+
+      if (error || !client) {
+        return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
+      }
+
+      const result = await googleSheetsService.syncAddressToSheet(
+        client.external_id,
+        req.body.address || client.address,
+        req.body.commune || client.commune,
+        userEmail
+      );
+      return res.json({ success: true, data: result });
+    }
+
+    res.status(400).json({ success: false, error: 'Se requiere clientId o updates[]' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Save geo link(s) to Google Sheet
+app.post('/api/clients/save-geo-link', authorize('admin'), async (req, res) => {
+  try {
+    const { code, geoLink, batch } = req.body;
+    const userEmail = req.user ? req.user.email : 'admin';
+
+    const rows = batch && Array.isArray(batch)
+      ? batch.map(b => ({ code: b.code, geoLink: b.geoLink, updatedBy: userEmail, updatedAt: new Date().toISOString() }))
+      : [{ code, geoLink, updatedBy: userEmail, updatedAt: new Date().toISOString() }];
+
+    const result = await googleSheetsService.postToSheet({
+      action: 'updateAddress',
+      rows
+    });
+    res.json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

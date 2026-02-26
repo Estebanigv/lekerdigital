@@ -1,4 +1,4 @@
-const CACHE_NAME = 'leker-v1.9.0';
+const CACHE_NAME = 'leker-v1.9.2';
 
 const STATIC_ASSETS = [
   '/leker-isotipo.png',
@@ -32,6 +32,9 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET
   if (request.method !== 'GET') return;
+
+  // Skip non-http(s) schemes (chrome-extension://, etc.)
+  if (!url.protocol.startsWith('http')) return;
 
   // API calls: network-first
   if (url.pathname.startsWith('/api/')) {

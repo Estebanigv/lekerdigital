@@ -1104,6 +1104,10 @@
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
     .spin {
       animation: spin 1s linear infinite;
     }
@@ -1111,6 +1115,7 @@
     /* Google Sheets Tables */
     .gs-table-wrap {
       overflow-x: auto;
+      overflow-y: auto;
       max-height: 600px;
       border-radius: 8px;
     }
@@ -3695,10 +3700,12 @@
           <a onclick="showSetupForm()">Primera vez? Configurar administrador</a>
         </div>
 
-        <!-- Install PWA button - always visible -->
-        <button type="button" id="install-btn-login" onclick="installPWA()" style="display:flex; width:100%; margin-top:14px; padding:11px 20px; background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%); color:#c7d2fe; border:1.5px solid rgba(99,102,241,0.3); border-radius:10px; cursor:pointer; font-size:13px; font-weight:600; transition:all 0.2s; gap:8px; align-items:center; justify-content:center;">
-          <i data-lucide="download" style="width:16px;height:16px;"></i>
-          <span>Descargar App</span>
+        <!-- Install PWA button - hidden by default, shown only if not installed -->
+        <button type="button" id="install-btn-login" onclick="installPWA()" style="display:none; width:100%; margin-top:14px; padding:10px 18px; background:rgba(99,102,241,0.08); color:#818cf8; border:1px solid rgba(99,102,241,0.2); border-radius:8px; cursor:pointer; font-size:12px; font-weight:500; transition:all 0.2s; gap:6px; align-items:center; justify-content:center; letter-spacing:0.2px;"
+          onmouseenter="this.style.background='rgba(99,102,241,0.14)';this.style.borderColor='rgba(99,102,241,0.35)'"
+          onmouseleave="this.style.background='rgba(99,102,241,0.08)';this.style.borderColor='rgba(99,102,241,0.2)'">
+          <i data-lucide="monitor-smartphone" style="width:14px;height:14px;opacity:0.7;"></i>
+          <span>Instalar como aplicaci&oacute;n</span>
         </button>
       </form>
 
@@ -3901,11 +3908,13 @@
       </div>
     </nav>
 
-    <!-- Install PWA button in sidebar -->
-    <div id="install-btn-sidebar" style="padding: 0 16px 8px 16px;">
-      <button onclick="installPWA()" style="width:100%; padding:9px 14px; background:linear-gradient(135deg,#312e81 0%,#4338ca 100%); color:#e0e7ff; border:1px solid rgba(129,140,248,0.25); border-radius:10px; cursor:pointer; font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
-        <i data-lucide="download" style="width:15px;height:15px;"></i>
-        <span class="install-btn-text">Instalar App</span>
+    <!-- Install PWA button in sidebar - hidden by default, shown only if not installed -->
+    <div id="install-btn-sidebar" style="padding: 0 16px 8px 16px; display: none;">
+      <button onclick="installPWA()" style="width:100%; padding:8px 12px; background:rgba(99,102,241,0.06); color:#a5b4fc; border:1px solid rgba(129,140,248,0.12); border-radius:8px; cursor:pointer; font-size:11px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s;"
+        onmouseenter="this.style.background='rgba(99,102,241,0.12)';this.style.borderColor='rgba(129,140,248,0.25)'"
+        onmouseleave="this.style.background='rgba(99,102,241,0.06)';this.style.borderColor='rgba(129,140,248,0.12)'">
+        <i data-lucide="monitor-smartphone" style="width:13px;height:13px;opacity:0.6;"></i>
+        <span class="install-btn-text">Instalar app</span>
       </button>
     </div>
 
@@ -5873,6 +5882,7 @@
                   <tr>
                     <th>Código</th>
                     <th>Nombre Fantasía</th>
+                    <th>Dirección</th>
                     <th>Zona</th>
                     <th>Vendedor</th>
                     <th>Segmento</th>
@@ -6156,11 +6166,49 @@
           </div>
         </div>
 
-        <!-- Loading state -->
-        <div id="gs-loading" style="display: none; text-align: center; padding: 60px 20px;">
-          <div class="spin" style="width: 48px; height: 48px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite;"></div>
-          <p style="color: var(--text-muted);">Cargando datos desde Google Sheets...</p>
-          <p style="color: var(--text-muted); font-size: 12px;">La primera carga puede tardar unos segundos</p>
+        <!-- Loading state with progress -->
+        <div id="gs-loading" style="display: none; padding: 40px 20px;">
+          <div style="max-width:420px;margin:0 auto;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+            <!-- Header with animated icon -->
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+              <div style="width:44px;height:44px;background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(129,140,248,0.1));border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i data-lucide="file-spreadsheet" style="width:22px;height:22px;color:var(--accent);animation:pulse 2s ease-in-out infinite;"></i>
+              </div>
+              <div>
+                <h3 id="gs-load-title" style="font-size:14px;font-weight:700;margin:0;color:var(--text-primary);">Sincronizando Datos Comerciales</h3>
+                <p id="gs-load-step" style="color:var(--text-muted);font-size:12px;margin:3px 0 0;">Conectando con Google Sheets...</p>
+              </div>
+            </div>
+            <!-- Progress section -->
+            <div style="margin-bottom:6px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+                <span id="gs-load-percent" style="font-size:28px;font-weight:800;color:var(--accent);line-height:1;">0%</span>
+                <span id="gs-load-detail" style="font-size:11px;color:var(--text-muted);">Preparando...</span>
+              </div>
+              <div style="width:100%;height:6px;background:var(--bg-hover);border-radius:3px;overflow:hidden;">
+                <div id="gs-load-bar" style="width:0%;height:100%;background:linear-gradient(90deg,var(--accent),#818cf8);border-radius:3px;transition:width 0.4s ease;"></div>
+              </div>
+            </div>
+            <!-- Steps checklist -->
+            <div id="gs-load-steps" style="margin-top:16px;display:flex;flex-direction:column;gap:6px;">
+              <div class="gs-step" data-step="connect" style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-muted);">
+                <div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><div style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1s ease-in-out infinite;"></div></div>
+                Conectando con Google Sheets
+              </div>
+              <div class="gs-step" data-step="download" style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-muted);opacity:0.4;">
+                <div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;"></div>
+                Descargando hojas de datos
+              </div>
+              <div class="gs-step" data-step="process" style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-muted);opacity:0.4;">
+                <div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;"></div>
+                Procesando registros
+              </div>
+              <div class="gs-step" data-step="render" style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-muted);opacity:0.4;">
+                <div style="width:16px;height:16px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;"></div>
+                Renderizando tablas
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Not configured state -->
@@ -6432,8 +6480,14 @@
               <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <h3><i data-lucide="map-pin" style="width: 18px; height: 18px;"></i> Direcciones</h3>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                  <button class="btn" onclick="reloadDireccionesFromSheet()" style="background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;" title="Recargar datos desde Excel">
+                    <i data-lucide="refresh-cw" style="width: 13px; height: 13px;"></i> Recargar Excel
+                  </button>
                   <button class="btn" onclick="syncAddressesFromGSheets()" style="background: #10b981; color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;">
                     <i data-lucide="database" style="width: 13px; height: 13px;"></i> Sync → Supabase
+                  </button>
+                  <button class="btn" id="btn-batch-geo" onclick="batchGenerateGeoLinks()" style="background: var(--accent); color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    <i data-lucide="locate" style="width: 13px; height: 13px;"></i> Cargar Geo
                   </button>
                   <div style="position:relative;">
                     <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
@@ -6988,6 +7042,15 @@
           <select id="client-vendor" class="form-control">
             <option value="">Sin asignar</option>
           </select>
+        </div>
+        <!-- Audit info (admin only) -->
+        <div id="client-audit-info" style="display:none; margin-top:12px; padding:10px 12px; background:var(--bg-hover); border-radius:8px; font-size:12px; color:var(--text-muted);">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+            <i data-lucide="shield-check" style="width:14px;height:14px;color:#6366f1;"></i>
+            <span style="font-weight:600; color:var(--text-primary);">Auditoría de Dirección</span>
+          </div>
+          <div id="client-audit-status" style="margin-bottom:4px;"></div>
+          <div id="client-audit-detail"></div>
         </div>
       </div>
       <div class="modal-footer">
@@ -13449,8 +13512,9 @@
     // Render tables
     function renderClientsTable(data) {
       const tbody = document.querySelector('#table-clients tbody');
+      const isAdmin = currentUser && currentUser.role === 'admin';
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay clientes que coincidan</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">No hay clientes que coincidan</td></tr>';
         return;
       }
       tbody.innerHTML = data.map(c => {
@@ -13464,12 +13528,24 @@
           : addrStatus === 'pending'
             ? '<span title="Dirección pendiente" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;margin-right:4px;vertical-align:middle;"></span>'
             : '';
+        // Address column with audit tooltip (admin only)
+        const addrText = c.address ? (c.address.length > 30 ? c.address.substring(0, 30) + '...' : c.address) : '-';
+        let addrAuditTooltip = '';
+        if (isAdmin && c.address_updated_at) {
+          const updaterUser = c.address_updated_by ? allUsers.find(u => u.id === c.address_updated_by) : null;
+          const updater = updaterUser ? updaterUser.full_name : 'sistema';
+          const updDate = new Date(c.address_updated_at).toLocaleDateString('es-CL');
+          addrAuditTooltip = ` title="Modificado: ${updDate} por ${updater}"`;
+        }
         return `
           <tr>
             <td><code style="font-size: 11px; background: var(--bg-hover); padding: 2px 6px; border-radius: 4px;">${c.external_id || '-'}</code></td>
             <td>
               <div style="font-weight: 500;">${addrDot}${c.fantasy_name || c.name || '-'}</div>
               ${c.fantasy_name && c.name ? `<div style="font-size: 11px; color: var(--text-muted);">${c.name}</div>` : ''}
+            </td>
+            <td style="font-size: 12px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"${addrAuditTooltip}>
+              ${addrDot}${addrText}${c.commune ? `<div style="font-size:10px;color:var(--text-muted);">${c.commune}</div>` : ''}
             </td>
             <td><span class="badge" style="background: var(--bg-hover); color: var(--text-secondary);">${zoneName}</span></td>
             <td style="font-size: 13px;">${vendorName}</td>
@@ -13856,6 +13932,9 @@
           `<option value="${u.id}">${u.full_name}</option>`
         ).join('');
 
+      const auditPanel = document.getElementById('client-audit-info');
+      const isAdmin = currentUser && currentUser.role === 'admin';
+
       if (clientId) {
         // Edit mode
         const client = allClients.find(c => c.id === clientId);
@@ -13872,6 +13951,30 @@
         document.getElementById('client-segment').value = client.segment || 'C';
         document.getElementById('client-priority').value = client.priority || 'Normal';
         document.getElementById('client-vendor').value = client.assigned_user_id || '';
+
+        // Show audit info (admin only)
+        if (isAdmin) {
+          auditPanel.style.display = 'block';
+          const addrStatus = client.address_status || (client.lat && client.lng ? 'auto' : 'pending');
+          const statusLabels = { confirmed: 'Confirmada en terreno', auto: 'Auto (geocodificada)', pending: 'Pendiente de confirmación' };
+          const statusColors = { confirmed: '#10b981', auto: '#6366f1', pending: '#f59e0b' };
+          document.getElementById('client-audit-status').innerHTML =
+            `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;background:${statusColors[addrStatus]}20;color:${statusColors[addrStatus]};font-weight:600;font-size:11px;">
+              <span style="width:6px;height:6px;border-radius:50%;background:${statusColors[addrStatus]};"></span>
+              ${statusLabels[addrStatus] || addrStatus}
+            </span>`;
+          if (client.address_updated_at) {
+            const updDate = new Date(client.address_updated_at).toLocaleString('es-CL');
+            const updaterUser = client.address_updated_by ? allUsers.find(u => u.id === client.address_updated_by) : null;
+            const updaterName = updaterUser ? updaterUser.full_name : 'sistema';
+            document.getElementById('client-audit-detail').innerHTML =
+              `<span style="font-size:11px;">Modificado: <strong>${updDate}</strong> por <strong>${updaterName}</strong></span>`;
+          } else {
+            document.getElementById('client-audit-detail').innerHTML = '<span style="font-size:11px;">Sin modificaciones registradas</span>';
+          }
+        } else {
+          auditPanel.style.display = 'none';
+        }
       } else {
         // Create mode
         title.textContent = 'Nuevo Cliente';
@@ -13885,6 +13988,7 @@
         document.getElementById('client-segment').value = 'C';
         document.getElementById('client-priority').value = 'Normal';
         document.getElementById('client-vendor').value = '';
+        auditPanel.style.display = 'none';
       }
 
       modal.style.display = 'flex';
@@ -14079,6 +14183,7 @@
 
     function renderTodayRoutesTable() {
       const tbody = document.querySelector('#table-routes tbody');
+      if (!tbody) return;
       const data = todayRoutesData;
 
       if (!data || data.length === 0) {
@@ -17451,6 +17556,59 @@
       lucide.createIcons();
     }
 
+    // Progress helper for GSheets loader
+    let _gsCurrentStep = '';
+    function _gsLoadProgress(pct, step, detail) {
+      const bar = document.getElementById('gs-load-bar');
+      const pctEl = document.getElementById('gs-load-percent');
+      const stepEl = document.getElementById('gs-load-step');
+      const detailEl = document.getElementById('gs-load-detail');
+      if (bar) bar.style.width = pct + '%';
+      if (pctEl) pctEl.textContent = Math.round(pct) + '%';
+      if (stepEl && step) stepEl.textContent = step;
+      if (detailEl && detail) detailEl.textContent = detail;
+
+      // Update step checklist
+      let activeStep = 'connect';
+      if (pct >= 10) activeStep = 'download';
+      if (pct >= 70) activeStep = 'process';
+      if (pct >= 88) activeStep = 'render';
+      if (activeStep !== _gsCurrentStep) {
+        _gsCurrentStep = activeStep;
+        const stepsContainer = document.getElementById('gs-load-steps');
+        if (stepsContainer) {
+          const steps = ['connect', 'download', 'process', 'render'];
+          const activeIdx = steps.indexOf(activeStep);
+          steps.forEach((s, i) => {
+            const el = stepsContainer.querySelector(`[data-step="${s}"]`);
+            if (!el) return;
+            const dot = el.querySelector('div:first-child');
+            if (i < activeIdx) {
+              // Completed
+              el.style.opacity = '1';
+              el.style.color = '#10b981';
+              dot.style.borderColor = '#10b981';
+              dot.style.background = '#10b981';
+              dot.innerHTML = '<i data-lucide="check" style="width:10px;height:10px;color:white;"></i>';
+            } else if (i === activeIdx) {
+              // Active
+              el.style.opacity = '1';
+              el.style.color = 'var(--accent)';
+              el.style.fontWeight = '600';
+              dot.style.borderColor = 'var(--accent)';
+              dot.innerHTML = '<div style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1s ease-in-out infinite;"></div>';
+            } else {
+              // Pending
+              el.style.opacity = '0.4';
+              el.style.color = 'var(--text-muted)';
+              el.style.fontWeight = 'normal';
+            }
+          });
+          try { lucide.createIcons(); } catch(e) {}
+        }
+      }
+    }
+
     async function loadGoogleSheetsData(forceRefresh = false, initialLoad = false) {
       if (gsheetsLoaded && !forceRefresh) return;
 
@@ -17461,6 +17619,7 @@
       const refreshBtn = document.getElementById('gs-refresh-btn');
 
       // Check if configured first
+      _gsLoadProgress(5, 'Verificando configuración...', 'Conectando...');
       try {
         const statusRes = await fetch(`${API}/api/gsheets/status`);
         const statusData = await statusRes.json();
@@ -17484,24 +17643,62 @@
       if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:16px;height:16px;"></i> Cargando...'; }
       lucide.createIcons();
 
+      _gsLoadProgress(10, 'Conectando con Google Sheets...', 'Solicitando datos...');
       if (initialLoad) updateDashLoadingProgress(65, 'Descargando datos de Google Sheets...');
+
+      // Animate progress while waiting for fetch — goes up to 92% slowly
+      let fakePct = 10;
+      let _fetchDone = false;
+      const fakeInterval = setInterval(() => {
+        if (_fetchDone) return;
+        // Slower progression — asymptotic approach to 92%
+        const remaining = 92 - fakePct;
+        fakePct += remaining * 0.04 + 0.3;
+        fakePct = Math.min(fakePct, 92);
+        const pct = Math.round(fakePct);
+
+        if (pct < 20) {
+          _gsLoadProgress(pct, 'Conectando con Google Sheets...', 'Estableciendo conexión...');
+        } else if (pct < 35) {
+          _gsLoadProgress(pct, 'Descargando hojas de datos...', 'Ventas, Cobranzas...');
+        } else if (pct < 50) {
+          _gsLoadProgress(pct, 'Descargando hojas de datos...', 'Vendedores, Zonales...');
+        } else if (pct < 65) {
+          _gsLoadProgress(pct, 'Descargando direcciones...', '~7,800 registros...');
+        } else if (pct < 80) {
+          _gsLoadProgress(pct, 'Recibiendo datos...', 'Descarga en progreso...');
+        } else {
+          _gsLoadProgress(pct, 'Recibiendo datos...', 'Casi listo...');
+        }
+      }, 500);
 
       try {
         const res = await fetch(`${API}/api/gsheets/all`);
-        const result = await res.json();
+        _fetchDone = true;
+        clearInterval(fakeInterval);
+        _gsLoadProgress(93, 'Datos recibidos', 'Parseando JSON...');
 
+        const result = await res.json();
         if (!result.success) throw new Error(result.error || 'Error desconocido');
 
+        _gsLoadProgress(82, 'Procesando datos comerciales...', 'Organizando hojas...');
         if (initialLoad) updateDashLoadingProgress(80, 'Procesando datos comerciales...');
 
         gsheetsData = result.data;
         gsheetsLoaded = true;
+
+        _gsLoadProgress(90, 'Renderizando tablas...', 'Generando vistas...');
+
+        // Small delay so user sees progress
+        await new Promise(r => setTimeout(r, 200));
 
         if (loading) loading.style.display = 'none';
         if (content) content.style.display = 'block';
 
         // Distribute data to renderers (tables, filters, etc.)
         renderAllGsheetsData(gsheetsData);
+
+        _gsLoadProgress(100, 'Listo', 'Completado');
 
         if (initialLoad) {
           updateDashLoadingProgress(95, 'Renderizando dashboard...');
@@ -17511,6 +17708,9 @@
 
         if (!initialLoad) showToast('success', 'Datos cargados', 'Google Sheets sincronizado correctamente');
       } catch (error) {
+        _fetchDone = true;
+        clearInterval(fakeInterval);
+        _gsLoadProgress(100, 'Error al cargar', error.message);
         if (loading) loading.style.display = 'none';
         if (errorDiv) {
           errorDiv.style.display = 'block';
@@ -18236,10 +18436,265 @@
       if (rawData && rawData.length > 0) {
         rawData = cleanSheetData(rawData);
         gsheetsAllDirecciones = rawData;
-        sheetToTable(rawData, 'gs-direcciones-body', { maxRows: 100, page: 0, storeKey: 'direcciones' });
+        renderDireccionesCustomTable(rawData, 'gs-direcciones-body', 0);
       }
       if (validadasData && validadasData.length > 0) {
         sheetToTable(cleanSheetData(validadasData), 'gs-direcciones-validadas-body', { maxRows: 100, page: 0, storeKey: 'dirvalidadas' });
+      }
+    }
+
+    // Title Case helper: "JUAN CARLOS PEREZ" → "Juan Carlos Perez"
+    function toTitleCase(str) {
+      if (!str) return '';
+      return str.toLowerCase().replace(/(?:^|\s|[-/])\S/g, c => c.toUpperCase());
+    }
+
+    let _dirCurrentPage = 0;
+    let _dirFilterGeo = false; // false = all, 'has' = only with geo link, 'none' = only without geo
+    let _dirColWidths = null; // persisted column widths
+
+    // Build Google Maps search URL from address
+    function _buildMapsSearchUrl(address, commune, city) {
+      const parts = [address, commune, city, 'Chile'].filter(Boolean);
+      return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(parts.join(', '));
+    }
+
+    function renderDireccionesCustomTable(data, containerId, page) {
+      const container = document.getElementById(containerId);
+      if (!data || data.length < 2) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">Sin datos</p>';
+        return;
+      }
+      _dirCurrentPage = page;
+
+      const headers = data[0].map(h => String(h || '').trim().toLowerCase());
+      let rows = data.slice(1).filter(r => r.some(c => c !== '' && c != null));
+
+      const colCode = headers.findIndex(h => h.includes('cod'));
+      const colRazon = headers.findIndex(h => h.includes('raz'));
+      const colFantasia = headers.findIndex(h => h.includes('fan'));
+      const colComuna = headers.findIndex(h => h.includes('comun'));
+      const colCiudad = headers.findIndex(h => h.includes('ciudad'));
+      const colDir = headers.findIndex(h => h.includes('direcc') || h.includes('address'));
+      const colLink = headers.findIndex(h => h.includes('link') || h.includes('geo'));
+      const colModPor = headers.findIndex(h => h.includes('modificado por') || h.includes('updated by'));
+      const colModAt = headers.findIndex(h => h.includes('ltima modif') || h.includes('fecha modif') || h.includes('updated at'));
+
+      const geoCount = rows.filter(r => colLink >= 0 && r[colLink] && String(r[colLink]).trim()).length;
+      const noGeoCount = rows.length - geoCount;
+
+      // Apply geo filter
+      if (_dirFilterGeo === 'has') {
+        rows = rows.filter(r => colLink >= 0 && r[colLink] && String(r[colLink]).trim());
+      } else if (_dirFilterGeo === 'none') {
+        rows = rows.filter(r => !(colLink >= 0 && r[colLink] && String(r[colLink]).trim()));
+      }
+
+      const pageSize = 100;
+      const start = page * pageSize;
+      const pageRows = rows.slice(start, start + pageSize);
+      const totalPages = Math.ceil(rows.length / pageSize);
+
+      const cell = (row, idx) => idx >= 0 && row[idx] ? String(row[idx]).trim() : '';
+      const isAdmin = currentUser && currentUser.role === 'admin';
+
+      // Column config — proportional to available width
+      const wrapEl = document.getElementById(containerId);
+      const availW = wrapEl ? wrapEl.clientWidth - 20 : 900;
+      const baseW = Math.max(availW, 750);
+      const cols = [
+        { key: 'code', label: 'Código', w: Math.round(baseW * 0.09) },
+        { key: 'client', label: 'Cliente', w: Math.round(baseW * 0.20) },
+        { key: 'address', label: 'Dirección', w: Math.round(baseW * 0.28) },
+        { key: 'commune', label: 'Comuna', w: Math.round(baseW * 0.13) },
+        { key: 'city', label: 'Ciudad', w: Math.round(baseW * 0.10) },
+        { key: 'geo', label: 'Mapa', w: Math.round(baseW * 0.05) },
+        { key: 'edited', label: 'Editado', w: Math.round(baseW * 0.10) },
+      ];
+      if (isAdmin) cols.push({ key: 'edit', label: '', w: Math.round(baseW * 0.04) });
+
+      // Restore saved widths
+      if (_dirColWidths) {
+        cols.forEach((c, i) => { if (_dirColWidths[i]) c.w = _dirColWidths[i]; });
+      }
+
+      // Filter buttons
+      const filterBtns = `
+        <button onclick="_dirFilterGeo=_dirFilterGeo==='has'?false:'has';renderDireccionesCustomTable(gsheetsAllDirecciones,'${containerId}',0)" style="padding:3px 8px;border:1px solid ${_dirFilterGeo === 'has' ? '#10b981' : 'var(--border)'};border-radius:5px;background:${_dirFilterGeo === 'has' ? 'rgba(16,185,129,0.1)' : 'transparent'};color:${_dirFilterGeo === 'has' ? '#10b981' : 'var(--text-muted)'};font-size:11px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;"><i data-lucide="map-pin" style="width:11px;height:11px;"></i>${geoCount} con geo</button>
+        <button onclick="_dirFilterGeo=_dirFilterGeo==='none'?false:'none';renderDireccionesCustomTable(gsheetsAllDirecciones,'${containerId}',0)" style="padding:3px 8px;border:1px solid ${_dirFilterGeo === 'none' ? '#f59e0b' : 'var(--border)'};border-radius:5px;background:${_dirFilterGeo === 'none' ? 'rgba(245,158,11,0.1)' : 'transparent'};color:${_dirFilterGeo === 'none' ? '#f59e0b' : 'var(--text-muted)'};font-size:11px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;"><i data-lucide="map-pin-off" style="width:11px;height:11px;"></i>${noGeoCount.toLocaleString()} sin geo</button>`;
+
+      // Pagination bar
+      const makePagination = (pos) => {
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:var(--bg-hover);border-radius:8px;margin-${pos === 'top' ? 'bottom' : 'top'}:6px;flex-wrap:wrap;gap:6px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;color:var(--text-secondary);font-weight:600;">${rows.length.toLocaleString()}</span>
+            ${filterBtns}
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            ${totalPages > 1 ? `
+              ${page > 0 ? `<button onclick="renderDireccionesCustomTable(gsheetsAllDirecciones,'${containerId}',${page - 1})" style="padding:3px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-card);color:var(--text-secondary);font-size:11px;cursor:pointer;">←</button>` : ''}
+              <span style="font-size:12px;font-weight:700;color:var(--text-primary);">${page + 1}/${totalPages}</span>
+              ${page < totalPages - 1 ? `<button onclick="renderDireccionesCustomTable(gsheetsAllDirecciones,'${containerId}',${page + 1})" style="padding:3px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-card);color:var(--text-secondary);font-size:11px;cursor:pointer;">→</button>` : ''}
+            ` : ''}
+          </div>
+        </div>`;
+      };
+
+      let html = makePagination('top');
+
+      // Table with resizable columns — compute total width in px
+      const tableId = 'dir-resize-table';
+      const totalW = cols.reduce((s, c) => s + c.w, 0);
+      const colGroupHtml = cols.map((c, i) => `<col data-col="${i}" style="width:${c.w}px;">`).join('');
+
+      html += `<div class="gs-table-wrap" style="overflow-x:auto;"><table id="${tableId}" class="gs-table" style="font-size:12px;table-layout:fixed;width:${totalW}px;min-width:650px;">
+        <colgroup>${colGroupHtml}</colgroup>
+        <thead><tr>`;
+
+      cols.forEach((c, i) => {
+        const isLast = i === cols.length - 1;
+        const canResize = c.key !== 'edit' && !isLast;
+        // Visible separator line + wider grab area for resizer
+        const borderRight = !isLast ? 'border-right:1px solid var(--border);' : '';
+        const resizer = canResize ? `<div class="dir-col-resizer" data-col="${i}" style="position:absolute;right:-4px;top:0;bottom:0;width:9px;cursor:col-resize;z-index:3;background:transparent;" onmouseenter="this.style.background='rgba(99,102,241,0.3)'" onmouseleave="this.style.background='transparent'"></div>` : '';
+        const align = c.key === 'geo' ? 'text-align:center;' : '';
+        html += `<th style="padding:6px 5px;font-size:11px;position:relative;${align}${borderRight}user-select:none;overflow:hidden;">${c.label}${resizer}</th>`;
+      });
+
+      html += `</tr></thead><tbody>`;
+
+      pageRows.forEach(row => {
+        const code = cell(row, colCode);
+        const razon = toTitleCase(cell(row, colRazon));
+        const fantasia = toTitleCase(cell(row, colFantasia));
+        const comuna = toTitleCase(cell(row, colComuna));
+        const ciudad = toTitleCase(cell(row, colCiudad));
+        const dir = toTitleCase(cell(row, colDir));
+        const link = cell(row, colLink);
+        const modPor = cell(row, colModPor);
+        const modAt = cell(row, colModAt);
+
+        const clientName = fantasia || razon || '-';
+        const clientSub = fantasia && razon && fantasia !== razon ? `<div style="font-size:9px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${razon}</div>` : '';
+
+        const hasGeoLink = !!link;
+        const rowBg = hasGeoLink ? 'background:rgba(16,185,129,0.04);' : '';
+
+        // Safe strings for onclick handlers (must be before geo cell)
+        const safeDir = dir.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const safeComuna = comuna.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const safeName = clientName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+        // Geo cell: green = existing link from Excel, blue = search Maps, click to add
+        let geoCell;
+        if (hasGeoLink) {
+          geoCell = `<td style="padding:3px 2px;text-align:center;border-right:1px solid var(--border);"><a href="${link}" target="_blank" rel="noopener" title="Geo verificado — Click para ver en mapa" style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(16,185,129,0.15);color:#10b981;text-decoration:none;"><i data-lucide="map-pin" style="width:14px;height:14px;"></i></a></td>`;
+        } else if (dir && isAdmin) {
+          const mapsUrl = _buildMapsSearchUrl(dir, comuna, ciudad);
+          geoCell = `<td style="padding:3px 2px;text-align:center;border-right:1px solid var(--border);"><a href="${mapsUrl}" target="_blank" rel="noopener" title="Buscar en Maps: ${dir}, ${comuna}" style="display:inline-flex;align-items:center;justify-content:center;width:13px;height:26px;border-radius:50%;color:rgba(99,102,241,0.4);text-decoration:none;"><i data-lucide="search" style="width:12px;height:12px;"></i></a><button onclick="openAddGeoLink('${code}','${safeName}','${safeDir}','${safeComuna}')" title="Agregar georeferencia" style="border:none;background:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:13px;height:26px;color:rgba(245,158,11,0.6);"><i data-lucide="plus" style="width:11px;height:11px;"></i></button></td>`;
+        } else if (dir) {
+          const mapsUrl = _buildMapsSearchUrl(dir, comuna, ciudad);
+          geoCell = `<td style="padding:3px 2px;text-align:center;border-right:1px solid var(--border);"><a href="${mapsUrl}" target="_blank" rel="noopener" title="Buscar en Google Maps" style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;color:rgba(99,102,241,0.35);text-decoration:none;"><i data-lucide="search" style="width:12px;height:12px;"></i></a></td>`;
+        } else {
+          geoCell = `<td style="padding:3px 2px;text-align:center;border-right:1px solid var(--border);"><span style="color:var(--text-muted);opacity:0.15;">—</span></td>`;
+        }
+
+        let modHtml = '<span style="color:var(--text-muted);opacity:0.2;font-size:10px;">—</span>';
+        if (modPor || modAt) {
+          const modName = modPor.replace(/@.*/, '');
+          const modDate = modAt ? new Date(modAt).toLocaleDateString('es-CL') : '';
+          modHtml = `<div style="font-size:10px;line-height:1.3;"><strong style="color:var(--text-secondary);">${modName}</strong>${modDate ? `<br><span style="color:var(--text-muted);">${modDate}</span>` : ''}</div>`;
+        }
+        const editBtn = isAdmin ? `<td style="padding:3px 2px;text-align:center;"><button onclick="openEditDireccion('${code}','${safeName}','${safeDir}','${safeComuna}')" class="btn-icon" title="Editar" style="padding:2px;"><i data-lucide="pencil" style="width:12px;height:12px;"></i></button></td>` : '';
+
+        const br = 'border-right:1px solid var(--border);';
+        html += `<tr style="${rowBg}">
+          <td style="padding:3px 5px;overflow:hidden;${br}"><code style="font-size:10px;background:var(--bg-hover);padding:1px 3px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">${code}</code></td>
+          <td style="padding:3px 5px;overflow:hidden;${br}"><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="${clientName}">${clientName}</div>${clientSub}</td>
+          <td style="padding:3px 5px;font-size:11px;overflow:hidden;${br}" title="${dir}"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir || '<span style="opacity:0.3">—</span>'}</div></td>
+          <td style="padding:3px 5px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${br}">${comuna}</td>
+          <td style="padding:3px 5px;font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${br}">${ciudad}</td>
+          ${geoCell}
+          <td style="padding:3px 5px;overflow:hidden;${isAdmin ? br : ''}">${modHtml}</td>
+          ${editBtn}
+        </tr>`;
+      });
+
+      html += '</tbody></table></div>';
+      html += makePagination('bottom');
+
+      container.innerHTML = html;
+      lucide.createIcons();
+
+      // Initialize column resizers
+      _initDirColumnResizers(tableId);
+    }
+
+    // Column resize system (drag borders like Excel)
+    function _initDirColumnResizers(tableId) {
+      const table = document.getElementById(tableId);
+      if (!table) return;
+      const ths = table.querySelectorAll('thead th');
+      const colEls = table.querySelectorAll('colgroup col');
+
+      ths.forEach((th, idx) => {
+        const resizer = th.querySelector('.dir-col-resizer');
+        if (!resizer) return;
+
+        resizer.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          const colIdx = parseInt(this.dataset.col);
+          const col = colEls[colIdx];
+          if (!col) return;
+
+          const startX = e.pageX;
+          const startW = th.getBoundingClientRect().width;
+          const startTableW = table.getBoundingClientRect().width;
+          const resizerEl = this;
+
+          // Visual feedback
+          resizerEl.style.background = 'rgba(99,102,241,0.6)';
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+
+          const onMove = (ev) => {
+            const diff = ev.pageX - startX;
+            const newW = Math.max(30, Math.round(startW + diff));
+            col.style.width = newW + 'px';
+            // Update table total width so other columns keep their size
+            table.style.width = Math.round(startTableW + diff) + 'px';
+          };
+          const onUp = () => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            resizerEl.style.background = 'transparent';
+            // Save widths for persistence across pagination
+            if (!_dirColWidths) _dirColWidths = {};
+            _dirColWidths[colIdx] = parseInt(col.style.width);
+          };
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+        });
+      });
+    }
+
+    async function reloadDireccionesFromSheet() {
+      showToast('info', 'Recargando', 'Obteniendo datos actualizados del Excel...');
+      try {
+        const res = await fetch(`${API}/api/gsheets/Direcciones`);
+        const result = await res.json();
+        if (result.success && result.data && result.data.length > 1) {
+          gsheetsAllDirecciones = cleanSheetData(result.data);
+          renderDireccionesCustomTable(gsheetsAllDirecciones, 'gs-direcciones-body', 0);
+          showToast('success', 'Listo', `${result.data.length - 1} direcciones cargadas desde Excel`);
+        } else {
+          showToast('warning', 'Sin datos', 'No se encontraron datos en la hoja Direcciones');
+        }
+      } catch (e) {
+        showToast('error', 'Error', 'No se pudo conectar con Google Sheets');
       }
     }
 
@@ -18248,13 +18703,343 @@
       const search = (document.getElementById('gs-direcciones-search').value || '').toLowerCase();
       const headers = gsheetsAllDirecciones[0];
 
+      if (!search) {
+        renderDireccionesCustomTable(gsheetsAllDirecciones, 'gs-direcciones-body', 0);
+        return;
+      }
+
       let filtered = [headers];
       gsheetsAllDirecciones.slice(1).forEach(row => {
-        if (!search || row.some(cell => String(cell).toLowerCase().includes(search))) {
+        if (row.some(cell => String(cell).toLowerCase().includes(search))) {
           filtered.push(row);
         }
       });
-      sheetToTable(filtered, 'gs-direcciones-body', { maxRows: 100, page: 0, storeKey: 'direcciones' });
+      renderDireccionesCustomTable(filtered, 'gs-direcciones-body', 0);
+    }
+
+    // Editar dirección desde tabla Direcciones (modal rápido)
+    function openEditDireccion(code, name, address, commune) {
+      const existing = document.getElementById('modal-edit-direccion');
+      if (existing) existing.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'modal-edit-direccion';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+      overlay.innerHTML = `
+        <div style="background:var(--bg-card);border-radius:14px;padding:0;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--text-primary);">Editar Dirección</h3>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;"><code style="background:var(--bg-hover);padding:1px 5px;border-radius:3px;font-size:10px;">${code}</code> ${name}</div>
+            </div>
+            <button onclick="document.getElementById('modal-edit-direccion').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);line-height:1;padding:4px;">&times;</button>
+          </div>
+          <div style="padding:20px;">
+            <div class="form-group" style="margin-bottom:14px;">
+              <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Dirección</label>
+              <input type="text" id="edit-dir-address" class="form-control" value="${address}" style="font-size:13px;">
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+              <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Comuna</label>
+              <input type="text" id="edit-dir-commune" class="form-control" value="${commune}" style="font-size:13px;">
+            </div>
+            <input type="hidden" id="edit-dir-code" value="${code}">
+          </div>
+          <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
+            <button onclick="document.getElementById('modal-edit-direccion').remove()" class="btn btn-secondary" style="font-size:12px;padding:7px 16px;">Cancelar</button>
+            <button onclick="saveEditDireccion()" class="btn btn-primary" id="btn-save-dir" style="font-size:12px;padding:7px 16px;">Guardar</button>
+          </div>
+        </div>`;
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+      document.getElementById('edit-dir-address').focus();
+    }
+
+    async function saveEditDireccion() {
+      const code = document.getElementById('edit-dir-code').value;
+      const address = document.getElementById('edit-dir-address').value.trim();
+      const commune = document.getElementById('edit-dir-commune').value.trim();
+      const btn = document.getElementById('btn-save-dir');
+
+      if (!address && !commune) {
+        showToast('warning', 'Sin datos', 'Ingresa al menos una dirección o comuna');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+
+      try {
+        // 1. Find client in allClients by external_id
+        const client = allClients.find(c => c.external_id === code);
+
+        // 2. If client exists in Supabase, update there (auto-syncs to Sheet)
+        if (client) {
+          const res = await fetch(`${API}/api/clients/${client.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address, commune })
+          });
+          const data = await res.json();
+          if (data.success) {
+            // Update local allClients
+            const idx = allClients.findIndex(c => c.id === client.id);
+            if (idx !== -1) {
+              allClients[idx].address = address;
+              allClients[idx].commune = commune;
+              allClients[idx].address_updated_at = new Date().toISOString();
+            }
+            showToast('success', 'Dirección actualizada', `${code} — guardado en BD + Excel`);
+          } else {
+            showToast('error', 'Error BD', data.error);
+            btn.disabled = false;
+            btn.textContent = 'Guardar';
+            return;
+          }
+        } else {
+          // 3. Client only in Sheet, sync directly to Sheet
+          const res = await fetch(`${API}/api/clients/sync-to-sheet`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ updates: [{ code, address, commune }] })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('success', 'Excel actualizado', `${code} — actualizado en Google Sheet`);
+          } else {
+            showToast('error', 'Error', data.error);
+            btn.disabled = false;
+            btn.textContent = 'Guardar';
+            return;
+          }
+        }
+
+        // 4. Update local sheet data and re-render
+        if (gsheetsAllDirecciones) {
+          const headers = gsheetsAllDirecciones[0].map(h => String(h || '').trim().toLowerCase());
+          const colCode = headers.findIndex(h => h.includes('cod'));
+          const colDir = headers.findIndex(h => h.includes('direcc') || h.includes('address'));
+          const colComuna = headers.findIndex(h => h.includes('comun'));
+          const colModPor = headers.findIndex(h => h.includes('modificado por'));
+          const colModAt = headers.findIndex(h => h.includes('ltima modif'));
+          const user = JSON.parse(localStorage.getItem('leker_user') || '{}');
+
+          for (let i = 1; i < gsheetsAllDirecciones.length; i++) {
+            if (String(gsheetsAllDirecciones[i][colCode]).trim() === code) {
+              if (colDir >= 0) gsheetsAllDirecciones[i][colDir] = address;
+              if (colComuna >= 0) gsheetsAllDirecciones[i][colComuna] = commune;
+              if (colModPor >= 0) gsheetsAllDirecciones[i][colModPor] = user.email || 'admin';
+              if (colModAt >= 0) gsheetsAllDirecciones[i][colModAt] = new Date().toISOString();
+              break;
+            }
+          }
+          renderDireccionesCustomTable(gsheetsAllDirecciones, 'gs-direcciones-body', 0);
+        }
+
+        document.getElementById('modal-edit-direccion').remove();
+      } catch (error) {
+        showToast('error', 'Error de conexión', error.message);
+        btn.disabled = false;
+        btn.textContent = 'Guardar';
+      }
+    }
+
+    // Save a geo link to Google Sheet for a specific client code
+    async function saveGeoLinkToSheet(code, geoLink) {
+      if (!code || !geoLink) return;
+      try {
+        showToast('info', 'Guardando geo', `Guardando link para ${code}...`);
+        const res = await fetch(`${API}/api/clients/save-geo-link`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, geoLink })
+        });
+        const data = await res.json();
+        if (data.success) {
+          // Update local data
+          if (gsheetsAllDirecciones) {
+            const headers = gsheetsAllDirecciones[0].map(h => String(h || '').trim().toLowerCase());
+            const colCode = headers.findIndex(h => h.includes('cod'));
+            const colLink = headers.findIndex(h => h.includes('link') || h.includes('geo'));
+            if (colLink >= 0) {
+              for (let i = 1; i < gsheetsAllDirecciones.length; i++) {
+                if (String(gsheetsAllDirecciones[i][colCode]).trim() === code) {
+                  gsheetsAllDirecciones[i][colLink] = geoLink;
+                  break;
+                }
+              }
+            }
+            renderDireccionesCustomTable(gsheetsAllDirecciones, 'gs-direcciones-body', _dirCurrentPage);
+          }
+          showToast('success', 'Geo guardado', `Link guardado en Excel para ${code}`);
+        } else {
+          showToast('error', 'Error', data.error || 'No se pudo guardar');
+        }
+      } catch (e) {
+        showToast('error', 'Error', e.message);
+      }
+    }
+
+    // Open modal to add geo link for a client
+    function openAddGeoLink(code, name, address, commune) {
+      const mapsUrl = _buildMapsSearchUrl(address, commune, '');
+      const existing = document.getElementById('modal-add-geo');
+      if (existing) existing.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'modal-add-geo';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+      overlay.innerHTML = `
+        <div style="background:var(--bg-card);border-radius:14px;padding:0;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+            <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--text-primary);">Agregar Georeferencia</h3>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;"><code style="background:var(--bg-hover);padding:1px 5px;border-radius:3px;font-size:10px;">${code}</code> ${name}</div>
+          </div>
+          <div style="padding:16px 20px;">
+            <div style="background:rgba(99,102,241,0.06);border-radius:8px;padding:12px;margin-bottom:14px;">
+              <p style="font-size:12px;color:var(--text-secondary);margin:0 0 8px;">1. Abre Google Maps con la dirección:</p>
+              <a href="${mapsUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--accent);color:white;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;"><i data-lucide="map" style="width:14px;height:14px;"></i> Abrir en Google Maps</a>
+              <p style="font-size:11px;color:var(--text-muted);margin:8px 0 0;">2. Verifica que el punto sea correcto, luego copia el link de Maps (Compartir → Copiar enlace).</p>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Pega el link de Google Maps</label>
+              <input type="text" id="add-geo-link" class="form-control" placeholder="https://maps.app.goo.gl/..." style="font-size:13px;">
+            </div>
+            <input type="hidden" id="add-geo-code" value="${code}">
+          </div>
+          <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
+            <button onclick="document.getElementById('modal-add-geo').remove()" class="btn btn-secondary" style="font-size:12px;padding:7px 16px;">Cancelar</button>
+            <button onclick="_saveGeoFromModal()" class="btn btn-primary" id="btn-save-geo" style="font-size:12px;padding:7px 16px;">Guardar Geo</button>
+          </div>
+        </div>`;
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+      lucide.createIcons();
+      document.getElementById('add-geo-link').focus();
+    }
+
+    async function _saveGeoFromModal() {
+      const code = document.getElementById('add-geo-code').value;
+      const link = document.getElementById('add-geo-link').value.trim();
+      const btn = document.getElementById('btn-save-geo');
+      if (!link) {
+        showToast('warning', 'Sin link', 'Pega el link de Google Maps');
+        return;
+      }
+      if (!link.includes('google') && !link.includes('goo.gl') && !link.includes('maps')) {
+        showToast('warning', 'Link inválido', 'El link debe ser de Google Maps');
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+      await saveGeoLinkToSheet(code, link);
+      const modal = document.getElementById('modal-add-geo');
+      if (modal) modal.remove();
+    }
+
+    // Batch generate Google Maps links for all addresses without geo and save to Sheet
+    async function batchGenerateGeoLinks() {
+      if (!gsheetsAllDirecciones || gsheetsAllDirecciones.length < 2) {
+        showToast('warning', 'Sin datos', 'Carga los datos del Excel primero');
+        return;
+      }
+
+      const headers = gsheetsAllDirecciones[0].map(h => String(h || '').trim().toLowerCase());
+      const colCode = headers.findIndex(h => h.includes('cod'));
+      const colDir = headers.findIndex(h => h.includes('direcc') || h.includes('address'));
+      const colComuna = headers.findIndex(h => h.includes('comun'));
+      const colCiudad = headers.findIndex(h => h.includes('ciudad'));
+      const colLink = headers.findIndex(h => h.includes('link') || h.includes('geo'));
+
+      // Find rows without geo link but with address
+      const toProcess = [];
+      for (let i = 1; i < gsheetsAllDirecciones.length; i++) {
+        const row = gsheetsAllDirecciones[i];
+        const code = colCode >= 0 ? String(row[colCode] || '').trim() : '';
+        const dir = colDir >= 0 ? String(row[colDir] || '').trim() : '';
+        const hasLink = colLink >= 0 && row[colLink] && String(row[colLink]).trim();
+        if (code && dir && !hasLink) {
+          const comuna = colComuna >= 0 ? String(row[colComuna] || '').trim() : '';
+          const ciudad = colCiudad >= 0 ? String(row[colCiudad] || '').trim() : '';
+          toProcess.push({ code, dir, comuna, ciudad, rowIdx: i });
+        }
+      }
+
+      if (toProcess.length === 0) {
+        showToast('info', 'Todo listo', 'Todas las direcciones ya tienen geo link');
+        return;
+      }
+
+      // Confirm with user
+      const btn = document.getElementById('btn-batch-geo');
+      const confirmed = confirm(`Se generarán links de Google Maps para ${toProcess.length.toLocaleString()} direcciones sin geo y se guardarán en el Excel.\n\nEsto puede tomar unos minutos. ¿Continuar?`);
+      if (!confirmed) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> Procesando...';
+      lucide.createIcons();
+
+      // Process in batches of 50
+      const BATCH_SIZE = 50;
+      let processed = 0;
+      let saved = 0;
+      let errors = 0;
+
+      for (let b = 0; b < toProcess.length; b += BATCH_SIZE) {
+        const batch = toProcess.slice(b, b + BATCH_SIZE);
+
+        // Generate links
+        const rows = batch.map(item => ({
+          code: item.code,
+          geoLink: _buildMapsSearchUrl(item.dir, item.comuna, item.ciudad)
+        }));
+
+        // Save batch to Sheet
+        try {
+          const res = await fetch(`${API}/api/clients/save-geo-link`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ batch: rows })
+          });
+          const data = await res.json();
+          if (data.success) {
+            saved += batch.length;
+            // Update local data
+            batch.forEach((item, j) => {
+              if (colLink >= 0) {
+                gsheetsAllDirecciones[item.rowIdx][colLink] = rows[j].geoLink;
+              }
+            });
+          } else {
+            errors += batch.length;
+          }
+        } catch (e) {
+          errors += batch.length;
+        }
+
+        processed += batch.length;
+        const pct = Math.round((processed / toProcess.length) * 100);
+        btn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> ${pct}% (${processed}/${toProcess.length})`;
+        lucide.createIcons();
+
+        // Small delay between batches to not overload Apps Script
+        if (b + BATCH_SIZE < toProcess.length) {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="locate" style="width:13px;height:13px;"></i> Cargar Geo';
+      lucide.createIcons();
+
+      // Re-render table
+      renderDireccionesCustomTable(gsheetsAllDirecciones, 'gs-direcciones-body', _dirCurrentPage);
+
+      if (errors > 0) {
+        showToast('warning', 'Parcial', `${saved} links guardados, ${errors} errores`);
+      } else {
+        showToast('success', 'Geo cargado', `${saved} links de Google Maps generados y guardados en Excel`);
+      }
     }
 
     // Sincronizar direcciones de GSheets → Supabase
@@ -21215,32 +22000,33 @@ if ('serviceWorker' in navigator) {
 
 // PWA Install prompt
 let deferredInstallPrompt = null;
-let pwaInstalled = false;
+let pwaInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-// Check if already running as installed PWA
-if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-  pwaInstalled = true;
-  document.addEventListener('DOMContentLoaded', () => {
-    const loginBtn = document.getElementById('install-btn-login');
-    const sidebarBtn = document.getElementById('install-btn-sidebar');
-    if (loginBtn) loginBtn.style.display = 'none';
-    if (sidebarBtn) sidebarBtn.style.display = 'none';
-  });
+function showInstallButtons(show) {
+  const loginBtn = document.getElementById('install-btn-login');
+  const sidebarBtn = document.getElementById('install-btn-sidebar');
+  if (loginBtn) loginBtn.style.display = show ? 'flex' : 'none';
+  if (sidebarBtn) sidebarBtn.style.display = show ? 'block' : 'none';
+}
+
+// If already running as installed PWA, buttons stay hidden (default)
+// If NOT installed, show buttons after DOM ready
+if (!pwaInstalled) {
+  document.addEventListener('DOMContentLoaded', () => showInstallButtons(true));
 }
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredInstallPrompt = e;
+  // Browser confirms app is installable — show buttons
+  showInstallButtons(true);
 });
 
 window.addEventListener('appinstalled', () => {
   pwaInstalled = true;
   deferredInstallPrompt = null;
-  const loginBtn = document.getElementById('install-btn-login');
-  const sidebarBtn = document.getElementById('install-btn-sidebar');
-  if (loginBtn) loginBtn.style.display = 'none';
-  if (sidebarBtn) sidebarBtn.style.display = 'none';
-  showToast('App instalada correctamente', 'success');
+  showInstallButtons(false);
+  showToast('success', 'Listo', 'App instalada correctamente');
 });
 
 function installPWA() {
