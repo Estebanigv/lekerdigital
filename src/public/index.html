@@ -6489,6 +6489,9 @@
                   <button class="btn" id="btn-batch-geo" onclick="batchGenerateGeoLinks()" style="background: var(--accent); color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;">
                     <i data-lucide="locate" style="width: 13px; height: 13px;"></i> Cargar Geo
                   </button>
+                  <button class="btn" id="btn-batch-geo-stop" onclick="stopBatchGeoLinks()" style="display:none; background: #ef4444; color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    <i data-lucide="square" style="width: 13px; height: 13px;"></i> Detener
+                  </button>
                   <div style="position:relative;">
                     <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
                     <input type="text" id="gs-direcciones-search" class="form-control" placeholder="Buscar..." style="max-width: 200px; width:100%; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsDirecciones()">
@@ -18938,6 +18941,17 @@
     }
 
     // Batch generate Google Maps links for all addresses without geo and save to Sheet
+    let _batchGeoAbort = false;
+
+    function stopBatchGeoLinks() {
+      _batchGeoAbort = true;
+      const stopBtn = document.getElementById('btn-batch-geo-stop');
+      if (stopBtn) {
+        stopBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> Deteniendo...';
+        lucide.createIcons();
+      }
+    }
+
     async function batchGenerateGeoLinks() {
       if (!gsheetsAllDirecciones || gsheetsAllDirecciones.length < 2) {
         showToast('warning', 'Sin datos', 'Carga los datos del Excel primero');
@@ -18972,11 +18986,14 @@
 
       // Confirm with user
       const btn = document.getElementById('btn-batch-geo');
-      const confirmed = confirm(`Se generarán links de Google Maps para ${toProcess.length.toLocaleString()} direcciones sin geo y se guardarán en el Excel.\n\nEsto puede tomar unos minutos. ¿Continuar?`);
+      const stopBtn = document.getElementById('btn-batch-geo-stop');
+      const confirmed = confirm(`Se generarán links de Google Maps para ${toProcess.length.toLocaleString()} direcciones sin geo y se guardarán en el Excel.\n\nEsto puede tomar unos minutos. Podrás detener el proceso en cualquier momento. ¿Continuar?`);
       if (!confirmed) return;
 
+      _batchGeoAbort = false;
       btn.disabled = true;
       btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> Procesando...';
+      if (stopBtn) { stopBtn.style.display = 'inline-flex'; }
       lucide.createIcons();
 
       // Process in batches of 50
@@ -18984,8 +19001,15 @@
       let processed = 0;
       let saved = 0;
       let errors = 0;
+      let stopped = false;
 
       for (let b = 0; b < toProcess.length; b += BATCH_SIZE) {
+        // Check abort flag
+        if (_batchGeoAbort) {
+          stopped = true;
+          break;
+        }
+
         const batch = toProcess.slice(b, b + BATCH_SIZE);
 
         // Generate links
@@ -19028,14 +19052,19 @@
         }
       }
 
+      // Reset buttons
       btn.disabled = false;
       btn.innerHTML = '<i data-lucide="locate" style="width:13px;height:13px;"></i> Cargar Geo';
+      if (stopBtn) { stopBtn.style.display = 'none'; stopBtn.innerHTML = '<i data-lucide="square" style="width:13px;height:13px;"></i> Detener'; }
       lucide.createIcons();
 
-      // Re-render table
+      // Re-render table with updated data
       renderDireccionesCustomTable(gsheetsAllDirecciones, 'gs-direcciones-body', _dirCurrentPage);
 
-      if (errors > 0) {
+      const remaining = toProcess.length - processed;
+      if (stopped) {
+        showToast('info', 'Detenido', `Proceso detenido. ${saved} links guardados de ${toProcess.length}. Quedan ${remaining} pendientes.`);
+      } else if (errors > 0) {
         showToast('warning', 'Parcial', `${saved} links guardados, ${errors} errores`);
       } else {
         showToast('success', 'Geo cargado', `${saved} links de Google Maps generados y guardados en Excel`);
