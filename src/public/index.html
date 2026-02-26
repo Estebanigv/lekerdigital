@@ -7381,11 +7381,13 @@
 
     let currentUser = null;
 
-    // Override fetch to inject auth token
+    // Override fetch to inject auth token (only for same-origin / API requests)
     const _originalFetch = window.fetch;
     window.fetch = function(url, options = {}) {
+      const urlStr = typeof url === 'string' ? url : url.url || '';
+      const isSameOrigin = urlStr.startsWith('/') || urlStr.startsWith(location.origin) || urlStr.startsWith(API);
       const token = localStorage.getItem('leker_token');
-      if (token) {
+      if (token && isSameOrigin) {
         options.headers = options.headers || {};
         if (options.headers instanceof Headers) {
           if (!options.headers.has('Authorization')) {
@@ -7398,7 +7400,7 @@
         }
       }
       return _originalFetch.call(this, url, options).then(response => {
-        if (response.status === 401 && token && !url.includes('/api/auth/')) {
+        if (response.status === 401 && token && isSameOrigin && !urlStr.includes('/api/auth/')) {
           localStorage.removeItem('leker_token');
           localStorage.removeItem('leker_user');
           location.reload();
