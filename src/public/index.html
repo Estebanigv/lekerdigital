@@ -17693,6 +17693,9 @@
         }
         lucide.createIcons();
 
+        // Auto-generate geo links in background (silent)
+        setTimeout(() => batchGenerateGeoLinks(false), 2000);
+
         // Background refresh if cache > 3 min
         if (cacheAge > 180 && _gsScriptUrl) {
           _gsFetchDirect(_gsScriptUrl).then(data => {
@@ -17780,6 +17783,9 @@
         }
 
         if (!initialLoad) showToast('success', 'Datos cargados', 'Google Sheets sincronizado correctamente');
+
+        // Auto-generate geo links in background (silent)
+        setTimeout(() => batchGenerateGeoLinks(false), 2000);
       } catch (error) {
         _fetchDone = true;
         clearInterval(fakeInterval);
@@ -18940,13 +18946,12 @@
       if (!code || !geoLink) return;
       try {
         showToast('info', 'Guardando geo', `Guardando link para ${code}...`);
-        const res = await fetch(`${API}/api/clients/save-geo-link`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, geoLink })
+        // POST directo al Apps Script (sin Vercel timeout)
+        const data = await _postDirectToAppsScript({
+          action: 'updateAddress',
+          rows: [{ code, geoLink, updatedBy: 'admin-geo', updatedAt: new Date().toISOString() }]
         });
-        const data = await res.json();
-        if (data.success) {
+        if (data.success || data.updated) {
           // Update local data
           if (gsheetsAllDirecciones) {
             const headers = gsheetsAllDirecciones[0].map(h => String(h || '').trim().toLowerCase());
@@ -19031,6 +19036,7 @@
 
     // Batch generate Google Maps links for all addresses without geo and save to Sheet
     let _batchGeoAbort = false;
+    let _batchGeoRunning = false;
 
     function stopBatchGeoLinks() {
       _batchGeoAbort = true;
@@ -19041,9 +19047,34 @@
       }
     }
 
-    async function batchGenerateGeoLinks() {
+    /**
+     * POST directo al Apps Script (sin pasar por Vercel — evita timeout)
+     */
+    async function _postDirectToAppsScript(payload) {
+      if (!_gsScriptUrl) throw new Error('No script URL');
+      const res = await fetch(_gsScriptUrl, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
+    }
+
+    /**
+     * Auto-genera y guarda geo links para direcciones sin geo.
+     * Se ejecuta automáticamente en segundo plano después de cargar datos.
+     * También se puede llamar manualmente con el botón.
+     * @param {boolean} manual - true si fue llamado por el usuario (muestra confirm)
+     */
+    async function batchGenerateGeoLinks(manual = true) {
+      if (_batchGeoRunning) return;
       if (!gsheetsAllDirecciones || gsheetsAllDirecciones.length < 2) {
-        showToast('warning', 'Sin datos', 'Carga los datos del Excel primero');
+        if (manual) showToast('warning', 'Sin datos', 'Carga los datos del Excel primero');
+        return;
+      }
+      if (!_gsScriptUrl) {
+        if (manual) showToast('warning', 'Sin URL', 'No se pudo obtener la URL del Apps Script');
         return;
       }
 
@@ -19054,7 +19085,6 @@
       const colCiudad = headers.findIndex(h => h.includes('ciudad'));
       const colLink = headers.findIndex(h => h.includes('link') || h.includes('geo'));
 
-      // Find rows without geo link but with address
       const toProcess = [];
       for (let i = 1; i < gsheetsAllDirecciones.length; i++) {
         const row = gsheetsAllDirecciones[i];
@@ -19069,95 +19099,92 @@
       }
 
       if (toProcess.length === 0) {
-        showToast('info', 'Todo listo', 'Todas las direcciones ya tienen geo link');
+        if (manual) showToast('info', 'Todo listo', 'Todas las direcciones ya tienen geo link');
         return;
       }
 
-      // Confirm with user
+      // If manual, ask confirmation. If auto, just run silently.
       const btn = document.getElementById('btn-batch-geo');
       const stopBtn = document.getElementById('btn-batch-geo-stop');
-      const confirmed = confirm(`Se generarán links de Google Maps para ${toProcess.length.toLocaleString()} direcciones sin geo y se guardarán en el Excel.\n\nEsto puede tomar unos minutos. Podrás detener el proceso en cualquier momento. ¿Continuar?`);
-      if (!confirmed) return;
+      if (manual) {
+        const confirmed = confirm(`Se generarán links de Google Maps para ${toProcess.length.toLocaleString()} direcciones sin geo y se guardarán en el Excel.\n\n¿Continuar?`);
+        if (!confirmed) return;
+      }
 
       _batchGeoAbort = false;
-      btn.disabled = true;
-      btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> Procesando...';
+      _batchGeoRunning = true;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> 0% (0/${toProcess.length})`;
+      }
       if (stopBtn) { stopBtn.style.display = 'inline-flex'; }
       lucide.createIcons();
 
-      // Process in batches of 50
-      const BATCH_SIZE = 10; // Small batches to avoid Vercel serverless timeout
+      // Batches of 20 — POST directo al Apps Script (sin Vercel timeout)
+      const BATCH_SIZE = 20;
       let processed = 0;
       let saved = 0;
       let errors = 0;
       let stopped = false;
 
       for (let b = 0; b < toProcess.length; b += BATCH_SIZE) {
-        // Check abort flag
-        if (_batchGeoAbort) {
-          stopped = true;
-          break;
-        }
+        if (_batchGeoAbort) { stopped = true; break; }
 
         const batch = toProcess.slice(b, b + BATCH_SIZE);
-
-        // Generate links
         const rows = batch.map(item => ({
           code: item.code,
           geoLink: _buildMapsSearchUrl(item.dir, item.comuna, item.ciudad)
         }));
 
-        // Save batch to Sheet
         try {
-          const res = await fetch(`${API}/api/clients/save-geo-link`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ batch: rows })
+          // POST directo al Apps Script (sin pasar por Vercel)
+          const data = await _postDirectToAppsScript({
+            action: 'updateAddress',
+            rows: rows.map(r => ({ code: r.code, geoLink: r.geoLink, updatedBy: 'auto-geo', updatedAt: new Date().toISOString() }))
           });
-          const data = await res.json();
-          if (data.success) {
-            saved += batch.length;
-            // Update local data
+          if (data.success || data.updated) {
+            saved += (data.updated || batch.length);
             batch.forEach((item, j) => {
-              if (colLink >= 0) {
-                gsheetsAllDirecciones[item.rowIdx][colLink] = rows[j].geoLink;
-              }
+              if (colLink >= 0) gsheetsAllDirecciones[item.rowIdx][colLink] = rows[j].geoLink;
             });
           } else {
             errors += batch.length;
           }
         } catch (e) {
           errors += batch.length;
+          console.warn('[GeoLink] Batch error:', e.message);
         }
 
         processed += batch.length;
         const pct = Math.round((processed / toProcess.length) * 100);
-        btn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> ${pct}% (${processed}/${toProcess.length})`;
-        lucide.createIcons();
+        if (btn) {
+          btn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> ${pct}% (${processed}/${toProcess.length})`;
+          lucide.createIcons();
+        }
 
-        // Small delay between batches to not overload Apps Script
+        // Delay between batches
         if (b + BATCH_SIZE < toProcess.length) {
-          await new Promise(r => setTimeout(r, 1000));
+          await new Promise(r => setTimeout(r, 800));
         }
       }
 
-      // Reset buttons
-      btn.disabled = false;
-      btn.innerHTML = '<i data-lucide="locate" style="width:13px;height:13px;"></i> Cargar Geo';
+      // Reset
+      _batchGeoRunning = false;
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="locate" style="width:13px;height:13px;"></i> Cargar Geo'; }
       if (stopBtn) { stopBtn.style.display = 'none'; stopBtn.innerHTML = '<i data-lucide="square" style="width:13px;height:13px;"></i> Detener'; }
       lucide.createIcons();
 
-      // Re-render table with updated data and update cache
+      // Update table + cache
       renderDireccionesCustomTable(gsheetsAllDirecciones, 'gs-direcciones-body', _dirCurrentPage);
       if (gsheetsData) { _gsCacheSet(gsheetsData); }
 
       const remaining = toProcess.length - processed;
       if (stopped) {
-        showToast('info', 'Detenido', `Proceso detenido. ${saved} links guardados de ${toProcess.length}. Quedan ${remaining} pendientes.`);
+        showToast('info', 'Detenido', `${saved} geo links guardados. Quedan ${remaining} pendientes.`);
       } else if (errors > 0) {
         showToast('warning', 'Parcial', `${saved} links guardados, ${errors} errores`);
       } else {
-        showToast('success', 'Geo cargado', `${saved} links de Google Maps generados y guardados en Excel`);
+        showToast('success', 'Geo completo', `${saved} links de Google Maps guardados en Excel`);
       }
     }
 
