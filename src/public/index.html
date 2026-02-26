@@ -17636,12 +17636,13 @@
     }
 
     /**
-     * Fetch Google Sheets data directly from Apps Script URL (bypasses Vercel timeout)
+     * Fetch Google Sheets data through backend API
      */
-    async function _gsFetchDirect(scriptUrl) {
-      const res = await fetch(`${scriptUrl}?sheet=all`, { redirect: 'follow' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
+    async function _gsFetchViaBackend() {
+      const res = await fetch(`${API}/api/gsheets/all`);
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error || 'Error desconocido');
+      return result.data;
     }
 
     async function loadGoogleSheetsData(forceRefresh = false, initialLoad = false) {
@@ -17699,12 +17700,12 @@
         setTimeout(() => batchGenerateGeoLinks(false), 2000);
 
         // Background refresh if cache > 3 min
-        if (cacheAge > 180 && _gsScriptUrl) {
-          _gsFetchDirect(_gsScriptUrl).then(data => {
+        if (cacheAge > 180) {
+          _gsFetchViaBackend().then(data => {
             gsheetsData = data;
             _gsCacheSet(data);
             renderAllGsheetsData(gsheetsData);
-            showToast('info', 'Actualizado', 'Datos de Google Sheets actualizados en segundo plano');
+            showToast('info', 'Actualizado', 'Datos actualizados en segundo plano');
           }).catch(() => { /* silent fail for background refresh */ });
         }
         return;
@@ -17746,17 +17747,7 @@
       }, 500);
 
       try {
-        let data;
-        // Try direct fetch to Apps Script first (bypasses Vercel 10s timeout)
-        if (_gsScriptUrl) {
-          data = await _gsFetchDirect(_gsScriptUrl);
-        } else {
-          // Fallback: fetch through backend
-          const res = await fetch(`${API}/api/gsheets/all`);
-          const result = await res.json();
-          if (!result.success) throw new Error(result.error || 'Error desconocido');
-          data = result.data;
-        }
+        const data = await _gsFetchViaBackend();
 
         _fetchDone = true;
         clearInterval(fakeInterval);
@@ -18948,12 +18939,8 @@
       if (!code || !geoLink) return;
       try {
         showToast('info', 'Guardando geo', `Guardando link para ${code}...`);
-        // POST directo al Apps Script (sin Vercel timeout)
-        const data = await _postDirectToAppsScript({
-          action: 'updateAddress',
-          rows: [{ code, geoLink, updatedBy: 'admin-geo', updatedAt: new Date().toISOString() }]
-        });
-        if (data.success || data.updated) {
+        const data = await _postGeoLinksBatch([{ code, geoLink }]);
+        if (data.success) {
           // Update local data
           if (gsheetsAllDirecciones) {
             const headers = gsheetsAllDirecciones[0].map(h => String(h || '').trim().toLowerCase());
@@ -19050,15 +19037,13 @@
     }
 
     /**
-     * POST directo al Apps Script (sin pasar por Vercel — evita timeout)
+     * POST geo links via backend API
      */
-    async function _postDirectToAppsScript(payload) {
-      if (!_gsScriptUrl) throw new Error('No script URL');
-      const res = await fetch(_gsScriptUrl, {
+    async function _postGeoLinksBatch(rows) {
+      const res = await fetch(`${API}/api/clients/save-geo-link`, {
         method: 'POST',
-        redirect: 'follow',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ batch: rows })
       });
       return await res.json();
     }
@@ -19075,8 +19060,8 @@
         if (manual) showToast('warning', 'Sin datos', 'Carga los datos del Excel primero');
         return;
       }
-      if (!_gsScriptUrl) {
-        if (manual) showToast('warning', 'Sin URL', 'No se pudo obtener la URL del Apps Script');
+      if (!currentUser || currentUser.role !== 'admin') {
+        if (manual) showToast('warning', 'Sin permiso', 'Solo admin puede cargar geo links');
         return;
       }
 
@@ -19139,13 +19124,9 @@
         }));
 
         try {
-          // POST directo al Apps Script (sin pasar por Vercel)
-          const data = await _postDirectToAppsScript({
-            action: 'updateAddress',
-            rows: rows.map(r => ({ code: r.code, geoLink: r.geoLink, updatedBy: 'auto-geo', updatedAt: new Date().toISOString() }))
-          });
-          if (data.success || data.updated) {
-            saved += (data.updated || batch.length);
+          const data = await _postGeoLinksBatch(rows);
+          if (data.success) {
+            saved += batch.length;
             batch.forEach((item, j) => {
               if (colLink >= 0) gsheetsAllDirecciones[item.rowIdx][colLink] = rows[j].geoLink;
             });
