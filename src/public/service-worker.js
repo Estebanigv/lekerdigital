@@ -1,4 +1,4 @@
-const CACHE_NAME = 'leker-v1.9.3';
+const CACHE_NAME = 'leker-v1.9.5';
 
 const STATIC_ASSETS = [
   '/leker-isotipo.png',
