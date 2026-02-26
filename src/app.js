@@ -1999,7 +1999,11 @@ app.post('/api/sync-vendedores', async (req, res) => {
 // =============================================
 
 app.get('/api/gsheets/status', (req, res) => {
-  res.json({ success: true, configured: googleSheetsService.isConfigured() });
+  res.json({
+    success: true,
+    configured: googleSheetsService.isConfigured(),
+    scriptUrl: googleSheetsService.isConfigured() ? googleSheetsService.scriptUrl : null
+  });
 });
 
 app.get('/api/gsheets/all', async (req, res) => {
