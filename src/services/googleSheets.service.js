@@ -162,17 +162,30 @@ class GoogleSheetsService {
   }
 
   /**
+   * Genera URL de búsqueda en Google Maps para una dirección
+   */
+  buildMapsSearchUrl(address, commune) {
+    const parts = [address, commune, 'Chile'].filter(Boolean);
+    const query = parts.join(', ').replace(/\s+/g, ' ').trim();
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  }
+
+  /**
    * Sincroniza dirección de un cliente al Google Sheet
    * @param {string} externalId - Código del cliente
    * @param {string} address - Nueva dirección
    * @param {string} commune - Nueva comuna
    * @param {string} updatedBy - Email o nombre del usuario que actualizó
+   * @param {string} [geoLink] - Link de georeferencia (se auto-genera si no se proporciona)
    */
-  async syncAddressToSheet(externalId, address, commune, updatedBy) {
+  async syncAddressToSheet(externalId, address, commune, updatedBy, geoLink) {
     if (!externalId) {
       console.warn('[GSheets] syncAddressToSheet: sin external_id, omitiendo');
       return { success: false, error: 'Sin código de cliente' };
     }
+
+    // Auto-generate geo link if not provided and address exists
+    const autoGeoLink = geoLink || (address ? this.buildMapsSearchUrl(address, commune) : '');
 
     return this.postToSheet({
       action: 'updateAddress',
@@ -180,6 +193,7 @@ class GoogleSheetsService {
         code: externalId,
         address: address || '',
         commune: commune || '',
+        geoLink: autoGeoLink,
         updatedBy: updatedBy || 'sistema',
         updatedAt: new Date().toISOString()
       }]

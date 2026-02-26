@@ -542,11 +542,18 @@ class RoutesService {
       if (user) updatedByName = user.email || user.full_name;
     }
 
+    // If client has lat/lng, use exact coordinates for geo link
+    let geoLink = '';
+    if (client.lat && client.lng) {
+      geoLink = `https://www.google.com/maps?q=${client.lat},${client.lng}`;
+    }
+
     const result = await googleSheetsService.syncAddressToSheet(
       client.external_id,
       client.address,
       client.commune,
-      updatedByName
+      updatedByName,
+      geoLink
     );
 
     if (result.success) {
