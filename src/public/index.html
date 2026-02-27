@@ -4158,6 +4158,7 @@
             <div class="stat-info">
               <h3 id="stat-clients">0</h3>
               <p>Clientes Totales</p>
+              <span id="stat-clients-sub" style="font-size:11px;font-weight:600;color:#b8860b;background:rgba(212,175,55,0.12);padding:1px 7px;border-radius:8px;margin-top:2px;display:inline-block;">⭐ <span id="stat-clients-8020">-</span> 80/20</span>
             </div>
           </div>
           <div class="stat-card" style="cursor: pointer;" onclick="document.querySelector('[data-tab=routes]').click()">
@@ -20888,6 +20889,9 @@
           // Segmentation (80-20, L, N)
           const el8020 = document.getElementById('seg-8020-count');
           if (el8020) el8020.textContent = (data.data['80-20'] || 0).toLocaleString('es-CL');
+          // Update stat card sub-label
+          const sub8020 = document.getElementById('stat-clients-8020');
+          if (sub8020) sub8020.textContent = (data.data['80-20'] || 0).toLocaleString('es-CL');
           document.getElementById('seg-L-count').textContent = (data.data.L || 0).toLocaleString('es-CL');
           document.getElementById('seg-N-count').textContent = (data.data.N || 0).toLocaleString('es-CL');
           document.getElementById('seg-total-count').textContent = (data.data.total || 0).toLocaleString('es-CL');
