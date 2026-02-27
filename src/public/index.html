@@ -5031,27 +5031,34 @@
           <!-- Modals (fixed position - stay outside wizard) -->
           <!-- Modal: Finalizar Ruta (KM Final) -->
           <div id="end-route-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
-            <div style="background:var(--bg-card); border-radius:12px; padding:24px; width:380px; max-width:90vw; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-              <h3 style="margin:0 0 16px 0; display:flex; align-items:center; gap:8px; color:var(--text);">
-                <i data-lucide="flag" style="width:20px;height:20px;color:var(--danger);"></i> Finalizar Jornada
-              </h3>
-              <div style="background:var(--bg-hover); padding:12px; border-radius:8px; margin-bottom:16px;">
+            <div style="background:var(--bg-card); border-radius:12px; padding:24px; width:400px; max-width:92vw; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <h3 style="margin:0; display:flex; align-items:center; gap:8px; color:var(--text);">
+                  <i data-lucide="flag" style="width:20px;height:20px;color:#f59e0b;"></i> Finalizar Jornada
+                </h3>
+                <button onclick="closeEndRouteModal()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;">
+                  <i data-lucide="x" style="width:18px;height:18px;"></i>
+                </button>
+              </div>
+              <div style="background:var(--bg-hover); padding:12px 14px; border-radius:8px; margin-bottom:16px;">
                 <div style="display:flex; justify-content:space-between; font-size:13px;">
-                  <span style="color:var(--text-muted);">KM Inicial:</span>
+                  <span style="color:var(--text-muted);">KM al iniciar:</span>
                   <strong id="end-route-start-km">0</strong>
                 </div>
               </div>
               <div class="form-group" style="margin-bottom:12px;">
-                <label style="font-weight:600; margin-bottom:4px; display:block;">Kilometraje Final</label>
-                <input type="number" id="end-route-km-input" class="form-control" placeholder="Ej: 45120" min="0" style="font-size:16px; padding:10px;">
+                <label style="font-weight:600; margin-bottom:6px; display:block;">KM actual del vehículo <span style="font-weight:400;color:var(--text-muted);font-size:12px;">(odómetro)</span></label>
+                <input type="number" id="end-route-km-input" class="form-control" placeholder="Ej: 45120" min="0" style="font-size:18px; padding:12px; text-align:center; letter-spacing:2px;">
               </div>
               <div id="end-route-km-diff" style="text-align:center; padding:10px; background:var(--bg-hover); border-radius:8px; margin-bottom:16px; font-size:14px; color:var(--text-muted);">
                 Ingresa el KM final para ver el recorrido
               </div>
-              <div style="display:flex; gap:8px;">
-                <button onclick="closeEndRouteModal()" class="btn btn-secondary" style="flex:1;">Cancelar</button>
-                <button onclick="confirmEndRoute()" class="btn btn-primary" style="flex:1; background:var(--danger); border-color:var(--danger);">
-                  <i data-lucide="flag" style="width:14px;height:14px;"></i> Finalizar
+              <div style="display:flex; gap:8px; flex-direction:column;">
+                <button onclick="confirmEndRoute()" class="btn btn-primary" style="background:#10b981; border-color:#10b981; font-size:14px; padding:12px; font-weight:600;">
+                  <i data-lucide="check-circle" style="width:16px;height:16px;"></i> Finalizar con KM registrado
+                </button>
+                <button onclick="confirmEndRouteNoKm()" class="btn btn-secondary" style="font-size:12px; padding:8px; color:var(--text-muted);">
+                  Finalizar sin registrar km
                 </button>
               </div>
               <input type="hidden" id="end-route-id">
@@ -14976,6 +14983,35 @@
       document.getElementById('end-route-modal').style.display = 'none';
     }
 
+    // Finalizar ruta sin registrar km (para cuando el exec no tiene el dato a mano)
+    async function confirmEndRouteNoKm() {
+      const routeId = document.getElementById('end-route-id').value;
+      if (!routeId) return;
+      try {
+        const res = await fetch(`${API}/routes/${routeId}/end`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endKm: null })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeEndRouteModal();
+          showToast('success', 'Jornada finalizada', 'Ruta completada — km no registrado');
+          currentStaleRoute = null;
+          currentActiveRoute = null;
+          const staleWarn = document.getElementById('stale-route-warning');
+          if (staleWarn) staleWarn.style.display = 'none';
+          const activeInfo = document.getElementById('active-route-info');
+          if (activeInfo) activeInfo.style.display = 'none';
+          loadData();
+        } else {
+          showToast('error', 'Error', data.error || 'No se pudo finalizar');
+        }
+      } catch (e) {
+        showToast('error', 'Error', e.message);
+      }
+    }
+
     async function confirmEndRoute() {
       const routeId = document.getElementById('end-route-id').value;
       const endKm = parseInt(document.getElementById('end-route-km-input').value);
@@ -15935,12 +15971,13 @@
 
     // Navigate to gestionar tab with specific vendor pre-selected
     function goToVendorRoute(userId) {
-      // Go to Planner Semanal to VIEW the exec's routes
-      switchRouteTab('planner');
-      const vendorSel = document.getElementById('schedule-vendor');
-      if (vendorSel) vendorSel.value = userId;
-      if (!document.getElementById('schedule-start').value) setWeekFromOffset(0);
-      showExecWeekDetail(userId);
+      // Go to Visits panel to monitor real-time check-ins for this vendor
+      document.querySelector('[data-tab=visits]')?.click();
+      const visitFilter = document.getElementById('visit-executive-filter');
+      if (visitFilter) {
+        visitFilter.value = userId;
+        filterVisitsByExecutive();
+      }
     }
 
     function goToVendorGestionar(userId) {

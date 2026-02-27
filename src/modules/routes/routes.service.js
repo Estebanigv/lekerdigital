@@ -1177,18 +1177,20 @@ class RoutesService {
 
     if (!route) throw new Error('Ruta no encontrada');
 
-    const kmTraveled = endKm - route.start_km;
-    const fuelEfficiency = route.vehicle?.fuel_efficiency_kml || VEHICLE_CONFIG.FUEL_EFFICIENCY_KML;
-    const fuelUsed = kmTraveled / fuelEfficiency;
-    const totalCost = Math.round(fuelUsed * VEHICLE_CONFIG.FUEL_PRICE_CLP);
+    const updateData = { status: 'completed' };
+
+    // Only calculate km/cost if endKm is provided
+    if (endKm != null && !isNaN(endKm) && endKm >= 0) {
+      const kmTraveled = endKm - (route.start_km || 0);
+      const fuelEfficiency = route.vehicle?.fuel_efficiency_kml || VEHICLE_CONFIG.FUEL_EFFICIENCY_KML;
+      const fuelUsed = kmTraveled / fuelEfficiency;
+      updateData.end_km = endKm;
+      updateData.total_cost_clp = Math.round(fuelUsed * VEHICLE_CONFIG.FUEL_PRICE_CLP);
+    }
 
     const { data, error } = await supabase
       .from('daily_routes')
-      .update({
-        end_km: endKm,
-        total_cost_clp: totalCost,
-        status: 'completed'
-      })
+      .update(updateData)
       .eq('id', routeId)
       .select()
       .single();
