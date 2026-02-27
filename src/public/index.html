@@ -13673,8 +13673,8 @@
       const btn = document.getElementById('exec-start-day-btn');
       if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:14px;height:14px;vertical-align:-2px;"></i> Iniciando...'; lucide.createIcons(); }
       await startDayFromVisits(currentUser.id);
-      // After starting, re-render exec dashboard to show active route
-      renderExecDashboard();
+      // After starting, navigate to Visits tab so exec can begin check-ins
+      setTimeout(() => document.querySelector('[data-tab="visits"]')?.click(), 300);
     }
 
     // Open exec's today route in Google Maps
@@ -15155,7 +15155,16 @@
           if (staleWarn) staleWarn.style.display = 'none';
           const activeInfo = document.getElementById('active-route-info');
           if (activeInfo) activeInfo.style.display = 'none';
-          loadData();
+          if (currentUser?.role === 'executive') {
+            try {
+              const [tRes, sRes] = await Promise.all([fetch(`${API}/api/daily-routes/today`), fetch(`${API}/api/routes/today-scheduled`)]);
+              const [tData, sData] = await Promise.all([tRes.json(), sRes.json()]);
+              if (tData.success) todayRoutesData = tData.data;
+              if (sData.success) todayScheduledData = sData.data;
+              renderExecDashboard();
+              updateVisitsNavBadge();
+            } catch (e) { loadData(); }
+          } else { loadData(); }
         } else {
           showToast('error', 'Error', data.error || 'No se pudo finalizar');
         }
@@ -15188,9 +15197,20 @@
           // Clear stale/active state
           currentStaleRoute = null;
           currentActiveRoute = null;
-          document.getElementById('stale-route-warning').style.display = 'none';
-          document.getElementById('active-route-info').style.display = 'none';
-          loadData();
+          const sw = document.getElementById('stale-route-warning');
+          if (sw) sw.style.display = 'none';
+          const ai = document.getElementById('active-route-info');
+          if (ai) ai.style.display = 'none';
+          if (currentUser?.role === 'executive') {
+            try {
+              const [tRes, sRes] = await Promise.all([fetch(`${API}/api/daily-routes/today`), fetch(`${API}/api/routes/today-scheduled`)]);
+              const [tData, sData] = await Promise.all([tRes.json(), sRes.json()]);
+              if (tData.success) todayRoutesData = tData.data;
+              if (sData.success) todayScheduledData = sData.data;
+              renderExecDashboard();
+              updateVisitsNavBadge();
+            } catch (e) { loadData(); }
+          } else { loadData(); }
           // Re-check the selected executive
           const selUser = document.getElementById('start-user').value;
           if (selUser) setTimeout(() => checkActiveRoute(selUser), 500);
@@ -22766,6 +22786,9 @@
       const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
       const isExec = currentUser && currentUser.role === 'executive';
       const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'supervisor');
+      const todayStr = new Date().toISOString().split('T')[0];
+      const myActiveRoute = isExec ? todayRoutesData.find(r => r.user_id === currentUser.id && r.status === 'active') : null;
+      const canStartToday = isExec && date === todayStr && !myActiveRoute;
 
       // Calculate cost for this day
       const distKm = dayData.totalDistance || 0;
@@ -22791,6 +22814,10 @@
                 <button class="btn" onclick="openDayRouteInMaps('${date}', '${userId}')" style="font-size: 11px; padding: 5px 10px; background: #4285f4; color: white; border: none; border-radius: 6px; display: inline-flex; align-items: center; gap: 3px;" title="Abrir ruta en Google Maps">
                   <i data-lucide="map-pin" style="width:12px;height:12px;"></i> Ruta Maps
                 </button>
+                ${canStartToday ? `
+                <button class="btn" onclick="this.closest('.day-detail-overlay').remove(); startDayFromDashboard();" style="font-size: 11px; padding: 5px 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;">
+                  <i data-lucide="play-circle" style="width:12px;height:12px;"></i> Iniciar Jornada
+                </button>` : ''}
                 ${isAdmin ? `
                 <button class="btn" onclick="deleteScheduledDay('${userId}', '${date}')" style="font-size: 11px; padding: 5px 10px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #ef4444; border-radius: 6px;" title="Eliminar rutas del día">
                   <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Eliminar
@@ -23252,6 +23279,54 @@
           loadExistingSchedule();
         } else {
           showToast('error', 'Error', data.error);
+        }
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+      }
+    }
+
+    async function skipRouteClient(routeId) {
+      if (!confirm('¿Marcar este cliente como saltado en la ruta de hoy?')) return;
+      try {
+        const res = await fetch(`${API}/api/routes/schedule/${routeId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'skip', reason: 'Saltado por ejecutivo' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Saltado', 'Cliente marcado como saltado');
+          document.querySelector('.day-detail-overlay')?.remove();
+          loadExistingSchedule();
+        } else {
+          showToast('error', 'Error', data.error || 'No se pudo saltar');
+        }
+      } catch (err) {
+        showToast('error', 'Error', err.message);
+      }
+    }
+
+    async function rescheduleRouteClient(routeId) {
+      // Default to next working day
+      const nextDay = new Date();
+      nextDay.setDate(nextDay.getDate() + 1);
+      while (nextDay.getDay() === 0 || nextDay.getDay() === 6) nextDay.setDate(nextDay.getDate() + 1);
+      const defaultDate = nextDay.toISOString().split('T')[0];
+      const newDate = prompt('¿Para qué fecha reagendar este cliente? (YYYY-MM-DD)', defaultDate);
+      if (!newDate) return;
+      try {
+        const res = await fetch(`${API}/api/routes/schedule/${routeId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reschedule', newDate, reason: 'Reagendado por ejecutivo' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Reagendado', `Cliente movido al ${newDate}`);
+          document.querySelector('.day-detail-overlay')?.remove();
+          loadExistingSchedule();
+        } else {
+          showToast('error', 'Error', data.error || 'No se pudo reagendar');
         }
       } catch (err) {
         showToast('error', 'Error', err.message);
