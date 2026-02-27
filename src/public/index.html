@@ -4218,15 +4218,22 @@
                   <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Total</div>
                 </div>
               </div>
-              <!-- Sub-segmentación (L, N) -->
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
-                <div style="text-align: center; padding: 10px; background: var(--bg-hover); border-radius: 8px; cursor: pointer;" onclick="goToClientsBySegmentation('L')">
-                  <div style="font-size: 20px; font-weight: 700; color: #2563eb;" id="seg-L-count">-</div>
-                  <div style="font-size: 10px; color: var(--text-muted);">L (Con ventas)</div>
+              <!-- Sub-segmentación comercial (80-20, L, N) -->
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+                <div style="text-align: center; padding: 10px 6px; background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.25); border-radius: 8px; cursor: pointer;" onclick="goToClientsBySegmentation('80-20')">
+                  <div style="font-size: 20px; font-weight: 700; color: #b8860b;" id="seg-8020-count">-</div>
+                  <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">80/20</div>
+                  <div style="font-size: 9px; color: var(--text-muted);">Clave</div>
                 </div>
-                <div style="text-align: center; padding: 10px; background: var(--bg-hover); border-radius: 8px; cursor: pointer;" onclick="goToClientsBySegmentation('N')">
+                <div style="text-align: center; padding: 10px 6px; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2); border-radius: 8px; cursor: pointer;" onclick="goToClientsBySegmentation('L')">
+                  <div style="font-size: 20px; font-weight: 700; color: #2563eb;" id="seg-L-count">-</div>
+                  <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">L</div>
+                  <div style="font-size: 9px; color: var(--text-muted);">Con ventas</div>
+                </div>
+                <div style="text-align: center; padding: 10px 6px; background: var(--bg-hover); border-radius: 8px; cursor: pointer;" onclick="goToClientsBySegmentation('N')">
                   <div style="font-size: 20px; font-weight: 700; color: #6b7280;" id="seg-N-count">-</div>
-                  <div style="font-size: 10px; color: var(--text-muted);">N (Nuevos)</div>
+                  <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">N</div>
+                  <div style="font-size: 9px; color: var(--text-muted);">Nuevos</div>
                 </div>
               </div>
             </div>
@@ -17746,12 +17753,18 @@
             return vendedor && vendedor.zona === zona;
           });
 
+          const clients8020Zone = clientsInZone.filter(c => c.segmentation === '80-20');
+          const pct8020 = clientsInZone.length > 0 ? Math.round(clients8020Zone.length / clientsInZone.length * 100) : 0;
           html += `<div style="background: ${zc.bg}; border: 1px solid ${zc.border}; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer;" onclick="document.querySelector('[data-tab=gsheets][data-subtab=gs-vendedores]')?.click()">
-            <i data-lucide="${zc.icon || 'map-pin'}" style="width: 20px; height: 20px; color: ${zc.color}; margin-bottom: 4px;"></i>
+            <i data-lucide="${zc.icon || 'map-pin'}" style="width: 18px; height: 18px; color: ${zc.color}; margin-bottom: 4px;"></i>
             <div style="font-size: 11px; font-weight: 700; color: ${zc.color}; margin-bottom: 4px;">${zona.replace('Zona ', '')}</div>
-            <div style="font-size: 18px; font-weight: 800; color: ${zc.color};">${vendedoresInZone.length}</div>
-            <div style="font-size: 10px; color: var(--text-muted);">vendedores</div>
-            <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">${clientsInZone.length} clientes</div>
+            <div style="font-size: 18px; font-weight: 800; color: ${zc.color}; line-height: 1;">${vendedoresInZone.length}</div>
+            <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">vendedores</div>
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">${clientsInZone.length} clientes</div>
+            ${clients8020Zone.length > 0 ? `<div style="margin-top: 4px; display: inline-flex; align-items: center; gap: 3px; background: rgba(212,175,55,0.15); border: 1px solid rgba(212,175,55,0.35); border-radius: 5px; padding: 2px 6px;">
+              <span style="font-size: 10px; font-weight: 700; color: #b8860b;">⭐ ${clients8020Zone.length} 80/20</span>
+              <span style="font-size: 9px; color: var(--text-muted);">(${pct8020}%)</span>
+            </div>` : ''}
           </div>`;
         });
         zonasContainer.innerHTML = html;
@@ -20843,10 +20856,12 @@
         const res = await fetch(`${API}/api/clients/segmentation-stats`);
         const data = await res.json();
         if (data.success) {
-          // Segmentation (L, N)
-          document.getElementById('seg-L-count').textContent = data.data.L || 0;
-          document.getElementById('seg-N-count').textContent = data.data.N || 0;
-          document.getElementById('seg-total-count').textContent = data.data.total || 0;
+          // Segmentation (80-20, L, N)
+          const el8020 = document.getElementById('seg-8020-count');
+          if (el8020) el8020.textContent = (data.data['80-20'] || 0).toLocaleString('es-CL');
+          document.getElementById('seg-L-count').textContent = (data.data.L || 0).toLocaleString('es-CL');
+          document.getElementById('seg-N-count').textContent = (data.data.N || 0).toLocaleString('es-CL');
+          document.getElementById('seg-total-count').textContent = (data.data.total || 0).toLocaleString('es-CL');
 
           // Segments A-E
           if (data.data.segments) {
