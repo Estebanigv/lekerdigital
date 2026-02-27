@@ -14284,44 +14284,70 @@
         return;
       }
 
+      // Determine exec context for prioritization
+      const execId = document.getElementById('visit-executive-filter')?.value || (currentUser?.role === 'executive' ? currentUser.id : null);
+      const scheduledToday = execId ? (todayScheduledData[execId] || []) : [];
+      const scheduledIds = new Set(scheduledToday.map(sc => sc.client_id));
+      const activeRoute = execId ? todayRoutesData.find(r => r.user_id === execId) : null;
+      const visitedIds = new Set((activeRoute?.visits || []).map(v => v.client_id));
+
       const filtered = allClients.filter(c => {
         const matchCode = c.external_id && c.external_id.toLowerCase().includes(search);
         const matchName = c.name && c.name.toLowerCase().includes(search);
         const matchFantasy = c.fantasy_name && c.fantasy_name.toLowerCase().includes(search);
         return matchCode || matchName || matchFantasy;
-      }).slice(0, 20); // Limit to 20 results
+      });
 
-      if (filtered.length === 0) {
+      // Sort: scheduled today (pending) first, then assigned, then others
+      filtered.sort((a, b) => {
+        const aScheduled = scheduledIds.has(a.id) && !visitedIds.has(a.id) ? 0 : scheduledIds.has(a.id) ? 1 : (execId && a.assigned_user_id === execId ? 2 : 3);
+        const bScheduled = scheduledIds.has(b.id) && !visitedIds.has(b.id) ? 0 : scheduledIds.has(b.id) ? 1 : (execId && b.assigned_user_id === execId ? 2 : 3);
+        return aScheduled - bScheduled;
+      });
+
+      const top = filtered.slice(0, 20);
+
+      if (top.length === 0) {
         resultsDiv.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--text-muted);">No se encontraron clientes</div>';
         resultsDiv.style.display = 'block';
         return;
       }
 
-      resultsDiv.innerHTML = filtered.map(c => `
-        <div class="client-search-item" onclick="selectCheckinClient('${c.id}')" style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.2s;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-              <div style="font-weight: 600; font-size: 13px;">${c.fantasy_name || c.name}</div>
-              ${c.fantasy_name && c.name !== c.fantasy_name ? `<div style="font-size: 11px; color: var(--text-muted);">${c.name}</div>` : ''}
+      resultsDiv.innerHTML = top.map(c => {
+        const isScheduledPending = scheduledIds.has(c.id) && !visitedIds.has(c.id);
+        const isVisited = visitedIds.has(c.id);
+        const rowBg = isScheduledPending ? 'background:rgba(99,102,241,0.03);' : '';
+        const scheduledBadge = isScheduledPending
+          ? '<span style="font-size:9px;font-weight:700;background:rgba(99,102,241,0.12);color:#6366f1;padding:1px 6px;border-radius:4px;">En ruta hoy</span>'
+          : isVisited
+            ? '<span style="font-size:9px;font-weight:700;background:rgba(16,185,129,0.12);color:#10b981;padding:1px 6px;border-radius:4px;">✓ Visitado</span>'
+            : '';
+        return `
+          <div class="client-search-item" onclick="selectCheckinClient('${c.id}')" style="padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.2s;${rowBg}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="font-weight: 600; font-size: 13px;">${c.fantasy_name || c.name}</div>
+                ${c.fantasy_name && c.name !== c.fantasy_name ? `<div style="font-size: 11px; color: var(--text-muted);">${c.name}</div>` : ''}
+              </div>
+              <code style="font-size: 11px; background: var(--accent); color: white; padding: 2px 6px; border-radius: 4px;">${c.external_id}</code>
             </div>
-            <code style="font-size: 11px; background: var(--accent); color: white; padding: 2px 6px; border-radius: 4px;">${c.external_id}</code>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; font-size: 11px; color: var(--text-secondary); align-items: center;">
+              <span><i data-lucide="map-pin" style="width: 10px; height: 10px; display: inline;"></i> ${c.commune || c.zone || 'Sin zona'}</span>
+              <span class="badge badge-${(c.segment || 'c').toLowerCase()}" style="font-size: 10px; padding: 1px 6px;">${c.segment || 'C'}</span>
+              ${c.segmentation === '80-20' ? '<span style="font-size:10px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 6px;border-radius:4px;">⭐ 80/20</span>' : ''}
+              ${scheduledBadge}
+            </div>
           </div>
-          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; font-size: 11px; color: var(--text-secondary); align-items: center;">
-            <span><i data-lucide="map-pin" style="width: 10px; height: 10px; display: inline;"></i> ${c.commune || c.zone || 'Sin zona'}</span>
-            <span class="badge badge-${(c.segment || 'c').toLowerCase()}" style="font-size: 10px; padding: 1px 6px;">${c.segment || 'C'}</span>
-            ${c.segmentation === '80-20' ? '<span style="font-size:10px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 6px;border-radius:4px;">⭐ 80/20</span>' : ''}
-            ${c.priority === 'FOCO' ? '<span class="badge badge-foco" style="font-size: 10px; padding: 1px 6px;">FOCO</span>' : ''}
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
       resultsDiv.style.display = 'block';
       lucide.createIcons();
 
       // Add hover effect
       resultsDiv.querySelectorAll('.client-search-item').forEach(item => {
-        item.addEventListener('mouseenter', () => item.style.background = 'var(--bg-hover)');
-        item.addEventListener('mouseleave', () => item.style.background = 'transparent');
+        item.addEventListener('mouseenter', () => { if (!item.style.background.includes('rgba')) item.style.background = 'var(--bg-hover)'; });
+        item.addEventListener('mouseleave', () => { if (!item.style.background.includes('rgba')) item.style.background = 'transparent'; });
       });
     }
 
