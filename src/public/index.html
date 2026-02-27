@@ -18740,14 +18740,41 @@
 
     // ====== DIRECCIONES FROM DATABASE (Supabase) ======
 
+    // Normalize region names client-side (same logic as backend)
+    const _REGION_NORM = {
+      'metropolitana':'Metropolitana','region metropolitana':'Metropolitana','rm':'Metropolitana',
+      'primera':'Primera','i':'Primera','tarapaca':'Primera','tarapacá':'Primera',
+      'segunda':'Segunda','ii':'Segunda','antofagasta':'Segunda',
+      'tercera':'Tercera','iii':'Tercera','atacama':'Tercera',
+      'cuarta':'Cuarta','iv':'Cuarta','coquimbo':'Cuarta',
+      'quinta':'Quinta','v':'Quinta','valparaiso':'Quinta','valparaíso':'Quinta',
+      'sexta':'Sexta Región','vi':'Sexta Región',"o'higgins":'Sexta Región','ohiggins':'Sexta Región',
+      'séptima':'Séptima','septima':'Séptima','vii':'Séptima','maule':'Séptima',
+      'octava':'Octava','viii':'Octava','biobio':'Octava','bío-bío':'Octava','biobío':'Octava','ñuble':'Octava',
+      'novena':'Novena','ix':'Novena','araucania':'Novena','araucanía':'Novena',
+      'decima':'Décima','décima':'Décima','x':'Décima','los lagos':'Décima',
+      'undecima':'Undécima','undécima':'Undécima','xi':'Undécima','aysen':'Undécima','aysén':'Undécima',
+      'duodecima':'Duodécima','duodécima':'Duodécima','xii':'Duodécima','magallanes':'Duodécima',
+      'decimo cuarta':'Décimo Cuarta','décimo cuarta':'Décimo Cuarta','xiv':'Décimo Cuarta','los rios':'Décimo Cuarta','los ríos':'Décimo Cuarta',
+      'decimo quinta':'Décimo Quinta','décimo quinta':'Décimo Quinta','xv':'Décimo Quinta','arica':'Décimo Quinta',
+    };
+    function _normRegionClient(raw) {
+      if (!raw) return '';
+      const key = raw.trim().replace(/\s+/g,' ').toLowerCase()
+        .replace(/región\s*(de\s+|del\s+|de\s+la\s+|de\s+los\s+)?/gi,'')
+        .replace(/region\s*(de\s+|del\s+|de\s+la\s+|de\s+los\s+)?/gi,'')
+        .trim();
+      return _REGION_NORM[key] || _REGION_NORM[raw.trim().toLowerCase()] || raw.trim().replace(/\s+/g,' ');
+    }
+
     function populateDirFilters() {
-      // Region dropdown
+      // Region dropdown — normalized so variants like "Octava" y "Octava Región del Biobío" aparecen juntos
       const regionSelect = document.getElementById('dir-db-region');
       if (regionSelect) {
-        const regions = [...new Set(allClients.map(c => c.region).filter(Boolean))].sort();
         const current = regionSelect.value;
+        const normalized = [...new Set(allClients.map(c => _normRegionClient(c.region)).filter(Boolean))].sort();
         regionSelect.innerHTML = '<option value="">Todas las regiones</option>';
-        regions.forEach(r => {
+        normalized.forEach(r => {
           regionSelect.innerHTML += `<option value="${r}" ${current === r ? 'selected' : ''}>${r}</option>`;
         });
       }
@@ -18780,7 +18807,7 @@
         );
       }
       if (region) {
-        filtered = filtered.filter(c => c.region === region);
+        filtered = filtered.filter(c => _normRegionClient(c.region) === region);
       }
       if (vendor === '__none__') {
         filtered = filtered.filter(c => !c.assigned_user_id);
@@ -18959,8 +18986,17 @@
     function initDireccionesFromDB() {
       if (!allClients || allClients.length === 0) return;
       populateDirFilters();
-      _dirDBFiltered = allClients;
-      renderDireccionesFromDB(allClients, 0);
+
+      // Auto-seleccionar vendedor activo (Gestionar Rutas o Panel de Rutas)
+      const vendorSelect = document.getElementById('dir-db-vendor');
+      if (vendorSelect && !vendorSelect.value) {
+        const activeVendor = selectedExecutiveId
+          || document.getElementById('schedule-vendor')?.value
+          || '';
+        if (activeVendor) vendorSelect.value = activeVendor;
+      }
+
+      filterDireccionesDB();
 
       // Show import banner if Sheet has many more clients than DB
       const sheetCount = gsheetsAllDirecciones ? gsheetsAllDirecciones.length - 1 : 0;
