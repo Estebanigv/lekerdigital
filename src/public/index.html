@@ -18768,13 +18768,13 @@
     }
 
     function populateDirFilters() {
-      // Region dropdown — normalized so variants like "Octava" y "Octava Región del Biobío" aparecen juntos
+      // Region dropdown — valores exactos del DB (sin normalizar para evitar mismatch)
       const regionSelect = document.getElementById('dir-db-region');
       if (regionSelect) {
         const current = regionSelect.value;
-        const normalized = [...new Set(allClients.map(c => _normRegionClient(c.region)).filter(Boolean))].sort();
+        const regions = [...new Set(allClients.map(c => (c.region || '').trim()).filter(Boolean))].sort();
         regionSelect.innerHTML = '<option value="">Todas las regiones</option>';
-        normalized.forEach(r => {
+        regions.forEach(r => {
           regionSelect.innerHTML += `<option value="${r}" ${current === r ? 'selected' : ''}>${r}</option>`;
         });
       }
@@ -18807,7 +18807,7 @@
         );
       }
       if (region) {
-        filtered = filtered.filter(c => _normRegionClient(c.region) === region);
+        filtered = filtered.filter(c => (c.region || '').trim() === region);
       }
       if (vendor === '__none__') {
         filtered = filtered.filter(c => !c.assigned_user_id);
