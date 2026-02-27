@@ -9100,6 +9100,21 @@
             </div>`;
           });
           html += '</div>';
+
+          // If ALL scheduled clients are done, show completion banner before Finalizar
+          const allDone = firstPendingIdx === -1 && myScheduled.length > 0;
+          if (allDone) {
+            html = `<div style="margin: 0 0 12px; padding: 14px 16px; background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.05)); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; display: flex; align-items: center; gap: 12px;">
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">🎯</div>
+              <div style="flex: 1;">
+                <div style="font-size: 14px; font-weight: 700; color: #10b981;">¡Ruta completada!</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 1px;">Visitaste ${myScheduled.length} de ${myScheduled.length} clientes programados</div>
+              </div>
+              <button onclick="endRoute('${myRoute.id}')" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 5px;">
+                <i data-lucide="flag" style="width:13px;height:13px;"></i> Finalizar
+              </button>
+            </div>` + html;
+          }
         } else if (visits.length > 0) {
           html += `<div style="text-align: center; padding: 12px; color: var(--text-muted); font-size: 12px;">Ruta activa con ${visits.length} visitas registradas</div>`;
         }
