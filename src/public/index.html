@@ -9782,32 +9782,6 @@
             const el = document.getElementById(id);
             if (el) el.checked = false;
           });
-
-          // Find next pending client in route and auto-advance for exec
-          const execId = document.getElementById('visit-executive-filter')?.value;
-          if (execId) {
-            const scheduled = todayScheduledData[execId] || [];
-            const routeVisits = (todayRoutesData.find(r => r.user_id === execId)?.visits || []);
-            const visitedIds = new Set(routeVisits.map(v => v.client_id));
-            visitedIds.add(clientId); // include just-registered
-            const nextSc = scheduled.find(sc => !visitedIds.has(sc.client_id));
-            if (nextSc?.client) {
-              const c = nextSc.client;
-              const nextName = c.fantasy_name || c.name || 'Cliente';
-              showToast('info', 'Próximo cliente', `${nextName} — ${c.commune || ''}`);
-              // For exec: auto-select next client after short delay (form is already cleared)
-              if (currentUser?.role === 'executive' && c.id) {
-                setTimeout(() => {
-                  // Only auto-select if form is still empty (user hasn't selected manually)
-                  if (!document.getElementById('checkin-client').value) {
-                    selectCheckinClient(c.id);
-                    const form = document.getElementById('form-checkin');
-                    if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
-                }, 1200);
-              }
-            }
-          }
         }
 
         if (!data.success) showResponse('response-checkin', data, false);
@@ -9826,6 +9800,25 @@
             renderTodayVisits();
             renderExecDashboard();
             updateVisitsNavBadge();
+            filterVisitsByExecutive(); // keep checkin-route select in sync
+
+            // Auto-advance to next pending client using fresh data
+            if (data.success) {
+              const freshScheduled = todayScheduledData[currentUser.id] || [];
+              const freshVisits = (todayRoutesData.find(r => r.user_id === currentUser.id)?.visits || []);
+              const freshVisitedIds = new Set(freshVisits.map(v => v.client_id));
+              const nextSc = freshScheduled.find(sc => !freshVisitedIds.has(sc.client_id));
+              if (nextSc?.client) {
+                const c = nextSc.client;
+                showToast('info', 'Próximo cliente', `${c.fantasy_name || c.name || 'Cliente'} — ${c.commune || ''}`);
+                setTimeout(() => {
+                  if (!document.getElementById('checkin-client').value) {
+                    selectCheckinClient(c.id);
+                    document.getElementById('form-checkin')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }, 800);
+              }
+            }
           } catch (e) {
             loadData(); // fallback
           }
@@ -13612,6 +13605,8 @@
         if (schedData.success) todayScheduledData = schedData.data;
         renderTodayVisits();
         updateVisitsNavBadge();
+        // Keep exec checkin-route select in sync (needed so submit handler has the active routeId)
+        if (currentUser?.role === 'executive') filterVisitsByExecutive();
         // Update "last updated" timestamp
         const tsEl = document.getElementById('visits-last-updated');
         if (tsEl) tsEl.textContent = `Act. ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
