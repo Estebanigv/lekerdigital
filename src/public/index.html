@@ -9129,6 +9129,40 @@
         routeContainer.innerHTML = html;
         document.getElementById('exec-stat-visits').textContent = '0';
 
+      } else if (myRoute && myRoute.status === 'completed') {
+        // Route completed today - show day summary
+        const visits = myRoute.visits || [];
+        const completed = visits.filter(v => v.status === 'completed').length;
+        const outcomes = { sale: 0, contacted: 0, no_contact: 0 };
+        visits.forEach(v => {
+          if (v.outcome === 'sale' || v.outcome === 'venta') outcomes.sale++;
+          else if (v.outcome === 'contacted' || v.outcome === 'seguimiento') outcomes.contacted++;
+          else outcomes.no_contact++;
+        });
+        const totalKm = myRoute.end_km && myRoute.start_km ? (myRoute.end_km - myRoute.start_km) : null;
+        routeStatEl.textContent = '✓ Terminada';
+        routeStatEl.style.fontSize = '14px';
+        routeActions.innerHTML = '';
+        routeContainer.innerHTML = `<div style="text-align: center; padding: 24px;">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px;">🎯</div>
+          <div style="font-size: 18px; font-weight: 700; color: #10b981; margin-bottom: 4px;">¡Jornada Completada!</div>
+          <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Buen trabajo hoy</div>
+          <div style="display: grid; grid-template-columns: repeat(${outcomes.sale > 0 ? 3 : 2}, 1fr); gap: 10px; max-width: 320px; margin: 0 auto;">
+            <div style="background: rgba(16,185,129,0.08); border-radius: 10px; padding: 12px; text-align: center;">
+              <div style="font-size: 22px; font-weight: 700; color: #10b981;">${completed}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">Visitas</div>
+            </div>
+            ${outcomes.sale > 0 ? `<div style="background: rgba(37,99,235,0.08); border-radius: 10px; padding: 12px; text-align: center;">
+              <div style="font-size: 22px; font-weight: 700; color: #2563eb;">${outcomes.sale}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">Ventas</div>
+            </div>` : ''}
+            ${totalKm ? `<div style="background: rgba(99,102,241,0.08); border-radius: 10px; padding: 12px; text-align: center;">
+              <div style="font-size: 20px; font-weight: 700; color: #6366f1;">${totalKm.toLocaleString()}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">km</div>
+            </div>` : ''}
+          </div>
+        </div>`;
+        document.getElementById('exec-stat-visits').textContent = completed;
       } else {
         // No route at all
         routeStatEl.textContent = 'Sin ruta';
@@ -16442,6 +16476,9 @@
                 <td style="padding:12px 10px;font-weight:700;color:#6366f1;font-size:15px;">$${cost.toLocaleString('es-CL')}</td>
                 <td style="padding:12px 10px;">
                   <div style="display:flex;gap:6px;align-items:center;">
+                    <button onclick="event.stopPropagation(); goToVendorGestionar('${uid}')" class="btn" style="font-size:12px;padding:6px 12px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);color:#6366f1;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Gestionar ruta">
+                      <i data-lucide="route" style="width:13px;height:13px;"></i> Gestionar
+                    </button>
                     <button onclick="event.stopPropagation(); deleteExecSchedule('${uid}', '${(info.userName || 'Sin nombre').replace(/'/g, "\\'")}', ${clientCount})" class="btn" style="font-size:12px;padding:6px 12px;background:none;border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:8px;cursor:pointer;" title="Eliminar rutas">
                       <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
                     </button>
