@@ -8953,17 +8953,17 @@
       const segContainer = document.getElementById('exec-clients-segmentation');
       if (segContainer) {
         segContainer.innerHTML = `
-          <div style="text-align: center; padding: 12px; background: rgba(239,68,68,0.08); border-radius: 8px; border: 1px solid rgba(239,68,68,0.2);">
-            <div style="font-size: 22px; font-weight: 700; color: #dc2626;">${seg8020}</div>
-            <div style="font-size: 11px; color: var(--text-muted);">80-20</div>
+          <div style="text-align: center; padding: 12px; background: rgba(212,175,55,0.1); border-radius: 8px; border: 1px solid rgba(212,175,55,0.35);">
+            <div style="font-size: 22px; font-weight: 700; color: #b8860b;">⭐ ${seg8020}</div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">80/20 Clave</div>
           </div>
           <div style="text-align: center; padding: 12px; background: rgba(59,130,246,0.08); border-radius: 8px; border: 1px solid rgba(59,130,246,0.2);">
             <div style="font-size: 22px; font-weight: 700; color: #2563eb;">${segL}</div>
-            <div style="font-size: 11px; color: var(--text-muted);">L (Con ventas)</div>
+            <div style="font-size: 11px; color: var(--text-muted);">L Con ventas</div>
           </div>
           <div style="text-align: center; padding: 12px; background: rgba(107,114,128,0.08); border-radius: 8px; border: 1px solid rgba(107,114,128,0.2);">
             <div style="font-size: 22px; font-weight: 700; color: #6b7280;">${segN}</div>
-            <div style="font-size: 11px; color: var(--text-muted);">N (Nuevos)</div>
+            <div style="font-size: 11px; color: var(--text-muted);">N Nuevos</div>
           </div>`;
       }
 
@@ -8974,13 +8974,18 @@
           const order = { '80-20': 0, 'L': 1, 'N': 2 };
           return (order[a.segmentation] ?? 3) - (order[b.segmentation] ?? 3);
         });
-        const SEG_COLORS = { '80-20': '#d4a017', 'L': '#2563eb', 'N': '#6b7280' };
         tbody.innerHTML = sorted.slice(0, 50).map(c => {
-          const segColor = SEG_COLORS[c.segmentation] || 'var(--text-muted)';
-          return `<tr>
-            <td style="font-weight: 500;">${c.fantasy_name || c.business_name || '-'}</td>
-            <td>${c.commune || '-'}</td>
-            <td><span style="font-size: 11px; font-weight: 600; color: ${segColor}; background: ${segColor}15; padding: 2px 8px; border-radius: 10px;">${c.segmentation || '-'}</span></td>
+          const is8020 = c.segmentation === '80-20';
+          const badge8020 = is8020 ? `<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;margin-left:4px;">80/20</span>` : '';
+          const segBadge = is8020
+            ? `<span style="font-size:11px;font-weight:700;background:rgba(212,175,55,0.15);color:#b8860b;border:1px solid rgba(212,175,55,0.35);padding:2px 8px;border-radius:10px;">⭐ 80/20</span>`
+            : c.segmentation === 'L'
+              ? `<span style="font-size:11px;font-weight:600;background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.25);padding:2px 8px;border-radius:10px;">L</span>`
+              : `<span style="font-size:11px;color:var(--text-muted);border:1px solid var(--border);padding:2px 8px;border-radius:10px;">${c.segmentation || '-'}</span>`;
+          return `<tr ${is8020 ? 'style="background:rgba(212,175,55,0.04);"' : ''}>
+            <td style="font-weight: ${is8020 ? '600' : '500'};">${c.fantasy_name || c.business_name || '-'}${badge8020}</td>
+            <td style="font-size:12px;">${c.commune || '-'}</td>
+            <td>${segBadge}</td>
           </tr>`;
         }).join('');
         if (sorted.length > 50) {
@@ -9349,16 +9354,20 @@
         return;
       }
 
-      // Build a set of my client names (lowercased) for matching
+      // Build sets for matching: names and external_ids (codes)
       const myClientNames = new Set();
+      const myClientCodes = new Set();
       myClients.forEach(c => {
         if (c.fantasy_name) myClientNames.add(c.fantasy_name.toLowerCase().trim());
         if (c.business_name) myClientNames.add(c.business_name.toLowerCase().trim());
-        if (c.code) myClientNames.add(String(c.code).toLowerCase().trim());
+        if (c.name) myClientNames.add(c.name.toLowerCase().trim());
+        if (c.external_id) myClientCodes.add(String(c.external_id).trim());
+        if (c.code) myClientCodes.add(String(c.code).trim());
       });
 
       const headers = gsheetsAllCobranzas[0];
       const clienteIdx = headers.findIndex(h => h && (h.toLowerCase().includes('cliente') || h.toLowerCase().includes('razón') || h.toLowerCase().includes('razon')));
+      const codigoIdx = headers.findIndex(h => h && (h.toLowerCase().includes('código') || h.toLowerCase().includes('codigo') || h.toLowerCase() === 'cod' || h.toLowerCase() === 'rut'));
       const montoIdx = headers.findIndex(h => h && (h.toLowerCase().includes('monto') || h.toLowerCase().includes('saldo') || h.toLowerCase().includes('deuda')));
       const diasIdx = headers.findIndex(h => h && (h.toLowerCase().includes('días') || h.toLowerCase().includes('dias') || h.toLowerCase().includes('atraso')));
       const vencIdx = headers.findIndex(h => h && (h.toLowerCase().includes('venc') || h.toLowerCase().includes('fecha')));
@@ -9366,22 +9375,34 @@
       let myCobranzas = [];
       gsheetsAllCobranzas.slice(1).forEach(row => {
         const clientName = clienteIdx >= 0 ? String(row[clienteIdx] || '').toLowerCase().trim() : '';
-        // Match by name
-        let isMyClient = false;
-        for (const name of myClientNames) {
-          if (name && clientName && (clientName.includes(name) || name.includes(clientName))) {
-            isMyClient = true;
-            break;
+        const clientCode = codigoIdx >= 0 ? String(row[codigoIdx] || '').trim() : '';
+        // Match by code (preferred) or name
+        let isMyClient = clientCode && myClientCodes.has(clientCode);
+        if (!isMyClient) {
+          for (const name of myClientNames) {
+            if (name && clientName && (clientName.includes(name) || name.includes(clientName))) {
+              isMyClient = true;
+              break;
+            }
           }
         }
         if (!isMyClient) return;
 
         const dias = diasIdx >= 0 ? parseInt(String(row[diasIdx] || '0').replace(/[^\d-]/g, '')) : 0;
+        // Cross-reference with allClients for 80/20 info
+        const clientObj = myClients.find(c => {
+          if (clientCode && c.external_id && String(c.external_id).trim() === clientCode) return true;
+          const fn = (c.fantasy_name || '').toLowerCase().trim();
+          const bn = (c.business_name || '').toLowerCase().trim();
+          return fn && clientName && (clientName.includes(fn) || fn.includes(clientName)) ||
+                 bn && clientName && (clientName.includes(bn) || bn.includes(clientName));
+        });
         myCobranzas.push({
           cliente: clienteIdx >= 0 ? row[clienteIdx] : '-',
           monto: montoIdx >= 0 ? row[montoIdx] : '-',
           dias: dias,
-          fecha: vencIdx >= 0 ? row[vencIdx] : '-'
+          fecha: vencIdx >= 0 ? row[vencIdx] : '-',
+          is8020: clientObj ? clientObj.segmentation === '80-20' : false
         });
       });
 
@@ -9402,9 +9423,10 @@
         let html = '<div style="display: flex; flex-direction: column;">';
         sorted.forEach(item => {
           const diasColor = item.dias > 60 ? '#ef4444' : item.dias > 30 ? '#f59e0b' : '#6b7280';
-          html += `<div style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border);">
+          const badge8020 = item.is8020 ? `<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;margin-left:4px;">80/20</span>` : '';
+          html += `<div style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); ${item.is8020 ? 'background:rgba(212,175,55,0.03);' : ''}">
             <div style="flex: 1; min-width: 0;">
-              <div style="font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.cliente}</div>
+              <div style="font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.cliente}${badge8020}</div>
               <div style="font-size: 11px; color: var(--text-muted);">${item.monto}</div>
             </div>
             ${item.dias > 0 ? `<span style="font-size: 11px; font-weight: 700; color: ${diasColor}; background: ${diasColor}15; padding: 2px 8px; border-radius: 10px; white-space: nowrap;">${item.dias}d</span>` : `<span style="font-size: 11px; color: var(--text-muted);">${item.fecha}</span>`}
