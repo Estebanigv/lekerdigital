@@ -5229,10 +5229,18 @@
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Panel de Visitas</div>
                 <div style="font-size: 20px; font-weight: 700;">Registro de Check-in</div>
               </div>
-              <div id="visit-exec-filter-container" style="display: flex; gap: 12px; align-items: center;">
-                <select id="visit-executive-filter" class="form-control" style="width: 250px; max-width: 100%; background: rgba(255,255,255,0.95); border: none;" onchange="filterVisitsByExecutive()">
-                  <option value="">-- Seleccionar Vendedor --</option>
-                </select>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                <div id="visit-exec-filter-container" style="display: flex; gap: 12px; align-items: center;">
+                  <select id="visit-executive-filter" class="form-control" style="width: 250px; max-width: 100%; background: rgba(255,255,255,0.95); border: none;" onchange="filterVisitsByExecutive()">
+                    <option value="">-- Seleccionar Vendedor --</option>
+                  </select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span id="visits-last-updated" style="font-size: 10px; color: rgba(255,255,255,0.7);"></span>
+                  <button onclick="_refreshVisitsData(false)" title="Actualizar ahora" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:6px;padding:4px 8px;cursor:pointer;color:white;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;">
+                    <i data-lucide="refresh-cw" style="width:11px;height:11px;"></i> Actualizar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -9788,7 +9796,26 @@
 
         if (!data.success) showResponse('response-checkin', data, false);
         else document.getElementById('response-checkin').style.display = 'none';
-        loadData();
+
+        // For exec: fast refresh (today routes only) — avoids slow full loadData()
+        if (currentUser?.role === 'executive') {
+          try {
+            const [todayRes, schedRes] = await Promise.all([
+              fetch(`${API}/api/daily-routes/today`),
+              fetch(`${API}/api/routes/today-scheduled`)
+            ]);
+            const [todayData, schedData] = await Promise.all([todayRes.json(), schedRes.json()]);
+            if (todayData.success) todayRoutesData = todayData.data;
+            if (schedData.success) todayScheduledData = schedData.data;
+            renderTodayVisits();
+            renderExecDashboard();
+            updateVisitsNavBadge();
+          } catch (e) {
+            loadData(); // fallback
+          }
+        } else {
+          loadData();
+        }
       } catch (error) {
         showResponse('response-checkin', { error: error.message }, false);
       } finally {
@@ -13569,6 +13596,9 @@
         if (schedData.success) todayScheduledData = schedData.data;
         renderTodayVisits();
         updateVisitsNavBadge();
+        // Update "last updated" timestamp
+        const tsEl = document.getElementById('visits-last-updated');
+        if (tsEl) tsEl.textContent = `Act. ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
         if (!silent) showToast('success', 'Actualizado', 'Datos de visitas actualizados');
       } catch (e) {
         console.warn('[visits-refresh] Error:', e);
