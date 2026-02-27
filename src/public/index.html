@@ -7238,6 +7238,20 @@
             <option value="">Sin asignar</option>
           </select>
         </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" id="client-phone" class="form-control" placeholder="Contacto principal">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="client-email" class="form-control" placeholder="correo@empresa.cl">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Observaciones</label>
+          <textarea id="client-observations" class="form-control" rows="2" placeholder="Notas internas..."></textarea>
+        </div>
         <!-- Audit info (admin only) -->
         <div id="client-audit-info" style="display:none; margin-top:12px; padding:10px 12px; background:var(--bg-hover); border-radius:8px; font-size:12px; color:var(--text-muted);">
           <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
@@ -7246,6 +7260,14 @@
           </div>
           <div id="client-audit-status" style="margin-bottom:4px;"></div>
           <div id="client-audit-detail"></div>
+        </div>
+        <!-- Visit history (loaded async when editing) -->
+        <div id="client-visit-history" style="display:none; margin-top:14px;">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px; font-size:12px; font-weight:600; color:var(--text-primary);">
+            <i data-lucide="clock" style="width:14px;height:14px;color:#6366f1;"></i>
+            Últimas Visitas
+          </div>
+          <div id="client-visit-history-body" style="font-size:12px;"></div>
         </div>
       </div>
       <div class="modal-footer">
@@ -14306,6 +14328,9 @@
         document.getElementById('client-segment').value = client.segment || 'C';
         document.getElementById('client-priority').value = client.priority || 'Normal';
         document.getElementById('client-vendor').value = client.assigned_user_id || '';
+        document.getElementById('client-phone').value = client.phone || '';
+        document.getElementById('client-email').value = client.email || '';
+        document.getElementById('client-observations').value = client.observations || '';
 
         // Show audit info (admin only)
         if (isAdmin) {
@@ -14343,7 +14368,42 @@
         document.getElementById('client-segment').value = 'C';
         document.getElementById('client-priority').value = 'Normal';
         document.getElementById('client-vendor').value = '';
+        document.getElementById('client-phone').value = '';
+        document.getElementById('client-email').value = '';
+        document.getElementById('client-observations').value = '';
         auditPanel.style.display = 'none';
+      }
+
+      // Load visit history async (edit mode only)
+      const histDiv = document.getElementById('client-visit-history');
+      const histBody = document.getElementById('client-visit-history-body');
+      if (clientId && histDiv && histBody) {
+        histDiv.style.display = 'block';
+        histBody.innerHTML = '<div style="color:var(--text-muted);padding:6px 0;">Cargando historial...</div>';
+        fetch(`${API}/api/clients/${clientId}/checklist-data`)
+          .then(r => r.json())
+          .then(res => {
+            if (!res.success || !res.data.visitHistory || res.data.visitHistory.length === 0) {
+              histBody.innerHTML = '<div style="color:var(--text-muted);padding:6px 0;">Sin visitas registradas</div>';
+              return;
+            }
+            const OUTCOME_LABELS = { sale: '✅ Venta', contacted: '✔️ Contactado', no_contact: '❌ Sin contacto', postponed: '⏱️ Postergado' };
+            histBody.innerHTML = res.data.visitHistory.slice(0, 5).map(v => {
+              const dateStr = v.route?.date ? new Date(v.route.date + 'T00:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '-';
+              const vendorName = v.route?.user?.full_name || '-';
+              const outcome = OUTCOME_LABELS[v.outcome] || v.outcome || '-';
+              return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);">
+                <div>
+                  <span style="font-weight:600;">${dateStr}</span>
+                  <span style="color:var(--text-muted);margin-left:6px;font-size:11px;">${vendorName}</span>
+                </div>
+                <span style="font-size:11px;">${outcome}</span>
+              </div>`;
+            }).join('');
+          })
+          .catch(() => { histBody.innerHTML = '<div style="color:var(--text-muted);font-size:11px;">Error cargando historial</div>'; });
+      } else if (histDiv) {
+        histDiv.style.display = 'none';
       }
 
       modal.style.display = 'flex';
@@ -14373,7 +14433,10 @@
         zone: document.getElementById('client-zone').value.trim() || null,
         segment: document.getElementById('client-segment').value,
         priority: document.getElementById('client-priority').value,
-        assigned_user_id: document.getElementById('client-vendor').value || null
+        assigned_user_id: document.getElementById('client-vendor').value || null,
+        phone: document.getElementById('client-phone').value.trim() || null,
+        email: document.getElementById('client-email').value.trim() || null,
+        observations: document.getElementById('client-observations').value.trim() || null
       };
 
       try {
