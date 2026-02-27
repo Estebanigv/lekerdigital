@@ -7600,13 +7600,20 @@
     };
 
     // Load overrides from localStorage if present
+    // Strategy: merge saved panels with defaults — never drop panels that DEFAULT has but override lacks
     let ROLE_PANELS = JSON.parse(JSON.stringify(DEFAULT_ROLE_PANELS));
     try {
       const saved = localStorage.getItem('leker_role_panels');
       if (saved) {
         const overrides = JSON.parse(saved);
         for (const role of Object.keys(ROLE_PANELS)) {
-          if (overrides[role]) ROLE_PANELS[role] = overrides[role];
+          if (overrides[role]) {
+            // Merge: keep all from override, but add any DEFAULT panels that are missing
+            const merged = [...new Set([...overrides[role], ...DEFAULT_ROLE_PANELS[role]])];
+            // But respect intentional removals: if a non-default panel was added in override, keep it
+            // Core system panels that should ALWAYS be present for each role
+            ROLE_PANELS[role] = merged;
+          }
         }
       }
     } catch(e) { /* ignore bad data */ }
