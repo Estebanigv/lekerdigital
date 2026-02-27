@@ -489,6 +489,14 @@ class RoutesService {
       if (error.code === '23505') throw new Error('Ya existe un cliente con ese código');
       throw error;
     }
+
+    // Sync new client to Google Sheet (non-blocking)
+    if (data && data.external_id) {
+      googleSheetsService.createClientInSheet(data).catch(err =>
+        console.error('[Routes] Error sync new client to sheet:', err.message)
+      );
+    }
+
     return data;
   }
 
@@ -514,10 +522,10 @@ class RoutesService {
       throw error;
     }
 
-    // Sync address change to Google Sheet (non-blocking)
-    if (data && (updateData.address !== undefined || updateData.commune !== undefined)) {
-      this._syncAddressToSheet(data, updatedByUserId).catch(err =>
-        console.error('[Routes] Error sync address to sheet:', err.message)
+    // Sync to Google Sheet (non-blocking) — full client sync
+    if (data && data.external_id) {
+      this._syncClientToSheet(data, updatedByUserId).catch(err =>
+        console.error('[Routes] Error sync client to sheet:', err.message)
       );
     }
 
@@ -565,6 +573,33 @@ class RoutesService {
     return result;
   }
 
+  /**
+   * Helper: sincroniza TODOS los campos de un cliente al Google Sheet
+   */
+  async _syncClientToSheet(client, updatedByUserId) {
+    if (!client.external_id) return;
+
+    let updatedByName = 'sistema';
+    if (updatedByUserId) {
+      const { data: user } = await supabase
+        .from('users')
+        .select('email, full_name')
+        .eq('id', updatedByUserId)
+        .single();
+      if (user) updatedByName = user.email || user.full_name;
+    }
+
+    const result = await googleSheetsService.syncClientToSheet(client, updatedByName);
+
+    if (result.success) {
+      console.log(`[Routes] Client synced to Sheet: ${client.external_id}`);
+    } else if (result.error) {
+      console.warn(`[Routes] Sheet sync failed for ${client.external_id}: ${result.error}`);
+    }
+
+    return result;
+  }
+
   async reassignClients(fromUserId, toUserId) {
     // Count clients to reassign
     const { data: clients, error: countError } = await supabase
@@ -591,6 +626,13 @@ class RoutesService {
   }
 
   async deleteClient(clientId) {
+    // Get client info before deleting (for sheet sync)
+    const { data: client } = await supabase
+      .from('clients')
+      .select('external_id')
+      .eq('id', clientId)
+      .single();
+
     // Check if client has visits
     const { data: visits } = await supabase
       .from('visits')
@@ -608,6 +650,14 @@ class RoutesService {
       .eq('id', clientId);
 
     if (error) throw error;
+
+    // Sync deletion to Google Sheet (non-blocking)
+    if (client && client.external_id) {
+      googleSheetsService.deleteClientFromSheet(client.external_id).catch(err =>
+        console.error('[Routes] Error sync delete to sheet:', err.message)
+      );
+    }
+
     return true;
   }
 
@@ -631,6 +681,95 @@ class RoutesService {
         results.errors.push({ batch: i / batchSize, error: error.message });
       } else {
         results.inserted += data ? data.length : 0;
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Import clients from Google Sheets data (massive upsert)
+   * Rows: array of { external_id, name, fantasy_name, address, commune, city, region, geo_link }
+   * Upserts by external_id: existing → update, new → create
+   */
+  async importClientsFromSheets(rows) {
+    const results = { created: 0, updated: 0, skipped: 0, errors: [], availableColumns: [] };
+    const batchSize = 100;
+
+    // Filter out rows without external_id
+    const validRows = rows.filter(r => r.external_id && r.external_id.trim());
+    results.skipped = rows.length - validRows.length;
+
+    // Detect available columns by doing a single-row test
+    const testRow = { external_id: '__test__col_check__', name: 'test' };
+    const extraCols = ['city', 'region', 'geo_link'];
+    const availableCols = new Set(['external_id', 'name', 'fantasy_name', 'address', 'commune']);
+
+    for (const col of extraCols) {
+      const testObj = { ...testRow, [col]: 'test' };
+      const { error } = await supabase.from('clients').upsert([testObj], { onConflict: 'external_id', ignoreDuplicates: false });
+      if (!error || !error.message.includes('column')) {
+        availableCols.add(col);
+      }
+    }
+    // Clean up test row
+    await supabase.from('clients').delete().eq('external_id', '__test__col_check__');
+    results.availableColumns = [...availableCols];
+    console.log('[Import] Available columns:', [...availableCols].join(', '));
+
+    // Get existing clients by external_id for tracking created vs updated
+    const existingIds = new Set();
+    let from = 0;
+    const fetchBatch = 1000;
+    let hasMore = true;
+    while (hasMore) {
+      const { data } = await supabase
+        .from('clients')
+        .select('external_id')
+        .range(from, from + fetchBatch - 1);
+      if (data && data.length > 0) {
+        data.forEach(c => existingIds.add(c.external_id));
+        from += fetchBatch;
+        hasMore = data.length === fetchBatch;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    for (let i = 0; i < validRows.length; i += batchSize) {
+      const batch = validRows.slice(i, i + batchSize).map(row => {
+        const obj = {
+          external_id: row.external_id.trim(),
+          name: row.name || row.external_id.trim(),
+          fantasy_name: row.fantasy_name || null,
+          address: row.address || null,
+          commune: row.commune || null
+        };
+        // Only include extra columns if they exist in the table
+        if (availableCols.has('city')) obj.city = row.city || null;
+        if (availableCols.has('region')) obj.region = row.region || null;
+        if (availableCols.has('geo_link')) obj.geo_link = row.geo_link || null;
+        return obj;
+      });
+
+      const { data, error } = await supabase
+        .from('clients')
+        .upsert(batch, {
+          onConflict: 'external_id',
+          ignoreDuplicates: false
+        })
+        .select('external_id');
+
+      if (error) {
+        results.errors.push({ batch: Math.floor(i / batchSize), error: error.message });
+      } else if (data) {
+        data.forEach(d => {
+          if (existingIds.has(d.external_id)) {
+            results.updated++;
+          } else {
+            results.created++;
+          }
+        });
       }
     }
 
@@ -1504,14 +1643,26 @@ class RoutesService {
    */
   async getSegmentationStats() {
     const allClients = await this.getAllClients();
-    const stats = { L: 0, '80-20': 0, N: 0, total: allClients.length };
+    const stats = { L: 0, '80-20': 0, N: 0, total: allClients.length, segments: { A: 0, B: 0, C: 0, D: 0, E: 0 }, regions: {} };
 
     allClients.forEach(c => {
+      // Segmentation (80-20, L, N)
       const seg = c.segmentation || 'N';
       if (seg === '80-20') stats['80-20']++;
       else if (seg === 'L') stats.L++;
       else stats.N++;
+
+      // Segments A-E
+      const s = c.segment || 'E';
+      stats.segments[s] = (stats.segments[s] || 0) + 1;
+
+      // Regions
+      const r = c.region || 'Sin región';
+      stats.regions[r] = (stats.regions[r] || 0) + 1;
     });
+
+    // Use segment A count as the authoritative 80-20 count
+    stats['80-20'] = stats.segments.A;
 
     return stats;
   }

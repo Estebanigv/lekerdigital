@@ -1,7 +1,12 @@
-const CACHE_NAME = 'leker-v1.9.5';
+const CACHE_NAME = 'leker-v1.9.7';
 
 const STATIC_ASSETS = [
-  '/leker-isotipo.png',
+  '/favicon.svg',
+  '/favicon-light.svg',
+  '/favicon-32.png',
+  '/apple-touch-icon.png',
+  '/icon-192x192.png',
+  '/icon-512x512.png',
   '/leker-logo.png',
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
   'https://unpkg.com/lucide@latest'

@@ -300,6 +300,19 @@ app.delete('/api/clients/:id', async (req, res) => {
   }
 });
 
+app.post('/api/clients/import-from-sheets', authorize('admin'), async (req, res) => {
+  try {
+    const { rows } = req.body;
+    if (!rows || !Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ success: false, error: 'Se requiere array de rows' });
+    }
+    const result = await routesService.importClientsFromSheets(rows);
+    res.json({ success: true, message: `Importación completada`, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/api/clients/reassign', authorize('admin', 'supervisor'), async (req, res) => {
   try {
     const { fromUserId, toUserId } = req.body;

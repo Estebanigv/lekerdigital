@@ -4,12 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LEKER - Sistema de Gestión Logística</title>
-  <link rel="icon" type="image/png" href="/leker-isotipo.png">
+  <!-- Favicon: color en light mode, blanco en dark mode -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" media="(prefers-color-scheme: light)">
+  <link rel="icon" type="image/svg+xml" href="/favicon-light.svg" media="(prefers-color-scheme: dark)">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#6366f1">
+  <meta name="theme-color" content="#1e1b4b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="/leker-isotipo.png">
 
   <!-- =============================================
        TRACKING SCRIPTS - CONFIGURAR IDs
@@ -543,9 +546,16 @@
     /* Stats Grid */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
       margin-bottom: 24px;
+    }
+
+    .dash-grid-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
     }
 
     .stat-card {
@@ -724,9 +734,11 @@
       border-radius: 50%;
     }
 
-    .legend-dot.a { background: #059669; }
-    .legend-dot.b { background: #d97706; }
-    .legend-dot.c { background: #6b7280; }
+    .legend-dot.a { background: #d97706; }
+    .legend-dot.b { background: #3b82f6; }
+    .legend-dot.c { background: #059669; }
+    .legend-dot.d { background: #f97316; }
+    .legend-dot.e { background: #9ca3af; }
     .legend-dot.route { background: var(--accent); }
 
     /* Forms */
@@ -1585,12 +1597,12 @@
 
     @media (max-width: 1200px) {
       .stats-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
       }
       .grid-2, .grid-3-1 {
         grid-template-columns: 1fr;
       }
-      .dash-row-4 {
+      .dash-grid-row {
         grid-template-columns: 1fr 1fr !important;
       }
       .responsive-grid-4 {
@@ -1675,7 +1687,7 @@
         grid-template-columns: 1fr;
         gap: 16px;
       }
-      .dash-row-2, .dash-row-4 {
+      .dash-grid-row {
         grid-template-columns: 1fr !important;
       }
       .content {
@@ -2065,9 +2077,7 @@
       .stat-card .stat-info p { font-size: 10px; }
 
       /* --- DASHBOARD GRID ROWS: stack --- */
-      .dash-row-2, .dash-row-4,
-      [style*="grid-template-columns: 1fr 1fr 1.5fr"],
-      [style*="grid-template-columns: 1fr 1fr"] {
+      .dash-grid-row {
         grid-template-columns: 1fr !important;
         gap: 12px !important;
       }
@@ -2259,9 +2269,11 @@
       border-radius: 50%;
     }
 
-    .marker-pin.segment-a { background: #059669; }
-    .marker-pin.segment-b { background: #d97706; }
-    .marker-pin.segment-c { background: #6b7280; }
+    .marker-pin.segment-a { background: #d97706; }
+    .marker-pin.segment-b { background: #3b82f6; }
+    .marker-pin.segment-c { background: #059669; }
+    .marker-pin.segment-d { background: #f97316; }
+    .marker-pin.segment-e { background: #9ca3af; }
     .marker-pin.foco {
       box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5), 0 0 10px rgba(239, 68, 68, 0.3);
       animation: pulse-foco 2s infinite;
@@ -3622,9 +3634,7 @@
       #exec-ventas-summary { grid-template-columns: repeat(3, 1fr) !important; }
 
       /* --- DASHBOARD GRIDS → 1 col --- */
-      .dash-row-2, .dash-row-4 { grid-template-columns: 1fr !important; gap: 12px !important; }
-      [style*="grid-template-columns: 1fr 1fr 1.5fr"] { grid-template-columns: 1fr !important; }
-      [style*="grid-template-columns: 1fr 1fr;"] { grid-template-columns: 1fr !important; }
+      .dash-grid-row { grid-template-columns: 1fr !important; gap: 12px !important; }
       .card[style*="min-width"] { min-width: 0 !important; }
 
       /* --- RUTAS PROGRAMADAS TABLE → CARDS --- */
@@ -4098,7 +4108,7 @@
         </div>
         <!-- ========== FIN DASHBOARD EJECUTIVO ========== -->
 
-        <!-- Fila 1: 6 Stats principales (admin/supervisor) -->
+        <!-- Fila 1: 4 Stats principales (admin/supervisor) -->
         <div class="stats-grid">
           <div class="stat-card" style="cursor: pointer;" onclick="document.querySelector('[data-tab=data][data-subtab=vendedores]').click()">
             <div class="stat-icon blue">
@@ -4136,57 +4146,67 @@
               <p>Visitas Hoy</p>
             </div>
           </div>
-          <div class="stat-card" style="cursor: pointer;" onclick="document.querySelector('[data-tab=gsheets][data-subtab=gs-8020]')?.click()">
-            <div class="stat-icon red">
-              <i data-lucide="target"></i>
-            </div>
-            <div class="stat-info">
-              <h3 id="stat-8020">-</h3>
-              <p>Clientes 80-20</p>
-            </div>
-          </div>
-          <div class="stat-card" style="cursor: pointer;" onclick="document.querySelector('[data-tab=gsheets][data-subtab=gs-cobranzas]')?.click()">
-            <div class="stat-icon yellow">
-              <i data-lucide="alert-circle"></i>
-            </div>
-            <div class="stat-info">
-              <h3 id="stat-cobranzas-vencidas">-</h3>
-              <p>Cobranzas Vencidas</p>
-            </div>
-          </div>
         </div>
 
-        <!-- Fila 2: Resumen Ventas | Rutas Activas Hoy -->
-        <div class="dash-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-          <!-- Resumen Ventas -->
+        <!-- Fila 2: Segmentación de Clientes + Clientes por Región -->
+        <div class="dash-grid-row dash-row-seg">
+          <!-- Segmentación de Clientes -->
           <div class="card">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-              <h3><i data-lucide="trending-up" style="width: 18px; height: 18px;"></i> Resumen Ventas</h3>
-              <a href="#" onclick="document.querySelector('[data-tab=gsheets][data-subtab=gs-ventas]')?.click(); return false;" style="font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 500;">Ver detalle →</a>
+              <h3><i data-lucide="pie-chart" style="width: 18px; height: 18px;"></i> Segmentación de Clientes</h3>
+              <button onclick="syncSegmentation()" id="btn-sync-seg" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 16px; border: 1px solid #10b981; background: rgba(16, 185, 129, 0.08); color: #10b981; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#10b981';this.style.color='white'" onmouseout="this.style.background='rgba(16,185,129,0.08)';this.style.color='#10b981'">
+                <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Sincronizar
+              </button>
             </div>
-            <div class="card-body" style="padding: 0;">
-              <div id="dash-ventas-summary" style="padding: 16px;">
-                <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px;">
-                  <i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px; margin-bottom: 8px;"></i>
-                  <p>Cargando datos de ventas...</p>
+            <div class="card-body">
+              <!-- Segmentos A-E -->
+              <div id="segmentation-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <div style="text-align: center; padding: 14px 8px; background: rgba(217,119,6,0.08); border-radius: 10px; border: 1px solid rgba(217,119,6,0.3); cursor: pointer;" onclick="goToClientsBySegment('A')">
+                  <div style="font-size: 26px; font-weight: 700; color: #d97706;" id="seg-A-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">A · Prioritario</div>
+                </div>
+                <div style="text-align: center; padding: 14px 8px; background: rgba(59,130,246,0.08); border-radius: 10px; border: 1px solid rgba(59,130,246,0.2); cursor: pointer;" onclick="goToClientsBySegment('B')">
+                  <div style="font-size: 26px; font-weight: 700; color: #3b82f6;" id="seg-B-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">B · Con dirección</div>
+                </div>
+                <div style="text-align: center; padding: 14px 8px; background: rgba(5,150,105,0.08); border-radius: 10px; border: 1px solid rgba(5,150,105,0.2); cursor: pointer;" onclick="goToClientsBySegment('C')">
+                  <div style="font-size: 26px; font-weight: 700; color: #059669;" id="seg-C-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">C · Con vendedor</div>
+                </div>
+                <div style="text-align: center; padding: 14px 8px; background: rgba(249,115,22,0.08); border-radius: 10px; border: 1px solid rgba(249,115,22,0.2); cursor: pointer;" onclick="goToClientsBySegment('D')">
+                  <div style="font-size: 26px; font-weight: 700; color: #f97316;" id="seg-D-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">D · Potencial</div>
+                </div>
+                <div style="text-align: center; padding: 14px 8px; background: rgba(156,163,175,0.08); border-radius: 10px; border: 1px solid rgba(156,163,175,0.2); cursor: pointer;" onclick="goToClientsBySegment('E')">
+                  <div style="font-size: 26px; font-weight: 700; color: #9ca3af;" id="seg-E-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">E · Sin dirección</div>
+                </div>
+                <div style="text-align: center; padding: 14px 8px; background: var(--bg-hover); border-radius: 10px; border: 1px solid var(--border); cursor: pointer;" onclick="goToClientsBySegmentation('')">
+                  <div style="font-size: 26px; font-weight: 700; color: var(--text-primary);" id="seg-total-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Total</div>
+                </div>
+              </div>
+              <!-- Sub-segmentación (L, N) -->
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+                <div style="text-align: center; padding: 10px; background: var(--bg-hover); border-radius: 8px; cursor: pointer;" onclick="goToClientsBySegmentation('L')">
+                  <div style="font-size: 20px; font-weight: 700; color: #2563eb;" id="seg-L-count">-</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">L (Con ventas)</div>
+                </div>
+                <div style="text-align: center; padding: 10px; background: var(--bg-hover); border-radius: 8px; cursor: pointer;" onclick="goToClientsBySegmentation('N')">
+                  <div style="font-size: 20px; font-weight: 700; color: #6b7280;" id="seg-N-count">-</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">N (Nuevos)</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Rutas Activas Hoy -->
+          <!-- Clientes por Región -->
           <div class="card">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-              <h3><i data-lucide="navigation" style="width: 18px; height: 18px;"></i> Rutas Activas Hoy</h3>
-              <a href="#" onclick="document.querySelector('[data-tab=routes]').click(); return false;" style="font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 500;">Ver mapa →</a>
+            <div class="card-header">
+              <h3><i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i> Clientes por Región</h3>
             </div>
-            <div class="card-body" style="padding: 0;">
-              <div id="dash-rutas-summary" style="padding: 16px;">
-                <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px;">
-                  <i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px; margin-bottom: 8px;"></i>
-                  <p>Cargando rutas...</p>
-                </div>
-              </div>
+            <div class="card-body">
+              <div id="regions-chart" style="max-height: 400px; overflow-y: auto; padding-right: 18px;"></div>
             </div>
           </div>
         </div>
@@ -4204,8 +4224,12 @@
             </div>
           </div>
           <div class="card-body" style="padding: 0;">
-            <div class="map-container" style="height: 450px;">
+            <div class="map-container" id="main-map-container" style="height: 450px; transition: height 0.3s ease;">
               <div id="map"></div>
+              <!-- Expand/Collapse Button -->
+              <button onclick="toggleMapSize()" id="btn-toggle-map" style="position: absolute; top: 10px; right: 10px; z-index: 11; background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #374151;" title="Expandir / Contraer mapa">
+                <i data-lucide="maximize-2" style="width: 14px; height: 14px;" id="icon-toggle-map"></i>
+              </button>
               <!-- Left Panel: Search + Filters -->
               <div class="map-left-panel" style="position: absolute; top: 10px; left: 10px; z-index: 10; width: 220px;">
                 <!-- Search -->
@@ -4221,22 +4245,32 @@
                   <div style="font-weight: 600; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Segmentos</div>
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('A')" data-segment="A" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
                     <div class="legend-dot a"></div>
-                    <span style="flex: 1; font-size: 12px;">Segmento A</span>
-                    <span id="count-segment-a" style="font-size: 10px; background: rgba(5,150,105,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                    <span style="flex: 1; font-size: 11px;">A — 80/20 Top</span>
+                    <span id="count-segment-a" style="font-size: 10px; background: rgba(217,119,6,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
                   </div>
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('B')" data-segment="B" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
                     <div class="legend-dot b"></div>
-                    <span style="flex: 1; font-size: 12px;">Segmento B</span>
-                    <span id="count-segment-b" style="font-size: 10px; background: rgba(217,119,6,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                    <span style="flex: 1; font-size: 11px;">B — Con dirección</span>
+                    <span id="count-segment-b" style="font-size: 10px; background: rgba(59,130,246,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
                   </div>
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('C')" data-segment="C" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
                     <div class="legend-dot c"></div>
-                    <span style="flex: 1; font-size: 12px;">Segmento C</span>
-                    <span id="count-segment-c" style="font-size: 10px; background: rgba(107,114,128,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                    <span style="flex: 1; font-size: 11px;">C — Con vendedor</span>
+                    <span id="count-segment-c" style="font-size: 10px; background: rgba(5,150,105,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                  </div>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('D')" data-segment="D" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                    <div class="legend-dot d"></div>
+                    <span style="flex: 1; font-size: 11px;">D — Potencial</span>
+                    <span id="count-segment-d" style="font-size: 10px; background: rgba(249,115,22,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                  </div>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('E')" data-segment="E" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                    <div class="legend-dot e"></div>
+                    <span style="flex: 1; font-size: 11px;">E — Sin dirección</span>
+                    <span id="count-segment-e" style="font-size: 10px; background: rgba(156,163,175,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
                   </div>
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('FOCO')" data-segment="FOCO" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; align-items: center;">
                     <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.4); margin-right: 8px;"></div>
-                    <span style="flex: 1; font-size: 12px;">FOCO</span>
+                    <span style="flex: 1; font-size: 11px;">FOCO</span>
                     <span id="count-segment-foco" style="font-size: 10px; background: rgba(239,68,68,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
                   </div>
                   <button onclick="filterMapBySegment('ALL')" style="width: 100%; margin-top: 8px; padding: 5px 8px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
@@ -4258,8 +4292,24 @@
           </div>
         </div>
 
-        <!-- Fila 4: Equipo por Zona | Cobranzas Pendientes | Comparativo -->
-        <div class="dash-row-4" style="display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 20px; margin-top: 20px; align-items: flex-start;">
+        <!-- Fila 4: Rutas Activas Hoy + Equipo por Zona -->
+        <div class="dash-grid-row dash-row-ops" style="margin-top: 20px;">
+          <!-- Rutas Activas Hoy -->
+          <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <h3><i data-lucide="navigation" style="width: 18px; height: 18px;"></i> Rutas Activas Hoy</h3>
+              <a href="#" onclick="document.querySelector('[data-tab=routes]').click(); return false;" style="font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 500;">Ver mapa →</a>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div id="dash-rutas-summary" style="padding: 16px;">
+                <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px;">
+                  <i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px; margin-bottom: 8px;"></i>
+                  <p>Cargando rutas...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Equipo por Zona -->
           <div class="card">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -4269,6 +4319,25 @@
             <div class="card-body" style="padding: 12px;">
               <div id="dash-zonas-summary" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div style="text-align: center; padding: 16px; color: var(--text-muted); font-size: 12px; grid-column: span 2;">Cargando zonas...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fila 5: Resumen Ventas + Cobranzas Pendientes -->
+        <div class="dash-grid-row dash-row-fin" style="margin-top: 20px;">
+          <!-- Resumen Ventas -->
+          <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <h3><i data-lucide="trending-up" style="width: 18px; height: 18px;"></i> Resumen Ventas</h3>
+              <a href="#" onclick="document.querySelector('[data-tab=gsheets][data-subtab=gs-ventas]')?.click(); return false;" style="font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 500;">Ver detalle →</a>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div id="dash-ventas-summary" style="padding: 16px;">
+                <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px;">
+                  <i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px; margin-bottom: 8px;"></i>
+                  <p>Cargando datos de ventas...</p>
+                </div>
               </div>
             </div>
           </div>
@@ -4288,66 +4357,36 @@
               </div>
             </div>
           </div>
-
-          <!-- Resumen Comparativo de Competencia -->
-          <div class="card" id="card-comparativo-summary" style="min-width: 300px;">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-              <h3><i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i> Comparativo de Competencia</h3>
-              <a href="#" onclick="document.querySelector('[data-tab=intelligence]').click(); return false;" style="font-size: 12px; color: var(--primary); text-decoration: none;">Ver detalle →</a>
-            </div>
-            <div class="card-body" style="padding: 16px; overflow: auto;">
-              <div id="dashboard-comparativo-summary">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;">
-                  <div style="text-align: center; padding: 12px; background: var(--bg-hover); border-radius: 8px;">
-                    <div style="font-size: 20px; font-weight: 700; color: #3b82f6;" id="dash-comp-products">-</div>
-                    <div style="font-size: 10px; color: var(--text-muted);">Productos</div>
-                  </div>
-                  <div style="text-align: center; padding: 12px; background: var(--bg-hover); border-radius: 8px;">
-                    <div style="font-size: 20px; font-weight: 700; color: #059669;" id="dash-comp-sources">-</div>
-                    <div style="font-size: 10px; color: var(--text-muted);">Fuentes</div>
-                  </div>
-                  <div style="text-align: center; padding: 12px; background: var(--bg-hover); border-radius: 8px;">
-                    <div style="font-size: 20px; font-weight: 700; color: #f97316;" id="dash-comp-avg">-</div>
-                    <div style="font-size: 10px; color: var(--text-muted);">Precio Prom</div>
-                  </div>
-                </div>
-                <div id="dash-comp-bars" style="font-size: 12px;"></div>
-              </div>
-            </div>
-          </div>
         </div>
 
-        <!-- Fila 5: Segmentación de Clientes -->
-        <div class="card" style="margin-top: 20px;">
+        <!-- Fila 6: Comparativo de Competencia -->
+        <div class="card" id="card-comparativo-summary" style="margin-top: 20px;">
           <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <h3><i data-lucide="pie-chart" style="width: 18px; height: 18px;"></i> Segmentación de Clientes</h3>
-            <button onclick="syncSegmentation()" id="btn-sync-seg" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 16px; border: 1px solid #10b981; background: rgba(16, 185, 129, 0.08); color: #10b981; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#10b981';this.style.color='white'" onmouseout="this.style.background='rgba(16,185,129,0.08)';this.style.color='#10b981'">
-              <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Sincronizar
-            </button>
+            <h3><i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i> Comparativo de Competencia</h3>
+            <a href="#" onclick="document.querySelector('[data-tab=intelligence]').click(); return false;" style="font-size: 12px; color: var(--primary); text-decoration: none;">Ver detalle →</a>
           </div>
-          <div class="card-body">
-            <div id="segmentation-stats" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-              <div style="text-align: center; padding: 16px; background: linear-gradient(135deg, rgba(26,26,46,0.06), rgba(22,33,62,0.06)); border-radius: 10px; border: 1px solid rgba(212,160,23,0.3); cursor: pointer;" onclick="goToClientsBySegmentation('80-20')">
-                <div style="font-size: 28px; font-weight: 700; color: #d4a017;" id="seg-8020-count">-</div>
-                <div style="font-size: 12px; color: var(--text-muted);">80-20 (Clave)</div>
+          <div class="card-body" style="padding: 16px; overflow: auto;">
+            <div id="dashboard-comparativo-summary">
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;">
+                <div style="text-align: center; padding: 12px; background: var(--bg-hover); border-radius: 8px;">
+                  <div style="font-size: 20px; font-weight: 700; color: #3b82f6;" id="dash-comp-products">-</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">Productos</div>
+                </div>
+                <div style="text-align: center; padding: 12px; background: var(--bg-hover); border-radius: 8px;">
+                  <div style="font-size: 20px; font-weight: 700; color: #059669;" id="dash-comp-sources">-</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">Fuentes</div>
+                </div>
+                <div style="text-align: center; padding: 12px; background: var(--bg-hover); border-radius: 8px;">
+                  <div style="font-size: 20px; font-weight: 700; color: #f97316;" id="dash-comp-avg">-</div>
+                  <div style="font-size: 10px; color: var(--text-muted);">Precio Prom</div>
+                </div>
               </div>
-              <div style="text-align: center; padding: 16px; background: rgba(59, 130, 246, 0.08); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.2); cursor: pointer;" onclick="goToClientsBySegmentation('L')">
-                <div style="font-size: 28px; font-weight: 700; color: #2563eb;" id="seg-L-count">-</div>
-                <div style="font-size: 12px; color: var(--text-muted);">L (Con ventas)</div>
-              </div>
-              <div style="text-align: center; padding: 16px; background: rgba(107, 114, 128, 0.08); border-radius: 10px; border: 1px solid rgba(107, 114, 128, 0.2); cursor: pointer;" onclick="goToClientsBySegmentation('N')">
-                <div style="font-size: 28px; font-weight: 700; color: #6b7280;" id="seg-N-count">-</div>
-                <div style="font-size: 12px; color: var(--text-muted);">N (Nuevos)</div>
-              </div>
-              <div style="text-align: center; padding: 16px; background: var(--bg-hover); border-radius: 10px; border: 1px solid var(--border); cursor: pointer;" onclick="goToClientsBySegmentation('')">
-                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);" id="seg-total-count">-</div>
-                <div style="font-size: 12px; color: var(--text-muted);">Total Clientes</div>
-              </div>
+              <div id="dash-comp-bars" style="font-size: 12px;"></div>
             </div>
           </div>
         </div>
 
-        <!-- Fila 6: Rendimiento por Vendedor -->
+        <!-- Fila 7: Rendimiento por Vendedor -->
         <div class="card" style="margin-top: 20px;">
           <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <h3><i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i> Rendimiento por Vendedor</h3>
@@ -4368,7 +4407,7 @@
           </div>
         </div>
 
-        <!-- Fila 7: Calendario de Visitas -->
+        <!-- Fila 8: Calendario de Visitas -->
         <div class="card" style="margin-top: 20px;">
           <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <h3><i data-lucide="calendar" style="width: 18px; height: 18px;"></i> Calendario Mensual de Visitas</h3>
@@ -5824,7 +5863,7 @@
               </div>
               <div id="upload-result" style="margin-top: 16px; display: none;"></div>
               <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
-                <strong>Columnas:</strong> Código, Razón Social, Nombre Fantasía, Dirección, Comuna, Segmento (A/B/C), Prioridad (FOCO/Normal)
+                <strong>Columnas:</strong> Código, Razón Social, Nombre Fantasía, Dirección, Comuna, Segmento (A/B/C/D/E), Prioridad (FOCO/Normal)
               </div>
             </div>
           </div>
@@ -5848,9 +5887,11 @@
                 </select>
                 <select id="filter-segment" class="form-control" onchange="filterClients()" style="max-width: 130px; width:100%;">
                   <option value="">Segmento</option>
-                  <option value="A">Segmento A</option>
-                  <option value="B">Segmento B</option>
-                  <option value="C">Segmento C</option>
+                  <option value="A">A - 80/20 Top</option>
+                  <option value="B">B - Con dirección</option>
+                  <option value="C">C - Con vendedor</option>
+                  <option value="D">D - Potencial</option>
+                  <option value="E">E - Sin dirección</option>
                 </select>
                 <select id="filter-segmentation" class="form-control" onchange="filterClients()" style="max-width: 130px; width:100%;">
                   <option value="">Segmentación</option>
@@ -6478,39 +6519,54 @@
           <div class="data-subpanel" id="gs-subpanel-gs-direcciones">
             <div class="card" style="margin-bottom: 16px;">
               <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                <h3><i data-lucide="map-pin" style="width: 18px; height: 18px;"></i> Direcciones</h3>
+                <h3><i data-lucide="map-pin" style="width: 18px; height: 18px;"></i> Direcciones <span id="dir-total-count" style="font-size:12px;font-weight:400;color:var(--text-muted);"></span></h3>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                  <button class="btn" onclick="reloadDireccionesFromSheet()" style="background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;" title="Recargar datos desde Excel">
-                    <i data-lucide="refresh-cw" style="width: 13px; height: 13px;"></i> Recargar Excel
+                  <button class="btn" onclick="openCreateClientModal()" style="background: var(--accent); color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;" id="btn-create-client-dir" title="Crear nuevo cliente">
+                    <i data-lucide="plus" style="width: 13px; height: 13px;"></i> Nuevo
                   </button>
-                  <button class="btn" onclick="syncAddressesFromGSheets()" style="background: #10b981; color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                    <i data-lucide="database" style="width: 13px; height: 13px;"></i> Sync → Supabase
+                  <button class="btn" onclick="importAllFromSheets()" style="background: #10b981; color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;" id="btn-import-sheets" title="Importar todos los clientes de Google Sheets a Supabase">
+                    <i data-lucide="database" style="width: 13px; height: 13px;"></i> Importar Excel → DB
                   </button>
-                  <button class="btn" id="btn-batch-geo" onclick="batchGenerateGeoLinks()" style="background: var(--accent); color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                  <button class="btn" id="btn-batch-geo" onclick="batchGenerateGeoLinks()" style="background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;">
                     <i data-lucide="locate" style="width: 13px; height: 13px;"></i> Cargar Geo
                   </button>
                   <button class="btn" id="btn-batch-geo-stop" onclick="stopBatchGeoLinks()" style="display:none; background: #ef4444; color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;">
                     <i data-lucide="square" style="width: 13px; height: 13px;"></i> Detener
                   </button>
-                  <div style="position:relative;">
-                    <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
-                    <input type="text" id="gs-direcciones-search" class="form-control" placeholder="Buscar..." style="max-width: 200px; width:100%; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsDirecciones()">
-                  </div>
                 </div>
+              </div>
+              <!-- Filters bar -->
+              <div style="padding: 8px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <div style="position:relative; flex: 1; min-width: 180px; max-width: 280px;">
+                  <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
+                  <input type="text" id="dir-db-search" class="form-control" placeholder="Buscar código, nombre, dirección..." style="width:100%; padding-left: 32px; font-size: 12px;" oninput="filterDireccionesDB()">
+                </div>
+                <select id="dir-db-region" class="form-control" style="max-width:160px; font-size:12px;" onchange="filterDireccionesDB()">
+                  <option value="">Todas las regiones</option>
+                </select>
+                <select id="dir-db-vendor" class="form-control" style="max-width:160px; font-size:12px;" onchange="filterDireccionesDB()">
+                  <option value="">Todos los vendedores</option>
+                  <option value="__none__">Sin asignar</option>
+                </select>
+                <div id="dir-db-geo-filters" style="display:flex;gap:4px;"></div>
               </div>
               <div class="card-body" style="padding: 0;">
                 <div id="gs-direcciones-body" style="overflow-x: auto;">
-                  <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+                  <p style="text-align: center; color: var(--text-muted); padding: 20px;">Cargando clientes...</p>
                 </div>
               </div>
             </div>
-            <div class="card">
-              <div class="card-header">
-                <h3><i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Direcciones Validadas</h3>
-              </div>
-              <div class="card-body" style="padding: 0;">
-                <div id="gs-direcciones-validadas-body" style="overflow-x: auto;">
-                  <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+            <!-- Import banner (shown when Sheet has more clients than DB) -->
+            <div id="dir-import-banner" style="display:none;padding:12px 16px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:10px;margin-bottom:12px;"></div>
+            <!-- Import progress (hidden by default) -->
+            <div id="dir-import-progress" style="display:none;" class="card">
+              <div class="card-body" style="padding: 16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <span style="font-size:13px;font-weight:600;" id="dir-import-title">Importando...</span>
+                  <span style="font-size:12px;color:var(--text-muted);" id="dir-import-detail"></span>
+                </div>
+                <div style="height:6px;background:var(--bg-hover);border-radius:3px;overflow:hidden;">
+                  <div id="dir-import-bar" style="height:100%;background:var(--accent);width:0%;transition:width 0.3s;border-radius:3px;"></div>
                 </div>
               </div>
             </div>
@@ -7027,9 +7083,11 @@
           <div class="form-group">
             <label>Segmento</label>
             <select id="client-segment" class="form-control">
-              <option value="C">C - Regular</option>
-              <option value="B">B - Medio</option>
-              <option value="A">A - Alto valor</option>
+              <option value="A">A - 80/20 Top</option>
+              <option value="B">B - Con dirección</option>
+              <option value="C">C - Con vendedor</option>
+              <option value="D">D - Potencial</option>
+              <option value="E">E - Sin dirección</option>
             </select>
           </div>
           <div class="form-group">
@@ -7642,8 +7700,8 @@
       // Toggle executive vs admin dashboard
       const isExec = currentUser.role === 'executive';
       const execDash = document.getElementById('exec-dashboard');
-      const adminSections = ['stats-grid', 'dash-row-2', 'dash-row-4'];
-      // Rows 5-7 are cards after dash-row-4 inside panel-dashboard
+      const adminSections = ['stats-grid', 'dash-row-seg', 'dash-row-ops', 'dash-row-fin'];
+      // Remaining cards (competencia, rendimiento, calendario) after dash-row-fin
       const panel = document.getElementById('panel-dashboard');
 
       if (execDash) execDash.style.display = isExec ? '' : 'none';
@@ -7654,11 +7712,11 @@
         if (el) el.style.display = isExec ? 'none' : '';
       });
 
-      // Rows 5, 6, 7 (segmentación, rendimiento, calendario) — they are direct .card children after dash-row-4
+      // Cards after dash-row-fin (competencia, rendimiento, calendario)
       if (panel) {
-        const dashRow4 = panel.querySelector('.dash-row-4');
-        if (dashRow4) {
-          let sibling = dashRow4.nextElementSibling;
+        const dashRowFin = panel.querySelector('.dash-row-fin');
+        if (dashRowFin) {
+          let sibling = dashRowFin.nextElementSibling;
           while (sibling && !sibling.classList.contains('panel')) {
             if (sibling.classList.contains('card')) {
               sibling.style.display = isExec ? 'none' : '';
@@ -7983,20 +8041,27 @@
 
     // Add client markers to map using lat/lng from client data
     // Store markers with metadata for filtering
-    let markersBySegment = { A: [], B: [], C: [], FOCO: [] };
-    let activeSegmentFilters = { A: true, B: true, C: true, FOCO: true };
+    let markersBySegment = { A: [], B: [], C: [], D: [], E: [], FOCO: [] };
+    let activeSegmentFilters = { A: true, B: true, C: true, D: true, E: true, FOCO: true };
 
     function addClientMarkers(clients) {
       // Clear existing markers
       mainMapMarkers.forEach(m => m.setMap(null));
       mainMapMarkers = [];
       clientMarkers = [];
-      markersBySegment = { A: [], B: [], C: [], FOCO: [] };
+      markersBySegment = { A: [], B: [], C: [], D: [], E: [], FOCO: [] };
 
       const bounds = new google.maps.LatLngBounds();
       let markersWithCoords = 0;
       let markersWithoutCoords = 0;
-      let segmentCounts = { A: 0, B: 0, C: 0, FOCO: 0 };
+      let segmentCounts = { A: 0, B: 0, C: 0, D: 0, E: 0, FOCO: 0 };
+
+      // Count ALL clients' segments first (not just GPS ones)
+      clients.forEach(c => {
+        const s = c.segment || 'E';
+        segmentCounts[s] = (segmentCounts[s] || 0) + 1;
+        if (c.priority === 'FOCO') segmentCounts.FOCO++;
+      });
 
       // Chile bounds: lat -17 to -56, lng -76 to -66
       const isInChile = (lat, lng) => lat >= -56 && lat <= -17 && lng >= -76 && lng <= -66;
@@ -8022,14 +8087,10 @@
         bounds.extend(position);
 
         // Marker colors by segment
-        const colors = { A: '#059669', B: '#d97706', C: '#6b7280' };
-        const segment = client.segment || 'C';
-        const color = colors[segment] || colors.C;
+        const colors = { A: '#d97706', B: '#3b82f6', C: '#059669', D: '#f97316', E: '#9ca3af' };
+        const segment = client.segment || 'E';
+        const color = colors[segment] || colors.E;
         const isFoco = client.priority === 'FOCO';
-
-        // Count segments
-        segmentCounts[segment] = (segmentCounts[segment] || 0) + 1;
-        if (isFoco) segmentCounts.FOCO++;
 
         const marker = new google.maps.Marker({
           position: position,
@@ -8087,14 +8148,10 @@
       updateMapStats(markersWithCoords, markersWithoutCoords);
 
       // Update segment counts in legend
-      const countA = document.getElementById('count-segment-a');
-      const countB = document.getElementById('count-segment-b');
-      const countC = document.getElementById('count-segment-c');
-      const countFoco = document.getElementById('count-segment-foco');
-      if (countA) countA.textContent = segmentCounts.A || 0;
-      if (countB) countB.textContent = segmentCounts.B || 0;
-      if (countC) countC.textContent = segmentCounts.C || 0;
-      if (countFoco) countFoco.textContent = segmentCounts.FOCO || 0;
+      ['a','b','c','d','e','foco'].forEach(s => {
+        const el = document.getElementById('count-segment-' + s);
+        if (el) el.textContent = segmentCounts[s.toUpperCase()] || 0;
+      });
 
       // Fit bounds to show all markers, but limit zoom
       if (markersWithCoords > 0) {
@@ -8116,7 +8173,7 @@
     function filterMapBySegment(segment) {
       if (segment === 'ALL') {
         // Show all markers
-        activeSegmentFilters = { A: true, B: true, C: true, FOCO: true };
+        activeSegmentFilters = { A: true, B: true, C: true, D: true, E: true, FOCO: true };
         mainMapMarkers.forEach(m => m.setMap(mainMap));
         // Update legend visual
         document.querySelectorAll('.legend-filter').forEach(el => el.classList.add('active'));
@@ -8154,12 +8211,35 @@
         }
 
         // If only FOCO filter and this is not FOCO, check segment
-        if (!activeSegmentFilters.A && !activeSegmentFilters.B && !activeSegmentFilters.C && activeSegmentFilters.FOCO) {
+        if (!activeSegmentFilters.A && !activeSegmentFilters.B && !activeSegmentFilters.C && !activeSegmentFilters.D && !activeSegmentFilters.E && activeSegmentFilters.FOCO) {
           shouldShow = isFoco;
         }
 
         marker.setMap(shouldShow ? mainMap : null);
       });
+    }
+
+    // Toggle map size (expand/collapse)
+    let _mapExpanded = false;
+    function toggleMapSize() {
+      const container = document.getElementById('main-map-container');
+      const icon = document.getElementById('icon-toggle-map');
+      if (!container) return;
+      _mapExpanded = !_mapExpanded;
+      if (_mapExpanded) {
+        container.style.height = 'calc(100vh - 120px)';
+        container.style.minHeight = '600px';
+        if (icon) icon.setAttribute('data-lucide', 'minimize-2');
+      } else {
+        container.style.height = '450px';
+        container.style.minHeight = '';
+        if (icon) icon.setAttribute('data-lucide', 'maximize-2');
+      }
+      lucide.createIcons();
+      // Trigger map resize so Google Maps recalculates
+      if (mainMap) {
+        setTimeout(() => google.maps.event.trigger(mainMap, 'resize'), 350);
+      }
     }
 
     // Search client on map
@@ -10324,11 +10404,8 @@
 
         // Determine color by segment
         const seg = (client.segment || '').toUpperCase();
-        let color = '#3b82f6'; // blue default
-        if (seg === 'A') color = '#10b981';
-        else if (seg === 'B') color = '#f59e0b';
-        else if (seg === 'C') color = '#6366f1';
-        else if (seg === 'FOCO') color = '#ef4444';
+        const _segCols = { A: '#d97706', B: '#3b82f6', C: '#059669', D: '#f97316', E: '#9ca3af', FOCO: '#ef4444' };
+        let color = _segCols[seg] || '#9ca3af';
 
         const dotSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
           <circle cx="7" cy="7" r="6" fill="${color}" stroke="white" stroke-width="1.5" opacity="0.85"/>
@@ -11470,7 +11547,7 @@
                 <strong>Comuna:</strong> ${client.commune || '-'}
               </div>
               <div style="font-size: 12px; margin-bottom: 8px;">
-                <span style="background: ${client.segment === 'A' ? '#10b981' : client.segment === 'B' ? '#3b82f6' : '#f59e0b'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">Segmento ${client.segment || '-'}</span>
+                <span style="background: ${{A:'#d97706',B:'#3b82f6',C:'#059669',D:'#f97316',E:'#9ca3af'}[client.segment] || '#9ca3af'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">Segmento ${client.segment || '-'}</span>
                 ${client.priority === 'FOCO' ? '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-left: 4px;">FOCO</span>' : ''}
               </div>
               <div style="display: flex; gap: 6px;">
@@ -12178,7 +12255,7 @@
       </div>`;
 
       listDiv.innerHTML = headerHtml + sortedClients.slice(0, 50).map(c => {
-        const segmentColors = { A: '#22c55e', B: '#3b82f6', C: '#6b7280' };
+        const segmentColors = { A: '#d97706', B: '#3b82f6', C: '#059669', D: '#f97316', E: '#9ca3af' };
         const segment = c.segment || 'C';
         const segmentColor = segmentColors[segment] || '#6b7280';
         const isFoco = c.priority === 'FOCO';
@@ -12582,7 +12659,7 @@
           map: routeMap,
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
-            fillColor: client.segment === 'A' ? '#059669' : client.segment === 'B' ? '#d97706' : '#6b7280',
+            fillColor: {A:'#d97706',B:'#3b82f6',C:'#059669',D:'#f97316',E:'#9ca3af'}[client.segment] || '#9ca3af',
             fillOpacity: 1,
             strokeColor: '#fff',
             strokeWeight: 2,
@@ -13243,7 +13320,7 @@
         `;
 
         clients.forEach(c => {
-          const segColors = { 'A': '#10b981', 'B': '#f59e0b', 'C': '#6b7280' };
+          const segColors = { 'A': '#d97706', 'B': '#3b82f6', 'C': '#059669', 'D': '#f97316', 'E': '#9ca3af' };
           html += `
             <div style="padding: 6px 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -13410,7 +13487,7 @@
         }
 
         const clients = result.data;
-        const segColors = { 'A': '#10b981', 'B': '#f59e0b', 'C': '#6b7280' };
+        const segColors = { 'A': '#d97706', 'B': '#3b82f6', 'C': '#059669', 'D': '#f97316', 'E': '#9ca3af' };
         let html = '';
         clients.forEach(c => {
           html += `
@@ -14599,7 +14676,7 @@
         }
 
         const clients = result.data;
-        const segColors = { 'A': '#10b981', 'B': '#f59e0b', 'C': '#6b7280' };
+        const segColors = { 'A': '#d97706', 'B': '#3b82f6', 'C': '#059669', 'D': '#f97316', 'E': '#9ca3af' };
         let html = '<div style="background: var(--bg-hover); border-left: 3px solid var(--accent); margin: 0;">';
         html += '<div style="padding: 6px 12px; font-size: 11px; font-weight: 600; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border);">';
         html += `<span>${clients.length} clientes asignados</span>`;
@@ -14868,7 +14945,7 @@
 
     function renderSectionOriginList() {
       const container = document.getElementById('section-origin-list');
-      const segColors = { 'A': '#10b981', 'B': '#f59e0b', 'C': '#6b7280' };
+      const segColors = { 'A': '#d97706', 'B': '#3b82f6', 'C': '#059669', 'D': '#f97316', 'E': '#9ca3af' };
 
       if (sectionOriginClients.length === 0) {
         container.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12px;">Sin clientes</div>';
@@ -14922,7 +14999,7 @@
     function renderSectionDestPreview() {
       const container = document.getElementById('section-dest-list');
       const countEl = document.getElementById('section-preview-count');
-      const segColors = { 'A': '#10b981', 'B': '#f59e0b', 'C': '#6b7280' };
+      const segColors = { 'A': '#d97706', 'B': '#3b82f6', 'C': '#059669', 'D': '#f97316', 'E': '#9ca3af' };
 
       const count = sectionSelectedIds.size;
       countEl.textContent = `${count} seleccionado${count !== 1 ? 's' : ''}`;
@@ -17430,10 +17507,16 @@
         ventasContainer.innerHTML = '<div style="text-align: center; padding: 16px; color: var(--text-muted); font-size: 12px;">Sin datos de ventas disponibles</div>';
       }
 
-      // --- 80-20 Stat ---
+      // --- 80-20 Stat (unique codes only) ---
       const stat8020 = document.getElementById('stat-8020');
       if (stat8020 && gs8020VendClean && gs8020VendClean.length > 1) {
-        stat8020.textContent = gs8020VendClean.length - 1;
+        const _codeCol8020 = findCodeColumn(gs8020VendClean[0]);
+        const _codes8020 = new Set();
+        gs8020VendClean.slice(1).forEach(row => {
+          const code = String(row[_codeCol8020] || '').trim();
+          if (code && code !== '0') _codes8020.add(code);
+        });
+        stat8020.textContent = _codes8020.size;
       }
 
       // --- Cobranzas Vencidas Stat + Summary ---
@@ -17556,6 +17639,9 @@
       } else if (tabName === 'gs-vendedores') {
         loadVendedorZonesDetail();
         loadVendedorNotasUI();
+      } else if (tabName === 'gs-direcciones') {
+        // Load from DB (Supabase) as primary source
+        initDireccionesFromDB();
       }
 
       lucide.createIcons();
@@ -18521,16 +18607,14 @@
       lucide.createIcons();
     }
 
-    // Direcciones
+    // Direcciones — store Sheet data for import, render from DB
     function renderGsheetsDirecciones(rawData, validadasData) {
       if (rawData && rawData.length > 0) {
         rawData = cleanSheetData(rawData);
         gsheetsAllDirecciones = rawData;
-        renderDireccionesCustomTable(rawData, 'gs-direcciones-body', 0);
       }
-      if (validadasData && validadasData.length > 0) {
-        sheetToTable(cleanSheetData(validadasData), 'gs-direcciones-validadas-body', { maxRows: 100, page: 0, storeKey: 'dirvalidadas' });
-      }
+      // Primary view is from DB (allClients)
+      initDireccionesFromDB();
     }
 
     // Title Case helper: "JUAN CARLOS PEREZ" → "Juan Carlos Perez"
@@ -18542,6 +18626,673 @@
     let _dirCurrentPage = 0;
     let _dirFilterGeo = false; // false = all, 'has' = only with geo link, 'none' = only without geo
     let _dirColWidths = null; // persisted column widths
+    let _dirDBPage = 0;
+    let _dirDBFiltered = []; // filtered allClients for Direcciones view
+
+    // ====== DIRECCIONES FROM DATABASE (Supabase) ======
+
+    function populateDirFilters() {
+      // Region dropdown
+      const regionSelect = document.getElementById('dir-db-region');
+      if (regionSelect) {
+        const regions = [...new Set(allClients.map(c => c.region).filter(Boolean))].sort();
+        const current = regionSelect.value;
+        regionSelect.innerHTML = '<option value="">Todas las regiones</option>';
+        regions.forEach(r => {
+          regionSelect.innerHTML += `<option value="${r}" ${current === r ? 'selected' : ''}>${r}</option>`;
+        });
+      }
+      // Vendor dropdown
+      const vendorSelect = document.getElementById('dir-db-vendor');
+      if (vendorSelect) {
+        const current = vendorSelect.value;
+        vendorSelect.innerHTML = '<option value="">Todos los vendedores</option><option value="__none__">Sin asignar</option>';
+        (executives || []).forEach(u => {
+          vendorSelect.innerHTML += `<option value="${u.id}" ${current === u.id ? 'selected' : ''}>${u.full_name}</option>`;
+        });
+      }
+    }
+
+    function filterDireccionesDB() {
+      const search = (document.getElementById('dir-db-search')?.value || '').toLowerCase().trim();
+      const region = document.getElementById('dir-db-region')?.value || '';
+      const vendor = document.getElementById('dir-db-vendor')?.value || '';
+
+      let filtered = allClients;
+
+      if (search) {
+        filtered = filtered.filter(c =>
+          (c.external_id || '').toLowerCase().includes(search) ||
+          (c.name || '').toLowerCase().includes(search) ||
+          (c.fantasy_name || '').toLowerCase().includes(search) ||
+          (c.address || '').toLowerCase().includes(search) ||
+          (c.commune || '').toLowerCase().includes(search) ||
+          (c.city || '').toLowerCase().includes(search)
+        );
+      }
+      if (region) {
+        filtered = filtered.filter(c => c.region === region);
+      }
+      if (vendor === '__none__') {
+        filtered = filtered.filter(c => !c.assigned_user_id);
+      } else if (vendor) {
+        filtered = filtered.filter(c => c.assigned_user_id === vendor);
+      }
+      if (_dirFilterGeo === 'has') {
+        filtered = filtered.filter(c => c.geo_link);
+      } else if (_dirFilterGeo === 'none') {
+        filtered = filtered.filter(c => !c.geo_link);
+      }
+
+      _dirDBFiltered = filtered;
+      _dirDBPage = 0;
+      renderDireccionesFromDB(filtered, 0);
+    }
+
+    function renderDireccionesFromDB(clients, page) {
+      const container = document.getElementById('gs-direcciones-body');
+      if (!container) return;
+      if (!clients || clients.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">Sin clientes</p>';
+        const countEl = document.getElementById('dir-total-count');
+        if (countEl) countEl.textContent = '';
+        return;
+      }
+      _dirDBPage = page;
+
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      const geoCount = clients.filter(c => c.geo_link).length;
+      const noGeoCount = clients.length - geoCount;
+
+      // Update total count
+      const countEl = document.getElementById('dir-total-count');
+      if (countEl) countEl.textContent = `(${allClients.length.toLocaleString()} total)`;
+
+      // Geo filter buttons
+      const geoFiltersEl = document.getElementById('dir-db-geo-filters');
+      if (geoFiltersEl) {
+        geoFiltersEl.innerHTML = `
+          <button onclick="_dirFilterGeo=_dirFilterGeo==='has'?false:'has';filterDireccionesDB()" style="padding:3px 8px;border:1px solid ${_dirFilterGeo === 'has' ? '#10b981' : 'var(--border)'};border-radius:5px;background:${_dirFilterGeo === 'has' ? 'rgba(16,185,129,0.1)' : 'transparent'};color:${_dirFilterGeo === 'has' ? '#10b981' : 'var(--text-muted)'};font-size:11px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;"><i data-lucide="map-pin" style="width:11px;height:11px;"></i>${geoCount.toLocaleString()} con geo</button>
+          <button onclick="_dirFilterGeo=_dirFilterGeo==='none'?false:'none';filterDireccionesDB()" style="padding:3px 8px;border:1px solid ${_dirFilterGeo === 'none' ? '#f59e0b' : 'var(--border)'};border-radius:5px;background:${_dirFilterGeo === 'none' ? 'rgba(245,158,11,0.1)' : 'transparent'};color:${_dirFilterGeo === 'none' ? '#f59e0b' : 'var(--text-muted)'};font-size:11px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;"><i data-lucide="map-pin-off" style="width:11px;height:11px;"></i>${noGeoCount.toLocaleString()} sin geo</button>`;
+      }
+
+      const pageSize = 100;
+      const start = page * pageSize;
+      const pageRows = clients.slice(start, start + pageSize);
+      const totalPages = Math.ceil(clients.length / pageSize);
+
+      // Vendor lookup map
+      const vendorMap = {};
+      (allUsers || []).forEach(u => { vendorMap[u.id] = u.full_name; });
+
+      // Column config
+      const wrapEl = container;
+      const availW = wrapEl ? wrapEl.clientWidth - 20 : 1000;
+      const baseW = Math.max(availW, 850);
+      const cols = [
+        { key: 'code', label: 'Código', w: Math.round(baseW * 0.08) },
+        { key: 'client', label: 'Cliente', w: Math.round(baseW * 0.17) },
+        { key: 'address', label: 'Dirección', w: Math.round(baseW * 0.22) },
+        { key: 'commune', label: 'Comuna', w: Math.round(baseW * 0.10) },
+        { key: 'city', label: 'Ciudad', w: Math.round(baseW * 0.08) },
+        { key: 'region', label: 'Región', w: Math.round(baseW * 0.10) },
+        { key: 'geo', label: 'Mapa', w: Math.round(baseW * 0.04) },
+        { key: 'vendor', label: 'Vendedor', w: Math.round(baseW * 0.11) },
+        { key: 'actions', label: '', w: Math.round(baseW * 0.07) },
+      ];
+
+      // Restore saved widths
+      if (_dirColWidths) {
+        cols.forEach((c, i) => { if (_dirColWidths[i]) c.w = _dirColWidths[i]; });
+      }
+
+      // Pagination
+      const makePag = (pos) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:var(--bg-hover);border-radius:8px;margin-${pos === 'top' ? 'bottom' : 'top'}:6px;flex-wrap:wrap;gap:6px;">
+        <span style="font-size:12px;color:var(--text-secondary);font-weight:600;">${clients.length.toLocaleString()} clientes</span>
+        <div style="display:flex;align-items:center;gap:5px;">
+          ${totalPages > 1 ? `
+            ${page > 0 ? `<button onclick="renderDireccionesFromDB(_dirDBFiltered,${page - 1})" style="padding:3px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-card);color:var(--text-secondary);font-size:11px;cursor:pointer;">←</button>` : ''}
+            <span style="font-size:12px;font-weight:700;color:var(--text-primary);">${page + 1}/${totalPages}</span>
+            ${page < totalPages - 1 ? `<button onclick="renderDireccionesFromDB(_dirDBFiltered,${page + 1})" style="padding:3px 8px;border:1px solid var(--border);border-radius:5px;background:var(--bg-card);color:var(--text-secondary);font-size:11px;cursor:pointer;">→</button>` : ''}
+          ` : ''}
+        </div>
+      </div>`;
+
+      let html = makePag('top');
+
+      const tableId = 'dir-resize-table';
+      const totalW = cols.reduce((s, c) => s + c.w, 0);
+      const colGroupHtml = cols.map((c, i) => `<col data-col="${i}" style="width:${c.w}px;">`).join('');
+
+      html += `<div class="gs-table-wrap" style="overflow-x:auto;"><table id="${tableId}" class="gs-table" style="font-size:12px;table-layout:fixed;width:${totalW}px;min-width:750px;">
+        <colgroup>${colGroupHtml}</colgroup><thead><tr>`;
+
+      cols.forEach((c, i) => {
+        const isLast = i === cols.length - 1;
+        const canResize = c.key !== 'actions' && !isLast;
+        const borderRight = !isLast ? 'border-right:1px solid var(--border);' : '';
+        const resizer = canResize ? `<div class="dir-col-resizer" data-col="${i}" style="position:absolute;right:-4px;top:0;bottom:0;width:9px;cursor:col-resize;z-index:3;background:transparent;" onmouseenter="this.style.background='rgba(99,102,241,0.3)'" onmouseleave="this.style.background='transparent'"></div>` : '';
+        const align = c.key === 'geo' || c.key === 'actions' ? 'text-align:center;' : '';
+        html += `<th style="padding:6px 5px;font-size:11px;position:relative;${align}${borderRight}user-select:none;overflow:hidden;">${c.label}${resizer}</th>`;
+      });
+      html += `</tr></thead><tbody>`;
+
+      pageRows.forEach(c => {
+        const name = toTitleCase(c.fantasy_name || c.name || '-');
+        const sub = c.fantasy_name && c.name && c.fantasy_name !== c.name ? `<div style="font-size:9px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${toTitleCase(c.name)}</div>` : '';
+        const dir = toTitleCase(c.address || '');
+        const commune = toTitleCase(c.commune || '');
+        const city = toTitleCase(c.city || '');
+        const region = c.region || '';
+        const geoLink = c.geo_link || '';
+        const vendorName = c.assigned_user_id ? (vendorMap[c.assigned_user_id] || '?') : '';
+        const hasGeo = !!geoLink;
+        const rowBg = hasGeo ? 'background:rgba(16,185,129,0.04);' : '';
+        const code = c.external_id || '';
+
+        const safeDir = dir.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const safeComuna = commune.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const safeName = name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+        // Geo cell
+        let geoCell;
+        if (hasGeo) {
+          geoCell = `<td style="padding:3px 2px;text-align:center;border-right:1px solid var(--border);"><a href="${geoLink}" target="_blank" rel="noopener" title="Geo verificado" style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(16,185,129,0.15);color:#10b981;text-decoration:none;"><i data-lucide="map-pin" style="width:14px;height:14px;"></i></a></td>`;
+        } else if (dir && isAdmin) {
+          const mapsUrl = _buildMapsSearchUrl(dir, commune, city);
+          geoCell = `<td style="padding:3px 2px;text-align:center;border-right:1px solid var(--border);"><a href="${mapsUrl}" target="_blank" rel="noopener" title="Buscar en Maps" style="display:inline-flex;align-items:center;justify-content:center;width:13px;height:26px;border-radius:50%;color:rgba(99,102,241,0.4);text-decoration:none;"><i data-lucide="search" style="width:12px;height:12px;"></i></a><button onclick="openAddGeoLink('${code}','${safeName}','${safeDir}','${safeComuna}')" title="Agregar geo" style="border:none;background:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:13px;height:26px;color:rgba(245,158,11,0.6);"><i data-lucide="plus" style="width:11px;height:11px;"></i></button></td>`;
+        } else if (dir) {
+          const mapsUrl = _buildMapsSearchUrl(dir, commune, city);
+          geoCell = `<td style="padding:3px 2px;text-align:center;border-right:1px solid var(--border);"><a href="${mapsUrl}" target="_blank" rel="noopener" title="Buscar en Maps" style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;color:rgba(99,102,241,0.35);text-decoration:none;"><i data-lucide="search" style="width:12px;height:12px;"></i></a></td>`;
+        } else {
+          geoCell = `<td style="padding:3px 2px;text-align:center;border-right:1px solid var(--border);"><span style="color:var(--text-muted);opacity:0.15;">—</span></td>`;
+        }
+
+        // Vendor cell
+        const vendorCell = vendorName
+          ? `<td style="padding:3px 5px;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-right:1px solid var(--border);" title="${vendorName}"><span style="background:rgba(99,102,241,0.1);color:var(--accent);padding:1px 6px;border-radius:4px;font-weight:500;">${vendorName.split(' ')[0]}</span></td>`
+          : `<td style="padding:3px 5px;font-size:10px;border-right:1px solid var(--border);"><span style="color:var(--text-muted);opacity:0.3;">sin asignar</span></td>`;
+
+        // Actions
+        let actionsHtml = '';
+        if (isAdmin) {
+          actionsHtml = `<td style="padding:3px 2px;text-align:center;">
+            <button onclick="openEditClientFullModal('${c.id}')" class="btn-icon" title="Editar" style="padding:2px;"><i data-lucide="pencil" style="width:12px;height:12px;"></i></button>
+            <button onclick="deleteClientFromDirecciones('${c.id}','${code}','${safeName}')" class="btn-icon" title="Eliminar" style="padding:2px;color:#ef4444;"><i data-lucide="trash-2" style="width:12px;height:12px;"></i></button>
+          </td>`;
+        } else {
+          actionsHtml = `<td style="padding:3px 2px;text-align:center;">
+            <button onclick="openEditClientFullModal('${c.id}')" class="btn-icon" title="Ver" style="padding:2px;"><i data-lucide="eye" style="width:12px;height:12px;"></i></button>
+          </td>`;
+        }
+
+        const br = 'border-right:1px solid var(--border);';
+        html += `<tr style="${rowBg}">
+          <td style="padding:3px 5px;overflow:hidden;${br}"><code style="font-size:10px;background:var(--bg-hover);padding:1px 3px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">${code}</code></td>
+          <td style="padding:3px 5px;overflow:hidden;${br}"><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="${name}">${name}</div>${sub}</td>
+          <td style="padding:3px 5px;font-size:11px;overflow:hidden;${br}" title="${dir}"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir || '<span style="opacity:0.3">—</span>'}</div></td>
+          <td style="padding:3px 5px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${br}">${commune}</td>
+          <td style="padding:3px 5px;font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${br}">${city}</td>
+          <td style="padding:3px 5px;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${br}">${region}</td>
+          ${geoCell}
+          ${vendorCell}
+          ${actionsHtml}
+        </tr>`;
+      });
+
+      html += '</tbody></table></div>';
+      html += makePag('bottom');
+      container.innerHTML = html;
+      lucide.createIcons();
+      _initDirColumnResizers(tableId);
+    }
+
+    function initDireccionesFromDB() {
+      if (!allClients || allClients.length === 0) return;
+      populateDirFilters();
+      _dirDBFiltered = allClients;
+      renderDireccionesFromDB(allClients, 0);
+
+      // Show import banner if Sheet has many more clients than DB
+      const sheetCount = gsheetsAllDirecciones ? gsheetsAllDirecciones.length - 1 : 0;
+      const dbCount = allClients.length;
+      const bannerEl = document.getElementById('dir-import-banner');
+      if (sheetCount > dbCount + 100 && bannerEl) {
+        bannerEl.style.display = 'block';
+        bannerEl.innerHTML = `
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="flex:1;">
+              <strong style="font-size:13px;">Google Sheets tiene ${sheetCount.toLocaleString()} clientes, pero solo ${dbCount.toLocaleString()} están en la base de datos.</strong>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Haz click en "Importar Excel → DB" para migrar todos los clientes. Después de importar, se cargarán siempre desde la base de datos (más rápido).</div>
+            </div>
+            <button onclick="importAllFromSheets()" style="background:#10b981;color:white;border:none;padding:8px 16px;font-size:12px;border-radius:8px;cursor:pointer;font-weight:700;white-space:nowrap;">
+              <i data-lucide="database" style="width:14px;height:14px;display:inline;vertical-align:-2px;"></i> Importar ${sheetCount.toLocaleString()} clientes
+            </button>
+          </div>`;
+        lucide.createIcons();
+      } else if (bannerEl) {
+        bannerEl.style.display = 'none';
+      }
+    }
+
+    // ====== CREATE CLIENT MODAL ======
+    function openCreateClientModal() {
+      const existing = document.getElementById('modal-create-client');
+      if (existing) existing.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'modal-create-client';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+
+      const vendorOptions = (executives || []).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('');
+      const regionOptions = [...new Set(allClients.map(c => c.region).filter(Boolean))].sort().map(r => `<option value="${r}">${r}</option>`).join('');
+
+      overlay.innerHTML = `
+        <div style="background:var(--bg-card);border-radius:14px;padding:0;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;max-height:90vh;overflow-y:auto;">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--text-primary);"><i data-lucide="user-plus" style="width:16px;height:16px;display:inline;vertical-align:-2px;"></i> Nuevo Cliente</h3>
+            <button onclick="document.getElementById('modal-create-client').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);line-height:1;padding:4px;">&times;</button>
+          </div>
+          <div style="padding:20px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Código (RUT)</label>
+                <input type="text" id="cc-code" class="form-control" placeholder="Ej: 76.123.456-7" style="font-size:13px;">
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Dejar vacío para auto-generar</div>
+              </div>
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Nombre Fantasía *</label>
+                <input type="text" id="cc-fantasy" class="form-control" style="font-size:13px;" placeholder="Nombre comercial">
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Razón Social *</label>
+                <input type="text" id="cc-name" class="form-control" style="font-size:13px;" placeholder="Razón social completa">
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Dirección</label>
+                <input type="text" id="cc-address" class="form-control" style="font-size:13px;" placeholder="Calle y número">
+              </div>
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Comuna</label>
+                <input type="text" id="cc-commune" class="form-control" style="font-size:13px;">
+              </div>
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Ciudad</label>
+                <input type="text" id="cc-city" class="form-control" style="font-size:13px;">
+              </div>
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Región</label>
+                <select id="cc-region" class="form-control" style="font-size:13px;">
+                  <option value="">-- Seleccionar --</option>
+                  ${regionOptions}
+                </select>
+              </div>
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Vendedor</label>
+                <select id="cc-vendor" class="form-control" style="font-size:13px;">
+                  <option value="">Sin asignar</option>
+                  ${vendorOptions}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
+            <button onclick="document.getElementById('modal-create-client').remove()" class="btn btn-secondary" style="font-size:12px;padding:7px 16px;">Cancelar</button>
+            <button onclick="saveNewClient()" class="btn btn-primary" id="btn-save-new-client" style="font-size:12px;padding:7px 16px;">Crear Cliente</button>
+          </div>
+        </div>`;
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+      lucide.createIcons();
+      document.getElementById('cc-code').focus();
+    }
+
+    async function saveNewClient() {
+      const code = document.getElementById('cc-code').value.trim();
+      const name = document.getElementById('cc-name').value.trim();
+      const fantasy = document.getElementById('cc-fantasy').value.trim();
+      const address = document.getElementById('cc-address').value.trim();
+      const commune = document.getElementById('cc-commune').value.trim();
+      const city = document.getElementById('cc-city').value.trim();
+      const region = document.getElementById('cc-region').value;
+      const vendor = document.getElementById('cc-vendor').value;
+      const btn = document.getElementById('btn-save-new-client');
+
+      if (!name && !fantasy) {
+        showToast('warning', 'Datos requeridos', 'Ingresa al menos nombre o nombre fantasía');
+        return;
+      }
+
+      // Auto-generate code if empty
+      const finalCode = code || ('CLI-' + Date.now().toString(36).toUpperCase());
+
+      // Check duplicate
+      if (allClients.find(c => c.external_id === finalCode)) {
+        showToast('warning', 'Código duplicado', `Ya existe un cliente con código ${finalCode}`);
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Creando...';
+
+      try {
+        const body = {
+          external_id: finalCode,
+          name: name || fantasy,
+          fantasy_name: fantasy || null,
+          address: address || null,
+          commune: commune || null,
+          city: city || null,
+          region: region || null,
+          assigned_user_id: vendor || null
+        };
+
+        const res = await fetch(`${API}/api/clients`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          allClients.push(data.data);
+          showToast('success', 'Cliente creado', `${finalCode} — ${name || fantasy}`);
+          document.getElementById('modal-create-client').remove();
+          filterDireccionesDB();
+        } else {
+          showToast('error', 'Error', data.error);
+          btn.disabled = false;
+          btn.textContent = 'Crear Cliente';
+        }
+      } catch (e) {
+        showToast('error', 'Error', e.message);
+        btn.disabled = false;
+        btn.textContent = 'Crear Cliente';
+      }
+    }
+
+    // ====== EDIT CLIENT FULL MODAL ======
+    function openEditClientFullModal(clientId) {
+      const client = allClients.find(c => c.id === clientId);
+      if (!client) { showToast('error', 'Error', 'Cliente no encontrado'); return; }
+
+      const existing = document.getElementById('modal-edit-client-full');
+      if (existing) existing.remove();
+
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      const vendorOptions = (executives || []).map(u => `<option value="${u.id}" ${client.assigned_user_id === u.id ? 'selected' : ''}>${u.full_name}</option>`).join('');
+      const regionOptions = [...new Set(allClients.map(c => c.region).filter(Boolean))].sort().map(r => `<option value="${r}" ${client.region === r ? 'selected' : ''}>${r}</option>`).join('');
+
+      const overlay = document.createElement('div');
+      overlay.id = 'modal-edit-client-full';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+
+      overlay.innerHTML = `
+        <div style="background:var(--bg-card);border-radius:14px;padding:0;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;max-height:90vh;overflow-y:auto;">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--text-primary);">${isAdmin ? 'Editar' : 'Ver'} Cliente</h3>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;"><code style="background:var(--bg-hover);padding:1px 5px;border-radius:3px;font-size:10px;">${client.external_id || ''}</code></div>
+            </div>
+            <button onclick="document.getElementById('modal-edit-client-full').remove()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);line-height:1;padding:4px;">&times;</button>
+          </div>
+          <div style="padding:20px;">
+            <input type="hidden" id="ec-id" value="${client.id}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Código</label>
+                <input type="text" id="ec-code" class="form-control" value="${client.external_id || ''}" style="font-size:13px;" ${isAdmin ? '' : 'disabled'}>
+              </div>
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Nombre Fantasía</label>
+                <input type="text" id="ec-fantasy" class="form-control" value="${client.fantasy_name || ''}" style="font-size:13px;" ${isAdmin ? '' : 'disabled'}>
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Razón Social</label>
+                <input type="text" id="ec-name" class="form-control" value="${client.name || ''}" style="font-size:13px;" ${isAdmin ? '' : 'disabled'}>
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Dirección</label>
+                <input type="text" id="ec-address" class="form-control" value="${client.address || ''}" style="font-size:13px;" ${isAdmin ? '' : 'disabled'}>
+              </div>
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Comuna</label>
+                <input type="text" id="ec-commune" class="form-control" value="${client.commune || ''}" style="font-size:13px;" ${isAdmin ? '' : 'disabled'}>
+              </div>
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Ciudad</label>
+                <input type="text" id="ec-city" class="form-control" value="${client.city || ''}" style="font-size:13px;" ${isAdmin ? '' : 'disabled'}>
+              </div>
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Región</label>
+                <select id="ec-region" class="form-control" style="font-size:13px;" ${isAdmin ? '' : 'disabled'}>
+                  <option value="">—</option>
+                  ${regionOptions}
+                </select>
+              </div>
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Vendedor</label>
+                <select id="ec-vendor" class="form-control" style="font-size:13px;" ${isAdmin ? '' : 'disabled'}>
+                  <option value="">Sin asignar</option>
+                  ${vendorOptions}
+                </select>
+              </div>
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Zona</label>
+                <input type="text" id="ec-zone" class="form-control" value="${client.zone || ''}" style="font-size:13px;" ${isAdmin ? '' : 'disabled'}>
+              </div>
+              <div class="form-group">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Segmento</label>
+                <select id="ec-segment" class="form-control" style="font-size:13px;" ${isAdmin ? '' : 'disabled'}>
+                  <option value="">—</option>
+                  <option value="A" ${client.segment === 'A' ? 'selected' : ''}>A - 80/20 Top</option>
+                  <option value="B" ${client.segment === 'B' ? 'selected' : ''}>B - Con dirección</option>
+                  <option value="C" ${client.segment === 'C' ? 'selected' : ''}>C - Con vendedor</option>
+                  <option value="D" ${client.segment === 'D' ? 'selected' : ''}>D - Potencial</option>
+                  <option value="E" ${client.segment === 'E' ? 'selected' : ''}>E - Sin dirección</option>
+                </select>
+              </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Geo Link</label>
+                <input type="text" id="ec-geolink" class="form-control" value="${client.geo_link || ''}" style="font-size:13px;" ${isAdmin ? '' : 'disabled'} placeholder="URL de Google Maps">
+              </div>
+            </div>
+            ${client.address_updated_at ? `<div style="margin-top:12px;padding:8px 12px;background:var(--bg-hover);border-radius:8px;font-size:11px;color:var(--text-muted);">Última modificación: ${new Date(client.address_updated_at).toLocaleString('es-CL')}</div>` : ''}
+          </div>
+          <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
+            <button onclick="document.getElementById('modal-edit-client-full').remove()" class="btn btn-secondary" style="font-size:12px;padding:7px 16px;">Cerrar</button>
+            ${isAdmin ? `<button onclick="saveEditClientFull()" class="btn btn-primary" id="btn-save-edit-client" style="font-size:12px;padding:7px 16px;">Guardar</button>` : ''}
+          </div>
+        </div>`;
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+      lucide.createIcons();
+    }
+
+    async function saveEditClientFull() {
+      const clientId = document.getElementById('ec-id').value;
+      const btn = document.getElementById('btn-save-edit-client');
+
+      const body = {
+        external_id: document.getElementById('ec-code').value.trim(),
+        name: document.getElementById('ec-name').value.trim(),
+        fantasy_name: document.getElementById('ec-fantasy').value.trim() || null,
+        address: document.getElementById('ec-address').value.trim() || null,
+        commune: document.getElementById('ec-commune').value.trim() || null,
+        city: document.getElementById('ec-city').value.trim() || null,
+        region: document.getElementById('ec-region').value || null,
+        zone: document.getElementById('ec-zone').value.trim() || null,
+        segment: document.getElementById('ec-segment').value || null,
+        assigned_user_id: document.getElementById('ec-vendor').value || null,
+        geo_link: document.getElementById('ec-geolink').value.trim() || null
+      };
+
+      if (!body.name && !body.fantasy_name) {
+        showToast('warning', 'Datos requeridos', 'Ingresa al menos nombre o nombre fantasía');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+
+      try {
+        const res = await fetch(`${API}/api/clients/${clientId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          // Update local allClients
+          const idx = allClients.findIndex(c => c.id === clientId);
+          if (idx !== -1) {
+            allClients[idx] = { ...allClients[idx], ...data.data };
+          }
+          showToast('success', 'Cliente actualizado', `${body.external_id} — guardado en BD + Excel`);
+          document.getElementById('modal-edit-client-full').remove();
+          filterDireccionesDB();
+        } else {
+          showToast('error', 'Error', data.error);
+          btn.disabled = false;
+          btn.textContent = 'Guardar';
+        }
+      } catch (e) {
+        showToast('error', 'Error', e.message);
+        btn.disabled = false;
+        btn.textContent = 'Guardar';
+      }
+    }
+
+    // ====== DELETE CLIENT ======
+    async function deleteClientFromDirecciones(clientId, code, name) {
+      if (!confirm(`¿Eliminar cliente ${name} (${code})?\n\nSe eliminará de la base de datos y del Excel.`)) return;
+
+      try {
+        const res = await fetch(`${API}/api/clients/${clientId}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (data.success) {
+          allClients = allClients.filter(c => c.id !== clientId);
+          showToast('success', 'Cliente eliminado', `${code} — eliminado de BD + Excel`);
+          filterDireccionesDB();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (e) {
+        showToast('error', 'Error', e.message);
+      }
+    }
+
+    // ====== IMPORT FROM SHEETS ======
+    async function importAllFromSheets() {
+      // First check if we have sheet data
+      if (!gsheetsAllDirecciones || gsheetsAllDirecciones.length < 2) {
+        showToast('info', 'Cargando Excel', 'Descargando datos de Google Sheets primero...');
+        try {
+          const res = await fetch(`${API}/api/gsheets/Direcciones`);
+          const result = await res.json();
+          if (result.success && result.data && result.data.length > 1) {
+            gsheetsAllDirecciones = cleanSheetData(result.data);
+          } else {
+            showToast('error', 'Sin datos', 'No se pudo cargar datos de Google Sheets');
+            return;
+          }
+        } catch (e) {
+          showToast('error', 'Error', 'No se pudo conectar con Google Sheets: ' + e.message);
+          return;
+        }
+      }
+
+      const headers = gsheetsAllDirecciones[0].map(h => String(h || '').trim().toLowerCase());
+      const rows = gsheetsAllDirecciones.slice(1).filter(r => r.some(c => c !== '' && c != null));
+
+      const colCode = headers.findIndex(h => h.includes('cod'));
+      const colRazon = headers.findIndex(h => h.includes('raz'));
+      const colFantasia = headers.findIndex(h => h.includes('fan'));
+      const colDir = headers.findIndex(h => h.includes('direcc') || h.includes('address'));
+      const colComuna = headers.findIndex(h => h.includes('comun'));
+      const colCiudad = headers.findIndex(h => h.includes('ciudad'));
+      const colRegion = headers.findIndex(h => h.includes('region') || h.includes('región'));
+      const colLink = headers.findIndex(h => h.includes('link') || h.includes('geo'));
+
+      if (colCode === -1) {
+        showToast('error', 'Error', 'No se encontró columna de código');
+        return;
+      }
+
+      const cell = (row, idx) => idx >= 0 && row[idx] ? String(row[idx]).trim() : '';
+
+      const importRows = rows.map(row => ({
+        external_id: cell(row, colCode),
+        name: cell(row, colRazon) || cell(row, colFantasia) || cell(row, colCode),
+        fantasy_name: cell(row, colFantasia) || null,
+        address: cell(row, colDir) || null,
+        commune: cell(row, colComuna) || null,
+        city: cell(row, colCiudad) || null,
+        region: cell(row, colRegion) || null,
+        geo_link: cell(row, colLink) || null
+      })).filter(r => r.external_id);
+
+      if (!confirm(`¿Importar ${importRows.length.toLocaleString()} clientes de Google Sheets a la base de datos?\n\nExistentes se actualizarán, nuevos se crearán.`)) return;
+
+      // Show progress
+      const progressDiv = document.getElementById('dir-import-progress');
+      const progressBar = document.getElementById('dir-import-bar');
+      const progressTitle = document.getElementById('dir-import-title');
+      const progressDetail = document.getElementById('dir-import-detail');
+      if (progressDiv) progressDiv.style.display = 'block';
+
+      const batchSize = 200;
+      let totalCreated = 0, totalUpdated = 0, totalErrors = 0;
+
+      try {
+        for (let i = 0; i < importRows.length; i += batchSize) {
+          const batch = importRows.slice(i, i + batchSize);
+          const pct = Math.round(((i + batch.length) / importRows.length) * 100);
+
+          if (progressBar) progressBar.style.width = pct + '%';
+          if (progressTitle) progressTitle.textContent = `Importando... ${pct}%`;
+          if (progressDetail) progressDetail.textContent = `${i + batch.length} / ${importRows.length}`;
+
+          const res = await fetch(`${API}/api/clients/import-from-sheets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rows: batch })
+          });
+          const data = await res.json();
+
+          if (data.success && data.data) {
+            totalCreated += data.data.created || 0;
+            totalUpdated += data.data.updated || 0;
+            totalErrors += (data.data.errors || []).length;
+          }
+        }
+
+        if (progressTitle) progressTitle.textContent = 'Importación completada';
+        if (progressDetail) progressDetail.textContent = `${totalCreated} creados, ${totalUpdated} actualizados${totalErrors ? `, ${totalErrors} errores` : ''}`;
+        if (progressBar) progressBar.style.width = '100%';
+
+        showToast('success', 'Importación completa', `${totalCreated} creados, ${totalUpdated} actualizados`);
+
+        // Reload allClients from DB
+        const clientsRes = await fetch(`${API}/api/clients`);
+        const clientsData = await clientsRes.json();
+        if (clientsData.success) {
+          allClients = clientsData.data;
+          filterDireccionesDB();
+          populateDirFilters();
+        }
+
+        // Hide progress after 3 seconds
+        setTimeout(() => { if (progressDiv) progressDiv.style.display = 'none'; }, 3000);
+
+      } catch (e) {
+        showToast('error', 'Error importación', e.message);
+        if (progressTitle) progressTitle.textContent = 'Error en importación';
+        if (progressDetail) progressDetail.textContent = e.message;
+      }
+    }
 
     // Build Google Maps search URL from address
     function _buildMapsSearchUrl(address, commune, city) {
@@ -18778,8 +19529,7 @@
         const result = await res.json();
         if (result.success && result.data && result.data.length > 1) {
           gsheetsAllDirecciones = cleanSheetData(result.data);
-          renderDireccionesCustomTable(gsheetsAllDirecciones, 'gs-direcciones-body', 0);
-          showToast('success', 'Listo', `${result.data.length - 1} direcciones cargadas desde Excel`);
+          showToast('success', 'Listo', `${result.data.length - 1} direcciones cargadas desde Excel (datos disponibles para importar)`);
         } else {
           showToast('warning', 'Sin datos', 'No se encontraron datos en la hoja Direcciones');
         }
@@ -18789,22 +19539,8 @@
     }
 
     function filterGsheetsDirecciones() {
-      if (!gsheetsAllDirecciones || gsheetsAllDirecciones.length === 0) return;
-      const search = (document.getElementById('gs-direcciones-search').value || '').toLowerCase();
-      const headers = gsheetsAllDirecciones[0];
-
-      if (!search) {
-        renderDireccionesCustomTable(gsheetsAllDirecciones, 'gs-direcciones-body', 0);
-        return;
-      }
-
-      let filtered = [headers];
-      gsheetsAllDirecciones.slice(1).forEach(row => {
-        if (row.some(cell => String(cell).toLowerCase().includes(search))) {
-          filtered.push(row);
-        }
-      });
-      renderDireccionesCustomTable(filtered, 'gs-direcciones-body', 0);
+      // Delegate to DB filter (backward compat)
+      filterDireccionesDB();
     }
 
     // Editar dirección desde tabla Direcciones (modal rápido)
@@ -18923,7 +19659,7 @@
               break;
             }
           }
-          renderDireccionesCustomTable(gsheetsAllDirecciones, 'gs-direcciones-body', 0);
+          filterDireccionesDB();
         }
 
         document.getElementById('modal-edit-direccion').remove();
@@ -18954,7 +19690,10 @@
                 }
               }
             }
-            renderDireccionesCustomTable(gsheetsAllDirecciones, 'gs-direcciones-body', _dirCurrentPage);
+            // Also update allClients geo_link
+            const cl = allClients.find(c => c.external_id === code);
+            if (cl) cl.geo_link = geoLink;
+            filterDireccionesDB();
             if (gsheetsData) { _gsCacheSet(gsheetsData); }
           }
           showToast('success', 'Geo guardado', `Link guardado en Excel para ${code}`);
@@ -19157,8 +19896,8 @@
       if (stopBtn) { stopBtn.style.display = 'none'; stopBtn.innerHTML = '<i data-lucide="square" style="width:13px;height:13px;"></i> Detener'; }
       lucide.createIcons();
 
-      // Update table + cache
-      renderDireccionesCustomTable(gsheetsAllDirecciones, 'gs-direcciones-body', _dirCurrentPage);
+      // Update table from DB (geo links saved to Sheet, re-render DB view)
+      filterDireccionesDB();
       if (gsheetsData) { _gsCacheSet(gsheetsData); }
 
       const remaining = toProcess.length - processed;
@@ -19863,14 +20602,70 @@
         const res = await fetch(`${API}/api/clients/segmentation-stats`);
         const data = await res.json();
         if (data.success) {
-          document.getElementById('seg-8020-count').textContent = data.data['80-20'] || 0;
+          // Segmentation (L, N)
           document.getElementById('seg-L-count').textContent = data.data.L || 0;
           document.getElementById('seg-N-count').textContent = data.data.N || 0;
           document.getElementById('seg-total-count').textContent = data.data.total || 0;
+
+          // Segments A-E
+          if (data.data.segments) {
+            ['A','B','C','D','E'].forEach(s => {
+              const el = document.getElementById('seg-' + s + '-count');
+              if (el) el.textContent = (data.data.segments[s] || 0).toLocaleString('es-CL');
+            });
+          }
+
+          // Regions chart
+          if (data.data.regions) {
+            renderRegionsChart(data.data.regions, data.data.total);
+          }
         }
       } catch (err) {
         console.warn('Error loading segmentation stats:', err);
       }
+    }
+
+    function renderRegionsChart(regions, total) {
+      const container = document.getElementById('regions-chart');
+      if (!container) return;
+
+      // Sort by count, group small ones
+      const sorted = Object.entries(regions)
+        .sort((a, b) => b[1] - a[1]);
+
+      const regionColors = [
+        '#3b82f6', '#059669', '#d97706', '#8b5cf6', '#ef4444',
+        '#14b8a6', '#f97316', '#6366f1', '#ec4899', '#84cc16',
+        '#06b6d4', '#a855f7', '#f43f5e', '#10b981', '#eab308'
+      ];
+
+      let html = '';
+      sorted.forEach(([name, count], i) => {
+        const pct = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+        const barWidth = total > 0 ? Math.max(2, (count / sorted[0][1]) * 100) : 0;
+        const color = regionColors[i % regionColors.length];
+        const shortName = name.replace(/\(.*?\)/g, '').replace(/Región\s*/i, '').replace(/Decimo\s*/i, '').trim();
+
+        html += `
+          <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border);">
+            <div style="width: 160px; font-size: 11px; color: var(--text-secondary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${name}">${shortName}</div>
+            <div style="flex: 1; height: 20px; background: var(--bg-hover); border-radius: 4px; overflow: hidden; position: relative;">
+              <div style="height: 100%; width: ${barWidth}%; background: ${color}; border-radius: 4px; transition: width 0.5s ease;"></div>
+            </div>
+            <div style="width: 55px; text-align: right; font-size: 12px; font-weight: 700; color: var(--text-primary);">${count.toLocaleString('es-CL')}</div>
+            <div style="width: 40px; text-align: right; font-size: 10px; color: var(--text-muted);">${pct}%</div>
+          </div>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function goToClientsBySegment(segment) {
+      document.querySelector('[data-tab="clients"]').click();
+      setTimeout(() => {
+        const filterSeg = document.getElementById('filter-segment');
+        if (filterSeg) { filterSeg.value = segment; filterClients(); }
+      }, 200);
     }
 
     // =============================================

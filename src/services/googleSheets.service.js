@@ -201,6 +201,73 @@ class GoogleSheetsService {
   }
 
   /**
+   * Sync completo de un cliente al Google Sheet (todos los campos)
+   */
+  async syncClientToSheet(client, updatedBy) {
+    if (!client.external_id) {
+      return { success: false, error: 'Sin código de cliente' };
+    }
+
+    let geoLink = client.geo_link || '';
+    if (!geoLink && client.lat && client.lng) {
+      geoLink = `https://www.google.com/maps?q=${client.lat},${client.lng}`;
+    } else if (!geoLink && client.address) {
+      geoLink = this.buildMapsSearchUrl(client.address, client.commune);
+    }
+
+    return this.postToSheet({
+      action: 'updateClient',
+      rows: [{
+        code: client.external_id,
+        name: client.name || '',
+        fantasyName: client.fantasy_name || '',
+        address: client.address || '',
+        commune: client.commune || '',
+        city: client.city || '',
+        region: client.region || '',
+        geoLink,
+        updatedBy: updatedBy || 'sistema',
+        updatedAt: new Date().toISOString()
+      }]
+    });
+  }
+
+  /**
+   * Elimina un cliente del Google Sheet
+   */
+  async deleteClientFromSheet(externalId) {
+    if (!externalId) {
+      return { success: false, error: 'Sin código de cliente' };
+    }
+    return this.postToSheet({
+      action: 'deleteClient',
+      code: externalId
+    });
+  }
+
+  /**
+   * Crea un nuevo cliente en el Google Sheet
+   */
+  async createClientInSheet(client) {
+    if (!client.external_id) {
+      return { success: false, error: 'Sin código de cliente' };
+    }
+    return this.postToSheet({
+      action: 'createClient',
+      row: {
+        code: client.external_id,
+        name: client.name || '',
+        fantasyName: client.fantasy_name || '',
+        address: client.address || '',
+        commune: client.commune || '',
+        city: client.city || '',
+        region: client.region || '',
+        geoLink: client.geo_link || ''
+      }
+    });
+  }
+
+  /**
    * Actualiza la URL en runtime
    */
   updateConfig(scriptUrl) {
