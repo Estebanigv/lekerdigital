@@ -18568,11 +18568,31 @@
       const borderLeft = isZonal ? `border-left: 3px solid ${zc.color};` : '';
       const bgCard = isZonal ? `background: ${zc.bg};` : 'background: var(--bg-card);';
 
+      // Cross-reference with allUsers/allClients for client stats
+      let clientStats = '';
+      if (!isZonal) {
+        const user = (allUsers || []).find(u => u.role === 'executive' && u.full_name && u.full_name.toLowerCase().includes(v.name.split(' ')[0].toLowerCase()));
+        if (user) {
+          const vc = (allClients || []).filter(c => c.assigned_user_id === user.id);
+          const vc8020 = vc.filter(c => c.segmentation === '80-20');
+          const pct = vc.length > 0 ? Math.round(vc8020.length / vc.length * 100) : 0;
+          if (vc.length > 0) {
+            clientStats = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+                <span style="color:var(--text-muted);">${vc.length} clientes asignados</span>
+                ${vc8020.length > 0 ? `<span style="font-weight:700;color:#b8860b;">⭐ ${vc8020.length} 80/20 (${pct}%)</span>` : ''}
+              </div>
+              ${vc8020.length > 0 ? `<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#d4af37,#b8860b);border-radius:2px;"></div></div>` : ''}
+            </div>`;
+          }
+        }
+      }
+
       return `<div style="${bgCard}${borderLeft}border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:box-shadow 0.15s;" onmouseenter="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseleave="this.style.boxShadow='none'">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-            <div style="width:36px;height:36px;min-width:36px;border-radius:50%;background:${zc.bg};border:1px solid ${zc.border};display:flex;align-items:center;justify-content:center;">
-              <i data-lucide="${isZonal ? 'shield' : 'user'}" style="width:16px;height:16px;color:${zc.color};"></i>
+            <div style="width:36px;height:36px;min-width:36px;border-radius:50%;background:${zc.color};display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:700;">
+              ${v.name.split(' ').map(n=>n[0]||'').join('').substring(0,2).toUpperCase()}
             </div>
             <div style="min-width:0;">
               <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${v.name}</div>
@@ -18581,10 +18601,11 @@
           </div>
           <span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:2px 10px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;flex-shrink:0;">${v.zona || 'Sin zona'}</span>
         </div>
-        <div style="margin-top:10px;display:flex;flex-direction:column;gap:4px;font-size:12px;">
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:3px;font-size:12px;">
           ${!isZonal && v.zonal ? `<div style="color:var(--text-muted);">Reporta a: <strong style="color:var(--text-secondary);">${v.zonal}</strong></div>` : ''}
           ${v.region ? `<div style="color:var(--text-muted);"><i data-lucide="map-pin" style="width:11px;height:11px;display:inline-block;vertical-align:-1px;"></i> ${v.region}</div>` : ''}
         </div>
+        ${clientStats}
         ${(v.mail || v.cel) ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
           ${v.mail ? `<a href="mailto:${v.mail}" style="font-size:11px;color:var(--accent);text-decoration:none;background:rgba(59,130,246,0.06);padding:3px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="mail" style="width:10px;height:10px;"></i>${v.mail}</a>` : ''}
           ${v.cel ? `<a href="tel:${v.cel.replace(/\s/g,'')}" style="font-size:11px;color:var(--text-secondary);text-decoration:none;background:var(--bg-hover);padding:3px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="phone" style="width:10px;height:10px;"></i>${v.cel}</a>` : ''}
