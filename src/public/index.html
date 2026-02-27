@@ -6515,9 +6515,12 @@
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                   <div style="position:relative;">
                     <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
-                    <input type="text" id="gs-cobranzas-search" class="form-control" placeholder="Buscar..." style="max-width: 200px; width:100%; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsCobranzas()">
+                    <input type="text" id="gs-cobranzas-search" class="form-control" placeholder="Buscar..." style="max-width: 180px; width:100%; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsCobranzas()">
                   </div>
-                  <select id="gs-cobranzas-filter" class="form-control" style="max-width: 140px; width:100%; font-size: 13px;" onchange="filterGsheetsCobranzas()">
+                  <select id="gs-cobranzas-vendor" class="form-control" style="max-width: 160px; width:100%; font-size: 13px;" onchange="filterGsheetsCobranzas()">
+                    <option value="">Todos los vendedores</option>
+                  </select>
+                  <select id="gs-cobranzas-filter" class="form-control" style="max-width: 130px; width:100%; font-size: 13px;" onchange="filterGsheetsCobranzas()">
                     <option value="">Todos</option>
                     <option value="vencido">Vencidos</option>
                     <option value="vigente">Vigentes</option>
@@ -18705,6 +18708,16 @@
       data = cleanSheetData(data);
       gsheetsAllCobranzas = data;
 
+      // Populate vendor filter
+      const headers = data[0] || [];
+      const vendorIdxCob = headers.findIndex(h => h && (h.toLowerCase().includes('vendedor') || h.toLowerCase().includes('ejecutivo') || h.toLowerCase() === 'vend'));
+      const vendorSelCob = document.getElementById('gs-cobranzas-vendor');
+      if (vendorIdxCob >= 0 && vendorSelCob) {
+        const vendors = [...new Set(data.slice(1).map(r => r[vendorIdxCob]).filter(Boolean))].sort();
+        vendorSelCob.innerHTML = '<option value="">Todos los vendedores</option>' +
+          vendors.map(n => `<option value="${n}">${n}</option>`).join('');
+      }
+
       sheetToTable(data, 'gs-cobranzas-body', {
         maxRows: 100, page: 0, storeKey: 'cobranzas',
         highlightFn: (row, headers) => {
@@ -18732,12 +18745,15 @@
       if (!gsheetsAllCobranzas || gsheetsAllCobranzas.length === 0) return;
       const search = (document.getElementById('gs-cobranzas-search').value || '').toLowerCase();
       const filter = document.getElementById('gs-cobranzas-filter').value;
+      const vendor = document.getElementById('gs-cobranzas-vendor')?.value || '';
       const headers = gsheetsAllCobranzas[0];
       const vencIdx = headers.findIndex(h => h && h.toLowerCase().includes('vencimiento'));
+      const vendorIdxCob = headers.findIndex(h => h && (h.toLowerCase().includes('vendedor') || h.toLowerCase().includes('ejecutivo') || h.toLowerCase() === 'vend'));
 
       let filtered = [headers];
       gsheetsAllCobranzas.slice(1).forEach(row => {
         const matchSearch = !search || row.some(cell => String(cell).toLowerCase().includes(search));
+        const matchVendor = !vendor || (vendorIdxCob >= 0 && row[vendorIdxCob] === vendor);
         let matchFilter = true;
         if (filter && vencIdx >= 0 && row[vencIdx]) {
           try {
@@ -18753,7 +18769,7 @@
             }
           } catch (e) {}
         }
-        if (matchSearch && matchFilter) filtered.push(row);
+        if (matchSearch && matchVendor && matchFilter) filtered.push(row);
       });
 
       sheetToTable(filtered, 'gs-cobranzas-body', {
