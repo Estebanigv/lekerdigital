@@ -4112,6 +4112,9 @@
             </div>
             <div class="card-body" style="padding: 0;">
               <div id="exec-clients-segmentation" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 16px; border-bottom: 1px solid var(--border);"></div>
+              <div style="padding: 10px 16px; border-bottom: 1px solid var(--border);">
+                <input type="search" id="exec-clients-search" class="form-control" placeholder="Buscar cliente..." oninput="filterExecClients()" style="font-size: 13px;">
+              </div>
               <div style="overflow-x: auto;">
                 <table class="data-table" id="exec-clients-table">
                   <thead>
@@ -4119,6 +4122,7 @@
                       <th>Cliente</th>
                       <th>Comuna</th>
                       <th>Segmento</th>
+                      <th style="width: 36px;"></th>
                     </tr>
                   </thead>
                   <tbody id="exec-clients-tbody"></tbody>
@@ -8998,30 +9002,11 @@
       }
 
       // Clients table
-      const tbody = document.getElementById('exec-clients-tbody');
-      if (tbody) {
-        const sorted = [...myClients].sort((a, b) => {
-          const order = { '80-20': 0, 'L': 1, 'N': 2 };
-          return (order[a.segmentation] ?? 3) - (order[b.segmentation] ?? 3);
-        });
-        tbody.innerHTML = sorted.slice(0, 50).map(c => {
-          const is8020 = c.segmentation === '80-20';
-          const badge8020 = is8020 ? `<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;margin-left:4px;">80/20</span>` : '';
-          const segBadge = is8020
-            ? `<span style="font-size:11px;font-weight:700;background:rgba(212,175,55,0.15);color:#b8860b;border:1px solid rgba(212,175,55,0.35);padding:2px 8px;border-radius:10px;">⭐ 80/20</span>`
-            : c.segmentation === 'L'
-              ? `<span style="font-size:11px;font-weight:600;background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.25);padding:2px 8px;border-radius:10px;">L</span>`
-              : `<span style="font-size:11px;color:var(--text-muted);border:1px solid var(--border);padding:2px 8px;border-radius:10px;">${c.segmentation || '-'}</span>`;
-          return `<tr ${is8020 ? 'style="background:rgba(212,175,55,0.04);"' : ''}>
-            <td style="font-weight: ${is8020 ? '600' : '500'};">${c.fantasy_name || c.business_name || '-'}${badge8020}</td>
-            <td style="font-size:12px;">${c.commune || '-'}</td>
-            <td>${segBadge}</td>
-          </tr>`;
-        }).join('');
-        if (sorted.length > 50) {
-          tbody.innerHTML += `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); font-size: 12px;">...y ${sorted.length - 50} más</td></tr>`;
-        }
-      }
+      window._execClients = [...myClients].sort((a, b) => {
+        const order = { '80-20': 0, 'L': 1, 'N': 2 };
+        return (order[a.segmentation] ?? 3) - (order[b.segmentation] ?? 3);
+      });
+      _renderExecClientsTable();
 
       // --- Mi Ruta de Hoy ---
       const myRoute = todayRoutesData.find(r => r.user_id === uid);
@@ -9037,8 +9022,12 @@
         const total = myScheduled.length || visits.length || 0;
         routeStatEl.textContent = `${completed}/${total}`;
         routeStatEl.style.fontSize = '22px';
-        routeActions.innerHTML = `<button onclick="document.querySelector('[data-tab=visits]').click()" class="btn btn-primary" style="font-size: 12px; padding: 6px 14px;">
-          <i data-lucide="map-pin-check" style="width: 14px; height: 14px; vertical-align: -2px;"></i> Ir a Visitas</button>`;
+        routeActions.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <button onclick="document.querySelector('[data-tab=visits]').click()" class="btn btn-primary" style="font-size: 12px; padding: 6px 14px;">
+            <i data-lucide="map-pin-check" style="width: 14px; height: 14px; vertical-align: -2px;"></i> Ir a Visitas</button>
+          <button onclick="openExecRouteMaps()" style="background:rgba(51,204,255,0.1);border:1px solid rgba(51,204,255,0.3);border-radius:6px;cursor:pointer;padding:6px 10px;font-size:11px;font-weight:600;color:#33ccff;display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="map" style="width:12px;height:12px;"></i> Ver Mapa</button>
+        </div>`;
 
         // Route client list
         let html = `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
@@ -9050,18 +9039,34 @@
 
         // Show scheduled clients with visit status
         if (myScheduled.length > 0) {
-          html += '<div style="display: flex; flex-direction: column; gap: 2px;">';
+          const firstPendingIdx = myScheduled.findIndex(s => !visits.find(v => v.client_id === s.client_id && v.status === 'completed'));
+          html += '<div style="display:flex;flex-direction:column;">';
           myScheduled.forEach((sc, i) => {
             const client = allClients.find(c => c.id === sc.client_id);
             const visit = visits.find(v => v.client_id === sc.client_id && v.status === 'completed');
             const isDone = !!visit;
-            html += `<div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; background: ${isDone ? 'rgba(16,185,129,0.06)' : 'transparent'}; border-bottom: 1px solid var(--border);">
-              <span style="width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; ${isDone ? 'background: #10b981; color: white;' : 'background: var(--bg-hover); color: var(--text-muted); border: 1px solid var(--border);'}">${isDone ? '✓' : (i + 1)}</span>
-              <div style="flex: 1; min-width: 0;">
-                <div style="font-size: 12px; font-weight: 600; ${isDone ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${client?.fantasy_name || client?.business_name || sc.client_name || 'Cliente'}</div>
-                <div style="font-size: 11px; color: var(--text-muted);">${client?.commune || ''}</div>
+            const isNext = i === firstPendingIdx;
+            const is8020 = client?.segmentation === '80-20';
+            const hasGps = !!(client?.lat && client?.lng);
+            const rowBg = isDone ? 'rgba(16,185,129,0.05)' : isNext ? 'linear-gradient(90deg,rgba(99,102,241,0.07),transparent)' : 'transparent';
+            const numStyle = isDone ? 'background:#10b981;color:white;' : isNext ? 'background:#6366f1;color:white;' : 'background:var(--bg-hover);color:var(--text-muted);border:1px solid var(--border);';
+            const clientName = client?.fantasy_name || client?.business_name || sc.client_name || 'Cliente';
+            const clientAddr = client?.address ? (client.address + (client?.commune ? ', ' + client.commune : '')) : (client?.commune || '');
+            html += `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:${rowBg};border-bottom:1px solid var(--border);">
+              <span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px;${numStyle}">${isDone ? '✓' : (i + 1)}</span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:600;${isDone ? 'text-decoration:line-through;opacity:0.6;' : ''}display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                  ${clientName}
+                  ${is8020 ? '<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;">⭐</span>' : ''}
+                  ${isNext ? '<span style="font-size:9px;font-weight:700;background:rgba(99,102,241,0.15);color:#6366f1;padding:1px 6px;border-radius:4px;">Próximo</span>' : ''}
+                </div>
+                ${clientAddr ? `<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${clientAddr}</div>` : ''}
               </div>
-              ${isDone ? '<span style="font-size: 10px; color: #10b981; font-weight: 600;">Visitado</span>' : '<span style="font-size: 10px; color: #f59e0b; font-weight: 600;">Pendiente</span>'}
+              <div style="display:flex;gap:4px;flex-shrink:0;align-items:center;margin-top:1px;">
+                ${hasGps && !isDone ? `<button onclick="openWazeToClient(${client.lat},${client.lng})" style="background:rgba(51,204,255,0.1);border:1px solid rgba(51,204,255,0.3);border-radius:6px;cursor:pointer;padding:4px 6px;display:flex;align-items:center;" title="Waze"><i data-lucide="navigation" style="width:11px;height:11px;color:#33ccff;"></i></button>` : ''}
+                ${!isDone && client?.id ? `<button onclick="goToCheckinClient('${client.id}')" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:6px;cursor:pointer;padding:4px 8px;font-size:10px;font-weight:600;color:#6366f1;">Visitar</button>` : ''}
+                ${isDone ? '<span style="font-size:10px;color:#10b981;font-weight:600;">✓ Hecho</span>' : ''}
+              </div>
             </div>`;
           });
           html += '</div>';
@@ -9078,21 +9083,40 @@
         // Has scheduled but not started
         routeStatEl.textContent = 'Programada';
         routeStatEl.style.fontSize = '15px';
-        routeActions.innerHTML = `<button onclick="document.querySelector('[data-tab=visits]').click()" class="btn btn-primary" style="font-size: 12px; padding: 6px 14px;">
-          <i data-lucide="play-circle" style="width: 14px; height: 14px; vertical-align: -2px;"></i> Iniciar Jornada</button>`;
-
-        let html = `<div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(59,130,246,0.06); border-radius: 8px; margin-bottom: 12px;">
-          <i data-lucide="info" style="width: 16px; height: 16px; color: #3b82f6;"></i>
-          <span style="font-size: 12px; color: #3b82f6; font-weight: 500;">Tienes ${myScheduled.length} clientes programados para hoy</span>
+        routeActions.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <button onclick="document.querySelector('[data-tab=visits]').click()" class="btn btn-primary" style="font-size: 12px; padding: 6px 14px;">
+            <i data-lucide="play-circle" style="width: 14px; height: 14px; vertical-align: -2px;"></i> Iniciar Jornada</button>
+          <button onclick="openExecRouteMaps()" style="background:rgba(51,204,255,0.1);border:1px solid rgba(51,204,255,0.3);border-radius:6px;cursor:pointer;padding:6px 10px;font-size:11px;font-weight:600;color:#33ccff;display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="map" style="width:12px;height:12px;"></i> Ver Mapa</button>
         </div>`;
-        html += '<div style="display: flex; flex-direction: column; gap: 2px;">';
+
+        let html = `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(59,130,246,0.06);border-radius:8px;margin-bottom:12px;">
+          <i data-lucide="info" style="width:16px;height:16px;color:#3b82f6;"></i>
+          <span style="font-size:12px;color:#3b82f6;font-weight:500;">Tienes ${myScheduled.length} clientes programados para hoy</span>
+        </div>`;
+        html += '<div style="display:flex;flex-direction:column;">';
         myScheduled.forEach((sc, i) => {
           const client = allClients.find(c => c.id === sc.client_id);
-          html += `<div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--border);">
-            <span style="width: 22px; height: 22px; border-radius: 50%; background: var(--bg-hover); color: var(--text-muted); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">${i + 1}</span>
-            <div style="flex: 1; min-width: 0;">
-              <div style="font-size: 12px; font-weight: 600;">${client?.fantasy_name || client?.business_name || sc.client_name || 'Cliente'}</div>
-              <div style="font-size: 11px; color: var(--text-muted);">${client?.commune || ''}</div>
+          const is8020 = client?.segmentation === '80-20';
+          const hasGps = !!(client?.lat && client?.lng);
+          const isFirst = i === 0;
+          const numStyle = isFirst ? 'background:#6366f1;color:white;' : 'background:var(--bg-hover);color:var(--text-muted);border:1px solid var(--border);';
+          const rowBg = isFirst ? 'linear-gradient(90deg,rgba(99,102,241,0.06),transparent)' : 'transparent';
+          const clientName = client?.fantasy_name || client?.business_name || sc.client_name || 'Cliente';
+          const clientAddr = client?.address ? (client.address + (client?.commune ? ', ' + client.commune : '')) : (client?.commune || '');
+          html += `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:${rowBg};border-bottom:1px solid var(--border);">
+            <span style="width:22px;height:22px;border-radius:50%;${numStyle}display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px;">${i + 1}</span>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                ${clientName}
+                ${is8020 ? '<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;">⭐</span>' : ''}
+                ${isFirst ? '<span style="font-size:9px;font-weight:700;background:rgba(99,102,241,0.15);color:#6366f1;padding:1px 6px;border-radius:4px;">Primero</span>' : ''}
+              </div>
+              ${clientAddr ? `<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${clientAddr}</div>` : ''}
+            </div>
+            <div style="display:flex;gap:4px;flex-shrink:0;align-items:center;margin-top:1px;">
+              ${hasGps ? `<button onclick="openWazeToClient(${client.lat},${client.lng})" style="background:rgba(51,204,255,0.1);border:1px solid rgba(51,204,255,0.3);border-radius:6px;cursor:pointer;padding:4px 6px;display:flex;align-items:center;" title="Waze"><i data-lucide="navigation" style="width:11px;height:11px;color:#33ccff;"></i></button>` : ''}
+              ${client?.id ? `<button onclick="goToCheckinClient('${client.id}')" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:6px;cursor:pointer;padding:4px 8px;font-size:10px;font-weight:600;color:#6366f1;">Visitar</button>` : ''}
             </div>
           </div>`;
         });
@@ -9133,6 +9157,47 @@
 
       // Re-init icons
       lucide.createIcons();
+    }
+
+    function _renderExecClientsTable(search) {
+      const tbody = document.getElementById('exec-clients-tbody');
+      if (!tbody || !window._execClients) return;
+      const q = (search || '').toLowerCase().trim();
+      const list = q
+        ? window._execClients.filter(c =>
+            (c.fantasy_name || '').toLowerCase().includes(q) ||
+            (c.business_name || '').toLowerCase().includes(q) ||
+            (c.commune || '').toLowerCase().includes(q) ||
+            (c.external_id || '').toLowerCase().includes(q))
+        : window._execClients;
+
+      tbody.innerHTML = list.slice(0, 100).map(c => {
+        const is8020 = c.segmentation === '80-20';
+        const badge8020 = is8020 ? `<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;margin-left:4px;">⭐</span>` : '';
+        const segBadge = is8020
+          ? `<span style="font-size:11px;font-weight:700;background:rgba(212,175,55,0.15);color:#b8860b;border:1px solid rgba(212,175,55,0.35);padding:2px 8px;border-radius:10px;">80/20</span>`
+          : c.segmentation === 'L'
+            ? `<span style="font-size:11px;font-weight:600;background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.25);padding:2px 8px;border-radius:10px;">L</span>`
+            : `<span style="font-size:11px;color:var(--text-muted);border:1px solid var(--border);padding:2px 8px;border-radius:10px;">${c.segmentation || '-'}</span>`;
+        const wazeBtn = (c.lat && c.lng)
+          ? `<button onclick="openWazeToClient(${c.lat},${c.lng})" style="background:rgba(51,204,255,0.1);border:1px solid rgba(51,204,255,0.3);border-radius:6px;cursor:pointer;padding:3px 5px;display:flex;align-items:center;" title="Waze"><i data-lucide="navigation" style="width:11px;height:11px;color:#33ccff;"></i></button>`
+          : '';
+        return `<tr ${is8020 ? 'style="background:rgba(212,175,55,0.04);"' : ''}>
+          <td style="font-weight:${is8020 ? '600' : '500'};">${c.fantasy_name || c.business_name || '-'}${badge8020}</td>
+          <td style="font-size:12px;">${c.commune || '-'}</td>
+          <td>${segBadge}</td>
+          <td>${wazeBtn}</td>
+        </tr>`;
+      }).join('');
+      if (list.length > 100) {
+        tbody.innerHTML += `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);font-size:12px;">...y ${list.length - 100} más</td></tr>`;
+      }
+      lucide.createIcons();
+    }
+
+    function filterExecClients() {
+      const q = document.getElementById('exec-clients-search')?.value || '';
+      _renderExecClientsTable(q);
     }
 
     let execMapInstance = null;
@@ -13327,6 +13392,25 @@
       if (lat && lng) {
         window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
       }
+    }
+
+    // Quick check-in from route card: switch to visits tab + pre-select client
+    function goToCheckinClient(clientId) {
+      document.querySelector('[data-tab=visits]').click();
+      setTimeout(() => {
+        selectCheckinClient(clientId);
+        const form = document.getElementById('checkin-form') || document.getElementById('visit-checkin-card');
+        if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+
+    // Open exec's today route in Google Maps
+    function openExecRouteMaps() {
+      if (!currentUser) return;
+      const scheduled = todayScheduledData[currentUser.id] || [];
+      const clients = scheduled.map(s => allClients.find(c => c.id === s.client_id)).filter(c => c && c.lat && c.lng);
+      if (clients.length === 0) { showToast('warning', 'Sin GPS', 'Clientes sin coordenadas GPS'); return; }
+      openFullRouteInMaps(clients);
     }
 
     function openDayRouteInMaps(date, userId) {
@@ -18982,23 +19066,62 @@
       const borderLeft = isZonal ? `border-left: 3px solid ${zc.color};` : '';
       const bgCard = isZonal ? `background: ${zc.bg};` : 'background: var(--bg-card);';
 
-      // Cross-reference with allUsers/allClients for client stats
+      // Cross-reference with allUsers/allClients for client + route stats
       let clientStats = '';
+      let routeStatus = '';
+      let gestionarBtn = '';
       if (!isZonal) {
-        const user = (allUsers || []).find(u => u.role === 'executive' && u.full_name && u.full_name.toLowerCase().includes(v.name.split(' ')[0].toLowerCase()));
+        const firstName = v.name.split(' ')[0].toLowerCase();
+        const user = (allUsers || []).find(u => u.role === 'executive' && u.full_name && u.full_name.toLowerCase().includes(firstName));
         if (user) {
+          // Client stats
           const vc = (allClients || []).filter(c => c.assigned_user_id === user.id);
           const vc8020 = vc.filter(c => c.segmentation === '80-20');
           const pct = vc.length > 0 ? Math.round(vc8020.length / vc.length * 100) : 0;
           if (vc.length > 0) {
             clientStats = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
               <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
-                <span style="color:var(--text-muted);">${vc.length} clientes asignados</span>
+                <span style="color:var(--text-muted);">${vc.length} clientes</span>
                 ${vc8020.length > 0 ? `<span style="font-weight:700;color:#b8860b;">⭐ ${vc8020.length} 80/20 (${pct}%)</span>` : ''}
               </div>
-              ${vc8020.length > 0 ? `<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#d4af37,#b8860b);border-radius:2px;"></div></div>` : ''}
+              ${vc8020.length > 0 ? `<div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#d4af37,#b8860b);border-radius:2px;"></div></div>` : ''}
             </div>`;
           }
+
+          // Route status today
+          const activeRoute = (todayRoutesData || []).find(r => r.user_id === user.id);
+          const scheduleData = window._dashboardScheduleData;
+          const hasSchedule = scheduleData && Object.values(scheduleData.schedule || {}).some(dayData => {
+            return (dayData.clients || dayData.route || []).some(c => c.assigned_user_id === user.id || c.user_id === user.id) ||
+                   (scheduleData.schedule[new Date().toISOString().split('T')[0]] &&
+                    scheduleData.userId === user.id);
+          });
+          const todayScheduled = (todayScheduledData || {})[user.id] || [];
+
+          if (activeRoute && activeRoute.status === 'active') {
+            const visits = activeRoute.visits || [];
+            const done = visits.filter(v => v.status === 'completed').length;
+            const total = todayScheduled.length || visits.length;
+            routeStatus = `<div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+              <span style="width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;animation:pulse 1.5s infinite;"></span>
+              <span style="font-size:11px;color:#10b981;font-weight:600;">En ruta</span>
+              ${total > 0 ? `<span style="font-size:11px;color:var(--text-muted);">${done}/${total} visitas</span>` : ''}
+            </div>`;
+          } else if (todayScheduled.length > 0) {
+            routeStatus = `<div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+              <span style="width:7px;height:7px;border-radius:50%;background:#3b82f6;flex-shrink:0;"></span>
+              <span style="font-size:11px;color:#3b82f6;font-weight:600;">Programada hoy</span>
+              <span style="font-size:11px;color:var(--text-muted);">${todayScheduled.length} clientes</span>
+            </div>`;
+          } else {
+            routeStatus = `<div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+              <span style="width:7px;height:7px;border-radius:50%;background:var(--text-muted);flex-shrink:0;opacity:0.5;"></span>
+              <span style="font-size:11px;color:var(--text-muted);">Sin ruta hoy</span>
+            </div>`;
+          }
+
+          // Gestionar quick-link
+          gestionarBtn = `<button onclick="goToVendorGestionar('${user.id}')" style="margin-top:2px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:6px;cursor:pointer;padding:3px 10px;font-size:10px;font-weight:600;color:#6366f1;display:inline-flex;align-items:center;gap:3px;"><i data-lucide="route" style="width:10px;height:10px;"></i> Gestionar</button>`;
         }
       }
 
@@ -19015,11 +19138,13 @@
           </div>
           <span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:2px 10px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;flex-shrink:0;">${v.zona || 'Sin zona'}</span>
         </div>
-        <div style="margin-top:8px;display:flex;flex-direction:column;gap:3px;font-size:12px;">
+        <div style="margin-top:6px;display:flex;flex-direction:column;gap:2px;font-size:12px;">
           ${!isZonal && v.zonal ? `<div style="color:var(--text-muted);">Reporta a: <strong style="color:var(--text-secondary);">${v.zonal}</strong></div>` : ''}
           ${v.region ? `<div style="color:var(--text-muted);"><i data-lucide="map-pin" style="width:11px;height:11px;display:inline-block;vertical-align:-1px;"></i> ${v.region}</div>` : ''}
         </div>
+        ${routeStatus}
         ${clientStats}
+        ${gestionarBtn ? `<div style="margin-top:8px;">${gestionarBtn}</div>` : ''}
         ${(v.mail || v.cel) ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
           ${v.mail ? `<a href="mailto:${v.mail}" style="font-size:11px;color:var(--accent);text-decoration:none;background:rgba(59,130,246,0.06);padding:3px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="mail" style="width:10px;height:10px;"></i>${v.mail}</a>` : ''}
           ${v.cel ? `<a href="tel:${v.cel.replace(/\s/g,'')}" style="font-size:11px;color:var(--text-secondary);text-decoration:none;background:var(--bg-hover);padding:3px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="phone" style="width:10px;height:10px;"></i>${v.cel}</a>` : ''}
