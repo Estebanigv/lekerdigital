@@ -22870,34 +22870,55 @@
         if (data.success && data.data.length > 0) {
           let html = '';
           data.data.forEach(vendor => {
+            // Cross-reference allClients to get 80/20 count for this vendor
+            const user = (allUsers || []).find(u => u.full_name === vendor.name);
+            const userId = user ? user.id : null;
+            const vendorClients = userId ? (allClients || []).filter(c => c.assigned_user_id === userId) : [];
+            const clients8020 = vendorClients.filter(c => c.segmentation === '80-20');
+            const clientsL = vendorClients.filter(c => c.segmentation === 'L');
+            const pct8020 = vendorClients.length > 0 ? Math.round(clients8020.length / vendorClients.length * 100) : 0;
+            const zc = user && user.zone ? (ZONE_COLORS[user.zone.toLowerCase()] || {color:'var(--text-muted)',bg:'var(--bg-hover)',border:'var(--border)'}) : {color:'var(--text-muted)',bg:'var(--bg-hover)',border:'var(--border)'};
+
             let weeklyHtml = '';
             vendor.weekly.forEach(w => {
               weeklyHtml += `<div style="display: flex; justify-content: space-between; font-size: 11px; padding: 3px 0; border-bottom: 1px solid var(--border);">
                 <span>${w.week}</span>
-                <span>${w.clients} clientes, ${w.days} días</span>
+                <span>${w.clients} cl, ${w.days} días</span>
               </div>`;
             });
 
             html += `
               <div class="vendor-stat-card">
-                <h4>
-                  <i data-lucide="user" style="width: 16px; height: 16px; color: var(--accent);"></i>
-                  ${vendor.name}
+                <h4 style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span style="width:28px;height:28px;border-radius:50%;background:${zc.color};color:white;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">${vendor.name.split(' ').map(n=>n[0]||'').join('').substring(0,2).toUpperCase()}</span>
+                  <span>${vendor.name}</span>
+                  ${user && user.zone ? `<span style="font-size:10px;background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 6px;border-radius:4px;font-weight:600;">${user.zone}</span>` : ''}
                 </h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
-                  <div style="text-align: center; padding: 8px; background: var(--bg-hover); border-radius: 8px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px;">
+                  <div style="text-align: center; padding: 8px 4px; background: var(--bg-hover); border-radius: 8px;">
                     <div style="font-size: 18px; font-weight: 700; color: var(--accent);">${vendor.clientsWithSale}</div>
-                    <div style="font-size: 10px; color: var(--text-muted);">Clientes con vta</div>
+                    <div style="font-size: 10px; color: var(--text-muted);">Con vta</div>
                   </div>
-                  <div style="text-align: center; padding: 8px; background: var(--bg-hover); border-radius: 8px;">
+                  <div style="text-align: center; padding: 8px 4px; background: var(--bg-hover); border-radius: 8px;">
                     <div style="font-size: 18px; font-weight: 700; color: var(--success);">${vendor.totalVisits}</div>
                     <div style="font-size: 10px; color: var(--text-muted);">Visitas</div>
                   </div>
+                  <div style="text-align: center; padding: 8px 4px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); border-radius: 8px;">
+                    <div style="font-size: 18px; font-weight: 700; color: #b8860b;">${clients8020.length}</div>
+                    <div style="font-size: 10px; color: var(--text-muted);">80/20</div>
+                  </div>
                 </div>
-                <div style="font-size: 12px; margin-bottom: 6px;">
-                  <span style="color: var(--text-muted);">Días trabajados:</span>
-                  <strong>${vendor.daysWorked}</strong>
-                </div>
+                ${vendorClients.length > 0 ? `
+                <div style="margin-bottom: 8px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="color: var(--text-muted);">${vendorClients.length} asignados</span>
+                    <span style="font-weight: 600; color: #b8860b;">${pct8020}% 80/20</span>
+                  </div>
+                  <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
+                    <div style="height: 100%; width: ${pct8020}%; background: linear-gradient(90deg,#d4af37,#b8860b); border-radius: 3px;"></div>
+                  </div>
+                </div>` : ''}
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">Días trabajados: <strong>${vendor.daysWorked}</strong></div>
                 ${weeklyHtml}
               </div>
             `;
