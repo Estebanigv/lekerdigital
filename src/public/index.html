@@ -3866,9 +3866,10 @@
           <span>Rutas y Mapa</span>
           <span id="nav-route-alerts-badge" class="alert-badge" style="display: none;">0</span>
         </div>
-        <div class="nav-item" data-tab="visits" data-tooltip="Visitas">
+        <div class="nav-item" data-tab="visits" data-tooltip="Visitas" style="position: relative;">
           <i data-lucide="clipboard-check"></i>
           <span>Visitas</span>
+          <span id="visits-nav-badge" style="display:none;position:absolute;top:6px;right:6px;background:#ef4444;color:white;border-radius:9px;font-size:9px;font-weight:700;padding:1px 5px;line-height:14px;min-width:14px;text-align:center;"></span>
         </div>
         <div class="nav-item" data-tab="crm" data-tooltip="Logística CRM">
           <i data-lucide="contact-2"></i>
@@ -8178,6 +8179,11 @@
         if (tab === 'crm') {
           renderCrmPanel();
         }
+        if (tab === 'visits') {
+          startVisitsAutoRefresh();
+        } else {
+          stopVisitsAutoRefresh();
+        }
 
         // Close sidebar on mobile after navigation
         if (window.innerWidth <= 1024) {
@@ -8910,6 +8916,7 @@
         const todayVisitsCount = todayRoutesData.reduce((sum, r) => sum + (r.visits?.length || r.visits_count || 0), 0);
         document.getElementById('stat-routes').textContent = todayActiveRoutes.length;
         document.getElementById('stat-visits-today').textContent = todayVisitsCount;
+        updateVisitsNavBadge();
 
         updateDashLoadingProgress(55, 'Procesando rutas activas...');
 
@@ -12202,6 +12209,9 @@
             todayRoutesData = [];
           }
           filterVisitsByExecutive();
+          updateVisitsNavBadge();
+          // Also refresh exec dashboard if it's visible
+          if (currentUser?.role === 'executive') renderExecDashboard();
         } else {
           showToast('error', 'Error', data.error || 'No se pudo iniciar la jornada');
         }
@@ -13532,12 +13542,83 @@
         renderExecDashboard();
         filterVisitsByExecutive();
         renderTodayVisits();
+        updateVisitsNavBadge();
         showToast('success', 'Actualizado', 'Datos de ruta actualizados');
       } catch (e) {
         showToast('error', 'Error', 'No se pudo actualizar');
       } finally {
         if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
         if (icon) { icon.setAttribute('data-lucide', 'refresh-cw'); icon.classList.remove('spin'); lucide.createIcons(); }
+      }
+    }
+
+    // =============================================
+    // VISITS PANEL: Auto-refresh + Nav badge
+    // =============================================
+    let _visitsRefreshTimer = null;
+    const VISITS_REFRESH_INTERVAL = 30000; // 30 seconds
+
+    async function _refreshVisitsData(silent = true) {
+      try {
+        const [todayRes, schedRes] = await Promise.all([
+          fetch(`${API}/api/daily-routes/today`),
+          fetch(`${API}/api/routes/today-scheduled`)
+        ]);
+        const [todayData, schedData] = await Promise.all([todayRes.json(), schedRes.json()]);
+        if (todayData.success) todayRoutesData = todayData.data;
+        if (schedData.success) todayScheduledData = schedData.data;
+        renderTodayVisits();
+        updateVisitsNavBadge();
+        if (!silent) showToast('success', 'Actualizado', 'Datos de visitas actualizados');
+      } catch (e) {
+        console.warn('[visits-refresh] Error:', e);
+      }
+    }
+
+    function startVisitsAutoRefresh() {
+      stopVisitsAutoRefresh();
+      _refreshVisitsData(true); // immediate refresh on tab open
+      _visitsRefreshTimer = setInterval(() => _refreshVisitsData(true), VISITS_REFRESH_INTERVAL);
+    }
+
+    function stopVisitsAutoRefresh() {
+      if (_visitsRefreshTimer) {
+        clearInterval(_visitsRefreshTimer);
+        _visitsRefreshTimer = null;
+      }
+    }
+
+    // Update pending count badge on visits nav item
+    function updateVisitsNavBadge() {
+      const badge = document.getElementById('visits-nav-badge');
+      if (!badge) return;
+      if (!currentUser) { badge.style.display = 'none'; return; }
+
+      let pendingCount = 0;
+      if (currentUser.role === 'executive') {
+        // Show pending scheduled (not yet visited) for this exec
+        const myScheduled = todayScheduledData[currentUser.id] || [];
+        const myRoute = todayRoutesData.find(r => r.user_id === currentUser.id);
+        const visitedIds = new Set((myRoute?.visits || []).map(v => v.client_id));
+        pendingCount = myScheduled.filter(sc => !visitedIds.has(sc.client_id)).length;
+      } else {
+        // Admin/supervisor: count total pending across all vendors
+        let total = 0;
+        Object.keys(todayScheduledData).forEach(uid => {
+          const route = todayRoutesData.find(r => r.user_id === uid && r.status === 'active');
+          const visited = new Set((route?.visits || []).map(v => v.client_id));
+          (todayScheduledData[uid] || []).forEach(sc => {
+            if (!visited.has(sc.client_id)) total++;
+          });
+        });
+        pendingCount = total;
+      }
+
+      if (pendingCount > 0) {
+        badge.textContent = pendingCount > 99 ? '99+' : pendingCount;
+        badge.style.display = '';
+      } else {
+        badge.style.display = 'none';
       }
     }
 
@@ -16830,6 +16911,9 @@
         if (subtab) {
           localStorage.setItem('leker_active_subtab', subtab);
         }
+
+        // Stop visits auto-refresh when navigating to non-visits panel
+        stopVisitsAutoRefresh();
 
         // Switch to subtab
         if (subtab) {
@@ -21835,7 +21919,10 @@
       const warning = document.getElementById('checklist-warning');
       const btn = document.getElementById('btn-checkin-submit');
       if (warning) warning.style.display = allChecked ? 'none' : 'block';
-      if (btn) btn.disabled = !allChecked;
+      // Executives can submit even without completing all checklist items (field reality)
+      // Admins/supervisors are blocked until all items are checked
+      const isExec = currentUser && currentUser.role === 'executive';
+      if (btn) btn.disabled = isExec ? false : !allChecked;
     }
 
     async function saveClientProfile() {
