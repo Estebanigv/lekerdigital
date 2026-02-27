@@ -734,11 +734,10 @@
       border-radius: 50%;
     }
 
-    .legend-dot.a { background: #d97706; }
-    .legend-dot.b { background: #3b82f6; }
-    .legend-dot.c { background: #059669; }
-    .legend-dot.d { background: #f97316; }
-    .legend-dot.e { background: #9ca3af; }
+    .legend-dot.seg-8020 { background: #f59e0b; }
+    .legend-dot.seg-l    { background: #3b82f6; }
+    .legend-dot.seg-n    { background: #94a3b8; }
+    .legend-dot.seg-none { background: #cbd5e1; }
     .legend-dot.route { background: var(--accent); }
 
     /* Forms */
@@ -4242,36 +4241,31 @@
                 </div>
                 <!-- Segment Filters -->
                 <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 10px;">
-                  <div style="font-weight: 600; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Segmentos</div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('A')" data-segment="A" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
-                    <div class="legend-dot a"></div>
-                    <span style="flex: 1; font-size: 11px;">A — 80/20 Top</span>
-                    <span id="count-segment-a" style="font-size: 10px; background: rgba(217,119,6,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                  <div style="font-weight: 600; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Segmentación</div>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('80-20')" data-segment="80-20" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                    <div class="legend-dot seg-8020"></div>
+                    <span style="flex: 1; font-size: 11px; font-weight: 600;">80/20 — Clave</span>
+                    <span id="count-seg-8020" style="font-size: 10px; background: rgba(245,158,11,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('B')" data-segment="B" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
-                    <div class="legend-dot b"></div>
-                    <span style="flex: 1; font-size: 11px;">B — Con dirección</span>
-                    <span id="count-segment-b" style="font-size: 10px; background: rgba(59,130,246,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('L')" data-segment="L" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                    <div class="legend-dot seg-l"></div>
+                    <span style="flex: 1; font-size: 11px;">L — Con ventas</span>
+                    <span id="count-seg-l" style="font-size: 10px; background: rgba(59,130,246,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('C')" data-segment="C" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
-                    <div class="legend-dot c"></div>
-                    <span style="flex: 1; font-size: 11px;">C — Con vendedor</span>
-                    <span id="count-segment-c" style="font-size: 10px; background: rgba(5,150,105,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('N')" data-segment="N" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                    <div class="legend-dot seg-n"></div>
+                    <span style="flex: 1; font-size: 11px;">N — Nuevos</span>
+                    <span id="count-seg-n" style="font-size: 10px; background: rgba(148,163,184,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('D')" data-segment="D" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
-                    <div class="legend-dot d"></div>
-                    <span style="flex: 1; font-size: 11px;">D — Potencial</span>
-                    <span id="count-segment-d" style="font-size: 10px; background: rgba(249,115,22,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
-                  </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('E')" data-segment="E" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
-                    <div class="legend-dot e"></div>
-                    <span style="flex: 1; font-size: 11px;">E — Sin dirección</span>
-                    <span id="count-segment-e" style="font-size: 10px; background: rgba(156,163,175,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('none')" data-segment="none" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                    <div class="legend-dot seg-none"></div>
+                    <span style="flex: 1; font-size: 11px;">Sin clasificar</span>
+                    <span id="count-seg-none" style="font-size: 10px; background: rgba(203,213,225,0.4); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
                   </div>
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('FOCO')" data-segment="FOCO" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; align-items: center;">
                     <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.4); margin-right: 8px;"></div>
                     <span style="flex: 1; font-size: 11px;">FOCO</span>
-                    <span id="count-segment-foco" style="font-size: 10px; background: rgba(239,68,68,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                    <span id="count-seg-foco" style="font-size: 10px; background: rgba(239,68,68,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
                   </div>
                   <button onclick="filterMapBySegment('ALL')" style="width: 100%; margin-top: 8px; padding: 5px 8px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
                     Mostrar Todos
@@ -8041,24 +8035,24 @@
 
     // Add client markers to map using lat/lng from client data
     // Store markers with metadata for filtering
-    let markersBySegment = { A: [], B: [], C: [], D: [], E: [], FOCO: [] };
-    let activeSegmentFilters = { A: true, B: true, C: true, D: true, E: true, FOCO: true };
+    let markersBySegment = { '80-20': [], 'L': [], 'N': [], 'none': [], 'FOCO': [] };
+    let activeSegmentFilters = { '80-20': true, 'L': true, 'N': true, 'none': true, 'FOCO': true };
 
     function addClientMarkers(clients) {
       // Clear existing markers
       mainMapMarkers.forEach(m => m.setMap(null));
       mainMapMarkers = [];
       clientMarkers = [];
-      markersBySegment = { A: [], B: [], C: [], D: [], E: [], FOCO: [] };
+      markersBySegment = { '80-20': [], 'L': [], 'N': [], 'none': [], 'FOCO': [] };
 
       const bounds = new google.maps.LatLngBounds();
       let markersWithCoords = 0;
       let markersWithoutCoords = 0;
-      let segmentCounts = { A: 0, B: 0, C: 0, D: 0, E: 0, FOCO: 0 };
+      let segmentCounts = { '80-20': 0, 'L': 0, 'N': 0, 'none': 0, 'FOCO': 0 };
 
-      // Count ALL clients' segments first (not just GPS ones)
+      // Count ALL clients' segmentation first (not just GPS ones)
       clients.forEach(c => {
-        const s = c.segment || 'E';
+        const s = c.segmentation || 'none';
         segmentCounts[s] = (segmentCounts[s] || 0) + 1;
         if (c.priority === 'FOCO') segmentCounts.FOCO++;
       });
@@ -8086,10 +8080,10 @@
         const position = { lat, lng };
         bounds.extend(position);
 
-        // Marker colors by segment
-        const colors = { A: '#d97706', B: '#3b82f6', C: '#059669', D: '#f97316', E: '#9ca3af' };
-        const segment = client.segment || 'E';
-        const color = colors[segment] || colors.E;
+        // Marker colors by segmentation (80-20=gold, L=blue, N=gray, none=light gray)
+        const segColors = { '80-20': '#f59e0b', 'L': '#3b82f6', 'N': '#94a3b8', 'none': '#cbd5e1' };
+        const seg = client.segmentation || 'none';
+        const color = segColors[seg] || '#cbd5e1';
         const isFoco = client.priority === 'FOCO';
 
         const marker = new google.maps.Marker({
@@ -8098,19 +8092,21 @@
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
             fillColor: isFoco ? '#ef4444' : color,
-            fillOpacity: 1,
-            strokeColor: isFoco ? '#fff' : '#fff',
-            strokeWeight: 2,
-            scale: isFoco ? 12 : 10
+            fillOpacity: seg === 'none' ? 0.5 : 1,
+            strokeColor: '#fff',
+            strokeWeight: isFoco ? 2 : (seg === '80-20' ? 2 : 1.5),
+            scale: isFoco ? 12 : (seg === '80-20' ? 10 : 7)
           },
           title: client.name
         });
 
         // Store marker metadata
         marker.clientData = client;
-        marker.segment = segment;
+        marker.segment = client.segment || 'E';
+        marker.segmentation = seg;
         marker.isFoco = isFoco;
 
+        const segLabel = { '80-20': '80/20 Clave', 'L': 'L · Con ventas', 'N': 'N · Nuevo', 'none': '' };
         const infoContent = `
           <div style="min-width: 250px; padding: 10px; font-family: system-ui, sans-serif;">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
@@ -8122,8 +8118,9 @@
               <i data-lucide="map-pin" style="width:12px;height:12px;color:#9ca3af;display:inline-block;vertical-align:middle;"></i> ${client.address || 'Sin dirección'}
             </div>
             <div style="font-size: 12px; color: #6b7280;">${client.commune || ''}</div>
-            <div style="margin-top: 10px; display: flex; gap: 4px;">
-              <span style="background: ${color}; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 500;">Segmento ${segment}</span>
+            <div style="margin-top: 10px; display: flex; gap: 4px; flex-wrap: wrap;">
+              ${seg !== 'none' ? `<span style="background: ${color}; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">${segLabel[seg] || seg}</span>` : ''}
+              ${client.segment ? `<span style="background: #e5e7eb; color: #374151; padding: 3px 10px; border-radius: 4px; font-size: 11px;">Seg ${client.segment}</span>` : ''}
               ${isFoco ? '<span style="background: #ef4444; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 500;">FOCO</span>' : ''}
             </div>
             ${client.zone ? `<div style="margin-top: 6px; font-size: 11px; color: #9ca3af;">Zona: ${client.zone}</div>` : ''}
@@ -8138,19 +8135,20 @@
         mainMapMarkers.push(marker);
         clientMarkers.push(marker);
 
-        // Store by segment for filtering
-        if (!markersBySegment[segment]) markersBySegment[segment] = [];
-        markersBySegment[segment].push(marker);
+        // Store by segmentation for filtering
+        if (!markersBySegment[seg]) markersBySegment[seg] = [];
+        markersBySegment[seg].push(marker);
         if (isFoco) markersBySegment.FOCO.push(marker);
       });
 
       // Update map stats
       updateMapStats(markersWithCoords, markersWithoutCoords);
 
-      // Update segment counts in legend
-      ['a','b','c','d','e','foco'].forEach(s => {
-        const el = document.getElementById('count-segment-' + s);
-        if (el) el.textContent = segmentCounts[s.toUpperCase()] || 0;
+      // Update segmentation counts in legend
+      const _countMap = { '80-20': 'count-seg-8020', 'L': 'count-seg-l', 'N': 'count-seg-n', 'none': 'count-seg-none', 'FOCO': 'count-seg-foco' };
+      Object.entries(_countMap).forEach(([key, id]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = segmentCounts[key] || 0;
       });
 
       // Fit bounds to show all markers, but limit zoom
@@ -8169,52 +8167,35 @@
       }
     }
 
-    // Filter map markers by segment
+    // Filter map markers by segmentation
+    const _segKeys = ['80-20', 'L', 'N', 'none'];
     function filterMapBySegment(segment) {
       if (segment === 'ALL') {
-        // Show all markers
-        activeSegmentFilters = { A: true, B: true, C: true, D: true, E: true, FOCO: true };
+        activeSegmentFilters = { '80-20': true, 'L': true, 'N': true, 'none': true, 'FOCO': true };
         mainMapMarkers.forEach(m => m.setMap(mainMap));
-        // Update legend visual
         document.querySelectorAll('.legend-filter').forEach(el => el.classList.add('active'));
         return;
       }
 
-      // Toggle the segment filter
-      if (segment === 'FOCO') {
-        activeSegmentFilters.FOCO = !activeSegmentFilters.FOCO;
-      } else {
-        activeSegmentFilters[segment] = !activeSegmentFilters[segment];
-      }
+      // Toggle filter
+      activeSegmentFilters[segment] = !activeSegmentFilters[segment];
 
       // Update legend visual
       const legendItem = document.querySelector(`.legend-filter[data-segment="${segment}"]`);
-      if (legendItem) {
-        legendItem.classList.toggle('active', segment === 'FOCO' ? activeSegmentFilters.FOCO : activeSegmentFilters[segment]);
-      }
+      if (legendItem) legendItem.classList.toggle('active', activeSegmentFilters[segment]);
 
-      // Show/hide markers based on active filters
+      // Show/hide markers
+      const onlyFoco = !_segKeys.some(k => activeSegmentFilters[k]) && activeSegmentFilters.FOCO;
       mainMapMarkers.forEach(marker => {
-        const markerSegment = marker.segment;
+        const markerSeg = marker.segmentation;
         const isFoco = marker.isFoco;
-
         let shouldShow = false;
-
-        // Check if segment filter is active
-        if (activeSegmentFilters[markerSegment]) {
-          shouldShow = true;
-        }
-
-        // If FOCO filter is active and marker is FOCO, show it
-        if (activeSegmentFilters.FOCO && isFoco) {
-          shouldShow = true;
-        }
-
-        // If only FOCO filter and this is not FOCO, check segment
-        if (!activeSegmentFilters.A && !activeSegmentFilters.B && !activeSegmentFilters.C && !activeSegmentFilters.D && !activeSegmentFilters.E && activeSegmentFilters.FOCO) {
+        if (onlyFoco) {
           shouldShow = isFoco;
+        } else {
+          if (activeSegmentFilters[markerSeg]) shouldShow = true;
+          if (activeSegmentFilters.FOCO && isFoco) shouldShow = true;
         }
-
         marker.setMap(shouldShow ? mainMap : null);
       });
     }
