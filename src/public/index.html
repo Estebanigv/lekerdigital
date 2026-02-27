@@ -6402,14 +6402,21 @@
                     <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
                     <input type="text" id="gs-ventas-search" class="form-control" placeholder="Buscar..." style="max-width: 200px; width:100%; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsVentas()">
                   </div>
-                  <select id="gs-ventas-mes" class="form-control" style="max-width: 160px; width:100%; font-size: 13px;" onchange="filterGsheetsVentas()">
+                  <select id="gs-ventas-mes" class="form-control" style="max-width: 140px; width:100%; font-size: 13px;" onchange="filterGsheetsVentas()">
                     <option value="">Todos los meses</option>
+                  </select>
+                  <select id="gs-ventas-vendor" class="form-control" style="max-width: 160px; width:100%; font-size: 13px;" onchange="filterGsheetsVentas()">
+                    <option value="">Todos los vendedores</option>
                   </select>
                 </div>
               </div>
               <div class="card-body" style="padding: 0;">
                 <div id="gs-ventas-body" style="overflow-x: auto;">
                   <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
+                </div>
+                <!-- 80/20 legend -->
+                <div id="gs-ventas-legend" style="display:none; padding: 8px 16px 10px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); gap: 16px;">
+                  <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:rgba(212,175,55,0.25);border:1px solid rgba(212,175,55,0.5);border-radius:2px;display:inline-block;"></span> Cliente 80/20</span>
                 </div>
               </div>
             </div>
@@ -18166,18 +18173,24 @@
 
       rows.forEach(row => {
         let rowClass = '';
+        let rowStyleStr = '';
         if (opts.highlightFn) {
           const style = opts.highlightFn(row, headers);
-          if (style && style.includes('239,68,68')) rowClass = ' class="row-danger"';
+          if (style) {
+            rowStyleStr = ` style="${style}"`;
+            if (style.includes('239,68,68')) rowClass = ' class="row-danger"';
+          }
         }
-        html += `<tr${rowClass}>`;
+        html += `<tr${rowClass}${rowStyleStr}>`;
         row.forEach((cell, i) => {
           const val = cell != null ? cell : '';
           const isNum = isNumericColumn(cell);
           const str = String(val);
           const truncated = str.length > 50 ? str.slice(0, 47) + '...' : str;
           const titleAttr = str.length > 50 ? ` title="${str.replace(/"/g, '&quot;')}"` : '';
-          html += `<td${isNum ? ' class="num"' : ''}${titleAttr}>${truncated}</td>`;
+          const isAccent = opts.accentCols && opts.accentCols.includes(i);
+          const cellStyle = isAccent && str ? ` style="color: var(--accent); font-weight: 600;"` : '';
+          html += `<td${isNum ? ' class="num"' : ''}${titleAttr}${cellStyle}>${truncated}</td>`;
         });
         html += '</tr>';
       });
@@ -18193,38 +18206,83 @@
     }
 
     // Ventas por Mes
+    // Returns Set of client codes present in the 80/20 sheet
+    function _get8020Codes() {
+      if (!gs8020VendClean || gs8020VendClean.length <= 1) return new Set();
+      const codeIdx = findCodeColumn(gs8020VendClean[0]);
+      return new Set(gs8020VendClean.slice(1).map(r => String(r[codeIdx] || '').trim()).filter(Boolean));
+    }
+
+    // Highlight function for ventas table: gold bg for 80/20 clients
+    function _ventasHighlightFn(row, headers) {
+      const codeIdx = findCodeColumn(headers);
+      const code = String(row[codeIdx] || '').trim();
+      if (!code) return '';
+      const codes8020 = _get8020Codes();
+      return codes8020.has(code) ? 'background: rgba(212,175,55,0.12); border-left: 2px solid rgba(212,175,55,0.6);' : '';
+    }
+
+    function _ventasVendorIdx(headers) {
+      return headers.findIndex(h => h && (
+        h.toLowerCase().includes('vendedor') ||
+        h.toLowerCase() === 'vend' ||
+        h.toLowerCase().includes('ejecutivo')
+      ));
+    }
+
     function renderGsheetsVentas(data) {
       if (!data || data.length === 0) return;
       data = cleanSheetData(data);
       gsheetsAllVentas = data;
 
-      // Populate month filter
       const headers = data[0];
       const mesIdx = headers.findIndex(h => h && h.toLowerCase().includes('mes'));
+      const vendIdx = _ventasVendorIdx(headers);
+
+      // Populate month filter
       const monthSelect = document.getElementById('gs-ventas-mes');
       if (mesIdx >= 0 && monthSelect) {
         const months = [...new Set(data.slice(1).map(r => r[mesIdx]).filter(Boolean))];
         monthSelect.innerHTML = '<option value="">Todos los meses</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
       }
 
-      sheetToTable(data, 'gs-ventas-body', { maxRows: 100, page: 0, storeKey: 'ventas' });
+      // Populate vendor filter
+      const vendorSelect = document.getElementById('gs-ventas-vendor');
+      if (vendIdx >= 0 && vendorSelect) {
+        const vendors = [...new Set(data.slice(1).map(r => r[vendIdx]).filter(Boolean))].sort();
+        vendorSelect.innerHTML = '<option value="">Todos los vendedores</option>' + vendors.map(v => `<option value="${v}">${v}</option>`).join('');
+      }
+
+      const vendAccent = vendIdx >= 0 ? [vendIdx] : [];
+      sheetToTable(data, 'gs-ventas-body', { maxRows: 100, page: 0, storeKey: 'ventas', highlightFn: _ventasHighlightFn, accentCols: vendAccent });
+      _showVentasLegend();
+    }
+
+    function _showVentasLegend() {
+      const legend = document.getElementById('gs-ventas-legend');
+      if (legend) legend.style.display = _get8020Codes().size > 0 ? 'flex' : 'none';
     }
 
     function filterGsheetsVentas() {
       if (!gsheetsAllVentas || gsheetsAllVentas.length === 0) return;
       const search = (document.getElementById('gs-ventas-search').value || '').toLowerCase();
       const mes = document.getElementById('gs-ventas-mes').value;
+      const vendor = document.getElementById('gs-ventas-vendor')?.value || '';
       const headers = gsheetsAllVentas[0];
       const mesIdx = headers.findIndex(h => h && h.toLowerCase().includes('mes'));
+      const vendIdx = _ventasVendorIdx(headers);
 
       let filtered = [headers];
       gsheetsAllVentas.slice(1).forEach(row => {
         const matchSearch = !search || row.some(cell => String(cell).toLowerCase().includes(search));
         const matchMes = !mes || (mesIdx >= 0 && row[mesIdx] === mes);
-        if (matchSearch && matchMes) filtered.push(row);
+        const matchVendor = !vendor || (vendIdx >= 0 && row[vendIdx] === vendor);
+        if (matchSearch && matchMes && matchVendor) filtered.push(row);
       });
 
-      sheetToTable(filtered, 'gs-ventas-body', { maxRows: 100, page: 0, storeKey: 'ventas' });
+      const vendAccent = vendIdx >= 0 ? [vendIdx] : [];
+      sheetToTable(filtered, 'gs-ventas-body', { maxRows: 100, page: 0, storeKey: 'ventas', highlightFn: _ventasHighlightFn, accentCols: vendAccent });
+      _showVentasLegend();
     }
 
     // Cobranzas
@@ -20674,6 +20732,13 @@
       if (!data) return;
 
       const opts = { maxRows: 100, page: page, storeKey: storeKey };
+      if (storeKey === 'ventas') {
+        opts.highlightFn = _ventasHighlightFn;
+        if (data && data[0]) {
+          const vi = _ventasVendorIdx(data[0]);
+          if (vi >= 0) opts.accentCols = [vi];
+        }
+      }
       if (storeKey === 'cobranzas') {
         opts.highlightFn = (row, headers) => {
           const vi = headers.findIndex(h => h && h.toLowerCase().includes('vencimiento'));
