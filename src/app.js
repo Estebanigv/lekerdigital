@@ -1493,6 +1493,11 @@ app.post('/api/clients/sync-addresses', async (req, res) => {
   }
 });
 
+// Config pública (sheets URL)
+app.get('/api/config/sheets-url', (req, res) => {
+  res.json({ url: process.env.GOOGLE_SHEETS_URL || null });
+});
+
 // Estadísticas de segmentación
 app.get('/api/clients/segmentation-stats', async (req, res) => {
   try {

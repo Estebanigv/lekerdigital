@@ -9689,13 +9689,14 @@
 
         const color = statusColors[statusClass] || statusColors.pending;
 
+        const extId = visit.client.external_id || String(index + 1);
         const marker = new google.maps.Marker({
           position: position,
           map: routeMap,
           label: {
-            text: String(index + 1),
+            text: extId.length > 6 ? extId.slice(-5) : extId,
             color: 'white',
-            fontSize: '12px',
+            fontSize: '8px',
             fontWeight: 'bold'
           },
           icon: {
@@ -9704,26 +9705,38 @@
             fillOpacity: 1,
             strokeColor: '#fff',
             strokeWeight: 2,
-            scale: 14
+            scale: 16
           },
-          title: visit.client.name
+          title: `${extId} — ${visit.client.name}`
         });
 
+        const sheetsBtn = window._sheetsUrl
+          ? `<a href="${window._sheetsUrl}" target="_blank" rel="noopener"
+               style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 10px;background:#16a34a;color:white;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;">
+               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+               Editar en Sheets (${extId})
+             </a>`
+          : '';
         const infoContent = `
-          <div style="min-width: 200px; padding: 8px;">
-            <strong style="font-size: 14px; color: #1f2937;">${index + 1}. ${visit.client.name}</strong>
-            <div style="margin: 4px 0; color: #6b7280; font-size: 12px;">
-              ${visit.client.address || ''}<br>
-              ${visit.client.commune || ''}
+          <div style="min-width: 220px; padding: 8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <strong style="font-size: 13px; color: #1f2937;">${index + 1}. ${visit.client.fantasy_name || visit.client.name}</strong>
+              <code style="font-size:10px;background:#6366f1;color:white;padding:2px 6px;border-radius:4px;">${extId}</code>
             </div>
-            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+            <div style="color: #6b7280; font-size: 11px;">
+              ${visit.client.address || ''}<br>${visit.client.commune || ''}
+            </div>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb; display:flex; gap:6px; flex-wrap:wrap;">
               <span style="background: ${color}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${statusLabel}</span>
               ${visit.ai_summary ? `<p style="margin-top: 6px; font-size: 11px; color: #9ca3af;">${visit.ai_summary}</p>` : ''}
             </div>
-            <a href="https://waze.com/ul?ll=${position.lat},${position.lng}&navigate=yes" target="_blank" rel="noopener"
-               style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 6px 12px; background: #33ccff; color: #000; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;">
-              <i data-lucide="navigation" style="width:12px;height:12px;"></i> Ir con Waze
-            </a>
+            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+              <a href="https://waze.com/ul?ll=${position.lat},${position.lng}&navigate=yes" target="_blank" rel="noopener"
+                 style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:#33ccff;color:#000;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;">
+                &#9992; Waze
+              </a>
+              ${sheetsBtn}
+            </div>
           </div>
         `;
 
@@ -10462,30 +10475,48 @@
 
         // Determine color by segment
         const seg = (client.segment || '').toUpperCase();
-        const _segCols = { A: '#d97706', B: '#3b82f6', C: '#059669', D: '#f97316', E: '#9ca3af', FOCO: '#ef4444' };
+        const _segCols = { A: '#d97706', B: '#3b82f6', C: '#059669', D: '#8b5cf6', E: '#9ca3af', FOCO: '#ef4444' };
         let color = _segCols[seg] || '#9ca3af';
+        const extIdPrev = client.external_id || '';
 
-        const dotSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
-          <circle cx="7" cy="7" r="6" fill="${color}" stroke="white" stroke-width="1.5" opacity="0.85"/>
-        </svg>`;
         const marker = new google.maps.Marker({
           position: pos,
           map: routeMap,
+          label: extIdPrev ? {
+            text: extIdPrev.length > 6 ? extIdPrev.slice(-5) : extIdPrev,
+            color: 'white',
+            fontSize: '8px',
+            fontWeight: 'bold'
+          } : undefined,
           icon: {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(dotSvg),
-            scaledSize: new google.maps.Size(14, 14),
-            anchor: new google.maps.Point(7, 7)
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: color,
+            fillOpacity: 0.9,
+            strokeColor: '#fff',
+            strokeWeight: 1.5,
+            scale: extIdPrev ? 14 : 8
           },
-          title: client.name || client.business_name,
+          title: `${extIdPrev} — ${client.fantasy_name || client.name}`,
           zIndex: 10
         });
         marker.addListener('click', () => {
+          const sheetsBtnP = window._sheetsUrl
+            ? `<a href="${window._sheetsUrl}" target="_blank" rel="noopener"
+                 style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 10px;background:#16a34a;color:white;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;">
+                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                 Editar en Sheets (${extIdPrev})
+               </a>`
+            : '';
           routeInfoWindow.setContent(`
-            <div style="min-width:200px;padding:6px;">
-              <div style="font-weight:700;font-size:13px;color:#1f2937;margin-bottom:4px;">${client.name || client.business_name}</div>
-              <div style="font-size:12px;color:#6b7280;">${client.address || 'Sin dirección'}</div>
-              ${client.commune ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px;">${client.commune}</div>` : ''}
-              ${seg ? `<span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;background:${color}20;color:${color};">Segmento ${seg}</span>` : ''}
+            <div style="min-width:210px;padding:6px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <div style="font-weight:700;font-size:13px;color:#1f2937;">${client.fantasy_name || client.name}</div>
+                <code style="font-size:10px;background:#6366f1;color:white;padding:2px 6px;border-radius:4px;">${extIdPrev}</code>
+              </div>
+              <div style="font-size:11px;color:#6b7280;">${client.address || 'Sin dirección'}</div>
+              ${client.commune ? `<div style="font-size:10px;color:#9ca3af;margin-top:2px;">${client.commune}</div>` : ''}
+              ${seg ? `<span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;background:${color}20;color:${color};">Seg ${seg}</span>` : ''}
+              ${sheetsBtnP}
             </div>
           `);
           routeInfoWindow.open(routeMap, marker);
@@ -12712,25 +12743,45 @@
         const position = { lat: parseFloat(client.lat), lng: parseFloat(client.lng) };
         bounds.extend(position);
 
+        const segCol = {A:'#d97706',B:'#3b82f6',C:'#059669',D:'#8b5cf6',E:'#9ca3af'}[client.segment] || '#9ca3af';
+        const extId2 = client.external_id || '';
         const marker = new google.maps.Marker({
           position: position,
           map: routeMap,
+          label: extId2 ? {
+            text: extId2.length > 6 ? extId2.slice(-5) : extId2,
+            color: 'white',
+            fontSize: '8px',
+            fontWeight: 'bold'
+          } : undefined,
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
-            fillColor: {A:'#d97706',B:'#3b82f6',C:'#059669',D:'#f97316',E:'#9ca3af'}[client.segment] || '#9ca3af',
+            fillColor: segCol,
             fillOpacity: 1,
             strokeColor: '#fff',
-            strokeWeight: 2,
-            scale: 8
+            strokeWeight: 1.5,
+            scale: extId2 ? 14 : 8
           },
-          title: client.name
+          title: `${extId2} — ${client.fantasy_name || client.name}`
         });
 
         marker.addListener('click', () => {
+          const sheetsBtn2 = window._sheetsUrl
+            ? `<a href="${window._sheetsUrl}" target="_blank" rel="noopener"
+                 style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:5px 10px;background:#16a34a;color:white;border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;">
+                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                 Editar en Sheets (${extId2})
+               </a>`
+            : '';
           routeInfoWindow.setContent(`
-            <div style="padding: 8px;">
-              <strong>${client.fantasy_name || client.name}</strong><br>
-              <small>${client.address || ''}, ${client.commune || ''}</small>
+            <div style="min-width:210px;padding:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <strong style="font-size:13px;color:#1f2937;">${client.fantasy_name || client.name}</strong>
+                <code style="font-size:10px;background:#6366f1;color:white;padding:2px 6px;border-radius:4px;">${extId2}</code>
+              </div>
+              <div style="font-size:11px;color:#6b7280;">${client.address || ''}, ${client.commune || ''}</div>
+              ${client.segment ? `<span style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600;background:${segCol}20;color:${segCol};">Seg ${client.segment}</span>` : ''}
+              ${sheetsBtn2}
             </div>
           `);
           routeInfoWindow.open(routeMap, marker);
@@ -22853,6 +22904,11 @@
 
       // Load segmentation stats
       loadSegmentationStats();
+
+      // Load Google Sheets URL for map edit links
+      fetch(`${API}/api/config/sheets-url`).then(r => r.json()).then(d => {
+        window._sheetsUrl = d.url || null;
+      }).catch(() => {});
 
       // Init week planner dates and alerts
       initWeekDates();
