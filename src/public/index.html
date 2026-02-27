@@ -5429,7 +5429,7 @@
                 </div>
                 <div id="checklist-warning" style="display: none; padding: 8px 12px; border-radius: 8px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #d97706; font-size: 12px; margin-bottom: 12px;">
                   <i data-lucide="alert-triangle" style="width: 14px; height: 14px; vertical-align: middle;"></i>
-                  Completa los 3 puntos del checklist antes de registrar el check-in
+                  <span class="checklist-warn-text">Completa los 3 puntos del checklist antes de registrar el check-in</span>
                 </div>
                 <button type="submit" class="btn btn-success btn-block" id="btn-checkin-submit">
                   <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i>
@@ -9182,7 +9182,8 @@
         const totalKm = myRoute.end_km && myRoute.start_km ? (myRoute.end_km - myRoute.start_km) : null;
         routeStatEl.textContent = '✓ Terminada';
         routeStatEl.style.fontSize = '14px';
-        routeActions.innerHTML = '';
+        routeActions.innerHTML = `<button onclick="switchRouteTab('planner')" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:6px;cursor:pointer;padding:6px 12px;font-size:11px;font-weight:600;color:#6366f1;display:inline-flex;align-items:center;gap:5px;">
+          <i data-lucide="calendar-days" style="width:12px;height:12px;"></i> Ver Semana</button>`;
         routeContainer.innerHTML = `<div style="text-align: center; padding: 24px;">
           <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px;">🎯</div>
           <div style="font-size: 18px; font-weight: 700; color: #10b981; margin-bottom: 4px;">¡Jornada Completada!</div>
@@ -21983,10 +21984,19 @@
 
       const warning = document.getElementById('checklist-warning');
       const btn = document.getElementById('btn-checkin-submit');
-      if (warning) warning.style.display = allChecked ? 'none' : 'block';
+      const isExec = currentUser && currentUser.role === 'executive';
+      if (warning) {
+        warning.style.display = allChecked ? 'none' : 'block';
+        // For exec: softer advisory message (not blocking)
+        const warnMsg = warning.querySelector('.checklist-warn-text');
+        if (warnMsg) {
+          warnMsg.textContent = isExec
+            ? 'Recomendado: completa los 3 puntos del checklist'
+            : 'Completa los 3 puntos del checklist antes de registrar el check-in';
+        }
+      }
       // Executives can submit even without completing all checklist items (field reality)
       // Admins/supervisors are blocked until all items are checked
-      const isExec = currentUser && currentUser.role === 'executive';
       if (btn) btn.disabled = isExec ? false : !allChecked;
     }
 
