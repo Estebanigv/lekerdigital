@@ -5157,7 +5157,7 @@
                     <i data-lucide="calendar-range" style="width: 28px; height: 28px; color: var(--accent);"></i>
                   </div>
                   <p style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">Cargando planificador...</p>
-                  <p style="font-size: 12px; color: var(--text-muted); max-width: 360px; margin: 0 auto;">Aqui veras el resumen semanal de todos los vendedores con sus rutas programadas</p>
+                  <p style="font-size: 12px; color: var(--text-muted); max-width: 360px; margin: 0 auto;">Aquí verás el resumen semanal de todos los vendedores con sus rutas programadas</p>
                 </div>
               </div>
               <!-- Hidden date inputs for week tracking -->
@@ -5467,6 +5467,11 @@
                 <option value="80-20">⭐ 80/20 Clave</option>
                 <option value="L">L Con ventas</option>
                 <option value="N">N Nuevos</option>
+              </select>
+              <select id="crm-gps-filter" class="form-control" style="max-width: 120px; font-size: 13px;" onchange="filterCrmClients()">
+                <option value="">Todo GPS</option>
+                <option value="has">Con GPS</option>
+                <option value="none">Sin GPS</option>
               </select>
               <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;" onclick="resetCrmFilters()">
                 <i data-lucide="x" style="width: 13px; height: 13px;"></i> Limpiar
@@ -15969,6 +15974,7 @@
       const vendor = document.getElementById('crm-vendor-filter')?.value || '';
       const zone   = document.getElementById('crm-zone-filter')?.value || '';
       const seg    = document.getElementById('crm-seg-filter')?.value || '';
+      const gps    = document.getElementById('crm-gps-filter')?.value || '';
 
       _crmFiltered = clients.filter(c => {
         if (search) {
@@ -15979,6 +15985,9 @@
         if (vendor && (c.assigned_user?.full_name || '') !== vendor) return false;
         if (zone   && (c.zone || c.commune || '') !== zone) return false;
         if (seg    && (c.segmentation || '') !== seg) return false;
+        const hasGps = !!(c.lat && c.lng);
+        if (gps === 'has' && !hasGps) return false;
+        if (gps === 'none' && hasGps) return false;
         return true;
       });
 
@@ -16108,14 +16117,8 @@
     }
 
     function resetCrmFilters() {
-      const s = document.getElementById('crm-search');
-      const v = document.getElementById('crm-vendor-filter');
-      const z = document.getElementById('crm-zone-filter');
-      const sg = document.getElementById('crm-seg-filter');
-      if (s) s.value = '';
-      if (v) v.value = '';
-      if (z) z.value = '';
-      if (sg) sg.value = '';
+      ['crm-search', 'crm-vendor-filter', 'crm-zone-filter', 'crm-seg-filter', 'crm-gps-filter']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       filterCrmClients();
     }
 
