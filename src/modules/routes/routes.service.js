@@ -1645,6 +1645,89 @@ class RoutesService {
     const allClients = await this.getAllClients();
     const stats = { L: 0, '80-20': 0, N: 0, total: allClients.length, segments: { A: 0, B: 0, C: 0, D: 0, E: 0 }, regions: {} };
 
+    // Normalize region names: trim, collapse spaces, map known variants to canonical
+    const REGION_MAP = {
+      'metropolitana': 'Metropolitana',
+      'region metropolitana': 'Metropolitana',
+      'rm': 'Metropolitana',
+      'r.m.': 'Metropolitana',
+      'primera': 'Primera',
+      'i': 'Primera',
+      'tarapaca': 'Primera',
+      'tarapacá': 'Primera',
+      'segunda': 'Segunda',
+      'ii': 'Segunda',
+      'antofagasta': 'Segunda',
+      'tercera': 'Tercera',
+      'iii': 'Tercera',
+      'atacama': 'Tercera',
+      'cuarta': 'Cuarta',
+      'iv': 'Cuarta',
+      'coquimbo': 'Cuarta',
+      'quinta': 'Quinta',
+      'v': 'Quinta',
+      'valparaiso': 'Quinta',
+      'valparaíso': 'Quinta',
+      'sexta': 'Sexta Region',
+      'sexta region': 'Sexta Region',
+      'sexta región': 'Sexta Region',
+      'vi': 'Sexta Region',
+      "o'higgins": 'Sexta Region',
+      'ohiggins': 'Sexta Region',
+      "libertador general bernardo o'higgins": 'Sexta Region',
+      "sexta (del libertador b.o'hi...": 'Sexta Region',
+      'séptima': 'Séptima',
+      'septima': 'Séptima',
+      'vii': 'Séptima',
+      'maule': 'Séptima',
+      'octava': 'Octava',
+      'viii': 'Octava',
+      'biobio': 'Octava',
+      'bío-bío': 'Octava',
+      'biobío': 'Octava',
+      'ñuble': 'Octava',
+      'novena': 'Novena',
+      'ix': 'Novena',
+      'araucania': 'Novena',
+      'araucanía': 'Novena',
+      'decima': 'Décima',
+      'décima': 'Décima',
+      'x': 'Décima',
+      'los lagos': 'Décima',
+      'undecima': 'Undécima',
+      'undécima': 'Undécima',
+      'xi': 'Undécima',
+      'aysen': 'Undécima',
+      'aysén': 'Undécima',
+      'aisen': 'Undécima',
+      'duodecima': 'Duodécima',
+      'duodécima': 'Duodécima',
+      'xii': 'Duodécima',
+      'magallanes': 'Duodécima',
+      'decimo cuarta': 'Décimo Cuarta',
+      'décimo cuarta': 'Décimo Cuarta',
+      'xiv': 'Décimo Cuarta',
+      'los rios': 'Décimo Cuarta',
+      'los ríos': 'Décimo Cuarta',
+      'decimo quinta': 'Décimo Quinta',
+      'décimo quinta': 'Décimo Quinta',
+      'xv': 'Décimo Quinta',
+      'arica': 'Décimo Quinta',
+      'sin': 'Sin región',
+      'sin region': 'Sin región',
+      'sin región': 'Sin región',
+      '': 'Sin región',
+    };
+
+    const normalizeRegion = (raw) => {
+      if (!raw) return 'Sin región';
+      const key = raw.trim().replace(/\s+/g, ' ').toLowerCase()
+        .replace(/región\s*(de\s+|del\s+|de\s+la\s+|de\s+los\s+)?/gi, '')
+        .replace(/region\s*(de\s+|del\s+|de\s+la\s+|de\s+los\s+)?/gi, '')
+        .trim();
+      return REGION_MAP[key] || REGION_MAP[raw.trim().toLowerCase()] || raw.trim().replace(/\s+/g, ' ');
+    };
+
     allClients.forEach(c => {
       // Segmentation (80-20, L, N)
       const seg = c.segmentation || 'N';
@@ -1656,8 +1739,8 @@ class RoutesService {
       const s = c.segment || 'E';
       stats.segments[s] = (stats.segments[s] || 0) + 1;
 
-      // Regions
-      const r = c.region || 'Sin región';
+      // Regions — normalized
+      const r = normalizeRegion(c.region);
       stats.regions[r] = (stats.regions[r] || 0) + 1;
     });
 
