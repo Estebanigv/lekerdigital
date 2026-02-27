@@ -4071,7 +4071,12 @@
           <div class="card" style="margin-bottom: 20px;">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
               <h3><i data-lucide="navigation" style="width: 18px; height: 18px;"></i> Mi Ruta de Hoy</h3>
-              <div id="exec-route-actions"></div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <button onclick="refreshExecDashboard()" id="exec-refresh-btn" title="Actualizar datos" style="background: none; border: 1px solid var(--border); cursor: pointer; color: var(--text-muted); padding: 5px 6px; border-radius: 6px; display: flex; align-items: center; line-height: 1; transition: all 0.2s;" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='none'">
+                  <i data-lucide="refresh-cw" style="width: 13px; height: 13px;"></i>
+                </button>
+                <div id="exec-route-actions"></div>
+              </div>
             </div>
             <div class="card-body" style="padding: 0;">
               <div class="exec-route-layout">
@@ -4122,7 +4127,7 @@
                       <th>Cliente</th>
                       <th>Comuna</th>
                       <th>Segmento</th>
-                      <th style="width: 36px;"></th>
+                      <th style="width: 90px;"></th>
                     </tr>
                   </thead>
                   <tbody id="exec-clients-tbody"></tbody>
@@ -5216,7 +5221,7 @@
                 <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Panel de Visitas</div>
                 <div style="font-size: 20px; font-weight: 700;">Registro de Check-in</div>
               </div>
-              <div style="display: flex; gap: 12px; align-items: center;">
+              <div id="visit-exec-filter-container" style="display: flex; gap: 12px; align-items: center;">
                 <select id="visit-executive-filter" class="form-control" style="width: 250px; max-width: 100%; background: rgba(255,255,255,0.95); border: none;" onchange="filterVisitsByExecutive()">
                   <option value="">-- Seleccionar Vendedor --</option>
                 </select>
@@ -5233,7 +5238,7 @@
             </div>
             <div class="card-body">
               <form id="form-checkin">
-                <div class="form-group">
+                <div class="form-group" id="checkin-route-group">
                   <label>Ruta Activa del Vendedor</label>
                   <select id="checkin-route" class="form-control" required onchange="onRouteSelected()">
                     <option value="">-- Selecciona un vendedor arriba --</option>
@@ -8839,14 +8844,12 @@
           });
           visitExecFilterEl.innerHTML = visitExecOpts;
 
-          // Auto-select executive in visits panel and hide dropdown
+          // Auto-select executive in visits panel and hide the filter container
           if (currentUser && currentUser.role === 'executive') {
             visitExecFilterEl.value = currentUser.id;
-            visitExecFilterEl.closest('.card-header, div')?.querySelectorAll('select').forEach(sel => {
-              if (sel.id === 'visit-executive-filter') {
-                sel.style.display = 'none';
-              }
-            });
+            visitExecFilterEl.style.display = 'none';
+            const filterCont = document.getElementById('visit-exec-filter-container');
+            if (filterCont) filterCont.style.display = 'none';
           }
         }
 
@@ -9210,6 +9213,10 @@
             (c.external_id || '').toLowerCase().includes(q))
         : window._execClients;
 
+      // Build set of visited client IDs today
+      const myRoute = todayRoutesData.find(r => r.user_id === currentUser?.id);
+      const visitedTodayIds = new Set((myRoute?.visits || []).map(v => v.client_id));
+
       tbody.innerHTML = list.slice(0, 100).map(c => {
         const is8020 = c.segmentation === '80-20';
         const badge8020 = is8020 ? `<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;margin-left:4px;">⭐</span>` : '';
@@ -9218,14 +9225,19 @@
           : c.segmentation === 'L'
             ? `<span style="font-size:11px;font-weight:600;background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.25);padding:2px 8px;border-radius:10px;">L</span>`
             : `<span style="font-size:11px;color:var(--text-muted);border:1px solid var(--border);padding:2px 8px;border-radius:10px;">${c.segmentation || '-'}</span>`;
+        const isVisitedToday = visitedTodayIds.has(c.id);
         const wazeBtn = (c.lat && c.lng)
           ? `<button onclick="openWazeToClient(${c.lat},${c.lng})" style="background:rgba(51,204,255,0.1);border:1px solid rgba(51,204,255,0.3);border-radius:6px;cursor:pointer;padding:3px 5px;display:flex;align-items:center;" title="Waze"><i data-lucide="navigation" style="width:11px;height:11px;color:#33ccff;"></i></button>`
           : '';
-        return `<tr ${is8020 ? 'style="background:rgba(212,175,55,0.04);"' : ''}>
+        const visitBtn = isVisitedToday
+          ? `<span style="font-size:10px;color:#10b981;font-weight:600;white-space:nowrap;">✓ Hoy</span>`
+          : `<button onclick="goToCheckinClient('${c.id}')" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:5px;cursor:pointer;padding:2px 7px;font-size:10px;font-weight:600;color:#6366f1;white-space:nowrap;">Visitar</button>`;
+        const rowBg = isVisitedToday ? 'background:rgba(16,185,129,0.04);' : is8020 ? 'background:rgba(212,175,55,0.04);' : '';
+        return `<tr style="${rowBg}">
           <td style="font-weight:${is8020 ? '600' : '500'};">${c.fantasy_name || c.business_name || '-'}${badge8020}</td>
           <td style="font-size:12px;">${c.commune || '-'}</td>
           <td>${segBadge}</td>
-          <td>${wazeBtn}</td>
+          <td><div style="display:flex;gap:4px;align-items:center;">${wazeBtn}${visitBtn}</div></td>
         </tr>`;
       }).join('');
       if (list.length > 100) {
@@ -9733,7 +9745,7 @@
             if (el) el.checked = false;
           });
 
-          // Find next pending client in route and auto-scroll to suggest it
+          // Find next pending client in route and auto-advance for exec
           const execId = document.getElementById('visit-executive-filter')?.value;
           if (execId) {
             const scheduled = todayScheduledData[execId] || [];
@@ -9742,10 +9754,20 @@
             visitedIds.add(clientId); // include just-registered
             const nextSc = scheduled.find(sc => !visitedIds.has(sc.client_id));
             if (nextSc?.client) {
-              setTimeout(() => {
-                const c = nextSc.client;
-                showToast('info', 'Próximo cliente', `${c.fantasy_name || c.name || 'Cliente'} — ${c.commune || ''}`);
-              }, 800);
+              const c = nextSc.client;
+              const nextName = c.fantasy_name || c.name || 'Cliente';
+              showToast('info', 'Próximo cliente', `${nextName} — ${c.commune || ''}`);
+              // For exec: auto-select next client after short delay (form is already cleared)
+              if (currentUser?.role === 'executive' && c.id) {
+                setTimeout(() => {
+                  // Only auto-select if form is still empty (user hasn't selected manually)
+                  if (!document.getElementById('checkin-client').value) {
+                    selectCheckinClient(c.id);
+                    const form = document.getElementById('form-checkin');
+                    if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }, 1200);
+              }
             }
           }
         }
@@ -12050,6 +12072,12 @@
       const execId = document.getElementById('visit-executive-filter').value;
       const routeSelect = document.getElementById('checkin-route');
 
+      // For exec role: hide the route select form group (auto-populated)
+      const routeGroup = document.getElementById('checkin-route-group');
+      if (routeGroup) {
+        routeGroup.style.display = (currentUser && currentUser.role === 'executive') ? 'none' : '';
+      }
+
       // Sync with main executive search
       if (execId && selectedExecutiveId !== execId) {
         selectExecutive(execId);
@@ -12121,6 +12149,12 @@
       // Update client count for this executive's assigned clients
       const assignedClients = allClients.filter(c => c.assigned_user_id === execId);
       document.getElementById('client-count-label').textContent = `(${assignedClients.length} asignados)`;
+
+      // For exec: default outcome to 'contactado' (they're physically visiting the client)
+      if (currentUser && currentUser.role === 'executive') {
+        const outcomeEl = document.getElementById('checkin-outcome');
+        if (outcomeEl && outcomeEl.value === 'pending') outcomeEl.value = 'contacted';
+      }
 
       // Render today's visits section
       renderTodayVisits();
@@ -13472,6 +13506,32 @@
       selectCheckinClient(clientId);
       const form = document.getElementById('form-checkin');
       if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Refresh exec dashboard data without full page reload
+    async function refreshExecDashboard() {
+      const btn = document.getElementById('exec-refresh-btn');
+      const icon = btn?.querySelector('i[data-lucide]');
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; }
+      if (icon) { icon.setAttribute('data-lucide', 'loader-2'); icon.classList.add('spin'); lucide.createIcons(); }
+      try {
+        const [todayRes, schedRes] = await Promise.all([
+          fetch(`${API}/api/daily-routes/today`),
+          fetch(`${API}/api/routes/today-scheduled`)
+        ]);
+        const [todayData, schedData] = await Promise.all([todayRes.json(), schedRes.json()]);
+        if (todayData.success) todayRoutesData = todayData.data;
+        if (schedData.success) todayScheduledData = schedData.data;
+        renderExecDashboard();
+        filterVisitsByExecutive();
+        renderTodayVisits();
+        showToast('success', 'Actualizado', 'Datos de ruta actualizados');
+      } catch (e) {
+        showToast('error', 'Error', 'No se pudo actualizar');
+      } finally {
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+        if (icon) { icon.setAttribute('data-lucide', 'refresh-cw'); icon.classList.remove('spin'); lucide.createIcons(); }
+      }
     }
 
     // Start day directly from exec dashboard (no navigation needed)
