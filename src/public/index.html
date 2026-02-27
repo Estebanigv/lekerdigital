@@ -8182,7 +8182,12 @@
           loadComparativoData();
         }
         if (tab === 'routes') {
-          updateRouteDashboard();
+          // Executive: go directly to weekly planner (not admin dashboard)
+          if (currentUser && currentUser.role === 'executive') {
+            setTimeout(() => switchRouteTab('planner'), 50);
+          } else {
+            updateRouteDashboard();
+          }
         }
         if (tab === 'crm') {
           renderCrmPanel();
@@ -9205,15 +9210,49 @@
         </div>`;
         document.getElementById('exec-stat-visits').textContent = completed;
       } else {
-        // No route at all
+        // No route at all — check for upcoming scheduled days
+        const todayStr = new Date().toISOString().split('T')[0];
+        const mySchedData = (window._dashboardScheduleData || {})[uid];
+        const futureDates = mySchedData
+          ? Object.keys(mySchedData.dates || {}).filter(d => d > todayStr).sort()
+          : [];
+        const nextDate = futureDates[0];
+        const nextCount = nextDate ? (mySchedData.dates[nextDate] || []).length : 0;
+
         routeStatEl.textContent = 'Sin ruta';
         routeStatEl.style.fontSize = '16px';
-        routeActions.innerHTML = '';
-        routeContainer.innerHTML = `<div style="text-align: center; padding: 32px; color: var(--text-muted);">
-          <i data-lucide="map-pin-off" style="width: 36px; height: 36px; margin-bottom: 8px; opacity: 0.5;"></i>
-          <p style="font-size: 13px; margin: 0;">No tienes ruta programada para hoy</p>
-          <p style="font-size: 11px; margin: 4px 0 0;">Contacta a tu supervisor para asignación de ruta</p>
-        </div>`;
+        routeActions.innerHTML = nextDate ? `
+          <button onclick="switchRouteTab('planner')" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:6px;cursor:pointer;padding:6px 12px;font-size:11px;font-weight:600;color:#6366f1;display:inline-flex;align-items:center;gap:5px;">
+            <i data-lucide="calendar-days" style="width:12px;height:12px;"></i> Ver Planner</button>` : '';
+
+        if (nextDate) {
+          const nd = new Date(nextDate + 'T12:00:00');
+          const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+          const dayLabel = dayNames[nd.getDay()];
+          const dateLabel = nd.toLocaleDateString('es-CL', { day: 'numeric', month: 'long' });
+          routeContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px 16px 16px; color: var(--text-muted);">
+              <i data-lucide="calendar-x" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.45;"></i>
+              <p style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 0 0 4px;">Sin ruta para hoy</p>
+            </div>
+            <div style="margin: 0 12px 12px; padding: 12px 14px; background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.04)); border: 1px solid rgba(99,102,241,0.2); border-radius: 10px; display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="switchRouteTab('planner')">
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99,102,241,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i data-lucide="calendar-check" style="width: 18px; height: 18px; color: #6366f1;"></i>
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 12px; font-weight: 700; color: var(--text-primary);">Próxima ruta: ${dayLabel} ${dateLabel}</div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${nextCount} cliente${nextCount !== 1 ? 's' : ''} programado${nextCount !== 1 ? 's' : ''}</div>
+              </div>
+              <i data-lucide="chevron-right" style="width: 14px; height: 14px; color: #6366f1; flex-shrink: 0;"></i>
+            </div>`;
+        } else {
+          routeContainer.innerHTML = `
+            <div style="text-align: center; padding: 32px; color: var(--text-muted);">
+              <i data-lucide="map-pin-off" style="width: 36px; height: 36px; margin-bottom: 8px; opacity: 0.5;"></i>
+              <p style="font-size: 13px; margin: 0;">No tienes ruta programada</p>
+              <p style="font-size: 11px; margin: 4px 0 0;">Contacta a tu supervisor para asignación de ruta</p>
+            </div>`;
+        }
         document.getElementById('exec-stat-visits').textContent = '0';
       }
 
