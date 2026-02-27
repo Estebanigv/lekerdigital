@@ -13758,6 +13758,12 @@
         const zoneName = c.zone || c.commune || '-';
         const currentSegment = c.segment || 'C';
         const isFoco = c.priority === 'FOCO';
+        const clientSeg = c.segmentation || '';
+        const segBadge = clientSeg === '80-20'
+          ? `<span title="80/20 Clave" style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;">80/20</span>`
+          : clientSeg === 'L'
+            ? `<span title="Con ventas 2025" style="font-size:9px;font-weight:700;background:rgba(37,99,235,0.12);color:#2563eb;border:1px solid rgba(37,99,235,0.3);padding:1px 5px;border-radius:4px;">L</span>`
+            : '';
         const addrStatus = c.address_status || (c.lat && c.lng ? 'auto' : 'pending');
         const addrDot = addrStatus === 'confirmed'
           ? '<span title="Dirección confirmada" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;margin-right:4px;vertical-align:middle;"></span>'
@@ -13777,7 +13783,7 @@
           <tr>
             <td><code style="font-size: 11px; background: var(--bg-hover); padding: 2px 6px; border-radius: 4px;">${c.external_id || '-'}</code></td>
             <td>
-              <div style="font-weight: 500;">${addrDot}${c.fantasy_name || c.name || '-'}</div>
+              <div style="font-weight: 500; display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">${addrDot}${c.fantasy_name || c.name || '-'} ${segBadge}</div>
               ${c.fantasy_name && c.name ? `<div style="font-size: 11px; color: var(--text-muted);">${c.name}</div>` : ''}
             </td>
             <td style="font-size: 12px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"${addrAuditTooltip}>
