@@ -714,6 +714,12 @@
     .legend-filter {
       transition: all 0.2s ease;
       opacity: 1;
+      user-select: none;
+    }
+
+    .legend-filter.active {
+      background: rgba(0,0,0,0.04);
+      border-radius: 6px;
     }
 
     .legend-filter:hover {
@@ -721,11 +727,35 @@
     }
 
     .legend-filter:not(.active) {
-      opacity: 0.4;
+      opacity: 0.35;
     }
 
     .legend-filter:not(.active) .legend-dot {
-      background: var(--text-muted) !important;
+      background: #d1d5db !important;
+    }
+
+    .legend-filter .toggle-eye { color: #10b981; }
+    .legend-filter:not(.active) .toggle-eye { color: #9ca3af; }
+
+    /* Map top-right buttons */
+    .map-btn {
+      background: white; border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 6px 10px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      display: flex; align-items: center; gap: 4px; font-size: 11px;
+      font-weight: 600; color: #374151; transition: all 0.15s;
+    }
+    .map-btn:hover { background: #f9fafb; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+    /* Fullscreen map overlay */
+    #main-map-container:fullscreen,
+    #main-map-container:-webkit-full-screen {
+      height: 100vh !important;
+      width: 100vw !important;
+      border-radius: 0;
+    }
+    #main-map-container:fullscreen #map,
+    #main-map-container:-webkit-full-screen #map {
+      height: 100% !important;
     }
 
     .legend-dot {
@@ -4225,10 +4255,17 @@
           <div class="card-body" style="padding: 0;">
             <div class="map-container" id="main-map-container" style="height: 450px; transition: height 0.3s ease;">
               <div id="map"></div>
-              <!-- Expand/Collapse Button -->
-              <button onclick="toggleMapSize()" id="btn-toggle-map" style="position: absolute; top: 10px; right: 10px; z-index: 11; background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #374151;" title="Expandir / Contraer mapa">
-                <i data-lucide="maximize-2" style="width: 14px; height: 14px;" id="icon-toggle-map"></i>
-              </button>
+              <!-- Map control buttons -->
+              <div style="position: absolute; top: 10px; right: 10px; z-index: 11; display: flex; gap: 6px;">
+                <button onclick="toggleMapSize()" id="btn-toggle-map" class="map-btn" title="Expandir / Contraer mapa">
+                  <i data-lucide="maximize-2" style="width: 14px; height: 14px;" id="icon-toggle-map"></i>
+                  <span id="lbl-toggle-map">Expandir</span>
+                </button>
+                <button onclick="toggleMapFullscreen()" id="btn-fullscreen-map" class="map-btn" title="Pantalla completa">
+                  <i data-lucide="fullscreen" style="width: 14px; height: 14px;" id="icon-fullscreen-map"></i>
+                  <span>Pantalla completa</span>
+                </button>
+              </div>
               <!-- Left Panel: Search + Filters -->
               <div class="map-left-panel" style="position: absolute; top: 10px; left: 10px; z-index: 10; width: 220px;">
                 <!-- Search -->
@@ -4241,31 +4278,39 @@
                 </div>
                 <!-- Segment Filters -->
                 <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 10px;">
-                  <div style="font-weight: 600; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Segmentación</div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('80-20')" data-segment="80-20" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                    <span style="font-weight: 600; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Segmentación</span>
+                    <button onclick="filterMapBySegment('ALL')" style="font-size: 9px; padding: 2px 7px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Ver todos</button>
+                  </div>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('80-20')" data-segment="80-20" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 0;">
                     <div class="legend-dot seg-8020"></div>
                     <span style="flex: 1; font-size: 11px; font-weight: 600;">80/20 — Clave</span>
-                    <span id="count-seg-8020" style="font-size: 10px; background: rgba(245,158,11,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                    <span id="count-seg-8020" style="font-size: 10px; background: rgba(245,158,11,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
+                    <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('L')" data-segment="L" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
                     <div class="legend-dot seg-l"></div>
                     <span style="flex: 1; font-size: 11px;">L — Con ventas</span>
-                    <span id="count-seg-l" style="font-size: 10px; background: rgba(59,130,246,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                    <span id="count-seg-l" style="font-size: 10px; background: rgba(59,130,246,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
+                    <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('N')" data-segment="N" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
                     <div class="legend-dot seg-n"></div>
                     <span style="flex: 1; font-size: 11px;">N — Nuevos</span>
-                    <span id="count-seg-n" style="font-size: 10px; background: rgba(148,163,184,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                    <span id="count-seg-n" style="font-size: 10px; background: rgba(148,163,184,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
+                    <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('none')" data-segment="none" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
                     <div class="legend-dot seg-none"></div>
                     <span style="flex: 1; font-size: 11px;">Sin clasificar</span>
-                    <span id="count-seg-none" style="font-size: 10px; background: rgba(203,213,225,0.4); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                    <span id="count-seg-none" style="font-size: 10px; background: rgba(203,213,225,0.4); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
+                    <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('FOCO')" data-segment="FOCO" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; align-items: center;">
-                    <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.4); margin-right: 8px;"></div>
+                    <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.4); margin-right: 8px; flex-shrink:0;"></div>
                     <span style="flex: 1; font-size: 11px;">FOCO</span>
-                    <span id="count-seg-foco" style="font-size: 10px; background: rgba(239,68,68,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                    <span id="count-seg-foco" style="font-size: 10px; background: rgba(239,68,68,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
+                    <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
                   <button onclick="filterMapBySegment('ALL')" style="width: 100%; margin-top: 8px; padding: 5px 8px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
                     Mostrar Todos
@@ -8182,7 +8227,15 @@
 
       // Update legend visual
       const legendItem = document.querySelector(`.legend-filter[data-segment="${segment}"]`);
-      if (legendItem) legendItem.classList.toggle('active', activeSegmentFilters[segment]);
+      if (legendItem) {
+        const isActive = activeSegmentFilters[segment];
+        legendItem.classList.toggle('active', isActive);
+        const eyeIcon = legendItem.querySelector('.toggle-eye');
+        if (eyeIcon) {
+          eyeIcon.setAttribute('data-lucide', isActive ? 'eye' : 'eye-off');
+          lucide.createIcons({ nodes: [eyeIcon] });
+        }
+      }
 
       // Show/hide markers
       const onlyFoco = !_segKeys.some(k => activeSegmentFilters[k]) && activeSegmentFilters.FOCO;
@@ -8205,23 +8258,47 @@
     function toggleMapSize() {
       const container = document.getElementById('main-map-container');
       const icon = document.getElementById('icon-toggle-map');
+      const lbl = document.getElementById('lbl-toggle-map');
       if (!container) return;
       _mapExpanded = !_mapExpanded;
       if (_mapExpanded) {
         container.style.height = 'calc(100vh - 120px)';
         container.style.minHeight = '600px';
         if (icon) icon.setAttribute('data-lucide', 'minimize-2');
+        if (lbl) lbl.textContent = 'Contraer';
       } else {
         container.style.height = '450px';
         container.style.minHeight = '';
         if (icon) icon.setAttribute('data-lucide', 'maximize-2');
+        if (lbl) lbl.textContent = 'Expandir';
       }
       lucide.createIcons();
-      // Trigger map resize so Google Maps recalculates
-      if (mainMap) {
-        setTimeout(() => google.maps.event.trigger(mainMap, 'resize'), 350);
+      if (mainMap) setTimeout(() => google.maps.event.trigger(mainMap, 'resize'), 350);
+    }
+
+    // Toggle fullscreen map
+    function toggleMapFullscreen() {
+      const container = document.getElementById('main-map-container');
+      const icon = document.getElementById('icon-fullscreen-map');
+      if (!container) return;
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        const req = container.requestFullscreen || container.webkitRequestFullscreen;
+        if (req) req.call(container);
+        if (icon) { icon.setAttribute('data-lucide', 'minimize'); lucide.createIcons({ nodes: [icon] }); }
+      } else {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen;
+        if (exit) exit.call(document);
+        if (icon) { icon.setAttribute('data-lucide', 'fullscreen'); lucide.createIcons({ nodes: [icon] }); }
       }
     }
+
+    // Resize map when entering/exiting fullscreen
+    document.addEventListener('fullscreenchange', () => {
+      if (mainMap) setTimeout(() => google.maps.event.trigger(mainMap, 'resize'), 100);
+    });
+    document.addEventListener('webkitfullscreenchange', () => {
+      if (mainMap) setTimeout(() => google.maps.event.trigger(mainMap, 'resize'), 100);
+    });
 
     // Search client on map
     function searchClientOnMap() {
