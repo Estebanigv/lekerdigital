@@ -13934,9 +13934,10 @@
             </div>
             <code style="font-size: 11px; background: var(--accent); color: white; padding: 2px 6px; border-radius: 4px;">${c.external_id}</code>
           </div>
-          <div style="display: flex; gap: 8px; margin-top: 4px; font-size: 11px; color: var(--text-secondary);">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; font-size: 11px; color: var(--text-secondary); align-items: center;">
             <span><i data-lucide="map-pin" style="width: 10px; height: 10px; display: inline;"></i> ${c.commune || c.zone || 'Sin zona'}</span>
             <span class="badge badge-${(c.segment || 'c').toLowerCase()}" style="font-size: 10px; padding: 1px 6px;">${c.segment || 'C'}</span>
+            ${c.segmentation === '80-20' ? '<span style="font-size:10px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 6px;border-radius:4px;">⭐ 80/20</span>' : ''}
             ${c.priority === 'FOCO' ? '<span class="badge badge-foco" style="font-size: 10px; padding: 1px 6px;">FOCO</span>' : ''}
           </div>
         </div>
@@ -13990,8 +13991,9 @@
           </div>
           <div style="text-align: right;">
             <code style="font-size: 12px; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px;">${client.external_id}</code>
-            <div style="margin-top: 4px;">
+            <div style="margin-top: 4px; display: flex; flex-direction: column; align-items: flex-end; gap: 3px;">
               <span class="badge badge-${(client.segment || 'c').toLowerCase()}">${client.segment || 'C'}</span>
+              ${client.segmentation === '80-20' ? '<span style="font-size:10px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:2px 8px;border-radius:10px;">⭐ 80/20</span>' : ''}
               ${client.priority === 'FOCO' ? '<span class="badge badge-foco">FOCO</span>' : ''}
             </div>
           </div>
