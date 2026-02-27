@@ -5480,6 +5480,9 @@
               <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;" onclick="resetCrmFilters()">
                 <i data-lucide="x" style="width: 13px; height: 13px;"></i> Limpiar
               </button>
+              <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;" onclick="exportCrmCsv()">
+                <i data-lucide="download" style="width: 13px; height: 13px;"></i> CSV
+              </button>
               <span id="crm-count-label" style="font-size: 12px; color: var(--text-muted); white-space: nowrap;"></span>
             </div>
           </div>
@@ -9027,6 +9030,8 @@
             <i data-lucide="map-pin-check" style="width: 14px; height: 14px; vertical-align: -2px;"></i> Ir a Visitas</button>
           <button onclick="openExecRouteMaps()" style="background:rgba(51,204,255,0.1);border:1px solid rgba(51,204,255,0.3);border-radius:6px;cursor:pointer;padding:6px 10px;font-size:11px;font-weight:600;color:#33ccff;display:inline-flex;align-items:center;gap:4px;">
             <i data-lucide="map" style="width:12px;height:12px;"></i> Ver Mapa</button>
+          <button onclick="endRoute('${myRoute.id}')" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:6px;cursor:pointer;padding:6px 10px;font-size:11px;font-weight:600;color:#f59e0b;display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="flag" style="width:12px;height:12px;"></i> Finalizar</button>
         </div>`;
 
         // Route client list
@@ -9084,7 +9089,7 @@
         routeStatEl.textContent = 'Programada';
         routeStatEl.style.fontSize = '15px';
         routeActions.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-          <button onclick="document.querySelector('[data-tab=visits]').click()" class="btn btn-primary" style="font-size: 12px; padding: 6px 14px;">
+          <button onclick="startDayFromDashboard()" class="btn btn-primary" style="font-size: 12px; padding: 6px 14px;" id="exec-start-day-btn">
             <i data-lucide="play-circle" style="width: 14px; height: 14px; vertical-align: -2px;"></i> Iniciar Jornada</button>
           <button onclick="openExecRouteMaps()" style="background:rgba(51,204,255,0.1);border:1px solid rgba(51,204,255,0.3);border-radius:6px;cursor:pointer;padding:6px 10px;font-size:11px;font-weight:600;color:#33ccff;display:inline-flex;align-items:center;gap:4px;">
             <i data-lucide="map" style="width:12px;height:12px;"></i> Ver Mapa</button>
@@ -9685,19 +9690,34 @@
           }
           showToast('success', 'Check-in registrado', successMsg);
 
-          // Reset address verification and checklist
-          document.getElementById('address-verification').style.display = 'none';
-          document.getElementById('correct-address-check').checked = false;
+          // Reset form: clear client + address + checklist
           correctedAddress = null;
-          document.getElementById('checklist-panel').style.display = 'none';
-          document.getElementById('checklist-warning').style.display = 'none';
+          clearSelectedClient();
+          document.getElementById('correct-address-check').checked = false;
           ['chk-cobranzas', 'chk-compra', 'chk-visita'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.checked = false;
           });
+
+          // Find next pending client in route and auto-scroll to suggest it
+          const execId = document.getElementById('visit-executive-filter')?.value;
+          if (execId) {
+            const scheduled = todayScheduledData[execId] || [];
+            const routeVisits = (todayRoutesData.find(r => r.user_id === execId)?.visits || []);
+            const visitedIds = new Set(routeVisits.map(v => v.client_id));
+            visitedIds.add(clientId); // include just-registered
+            const nextSc = scheduled.find(sc => !visitedIds.has(sc.client_id));
+            if (nextSc?.client) {
+              setTimeout(() => {
+                const c = nextSc.client;
+                showToast('info', 'Próximo cliente', `${c.fantasy_name || c.name || 'Cliente'} — ${c.commune || ''}`);
+              }, 800);
+            }
+          }
         }
 
-        showResponse('response-checkin', data, data.success);
+        if (!data.success) showResponse('response-checkin', data, false);
+        else document.getElementById('response-checkin').style.display = 'none';
         loadData();
       } catch (error) {
         showResponse('response-checkin', { error: error.message }, false);
@@ -12231,18 +12251,25 @@
         const clientName = client.fantasy_name || client.name || 'Cliente';
         const commune = client.commune || '';
         const arrival = sc.estimated_arrival || '';
+        const is8020 = client.segmentation === '80-20';
+        const hasGps = client.lat && client.lng;
 
-        html += `<div style="display: flex; align-items: stretch; gap: 0; font-size: 13px; opacity: 0.6;">
-          <div style="width: 50px; text-align: right; padding: 10px 8px 10px 0; font-size: 11px; color: var(--text-muted);">${arrival ? arrival.substring(0, 5) : '—'}</div>
-          <div style="width: 24px; display: flex; flex-direction: column; align-items: center;">
+        html += `<div style="display: flex; align-items: stretch; gap: 0; font-size: 13px;">
+          <div style="width: 50px; text-align: right; padding: 10px 8px 10px 0; font-size: 11px; color: var(--text-muted); opacity: 0.65;">${arrival ? arrival.substring(0, 5) : '—'}</div>
+          <div style="width: 24px; display: flex; flex-direction: column; align-items: center; opacity: 0.65;">
             <div style="width: 10px; height: 10px; border-radius: 50%; border: 2px solid #d1d5db; background: white; flex-shrink: 0; margin-top: 12px;"></div>
             ${i < pendingScheduled.length - 1 ? '<div style="width: 2px; flex: 1; background: #e5e7eb;"></div>' : '<div style="flex:1;"></div>'}
           </div>
           <div style="flex: 1; padding: 8px 10px; border-bottom: 1px solid var(--border);">
-            <div style="font-weight: 500;">${clientName}</div>
-            <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+            <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+              <span style="font-weight: 500;">${clientName}</span>
+              ${is8020 ? '<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;padding:1px 5px;border-radius:8px;">⭐ 80/20</span>' : ''}
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap;">
               <span style="font-size: 10px; color: #f59e0b; font-weight: 600;">Pendiente</span>
               ${commune ? `<span style="font-size: 10px; color: var(--text-muted);">${commune}</span>` : ''}
+              ${hasGps ? `<button onclick="openWazeToClient(${client.lat},${client.lng})" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:5px;cursor:pointer;padding:2px 8px;font-size:9px;font-weight:600;color:#10b981;">Waze</button>` : ''}
+              ${client.id ? `<button onclick="goToCheckinClient('${client.id}')" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:5px;cursor:pointer;padding:2px 8px;font-size:9px;font-weight:600;color:#6366f1;">Registrar</button>` : ''}
             </div>
           </div>
         </div>`;
@@ -12365,7 +12392,7 @@
         const lastTimeStr = row.lastCheckin ? `Ultimo check-in: ${row.lastCheckin.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}` : '';
 
         html += `
-        <div style="border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; ${row.status === 'active' ? 'border-left: 4px solid #10b981;' : ''}"
+        <div style="border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; ${row.status === 'active' ? 'background: linear-gradient(135deg, rgba(16,185,129,0.04), transparent);' : ''}"
           onmouseenter="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseleave="this.style.boxShadow=''"
           onclick="document.getElementById('visit-executive-filter').value='${row.exec.id}';filterVisitsByExecutive();">
           <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
@@ -13395,13 +13422,32 @@
     }
 
     // Quick check-in from route card: switch to visits tab + pre-select client
-    function goToCheckinClient(clientId) {
+    async function goToCheckinClient(clientId) {
       document.querySelector('[data-tab=visits]').click();
-      setTimeout(() => {
-        selectCheckinClient(clientId);
-        const form = document.getElementById('form-checkin');
-        if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 200);
+      await new Promise(r => setTimeout(r, 200));
+      // For exec: if no active route but has scheduled, auto-start day first
+      if (currentUser && currentUser.role === 'executive') {
+        const execId = currentUser.id;
+        const activeRoute = todayRoutesData.find(r => r.user_id === execId && r.status === 'active');
+        const scheduledClients = todayScheduledData[execId] || [];
+        if (!activeRoute && scheduledClients.length > 0) {
+          await startDayFromVisits(execId);
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+      selectCheckinClient(clientId);
+      const form = document.getElementById('form-checkin');
+      if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Start day directly from exec dashboard (no navigation needed)
+    async function startDayFromDashboard() {
+      if (!currentUser) return;
+      const btn = document.getElementById('exec-start-day-btn');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:14px;height:14px;vertical-align:-2px;"></i> Iniciando...'; lucide.createIcons(); }
+      await startDayFromVisits(currentUser.id);
+      // After starting, re-render exec dashboard to show active route
+      renderExecDashboard();
     }
 
     // Open exec's today route in Google Maps
@@ -16210,6 +16256,44 @@
       _crmPage = page;
       _renderCrmTable();
       document.getElementById('panel-crm')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function exportCrmCsv() {
+      if (!_crmFiltered || _crmFiltered.length === 0) {
+        showToast('warning', 'Sin datos', 'No hay clientes para exportar con los filtros actuales');
+        return;
+      }
+      const headers = ['Código', 'Razón Social', 'Nombre Fantasía', 'Dirección', 'Comuna', 'Zona', 'Vendedor', 'Segmentación', 'Segmento', 'GPS Lat', 'GPS Lng', 'Teléfono', 'Email'];
+      const rows = _crmFiltered.map(c => {
+        const vendor = (allUsers || []).find(u => u.id === c.assigned_user_id);
+        return [
+          c.external_id || '',
+          (c.name || '').replace(/,/g, ' '),
+          (c.fantasy_name || '').replace(/,/g, ' '),
+          (c.address || '').replace(/,/g, ' '),
+          c.commune || '',
+          c.zone || '',
+          vendor ? vendor.full_name.replace(/,/g, ' ') : '',
+          c.segmentation || '',
+          c.segment || '',
+          c.lat || '',
+          c.lng || '',
+          c.phone || '',
+          c.email || ''
+        ].join(',');
+      });
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }); // BOM for Excel
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const date = new Date().toISOString().split('T')[0];
+      a.href = url;
+      a.download = `clientes_leker_${date}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('success', 'Exportado', `${_crmFiltered.length} clientes exportados`);
     }
 
     // ─── End Logística CRM Panel ───────────────────────────────────────────────
