@@ -14919,17 +14919,23 @@
               histBody.innerHTML = '<div style="color:var(--text-muted);padding:6px 0;">Sin visitas registradas</div>';
               return;
             }
-            const OUTCOME_LABELS = { sale: '✅ Venta', contacted: '✔️ Contactado', no_contact: '❌ Sin contacto', postponed: '⏱️ Postergado' };
+            const OUTCOME_LABELS = { sale: '✅ Venta', contacted: '✔️ Contactado', no_contact: '❌ Sin contacto', postponed: '⏱️ Postergado', pending: '⏳ Pendiente' };
             histBody.innerHTML = res.data.visitHistory.slice(0, 5).map(v => {
               const dateStr = v.route?.date ? new Date(v.route.date + 'T00:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '-';
               const vendorName = v.route?.user?.full_name || '-';
               const outcome = OUTCOME_LABELS[v.outcome] || v.outcome || '-';
-              return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);">
-                <div>
-                  <span style="font-weight:600;">${dateStr}</span>
-                  <span style="color:var(--text-muted);margin-left:6px;font-size:11px;">${vendorName}</span>
+              const obs = v.checklist_data?.observations;
+              const comp = v.checklist_data?.competitor1 || v.checklist_data?.competitor2;
+              return `<div style="padding:6px 0;border-bottom:1px solid var(--border);">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div>
+                    <span style="font-weight:600;">${dateStr}</span>
+                    <span style="color:var(--text-muted);margin-left:6px;font-size:11px;">${vendorName}</span>
+                  </div>
+                  <span style="font-size:11px;">${outcome}</span>
                 </div>
-                <span style="font-size:11px;">${outcome}</span>
+                ${obs ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;font-style:italic;">"${obs}"</div>` : ''}
+                ${comp ? `<div style="font-size:10px;color:#f59e0b;margin-top:2px;">Competencia: ${[v.checklist_data.competitor1, v.checklist_data.competitor2].filter(Boolean).join(', ')}</div>` : ''}
               </div>`;
             }).join('');
           })
