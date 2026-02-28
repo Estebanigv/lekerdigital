@@ -6048,7 +6048,7 @@
                 </div>
               </div>
               <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <input type="text" id="search-clients" class="form-control" placeholder="Buscar por código o nombre..." oninput="filterClients()" style="flex: 1; min-width: 200px;">
+                <input type="text" id="search-clients" class="form-control" placeholder="Buscar por código, nombre, dirección, comuna o teléfono..." oninput="filterClients()" style="flex: 1; min-width: 200px;">
                 <select id="filter-zone" class="form-control" onchange="filterClients()" style="max-width: 160px; width:100%;">
                   <option value="">Todas las zonas</option>
                 </select>
@@ -14754,7 +14754,10 @@
         const matchSearch = !search ||
           (c.external_id && c.external_id.toLowerCase().includes(search)) ||
           (c.name && c.name.toLowerCase().includes(search)) ||
-          (c.fantasy_name && c.fantasy_name.toLowerCase().includes(search));
+          (c.fantasy_name && c.fantasy_name.toLowerCase().includes(search)) ||
+          (c.commune && c.commune.toLowerCase().includes(search)) ||
+          (c.address && c.address.toLowerCase().includes(search)) ||
+          (c.phone && c.phone.replace(/\s+/g,'').includes(search.replace(/\s+/g,'')));
         const matchZone = !zone || c.zone === zone || c.commune === zone;
         const matchSegment = !segment || c.segment === segment;
         const matchSegmentation = !segmentation || c.segmentation === segmentation;
@@ -23204,56 +23207,6 @@
           });
         }
       });
-    }
-
-    // Executive: skip a client
-    async function skipRouteClient(routeId) {
-      const reason = prompt('Razón para saltar este cliente:');
-      if (reason === null) return;
-
-      try {
-        const res = await fetch(`${API}/api/routes/schedule/${routeId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'skip', reason })
-        });
-        const data = await res.json();
-        if (data.success) {
-          showToast('success', 'Cliente saltado', 'Se notificó al admin');
-          document.querySelector('.day-detail-overlay')?.remove();
-          loadExistingSchedule();
-        } else {
-          showToast('error', 'Error', data.error);
-        }
-      } catch (err) {
-        showToast('error', 'Error', err.message);
-      }
-    }
-
-    // Executive: reschedule a client
-    async function rescheduleRouteClient(routeId) {
-      const reason = prompt('Razón para reagendar:');
-      if (reason === null) return;
-      const newDate = prompt('Nueva fecha (YYYY-MM-DD):');
-      if (!newDate) return;
-
-      try {
-        const res = await fetch(`${API}/api/routes/schedule/${routeId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'reschedule', reason, newDate })
-        });
-        const data = await res.json();
-        if (data.success) {
-          showToast('success', 'Cliente reagendado', 'Se notificó al admin');
-          document.querySelector('.day-detail-overlay')?.remove();
-          loadExistingSchedule();
-        } else {
-          showToast('error', 'Error', data.error);
-        }
-      } catch (err) {
-        showToast('error', 'Error', err.message);
-      }
     }
 
     async function rescheduleDay(userId, date) {
