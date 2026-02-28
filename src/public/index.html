@@ -2720,9 +2720,14 @@
       border-radius: 12px;
       padding: 16px;
       background: var(--bg-card);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .vendor-stat-card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      border-color: rgba(99,102,241,0.35);
     }
     .vendor-stat-card h4 {
-      font-size: 15px;
+      font-size: 14px;
       margin-bottom: 10px;
       display: flex;
       align-items: center;
@@ -3715,7 +3720,7 @@
       <div class="login-logo">
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
         <p>Sistema de Gestión Logística</p>
-        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.4</div>
+        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.5</div>
       </div>
 
       <!-- Login Form -->
@@ -3792,7 +3797,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.4</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.5</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -12635,32 +12640,43 @@
         }
 
         // Last activity
-        const lastTimeStr = row.lastCheckin ? `Ultimo check-in: ${row.lastCheckin.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}` : '';
+        const lastTimeStr = row.lastCheckin ? `Último check-in: ${row.lastCheckin.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}` : '';
+        // Zone badge
+        const _execZone = row.exec.zone || '';
+        const _ZC = { norte:{c:'#ef4444',bg:'rgba(239,68,68,0.12)'}, centro:{c:'#3b82f6',bg:'rgba(59,130,246,0.12)'}, sur:{c:'#10b981',bg:'rgba(16,185,129,0.12)'}, metropolitana:{c:'#8b5cf6',bg:'rgba(139,92,246,0.12)'}, metro:{c:'#8b5cf6',bg:'rgba(139,92,246,0.12)'} };
+        const _zci = _execZone ? (_ZC[_execZone.toLowerCase()] || {c:'var(--text-muted)',bg:'var(--bg-hover)'}) : null;
+        const _zoneBadge = _zci ? `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:${_zci.bg};color:${_zci.c};font-weight:700;">${_execZone.toUpperCase()}</span>` : '';
+        // Efectividad per vendor
+        const _efec = row.visitsCount > 0 ? Math.round(((row.outcomes.sale + row.outcomes.contacted) / row.visitsCount) * 100) : null;
+        const _efecHtml = _efec !== null ? `<span style="font-size:10px;color:${_efec>=70?'#10b981':_efec>=40?'#f59e0b':'#6b7280'};font-weight:600;"> · ⚡${_efec}% efec.</span>` : '';
+        const _cardOpacity = row.status === 'none' ? ';opacity:0.6' : '';
 
         html += `
-        <div style="border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; ${row.status === 'active' ? 'background: linear-gradient(135deg, rgba(16,185,129,0.04), transparent);' : ''}"
-          onmouseenter="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseleave="this.style.boxShadow=''"
+        <div style="border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; ${row.status === 'active' ? 'background: linear-gradient(135deg, rgba(16,185,129,0.05), transparent);' : row.status === 'completed' ? 'background: linear-gradient(135deg, rgba(99,102,241,0.04), transparent);' : ''}${_cardOpacity}"
+          onmouseenter="this.style.boxShadow='0 3px 10px rgba(0,0,0,0.08)';this.style.borderColor='rgba(99,102,241,0.3)';" onmouseleave="this.style.boxShadow='';this.style.borderColor='var(--border)';"
           onclick="document.getElementById('visit-executive-filter').value='${row.exec.id}';filterVisitsByExecutive();">
           <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-            <div style="width: 36px; height: 36px; border-radius: 50%; background: ${row.status === 'active' ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)'}; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 700; flex-shrink: 0;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: ${row.status === 'active' ? 'linear-gradient(135deg, #10b981, #059669)' : row.status === 'completed' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'linear-gradient(135deg, #6b7280, #4b5563)'}; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 700; flex-shrink: 0;">
               ${(row.exec.full_name || '?').charAt(0).toUpperCase()}
             </div>
             <div style="flex: 1; min-width: 0;">
-              <div style="display: flex; align-items: center; gap: 6px;">
+              <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
                 <span style="font-size: 14px; font-weight: 700;">${row.exec.full_name}</span>
-                <span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; background: ${st.bg}; color: ${st.color};">
+                ${_zoneBadge}
+                <span style="padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 700; background: ${st.bg}; color: ${st.color};">
                   <i data-lucide="${st.icon}" style="width:10px;height:10px;display:inline-block;vertical-align:middle;margin-right:2px;"></i>${st.label}
                 </span>
               </div>
-              <div style="font-size: 11px; color: var(--text-muted);">${lastTimeStr}${lastTimeStr && row.scheduledCount > 0 ? ' · ' : ''}${row.scheduledCount > 0 ? row.visitsCount + '/' + row.scheduledCount + ' visitas' : 'Sin programacion'}</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${lastTimeStr}${lastTimeStr && row.scheduledCount > 0 ? ' · ' : ''}${row.scheduledCount > 0 ? row.visitsCount + '/' + row.scheduledCount + ' visitas' : 'Sin programación'}${_efecHtml}</div>
             </div>
             <div style="text-align: right; flex-shrink: 0;">
               <div style="font-size: 22px; font-weight: 800; color: ${pct >= 80 ? '#10b981' : pct >= 40 ? '#f59e0b' : 'var(--text-muted)'}; line-height: 1;">${pct}%</div>
+              <div style="font-size: 9px; color: var(--text-muted);">avance</div>
             </div>
           </div>
           ${row.scheduledCount > 0 ? `
-          <div style="height: 5px; border-radius: 3px; background: var(--bg-hover); overflow: hidden; margin-bottom: 6px;">
-            <div style="height: 100%; width: ${pct}%; border-radius: 3px; background: ${barColor}; transition: width 0.5s;"></div>
+          <div style="height: 4px; border-radius: 2px; background: var(--bg-hover); overflow: hidden; margin-bottom: 6px;">
+            <div style="height: 100%; width: ${pct}%; border-radius: 2px; background: ${barColor}; transition: width 0.5s;"></div>
           </div>` : ''}
           ${outcomeHtml}
         </div>`;
@@ -24285,6 +24301,10 @@
             const clients8020 = vendorClients.filter(c => c.segmentation === '80-20');
             const clientsL = vendorClients.filter(c => c.segmentation === 'L');
             const pct8020 = vendorClients.length > 0 ? Math.round(clients8020.length / vendorClients.length * 100) : 0;
+            const gpsCoverage = vendorClients.filter(c => c.lat && c.lng).length;
+            const gpsPct = vendorClients.length > 0 ? Math.round(gpsCoverage / vendorClients.length * 100) : 0;
+            const efecPct = vendor.totalVisits > 0 ? Math.round(vendor.clientsWithSale / vendor.totalVisits * 100) : 0;
+            const avgPerDay = vendor.daysWorked > 0 ? (Math.round(vendor.totalVisits / vendor.daysWorked * 10) / 10) : 0;
             const zc = user && user.zone ? (ZONE_COLORS[user.zone.toLowerCase()] || {color:'var(--text-muted)',bg:'var(--bg-hover)',border:'var(--border)'}) : {color:'var(--text-muted)',bg:'var(--bg-hover)',border:'var(--border)'};
 
             let weeklyHtml = '';
@@ -24296,37 +24316,55 @@
             });
 
             html += `
-              <div class="vendor-stat-card">
-                <h4 style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                  <span style="width:28px;height:28px;border-radius:50%;background:${zc.color};color:white;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">${vendor.name.split(' ').map(n=>n[0]||'').join('').substring(0,2).toUpperCase()}</span>
-                  <span>${vendor.name}</span>
-                  ${user && user.zone ? `<span style="font-size:10px;background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 6px;border-radius:4px;font-weight:600;">${user.zone}</span>` : ''}
-                </h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px;">
+              <div class="vendor-stat-card" style="border-top: 3px solid ${zc.color};">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                  <div style="width:34px;height:34px;border-radius:50%;background:${zc.color};color:white;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">${vendor.name.split(' ').map(n=>n[0]||'').join('').substring(0,2).toUpperCase()}</div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${vendor.name}</div>
+                    ${user && user.zone ? `<span style="font-size:9px;background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 5px;border-radius:3px;font-weight:700;">${user.zone.toUpperCase()}</span>` : ''}
+                  </div>
+                  <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);">${vendor.daysWorked} días</div>
+                    <div style="font-size:10px;color:var(--text-muted);">${avgPerDay} vis/día</div>
+                  </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;">
                   <div style="text-align: center; padding: 8px 4px; background: var(--bg-hover); border-radius: 8px;">
-                    <div style="font-size: 18px; font-weight: 700; color: var(--accent);">${vendor.clientsWithSale}</div>
-                    <div style="font-size: 10px; color: var(--text-muted);">Con vta</div>
+                    <div style="font-size: 20px; font-weight: 700; color: var(--accent);">${vendor.clientsWithSale}</div>
+                    <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Con venta</div>
                   </div>
                   <div style="text-align: center; padding: 8px 4px; background: var(--bg-hover); border-radius: 8px;">
-                    <div style="font-size: 18px; font-weight: 700; color: var(--success);">${vendor.totalVisits}</div>
-                    <div style="font-size: 10px; color: var(--text-muted);">Visitas</div>
+                    <div style="font-size: 20px; font-weight: 700; color: #10b981;">${vendor.totalVisits}</div>
+                    <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Visitas</div>
                   </div>
-                  <div style="text-align: center; padding: 8px 4px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3); border-radius: 8px;">
-                    <div style="font-size: 18px; font-weight: 700; color: #b8860b;">${clients8020.length}</div>
-                    <div style="font-size: 10px; color: var(--text-muted);">80/20</div>
+                  <div style="text-align: center; padding: 8px 4px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.2); border-radius: 8px;">
+                    <div style="font-size: 20px; font-weight: 700; color: #b8860b;">${clients8020.length}</div>
+                    <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">80/20</div>
+                  </div>
+                  <div style="text-align: center; padding: 8px 4px; background: ${efecPct>=60?'rgba(16,185,129,0.08)':'var(--bg-hover)'}; border: 1px solid ${efecPct>=60?'rgba(16,185,129,0.2)':'transparent'}; border-radius: 8px;">
+                    <div style="font-size: 20px; font-weight: 700; color: ${efecPct>=60?'#10b981':efecPct>=30?'#f59e0b':'var(--text-muted)'};">${efecPct}%</div>
+                    <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Efec.</div>
                   </div>
                 </div>
                 ${vendorClients.length > 0 ? `
-                <div style="margin-bottom: 8px;">
-                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
-                    <span style="color: var(--text-muted);">${vendorClients.length} asignados</span>
-                    <span style="font-weight: 600; color: #b8860b;">${pct8020}% 80/20</span>
+                <div style="margin-bottom: 7px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
+                    <span style="color: var(--text-muted);">80/20 — ${clients8020.length} de ${vendorClients.length} asignados</span>
+                    <span style="font-weight: 700; color: #b8860b;">${pct8020}%</span>
                   </div>
-                  <div style="height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;">
-                    <div style="height: 100%; width: ${pct8020}%; background: linear-gradient(90deg,#d4af37,#b8860b); border-radius: 3px;"></div>
+                  <div style="height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;">
+                    <div style="height: 100%; width: ${pct8020}%; background: linear-gradient(90deg,#d4af37,#b8860b); border-radius: 2px;"></div>
+                  </div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
+                    <span style="color: var(--text-muted);">GPS — ${gpsCoverage} de ${vendorClients.length} clientes</span>
+                    <span style="font-weight: 700; color: ${gpsPct>=70?'#10b981':gpsPct>=40?'#f59e0b':'#ef4444'};">${gpsPct}%</span>
+                  </div>
+                  <div style="height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;">
+                    <div style="height: 100%; width: ${gpsPct}%; background: linear-gradient(90deg,#3b82f6,#06b6d4); border-radius: 2px;"></div>
                   </div>
                 </div>` : ''}
-                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">Días trabajados: <strong>${vendor.daysWorked}</strong></div>
                 ${weeklyHtml}
               </div>
             `;
