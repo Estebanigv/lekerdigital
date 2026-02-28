@@ -3715,7 +3715,7 @@
       <div class="login-logo">
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
         <p>Sistema de Gestión Logística</p>
-        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.2</div>
+        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.3</div>
       </div>
 
       <!-- Login Form -->
@@ -3792,7 +3792,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.2</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.3</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -4125,10 +4125,11 @@
                 <table class="data-table" id="exec-clients-table">
                   <thead>
                     <tr>
+                      <th style="width:80px;">Código</th>
                       <th>Cliente</th>
-                      <th>Comuna</th>
-                      <th>Segmento</th>
-                      <th style="width: 90px;"></th>
+                      <th>Dirección / Comuna</th>
+                      <th style="width:70px;">Seg.</th>
+                      <th style="width: 100px;"></th>
                     </tr>
                   </thead>
                   <tbody id="exec-clients-tbody"></tbody>
@@ -9324,38 +9325,52 @@
       const myRoute = todayRoutesData.find(r => r.user_id === currentUser?.id);
       const visitedTodayIds = new Set((myRoute?.visits || []).map(v => v.client_id));
 
-      tbody.innerHTML = list.slice(0, 100).map(c => {
+      // Separate 80/20 from the rest
+      const list8020 = list.filter(c => c.segmentation === '80-20');
+      const listResto = list.filter(c => c.segmentation !== '80-20');
+
+      function buildClientRow(c) {
         const is8020 = c.segmentation === '80-20';
-        const badge8020 = is8020 ? `<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;margin-left:4px;">⭐</span>` : '';
         const segBadge = is8020
-          ? `<span style="font-size:11px;font-weight:700;background:rgba(212,175,55,0.15);color:#b8860b;border:1px solid rgba(212,175,55,0.35);padding:2px 8px;border-radius:10px;">80/20</span>`
+          ? `<span style="font-size:10px;font-weight:700;background:rgba(212,175,55,0.15);color:#b8860b;border:1px solid rgba(212,175,55,0.35);padding:2px 7px;border-radius:10px;">⭐80/20</span>`
           : c.segmentation === 'L'
-            ? `<span style="font-size:11px;font-weight:600;background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.25);padding:2px 8px;border-radius:10px;">L</span>`
-            : `<span style="font-size:11px;color:var(--text-muted);border:1px solid var(--border);padding:2px 8px;border-radius:10px;">${c.segmentation || '-'}</span>`;
+            ? `<span style="font-size:10px;font-weight:600;background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.25);padding:2px 7px;border-radius:10px;">L</span>`
+            : `<span style="font-size:10px;color:var(--text-muted);border:1px solid var(--border);padding:2px 7px;border-radius:10px;">${c.segmentation || 'N'}</span>`;
         const isVisitedToday = visitedTodayIds.has(c.id);
-        const hasGpsClient = !!(c.lat && c.lng);
-        const wazeBtn = hasGpsClient
-          ? `<button onclick="openWazeToClient(${c.lat},${c.lng})" style="background:rgba(51,204,255,0.1);border:1px solid rgba(51,204,255,0.3);border-radius:6px;cursor:pointer;padding:3px 5px;display:flex;align-items:center;" title="Waze"><i data-lucide="navigation" style="width:11px;height:11px;color:#33ccff;"></i></button>`
-          : '';
-        const mapsBtn = hasGpsClient
-          ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}" target="_blank" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:6px;cursor:pointer;padding:3px 5px;display:flex;align-items:center;" title="Google Maps"><i data-lucide="map" style="width:11px;height:11px;color:#10b981;"></i></a>`
-          : '';
+        const hasGps = !!(c.lat && c.lng);
+        const wazeBtn = hasGps
+          ? `<button onclick="openWazeToClient(${c.lat},${c.lng})" style="background:rgba(51,204,255,0.1);border:1px solid rgba(51,204,255,0.3);border-radius:6px;cursor:pointer;padding:3px 5px;display:flex;align-items:center;" title="Waze"><i data-lucide="navigation" style="width:11px;height:11px;color:#33ccff;"></i></button>` : '';
+        const mapsBtn = hasGps
+          ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}" target="_blank" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:6px;padding:3px 5px;display:flex;align-items:center;" title="Google Maps"><i data-lucide="map" style="width:11px;height:11px;color:#10b981;"></i></a>` : '';
         const phoneBtn = c.phone
-          ? `<a href="tel:${c.phone.replace(/\s+/g,'')}" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:6px;cursor:pointer;padding:3px 5px;display:flex;align-items:center;" title="Llamar: ${c.phone}"><i data-lucide="phone" style="width:11px;height:11px;color:#10b981;"></i></a>`
-          : '';
+          ? `<a href="tel:${c.phone.replace(/\s+/g,'')}" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:6px;padding:3px 5px;display:flex;align-items:center;" title="Llamar"><i data-lucide="phone" style="width:11px;height:11px;color:#10b981;"></i></a>` : '';
         const visitBtn = isVisitedToday
           ? `<span style="font-size:10px;color:#10b981;font-weight:600;white-space:nowrap;">✓ Hoy</span>`
-          : `<button onclick="goToCheckinClient('${c.id}')" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:5px;cursor:pointer;padding:2px 7px;font-size:10px;font-weight:600;color:#6366f1;white-space:nowrap;">Visitar</button>`;
+          : `<button onclick="goToCheckinClient('${c.id}')" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:5px;cursor:pointer;padding:2px 6px;font-size:10px;font-weight:600;color:#6366f1;white-space:nowrap;">Visitar</button>`;
         const rowBg = isVisitedToday ? 'background:rgba(16,185,129,0.04);' : is8020 ? 'background:rgba(212,175,55,0.04);' : '';
+        const addressText = [c.address, c.commune].filter(Boolean).join(', ') || '-';
         return `<tr style="${rowBg}">
-          <td style="font-weight:${is8020 ? '600' : '500'};">${c.fantasy_name || c.business_name || '-'}${badge8020}</td>
-          <td style="font-size:12px;">${c.commune || '-'}</td>
+          <td style="font-size:11px;color:#3b82f6;font-weight:600;">${c.external_id || '-'}</td>
+          <td style="font-weight:${is8020 ? '600' : '500'};font-size:12px;">${c.fantasy_name || c.business_name || c.name || '-'}</td>
+          <td style="font-size:11px;color:var(--text-muted);">${addressText}</td>
           <td>${segBadge}</td>
-          <td><div style="display:flex;gap:4px;align-items:center;">${wazeBtn}${mapsBtn}${phoneBtn}${visitBtn}</div></td>
+          <td><div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">${wazeBtn}${mapsBtn}${phoneBtn}${visitBtn}</div></td>
         </tr>`;
-      }).join('');
+      }
+
+      let rows = '';
+      const colSpan = 5;
+      if (list8020.length > 0) {
+        rows += `<tr><td colspan="${colSpan}" style="padding:6px 12px;background:rgba(212,175,55,0.12);font-weight:700;font-size:11px;color:#b45309;">⭐ Clientes 80/20 (${list8020.length})</td></tr>`;
+        rows += list8020.slice(0, 100).map(buildClientRow).join('');
+      }
+      if (listResto.length > 0) {
+        rows += `<tr><td colspan="${colSpan}" style="padding:6px 12px;background:rgba(100,116,139,0.08);font-weight:700;font-size:11px;color:var(--text-secondary);">Otros clientes (${listResto.length})</td></tr>`;
+        rows += listResto.slice(0, 100).map(buildClientRow).join('');
+      }
+      tbody.innerHTML = rows;
       if (list.length > 100) {
-        tbody.innerHTML += `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);font-size:12px;">...y ${list.length - 100} más</td></tr>`;
+        tbody.innerHTML += `<tr><td colspan="${colSpan}" style="text-align:center;color:var(--text-muted);font-size:12px;">...y ${list.length - 100} más</td></tr>`;
       }
       lucide.createIcons();
     }

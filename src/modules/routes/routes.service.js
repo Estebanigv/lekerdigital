@@ -951,7 +951,7 @@ class RoutesService {
 
     const { data: client, error: clientError } = await supabase
       .from('clients')
-      .select('id, name, lat, lng, consecutive_no_sale')
+      .select('id, name, external_id, address, commune, lat, lng, consecutive_no_sale')
       .eq('id', clientId)
       .single();
 
@@ -1006,6 +1006,20 @@ class RoutesService {
       .from('clients')
       .update(updateData)
       .eq('id', clientId);
+
+    // Sync address correction to Google Sheets (non-blocking)
+    if (addressUpdate && client.external_id) {
+      const syncedClient = {
+        external_id: client.external_id,
+        address: addressUpdate.address || client.address,
+        commune: addressUpdate.commune || client.commune,
+        lat: addressUpdate.lat || client.lat,
+        lng: addressUpdate.lng || client.lng
+      };
+      this._syncAddressToSheet(syncedClient, null).catch(err =>
+        console.warn('[checkIn] Sheet sync failed:', err.message)
+      );
+    }
 
     // Mark scheduled route as completed if exists
     const today = new Date().toISOString().split('T')[0];
