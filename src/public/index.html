@@ -5479,7 +5479,7 @@
             <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
               <div style="position: relative; flex: 1; min-width: 180px;">
                 <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-muted);"></i>
-                <input id="crm-search" type="text" class="form-control" placeholder="Buscar por código, nombre..." style="padding-left: 32px;" oninput="filterCrmClients()">
+                <input id="crm-search" type="text" class="form-control" placeholder="Buscar por código, nombre, dirección, comuna o teléfono..." style="padding-left: 32px;" oninput="filterCrmClients()">
               </div>
               <select id="crm-vendor-filter" class="form-control" style="max-width: 180px; font-size: 13px;" onchange="filterCrmClients()">
                 <option value="">Todos los vendedores</option>
@@ -9821,7 +9821,16 @@
       const checklistData = {
         cobranzas_ok: document.getElementById('chk-cobranzas')?.checked || false,
         ultima_compra_ok: document.getElementById('chk-compra')?.checked || false,
-        ultima_visita_ok: document.getElementById('chk-visita')?.checked || false
+        ultima_visita_ok: document.getElementById('chk-visita')?.checked || false,
+        observations: (document.getElementById('chk-observations')?.value || '').trim() || null,
+        owner: (document.getElementById('chk-owner')?.value || '').trim() || null,
+        buyer: (document.getElementById('chk-buyer')?.value || '').trim() || null,
+        phone: (document.getElementById('chk-phone')?.value || '').trim() || null,
+        phone2: (document.getElementById('chk-phone2')?.value || '').trim() || null,
+        email_contact: (document.getElementById('chk-email')?.value || '').trim() || null,
+        has_competitor: document.getElementById('chk-is-competitor')?.checked || false,
+        competitor1: (document.getElementById('chk-competitor1')?.value || '').trim() || null,
+        competitor2: (document.getElementById('chk-competitor2')?.value || '').trim() || null
       };
 
       const body = {
@@ -9858,6 +9867,12 @@
             const el = document.getElementById(id);
             if (el) el.checked = false;
           });
+          ['chk-observations', 'chk-owner', 'chk-buyer', 'chk-phone', 'chk-phone2', 'chk-email', 'chk-competitor1', 'chk-competitor2'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+          });
+          const compEl = document.getElementById('chk-is-competitor');
+          if (compEl) compEl.checked = false;
         }
 
         if (!data.success) showResponse('response-checkin', data, false);
@@ -16560,9 +16575,14 @@
       const now = new Date();
       _crmFiltered = clients.filter(c => {
         if (search) {
-          const extId = (c.external_id || '').toLowerCase();
-          const name  = (c.fantasy_name || c.name || '').toLowerCase();
-          if (!extId.includes(search) && !name.includes(search)) return false;
+          const extId   = (c.external_id || '').toLowerCase();
+          const name    = (c.fantasy_name || c.name || '').toLowerCase();
+          const fullName = (c.name || '').toLowerCase();
+          const commune = (c.commune || '').toLowerCase();
+          const address = (c.address || '').toLowerCase();
+          const phone   = (c.phone || '').replace(/\s+/g, '');
+          const sNorm   = search.replace(/\s+/g, '');
+          if (!extId.includes(search) && !name.includes(search) && !fullName.includes(search) && !commune.includes(search) && !address.includes(search) && !phone.includes(sNorm)) return false;
         }
         if (vendor && (c.assigned_user?.full_name || '') !== vendor) return false;
         if (zone   && (c.zone || c.commune || '') !== zone) return false;
