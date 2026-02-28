@@ -3715,7 +3715,7 @@
       <div class="login-logo">
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
         <p>Sistema de Gestión Logística</p>
-        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.3</div>
+        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.4</div>
       </div>
 
       <!-- Login Form -->
@@ -3792,7 +3792,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.3</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.4</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -4155,15 +4155,15 @@
         </div>
         <!-- ========== FIN DASHBOARD EJECUTIVO ========== -->
 
-        <!-- Fila 1: 4 Stats principales (admin/supervisor) -->
-        <div class="stats-grid">
+        <!-- Fila 1: 5 Stats principales (admin/supervisor) -->
+        <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr);">
           <div class="stat-card" style="cursor: pointer;" onclick="document.querySelector('[data-tab=data][data-subtab=vendedores]').click()">
             <div class="stat-icon blue">
               <i data-lucide="users"></i>
             </div>
             <div class="stat-info">
               <h3 id="stat-users">0</h3>
-              <p>Vendedores Activos</p>
+              <p>Vendedores</p>
             </div>
           </div>
           <div class="stat-card" style="cursor: pointer;" onclick="document.querySelector('[data-tab=data][data-subtab=clientes]').click()">
@@ -4185,13 +4185,22 @@
               <p>Rutas Hoy</p>
             </div>
           </div>
-          <div class="stat-card" style="cursor: pointer;" onclick="document.querySelector('[data-tab=routes]').click()">
+          <div class="stat-card" style="cursor: pointer;" onclick="document.querySelector('[data-tab=visits]').click()">
             <div class="stat-icon orange">
               <i data-lucide="map-pin-check"></i>
             </div>
             <div class="stat-info">
               <h3 id="stat-visits-today">0</h3>
               <p>Visitas Hoy</p>
+            </div>
+          </div>
+          <div class="stat-card" style="cursor: pointer;" onclick="document.querySelector('[data-tab=gsheets][data-subtab=gs-rendimiento]')?.click()">
+            <div class="stat-icon" style="background: linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(5,150,105,0.1) 100%);">
+              <i data-lucide="trending-up" style="color:#10b981;"></i>
+            </div>
+            <div class="stat-info">
+              <h3 id="stat-efectividad-hoy" style="color:#10b981;">-</h3>
+              <p>Efectividad Hoy</p>
             </div>
           </div>
         </div>
@@ -8953,9 +8962,16 @@
 
         // Update dashboard stats from today's routes
         const todayActiveRoutes = todayRoutesData.filter(r => r.status === 'active');
+        const todayAllRoutes = todayRoutesData.filter(r => r.status === 'active' || r.status === 'completed');
         const todayVisitsCount = todayRoutesData.reduce((sum, r) => sum + (r.visits?.length || r.visits_count || 0), 0);
-        document.getElementById('stat-routes').textContent = todayActiveRoutes.length;
+        document.getElementById('stat-routes').textContent = `${todayActiveRoutes.length}${todayAllRoutes.length > todayActiveRoutes.length ? '+' + (todayAllRoutes.length - todayActiveRoutes.length) : ''}`;
         document.getElementById('stat-visits-today').textContent = todayVisitsCount;
+        // Efectividad hoy: % de visitas con venta o contactado
+        const allVisitsHoy = todayRoutesData.flatMap(r => r.visits || []);
+        const positiveVisits = allVisitsHoy.filter(v => v.outcome === 'sale' || v.outcome === 'contacted').length;
+        const efec = allVisitsHoy.length > 0 ? Math.round((positiveVisits / allVisitsHoy.length) * 100) : null;
+        const efecEl = document.getElementById('stat-efectividad-hoy');
+        if (efecEl) efecEl.textContent = efec !== null ? efec + '%' : '-';
         updateVisitsNavBadge();
 
         updateDashLoadingProgress(55, 'Procesando rutas activas...');
@@ -18669,14 +18685,24 @@
       if (!container) return;
 
       const activeRoutes = todayRoutesData.filter(r => r.status === 'active');
-      if (activeRoutes.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px;"><i data-lucide="route" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.4;"></i><p>No hay rutas activas hoy</p></div>';
+      const completedRoutes = todayRoutesData.filter(r => r.status === 'completed');
+      const allTodayRoutes = [...activeRoutes, ...completedRoutes];
+
+      if (allTodayRoutes.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px;"><i data-lucide="route" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.4;"></i><p>No hay rutas hoy</p></div>';
         lucide.createIcons();
         return;
       }
 
-      let html = '<div style="display: flex; flex-direction: column; gap: 6px;">';
-      activeRoutes.slice(0, 6).forEach(route => {
+      // Summary header
+      const totalVisits = allTodayRoutes.reduce((s, r) => s + (r.visits_count || (r.visits || []).length || 0), 0);
+      let html = `<div style="display:flex;gap:8px;padding:10px 12px 6px;border-bottom:1px solid var(--border);flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:700;background:rgba(16,185,129,0.1);color:#059669;border:1px solid rgba(16,185,129,0.25);padding:2px 8px;border-radius:8px;">${activeRoutes.length} activa${activeRoutes.length!==1?'s':''}</span>
+        ${completedRoutes.length > 0 ? `<span style="font-size:11px;font-weight:700;background:rgba(99,102,241,0.1);color:#6366f1;border:1px solid rgba(99,102,241,0.25);padding:2px 8px;border-radius:8px;">${completedRoutes.length} completada${completedRoutes.length!==1?'s':''}</span>` : ''}
+        <span style="font-size:11px;color:var(--text-muted);padding:2px 4px;">${totalVisits} visitas totales</span>
+      </div>`;
+      html += '<div style="display: flex; flex-direction: column; gap: 4px; padding: 8px 0;">';
+      allTodayRoutes.slice(0, 8).forEach(route => {
         const user = allUsers.find(u => u.id === route.user_id);
         const userName = user ? user.full_name : 'Vendedor';
         const initials = userName.split(' ').map(n => n[0] || '').join('').substring(0, 2).toUpperCase();
@@ -18688,28 +18714,35 @@
         const gsData = user && gsheetsVendedoresParsed.length > 0 ? gsheetsVendedoresParsed.find(v => v.name && v.name.toLowerCase().includes(userName.split(' ')[0].toLowerCase())) : null;
         const zona = gsData ? gsData.zona : (user?.zone || '');
         const zc = ZONE_COLORS[(zona || '').toLowerCase()] || { bg: 'rgba(139,92,246,0.1)', color: '#8b5cf6', border: 'rgba(139,92,246,0.25)' };
-        const progressColor = progress >= 80 ? '#10b981' : progress >= 50 ? '#f59e0b' : '#ef4444';
+        const isCompleted = route.status === 'completed';
+        const progressColor = isCompleted ? '#6366f1' : (progress >= 80 ? '#10b981' : progress >= 50 ? '#f59e0b' : '#ef4444');
+        const statusDot = isCompleted
+          ? `<span style="font-size:9px;font-weight:700;background:rgba(99,102,241,0.12);color:#6366f1;border:1px solid rgba(99,102,241,0.25);padding:1px 5px;border-radius:6px;">✓ Completada</span>`
+          : `<span style="font-size:9px;font-weight:700;background:rgba(16,185,129,0.1);color:#059669;border:1px solid rgba(16,185,129,0.25);padding:1px 5px;border-radius:6px;">● Activa</span>`;
 
-        html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--bg-hover);cursor:pointer;" onclick="goToVendorRoute('${route.user_id}')">
-          <div style="width:32px;height:32px;border-radius:50%;background:${zc.color};color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">${initials}</div>
+        html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:${isCompleted ? 'rgba(99,102,241,0.04)' : 'var(--bg-hover)'};cursor:pointer;opacity:${isCompleted ? '0.85' : '1'};" onclick="goToVendorRoute('${route.user_id}')">
+          <div style="width:32px;height:32px;border-radius:50%;background:${isCompleted ? '#6366f1' : zc.color};color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">${initials}</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${userName}</div>
-            <div style="display:flex;align-items:center;gap:5px;margin-top:2px;">
-              ${zona ? `<span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 5px;border-radius:4px;font-size:9px;font-weight:600;">${zona}</span>` : ''}
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+              <span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${userName}</span>
+              ${statusDot}
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap;">
+              ${zona ? `<span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 5px;border-radius:4px;font-size:9px;font-weight:600;">${zona.replace('Zona ','')}</span>` : ''}
               <span style="font-size:11px;color:var(--text-muted);">${visits}/${totalClients} visitas</span>
             </div>
           </div>
           <div style="width:52px;text-align:right;flex-shrink:0;">
             <div style="font-size:13px;font-weight:700;color:${progressColor};">${progress}%</div>
             <div style="height:3px;background:var(--border);border-radius:2px;margin-top:3px;">
-              <div style="height:100%;width:${progress}%;background:${progressColor};border-radius:2px;transition:width 0.3s;"></div>
+              <div style="height:100%;width:${Math.min(progress,100)}%;background:${progressColor};border-radius:2px;transition:width 0.3s;"></div>
             </div>
           </div>
         </div>`;
       });
 
-      if (activeRoutes.length > 6) {
-        html += `<div style="text-align: center; font-size: 12px; color: var(--text-muted); padding: 4px;">+${activeRoutes.length - 6} rutas más</div>`;
+      if (allTodayRoutes.length > 8) {
+        html += `<div style="text-align:center;font-size:12px;color:var(--text-muted);padding:4px;">+${allTodayRoutes.length - 8} rutas más</div>`;
       }
       html += '</div>';
       container.innerHTML = html;
@@ -18874,25 +18907,34 @@
         ZONAS.forEach(zona => {
           const zc = ZONE_COLORS[zona.toLowerCase()] || { bg: 'var(--bg-hover)', color: 'var(--text-muted)', border: 'var(--border)', icon: 'map-pin' };
           const vendedoresInZone = gsheetsVendedoresParsed.filter(v => v.zona === zona && !v.isZonal);
-          const clientsInZone = allClients.filter(c => {
-            const assignedUser = allUsers.find(u => u.id === c.assigned_user_id);
-            if (!assignedUser) return false;
-            const vendedor = gsheetsVendedoresParsed.find(v => v.name && v.name.toLowerCase().includes(assignedUser.full_name.toLowerCase()));
-            return vendedor && vendedor.zona === zona;
-          });
+          const usersInZone = vendedoresInZone.map(v =>
+            allUsers.find(u => u.full_name && u.full_name.toLowerCase() === v.name.toLowerCase())
+          ).filter(Boolean);
 
+          const clientsInZone = allClients.filter(c => usersInZone.some(u => u.id === c.assigned_user_id));
           const clients8020Zone = clientsInZone.filter(c => c.segmentation === '80-20');
-          const pct8020 = clientsInZone.length > 0 ? Math.round(clients8020Zone.length / clientsInZone.length * 100) : 0;
-          html += `<div style="background: ${zc.bg}; border: 1px solid ${zc.border}; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer;" onclick="document.querySelector('[data-tab=gsheets][data-subtab=gs-vendedores]')?.click()">
-            <i data-lucide="${zc.icon || 'map-pin'}" style="width: 18px; height: 18px; color: ${zc.color}; margin-bottom: 4px;"></i>
-            <div style="font-size: 11px; font-weight: 700; color: ${zc.color}; margin-bottom: 4px;">${zona.replace('Zona ', '')}</div>
-            <div style="font-size: 18px; font-weight: 800; color: ${zc.color}; line-height: 1;">${vendedoresInZone.length}</div>
-            <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">vendedores</div>
-            <div style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">${clientsInZone.length} clientes</div>
-            ${clients8020Zone.length > 0 ? `<div style="margin-top: 4px; display: inline-flex; align-items: center; gap: 3px; background: rgba(212,175,55,0.15); border: 1px solid rgba(212,175,55,0.35); border-radius: 5px; padding: 2px 6px;">
-              <span style="font-size: 10px; font-weight: 700; color: #b8860b;">⭐ ${clients8020Zone.length} 80/20</span>
-              <span style="font-size: 9px; color: var(--text-muted);">(${pct8020}%)</span>
-            </div>` : ''}
+
+          // Today's route activity for this zone
+          const routesInZone = todayRoutesData.filter(r => usersInZone.some(u => u.id === r.user_id));
+          const activeRoutes = routesInZone.filter(r => r.status === 'active').length;
+          const completedRoutes = routesInZone.filter(r => r.status === 'completed').length;
+          const totalVisitsHoy = routesInZone.reduce((sum, r) => sum + (r.visits_count || (r.visits || []).length || 0), 0);
+
+          const routeStatusHtml = routesInZone.length > 0
+            ? `<div style="margin-top:6px;display:flex;justify-content:center;gap:5px;flex-wrap:wrap;">
+                ${activeRoutes > 0 ? `<span style="font-size:9px;font-weight:700;background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.3);padding:1px 6px;border-radius:8px;">${activeRoutes} activa${activeRoutes>1?'s':''}</span>` : ''}
+                ${completedRoutes > 0 ? `<span style="font-size:9px;font-weight:700;background:rgba(99,102,241,0.12);color:#6366f1;border:1px solid rgba(99,102,241,0.25);padding:1px 6px;border-radius:8px;">${completedRoutes} complet.</span>` : ''}
+                ${totalVisitsHoy > 0 ? `<span style="font-size:9px;color:var(--text-muted);padding:1px 4px;">${totalVisitsHoy} visitas hoy</span>` : ''}
+              </div>`
+            : `<div style="margin-top:4px;font-size:9px;color:var(--text-muted);">Sin ruta hoy</div>`;
+
+          html += `<div style="background:${zc.bg};border:1px solid ${zc.border};border-radius:10px;padding:12px;text-align:center;cursor:pointer;" onclick="document.querySelector('[data-tab=gsheets][data-subtab=gs-vendedores]')?.click()">
+            <div style="font-size:10px;font-weight:700;color:${zc.color};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${zona.replace('Zona ', '')}</div>
+            <div style="font-size:20px;font-weight:800;color:${zc.color};line-height:1;">${vendedoresInZone.length}</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:3px;">vendedores</div>
+            <div style="font-size:11px;font-weight:600;color:var(--text-secondary);">${clientsInZone.length.toLocaleString('es-CL')} clientes</div>
+            ${clients8020Zone.length > 0 ? `<div style="margin-top:3px;font-size:10px;font-weight:700;color:#b8860b;">⭐ ${clients8020Zone.length} 80/20</div>` : ''}
+            ${routeStatusHtml}
           </div>`;
         });
         zonasContainer.innerHTML = html;
@@ -24389,10 +24431,11 @@
     // =============================================
 
     function initNewDashboardComponents() {
-      // Set default month for vendor stats
+      // Set default month for vendor stats and auto-load
       const monthInput = document.getElementById('vendor-stats-month');
       if (monthInput && !monthInput.value) {
         monthInput.value = new Date().toISOString().slice(0, 7);
+        setTimeout(() => loadVendorDashboard(), 1200);
       }
       const calMonth = document.getElementById('calendar-month');
       if (calMonth && !calMonth.value) {
