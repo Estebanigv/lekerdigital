@@ -5264,7 +5264,7 @@
                 <div class="form-group">
                   <label>Buscar Cliente <span id="client-count-label" style="font-size: 11px; color: var(--text-muted);"></span></label>
                   <div style="position: relative;">
-                    <input type="text" id="checkin-client-search" class="form-control" placeholder="Escribe código, nombre o nombre fantasía..." oninput="filterCheckinClients()" autocomplete="off" style="padding-left: 36px;">
+                    <input type="text" id="checkin-client-search" class="form-control" placeholder="Buscar por código, nombre, dirección o teléfono..." oninput="filterCheckinClients()" autocomplete="off" style="padding-left: 36px;">
                     <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);"></i>
                   </div>
                   <div id="client-search-results" style="margin-top: 8px; max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; display: none;">
@@ -14488,7 +14488,9 @@
         const matchCode = c.external_id && c.external_id.toLowerCase().includes(search);
         const matchName = c.name && c.name.toLowerCase().includes(search);
         const matchFantasy = c.fantasy_name && c.fantasy_name.toLowerCase().includes(search);
-        return matchCode || matchName || matchFantasy;
+        const matchPhone = c.phone && c.phone.replace(/\s+/g,'').includes(search.replace(/\s+/g,''));
+        const matchAddress = c.address && c.address.toLowerCase().includes(search);
+        return matchCode || matchName || matchFantasy || matchPhone || matchAddress;
       });
 
       // Sort: scheduled today (pending) first, then assigned, then others
