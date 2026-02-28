@@ -6042,6 +6042,9 @@
                 <h3><i data-lucide="building-2" style="width: 18px; height: 18px;"></i> Lista de Clientes</h3>
                 <div style="display: flex; gap: 8px; align-items: center;">
                   <span class="badge badge-active" id="clients-count">0</span>
+                  <button class="btn btn-secondary" onclick="exportClientsCsv()" style="padding: 6px 12px; font-size: 13px;" title="Exportar clientes filtrados">
+                    <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                  </button>
                   <button class="btn btn-primary" onclick="openClientModal()" style="padding: 6px 12px; font-size: 13px;">
                     <i data-lucide="plus" style="width: 14px; height: 14px;"></i> Nuevo
                   </button>
@@ -6514,8 +6517,11 @@
 
             <!-- Performance table -->
             <div class="card">
-              <div class="card-header">
+              <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
                 <h3><i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i> Rendimiento por Vendedor</h3>
+                <button class="btn btn-secondary" onclick="exportPerformanceCsv()" style="font-size:12px;padding:6px 12px;display:flex;align-items:center;gap:6px;">
+                  <i data-lucide="download" style="width:13px;height:13px;"></i> Exportar CSV
+                </button>
               </div>
               <div class="card-body" id="perf-table-body" style="overflow-x: auto;">
                 <p style="text-align: center; color: var(--text-muted); padding: 20px;">Cargando datos de rendimiento...</p>
@@ -14581,11 +14587,12 @@
               ${addrBadge}
             </div>
             ${confirmBtn}
-            ${client.lat && client.lng ? `
-            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
-              <a href="https://waze.com/ul?ll=${client.lat},${client.lng}&navigate=yes" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;background:rgba(99,102,241,0.1);color:#6366f1;padding:5px 10px;border-radius:6px;text-decoration:none;border:1px solid rgba(99,102,241,0.3);"><i data-lucide="navigation" style="width:11px;height:11px;"></i> Waze</a>
-              <a href="https://www.google.com/maps/dir/?api=1&destination=${client.lat},${client.lng}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;background:rgba(16,185,129,0.1);color:#10b981;padding:5px 10px;border-radius:6px;text-decoration:none;border:1px solid rgba(16,185,129,0.3);"><i data-lucide="map" style="width:11px;height:11px;"></i> Maps</a>
-            </div>` : ''}
+            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              ${client.lat && client.lng ? `<a href="https://waze.com/ul?ll=${client.lat},${client.lng}&navigate=yes" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;background:rgba(99,102,241,0.1);color:#6366f1;padding:5px 10px;border-radius:6px;text-decoration:none;border:1px solid rgba(99,102,241,0.3);"><i data-lucide="navigation" style="width:11px;height:11px;"></i> Waze</a>` : ''}
+              ${client.lat && client.lng ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${client.lat},${client.lng}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;background:rgba(16,185,129,0.1);color:#10b981;padding:5px 10px;border-radius:6px;text-decoration:none;border:1px solid rgba(16,185,129,0.3);"><i data-lucide="map" style="width:11px;height:11px;"></i> Maps</a>` : ''}
+              ${client.phone ? `<a href="tel:${client.phone.replace(/\s+/g,'')}" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;background:rgba(16,185,129,0.08);color:#059669;padding:5px 10px;border-radius:6px;text-decoration:none;border:1px solid rgba(16,185,129,0.25);"><i data-lucide="phone" style="width:11px;height:11px;"></i> ${client.phone}</a>` : ''}
+            </div>
+            ${client.last_visit_at ? `<div style="margin-top:6px;font-size:11px;color:var(--text-muted);"><i data-lucide="clock" style="width:10px;height:10px;display:inline;vertical-align:middle;"></i> Últ. visita: <strong>${Math.floor((Date.now()-new Date(client.last_visit_at))/(86400000))} días</strong> (${new Date(client.last_visit_at).toLocaleDateString('es-CL')})</div>` : '<div style="margin-top:6px;font-size:11px;color:var(--text-muted);">Sin visitas registradas</div>'}
           </div>
           <div style="text-align: right;">
             <code style="font-size: 12px; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px;">${client.external_id}</code>
@@ -14767,6 +14774,44 @@
 
       currentClientsPage = 1;
       renderClientsTablePaginated();
+    }
+
+    function exportClientsCsv() {
+      if (!filteredClients || filteredClients.length === 0) {
+        showToast('warning', 'Sin datos', 'No hay clientes con los filtros actuales');
+        return;
+      }
+      const headers = ['Código', 'Razón Social', 'Nombre Fantasía', 'Dirección', 'Comuna', 'Zona', 'Vendedor', 'Segmentación', 'Segmento', 'Prioridad', 'GPS Lat', 'GPS Lng', 'Teléfono', 'Email'];
+      const rows = filteredClients.map(c => {
+        const vendor = (allUsers || []).find(u => u.id === c.assigned_user_id);
+        return [
+          c.external_id || '',
+          (c.name || '').replace(/,/g, ' '),
+          (c.fantasy_name || '').replace(/,/g, ' '),
+          (c.address || '').replace(/,/g, ' '),
+          c.commune || '',
+          c.zone || '',
+          vendor ? vendor.full_name.replace(/,/g, ' ') : '',
+          c.segmentation || '',
+          c.segment || '',
+          c.priority || '',
+          c.lat || '',
+          c.lng || '',
+          c.phone || '',
+          c.email || ''
+        ].join(',');
+      });
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `clientes_leker_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('success', 'Exportado', `${filteredClients.length} clientes exportados`);
     }
 
     // Client Modal Functions
@@ -21552,6 +21597,7 @@
         document.getElementById('perf-avg-effectiveness').textContent = totals.avgEffectiveness + '%';
         document.getElementById('perf-total-vendors').textContent = totals.totalVendedores;
 
+        _lastPerfStats = stats;
         renderPerformanceTable(stats);
         perfDataLoaded = true;
       } catch (error) {
@@ -21646,6 +21692,44 @@
 
       html += '</tbody></table></div>';
       container.innerHTML = html;
+    }
+
+    let _lastPerfStats = [];
+
+    function exportPerformanceCsv() {
+      if (!_lastPerfStats || _lastPerfStats.length === 0) {
+        showToast('warning', 'Sin datos', 'Carga el rendimiento primero');
+        return;
+      }
+      const headers = ['Vendedor', 'Zona', 'Rutas', 'Rutas Completadas', 'Días Trabajados', 'Visitas', 'Prom/Día', 'Ventas', 'Contactados', 'Sin Contacto', 'Efectividad %'];
+      const rows = _lastPerfStats.map(s => {
+        const gsData = findVendedorData(s.name);
+        const zona = gsData ? gsData.zona : '';
+        return [
+          (s.name || '').replace(/,/g, ' '),
+          (zona || '').replace(/,/g, ' '),
+          s.totalRoutes || 0,
+          s.completedRoutes || 0,
+          s.daysWorked || 0,
+          s.totalVisits || 0,
+          s.avgVisitsPerDay || 0,
+          s.outcomes?.sale || 0,
+          s.outcomes?.contacted || 0,
+          s.outcomes?.no_contact || 0,
+          s.effectiveness || 0
+        ].join(',');
+      });
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rendimiento_vendedores_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('success', 'Exportado', `${_lastPerfStats.length} vendedores exportados`);
     }
 
     // =============================================
