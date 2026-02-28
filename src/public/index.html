@@ -14554,6 +14554,11 @@
               ${addrBadge}
             </div>
             ${confirmBtn}
+            ${client.lat && client.lng ? `
+            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+              <a href="https://waze.com/ul?ll=${client.lat},${client.lng}&navigate=yes" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;background:rgba(99,102,241,0.1);color:#6366f1;padding:5px 10px;border-radius:6px;text-decoration:none;border:1px solid rgba(99,102,241,0.3);"><i data-lucide="navigation" style="width:11px;height:11px;"></i> Waze</a>
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${client.lat},${client.lng}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;background:rgba(16,185,129,0.1);color:#10b981;padding:5px 10px;border-radius:6px;text-decoration:none;border:1px solid rgba(16,185,129,0.3);"><i data-lucide="map" style="width:11px;height:11px;"></i> Maps</a>
+            </div>` : ''}
           </div>
           <div style="text-align: right;">
             <code style="font-size: 12px; background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px;">${client.external_id}</code>
@@ -15205,6 +15210,7 @@
               if (sData.success) todayScheduledData = sData.data;
               renderExecDashboard();
               updateVisitsNavBadge();
+              filterVisitsByExecutive();
             } catch (e) { loadData(); }
           } else { loadData(); }
         } else {
@@ -15251,6 +15257,7 @@
               if (sData.success) todayScheduledData = sData.data;
               renderExecDashboard();
               updateVisitsNavBadge();
+              filterVisitsByExecutive();
             } catch (e) { loadData(); }
           } else { loadData(); }
           // Re-check the selected executive
@@ -24274,7 +24281,17 @@
   </div>
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js');
+  navigator.serviceWorker.register('/service-worker.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newWorker = reg.installing;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          // New version available — show persistent toast
+          showToast('info', 'Nueva versión disponible', 'Recarga la página para actualizar LEKER', 15000);
+        }
+      });
+    });
+  });
 }
 
 // PWA Install prompt
