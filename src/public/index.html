@@ -3715,7 +3715,7 @@
       <div class="login-logo">
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
         <p>Sistema de Gestión Logística</p>
-        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.9.9</div>
+        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.2</div>
       </div>
 
       <!-- Login Form -->
@@ -3792,7 +3792,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v1.9.9</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.2</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -19315,7 +19315,9 @@
           const truncated = str.length > 50 ? str.slice(0, 47) + '...' : str;
           const titleAttr = str.length > 50 ? ` title="${str.replace(/"/g, '&quot;')}"` : '';
           const isAccent = opts.accentCols && opts.accentCols.includes(i);
-          const cellStyle = isAccent && str ? ` style="color: var(--accent); font-weight: 600;"` : '';
+          const isBlue = opts.blueCols && opts.blueCols.includes(i);
+          const cellStyle = isBlue && str ? ` style="color: #3b82f6; font-weight: 600;"` :
+                            (isAccent && str ? ` style="color: var(--accent); font-weight: 600;"` : '');
           html += `<td${isNum ? ' class="num"' : ''}${titleAttr}${cellStyle}>${truncated}</td>`;
         });
         html += '</tr>';
@@ -19356,6 +19358,81 @@
       ));
     }
 
+    function _ventasNameIdx(headers) {
+      return headers.findIndex(h => h && (
+        h.toLowerCase().includes('fantasía') || h.toLowerCase().includes('fantasia') ||
+        h.toLowerCase().includes('fantasia') || h.toLowerCase() === 'nombre'
+      ));
+    }
+
+    function _renderVentasGrouped(data, containerId) {
+      const container = document.getElementById(containerId);
+      if (!container || !data || data.length === 0) return;
+
+      const headers = data[0];
+      const dataRows = data.slice(1).filter(r => r.some(c => c !== '' && c != null));
+      const codes8020 = _get8020Codes();
+
+      const codeIdx = findCodeColumn(headers);
+      const nameIdx = _ventasNameIdx(headers);
+      const vendIdx = _ventasVendorIdx(headers);
+
+      // Blue columns: code + fantasy name + vendor
+      const blueCols = [codeIdx, nameIdx, vendIdx].filter(i => i >= 0);
+
+      // Separate 80/20 from the rest
+      const rows8020 = dataRows.filter(r => codes8020.has(String(r[codeIdx] || '').trim()));
+      const rowsResto = dataRows.filter(r => !codes8020.has(String(r[codeIdx] || '').trim()));
+
+      // Build header row
+      let html = '<div class="gs-table-wrap"><table class="gs-table"><thead><tr>';
+      headers.forEach(h => { html += `<th>${h || ''}</th>`; });
+      html += '</tr></thead><tbody>';
+
+      function buildRows(rows, rowStyle) {
+        rows.forEach(row => {
+          html += `<tr style="${rowStyle}">`;
+          row.forEach((cell, i) => {
+            const val = cell != null ? cell : '';
+            const str = String(val);
+            const truncated = str.length > 50 ? str.slice(0, 47) + '...' : str;
+            const titleAttr = str.length > 50 ? ` title="${str.replace(/"/g, '&quot;')}"` : '';
+            const isBlue = blueCols.includes(i) && str;
+            const cellStyle = isBlue ? ` style="color: #3b82f6; font-weight: 600;"` : '';
+            html += `<td${titleAttr}${cellStyle}>${truncated}</td>`;
+          });
+          html += '</tr>';
+        });
+      }
+
+      const colSpan = headers.length;
+
+      // 80/20 group
+      if (rows8020.length > 0) {
+        html += `<tr><td colspan="${colSpan}" style="padding:8px 12px;background:rgba(212,175,55,0.15);font-weight:700;font-size:12px;color:#b45309;">
+          ⭐ Clientes 80/20 <span style="font-weight:400;margin-left:6px;color:var(--text-muted);">(${rows8020.length} clientes)</span>
+        </td></tr>`;
+        buildRows(rows8020, 'background:rgba(212,175,55,0.07);');
+      }
+
+      // Non-sold group
+      if (rowsResto.length > 0) {
+        html += `<tr><td colspan="${colSpan}" style="padding:8px 12px;background:rgba(100,116,139,0.1);font-weight:700;font-size:12px;color:var(--text-secondary);">
+          Sin venta 2025 <span style="font-weight:400;margin-left:6px;color:var(--text-muted);">(${rowsResto.length} clientes)</span>
+        </td></tr>`;
+        buildRows(rowsResto, '');
+      }
+
+      // If no 80/20 data yet, just show all rows with blue cols
+      if (rows8020.length === 0 && rowsResto.length === 0) {
+        buildRows(dataRows, '');
+      }
+
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
     function renderGsheetsVentas(data) {
       if (!data || data.length === 0) return;
       data = cleanSheetData(data);
@@ -19379,8 +19456,7 @@
         vendorSelect.innerHTML = '<option value="">Todos los vendedores</option>' + vendors.map(v => `<option value="${v}">${v}</option>`).join('');
       }
 
-      const vendAccent = vendIdx >= 0 ? [vendIdx] : [];
-      sheetToTable(data, 'gs-ventas-body', { maxRows: 100, page: 0, storeKey: 'ventas', highlightFn: _ventasHighlightFn, accentCols: vendAccent });
+      _renderVentasGrouped(data, 'gs-ventas-body');
       _showVentasLegend();
     }
 
@@ -19406,8 +19482,7 @@
         if (matchSearch && matchMes && matchVendor) filtered.push(row);
       });
 
-      const vendAccent = vendIdx >= 0 ? [vendIdx] : [];
-      sheetToTable(filtered, 'gs-ventas-body', { maxRows: 100, page: 0, storeKey: 'ventas', highlightFn: _ventasHighlightFn, accentCols: vendAccent });
+      _renderVentasGrouped(filtered, 'gs-ventas-body');
       _showVentasLegend();
     }
 
@@ -22111,12 +22186,41 @@
       }
     }
 
+    function normalizeRegion(name) {
+      if (!name) return 'Sin Región';
+      const n = name.toLowerCase().trim();
+      if (n === 'sin' || n === 'sin región' || n === 'sin region' || n === '') return 'Sin Región';
+      if (n.includes('metropolitana') || n.includes('metro')) return 'Metropolitana';
+      if (n.includes('primera') || n.includes('tarapacá') || n.includes('tarapaca')) return 'Primera (Tarapacá)';
+      if (n.includes('segunda') || n.includes('antofagasta')) return 'Segunda (Antofagasta)';
+      if (n.includes('tercera') || n.includes('atacama')) return 'Tercera (Atacama)';
+      if ((n.includes('cuarta') || n === 'iv') && !n.includes('décimo') && !n.includes('decimo')) return 'Cuarta (Coquimbo)';
+      if (n.includes('quinta') || n.includes('valparaíso') || n.includes('valparaiso') || n === 'v') return 'Quinta (Valparaíso)';
+      if ((n.includes('sexta') || n === 'vi') && !n.includes('séptima') && !n.includes('septima')) return "Sexta (O'Higgins)";
+      if (n.includes('séptima') || n.includes('septima') || n.includes('maule') || n === 'vii') return 'Séptima (Maule)';
+      if (n.includes('octava') || n.includes('biobío') || n.includes('biobio') || n.includes('bío') || n === 'viii') return 'Octava (Bío-Bío)';
+      if (n.includes('novena') || n.includes('araucanía') || n.includes('araucania') || n === 'ix') return 'Novena (Araucanía)';
+      if ((n.includes('décimo cuarta') || n.includes('decimo cuarta') || n.includes('ríos') || n.includes('rios')) && !n.includes('quinta')) return 'Décimo Cuarta (Los Ríos)';
+      if (n.includes('décimo quinta') || n.includes('decimo quinta') || n.includes('arica') || n === 'xv') return 'Décimo Quinta (Arica y Parinacota)';
+      if (n.includes('undécima') || n.includes('undecima') || n.includes('aysén') || n.includes('aysen') || n === 'xi') return 'Undécima (Aysén)';
+      if (n.includes('duodécima') || n.includes('duodecima') || n.includes('magallanes') || n === 'xii') return 'Duodécima (Magallanes)';
+      if ((n.includes('décima') || n.includes('decima') || n.includes('lagos') || n === 'x') && !n.includes('cuarta') && !n.includes('quinta')) return 'Décima (Los Lagos)';
+      return name;
+    }
+
     function renderRegionsChart(regions, total) {
       const container = document.getElementById('regions-chart');
       if (!container) return;
 
+      // Normalize and merge duplicate region names
+      const normalized = {};
+      Object.entries(regions).forEach(([name, count]) => {
+        const key = normalizeRegion(name);
+        normalized[key] = (normalized[key] || 0) + count;
+      });
+
       // Sort by count, group small ones
-      const sorted = Object.entries(regions)
+      const sorted = Object.entries(normalized)
         .sort((a, b) => b[1] - a[1]);
 
       const regionColors = [
@@ -22130,7 +22234,7 @@
         const pct = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
         const barWidth = total > 0 ? Math.max(2, (count / sorted[0][1]) * 100) : 0;
         const color = regionColors[i % regionColors.length];
-        const shortName = name.replace(/\(.*?\)/g, '').replace(/Región\s*/i, '').replace(/Decimo\s*/i, '').trim();
+        const shortName = name; // already normalized
 
         html += `
           <div style="display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border);">
