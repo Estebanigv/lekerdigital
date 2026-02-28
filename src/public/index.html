@@ -18701,6 +18701,36 @@
 
       // --- Zonas Summary ---
       const zonasContainer = document.getElementById('dash-zonas-summary');
+      if (zonasContainer && !gsheetsVendedoresParsed?.length) {
+        // Fallback: render from allUsers + allClients without Sheets data
+        const ZONE_COLORS_LOCAL = {
+          'rm': { bg: 'rgba(99,102,241,0.08)', color: '#6366f1', border: 'rgba(99,102,241,0.25)', label: 'RM' },
+          'concepción': { bg: 'rgba(5,150,105,0.08)', color: '#059669', border: 'rgba(5,150,105,0.25)', label: 'Concepción' },
+          'temuco': { bg: 'rgba(245,158,11,0.08)', color: '#d97706', border: 'rgba(245,158,11,0.25)', label: 'Temuco' },
+          'puerto montt': { bg: 'rgba(59,130,246,0.08)', color: '#3b82f6', border: 'rgba(59,130,246,0.25)', label: 'Puerto Montt' }
+        };
+        const vendors = (allUsers || []).filter(u => u.role === 'executive' || u.role === 'zonal');
+        const zoneGroups = {};
+        vendors.forEach(u => {
+          const z = (u.zone || 'Sin zona').toLowerCase();
+          if (!zoneGroups[z]) zoneGroups[z] = [];
+          zoneGroups[z].push(u);
+        });
+        let fallbackHtml = '';
+        Object.entries(zoneGroups).sort().forEach(([zone, members]) => {
+          const zc = ZONE_COLORS_LOCAL[zone] || { bg: 'var(--bg-hover)', color: 'var(--text-secondary)', border: 'var(--border)', label: zone };
+          const clientsInZone = (allClients || []).filter(c => members.some(u => u.id === c.assigned_user_id));
+          const clients8020 = clientsInZone.filter(c => c.segmentation === '80-20');
+          fallbackHtml += `<div style="background:${zc.bg};border:1px solid ${zc.border};border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-size:11px;font-weight:700;color:${zc.color};margin-bottom:4px;">${zc.label}</div>
+            <div style="font-size:18px;font-weight:800;color:${zc.color};line-height:1;">${members.length}</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">vendedores</div>
+            <div style="font-size:11px;font-weight:600;color:var(--text-secondary);">${clientsInZone.length} clientes</div>
+            ${clients8020.length > 0 ? `<div style="margin-top:4px;font-size:10px;font-weight:700;color:#b8860b;">⭐ ${clients8020.length} 80/20</div>` : ''}
+          </div>`;
+        });
+        if (fallbackHtml) { zonasContainer.innerHTML = fallbackHtml; lucide.createIcons(); }
+      }
       if (zonasContainer && gsheetsVendedoresParsed && gsheetsVendedoresParsed.length > 0) {
         const ZONAS = ['Zona Norte', 'Zona Centro', 'Zona Centro Sur', 'Zona Sur'];
         let html = '';
@@ -24178,6 +24208,9 @@
 
       // Load segmentation stats
       loadSegmentationStats();
+
+      // Render dashboard summary (Zonas fallback from DB if Sheets not loaded)
+      renderDashboardSummary();
 
       // Load Google Sheets URL for map edit links
       fetch(`${API}/api/config/sheets-url`).then(r => r.json()).then(d => {
