@@ -12449,10 +12449,11 @@
           </div>
           <div style="flex: 1; padding: 8px 10px; border-bottom: 1px solid var(--border);">
             <div style="font-weight: 600;">${clientName}</div>
-            <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap:wrap;">
               <span style="padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; background: ${oc}15; color: ${oc};">${ocLabel}</span>
               ${commune ? `<span style="font-size: 10px; color: var(--text-muted);">${commune}</span>` : ''}
             </div>
+            ${v.checklist_data?.observations ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;font-style:italic;">"${v.checklist_data.observations}"</div>` : ''}
           </div>
         </div>`;
       });
@@ -12482,6 +12483,7 @@
               ${commune ? `<span style="font-size: 10px; color: var(--text-muted);">${commune}</span>` : ''}
               ${hasGps ? `<button onclick="openWazeToClient(${client.lat},${client.lng})" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:5px;cursor:pointer;padding:2px 8px;font-size:9px;font-weight:600;color:#10b981;">Waze</button>` : ''}
               ${hasGps ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${client.lat},${client.lng}" target="_blank" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:5px;cursor:pointer;padding:2px 8px;font-size:9px;font-weight:600;color:#3b82f6;text-decoration:none;">Maps</a>` : ''}
+              ${client.phone ? `<a href="tel:${client.phone.replace(/\s+/g,'')}" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:5px;padding:2px 8px;font-size:9px;font-weight:600;color:#059669;text-decoration:none;display:inline-flex;align-items:center;gap:3px;"><i data-lucide="phone" style="width:9px;height:9px;"></i>${client.phone}</a>` : ''}
               ${client.id ? `<button onclick="goToCheckinClient('${client.id}')" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:5px;cursor:pointer;padding:2px 8px;font-size:9px;font-weight:600;color:#6366f1;">Registrar</button>` : ''}
             </div>
           </div>
