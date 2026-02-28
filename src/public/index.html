@@ -6108,7 +6108,13 @@
           <div class="card">
             <div class="card-header">
               <h3><i data-lucide="package" style="width: 18px; height: 18px;"></i> Lista de Productos</h3>
-              <span class="badge badge-active" id="products-count">0</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="position:relative;">
+                  <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
+                  <input type="text" id="products-search" placeholder="Buscar SKU o nombre..." oninput="filterProductsTable()" style="padding:5px 8px 5px 28px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg-card);color:var(--text-primary);width:200px;">
+                </div>
+                <span class="badge badge-active" id="products-count">0</span>
+              </div>
             </div>
             <div class="table-wrapper" style="max-height: 500px; overflow-y: auto;">
               <table id="table-products">
@@ -12443,6 +12449,7 @@
               <span style="font-size: 10px; color: #f59e0b; font-weight: 600;">Pendiente</span>
               ${commune ? `<span style="font-size: 10px; color: var(--text-muted);">${commune}</span>` : ''}
               ${hasGps ? `<button onclick="openWazeToClient(${client.lat},${client.lng})" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:5px;cursor:pointer;padding:2px 8px;font-size:9px;font-weight:600;color:#10b981;">Waze</button>` : ''}
+              ${hasGps ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${client.lat},${client.lng}" target="_blank" style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:5px;cursor:pointer;padding:2px 8px;font-size:9px;font-weight:600;color:#3b82f6;text-decoration:none;">Maps</a>` : ''}
               ${client.id ? `<button onclick="goToCheckinClient('${client.id}')" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:5px;cursor:pointer;padding:2px 8px;font-size:9px;font-weight:600;color:#6366f1;">Registrar</button>` : ''}
             </div>
           </div>
@@ -14584,6 +14591,10 @@
       cardDiv.style.position = 'relative';
       lucide.createIcons();
 
+      // Default outcome to 'sale' for exec workflow (most common outcome)
+      const outcomeEl = document.getElementById('checkin-outcome');
+      if (outcomeEl && outcomeEl.value === 'pending') outcomeEl.value = 'sale';
+
       // Trigger address verification
       selectedClientData = client;
       onClientSelectChange();
@@ -15028,14 +15039,33 @@
       document.getElementById('vehicles-count').textContent = filtered.length;
     }
 
+    let _allProductsData = [];
+
     function renderProductsTable(data) {
+      _allProductsData = data;
+      _renderFilteredProducts(data);
+    }
+
+    function filterProductsTable() {
+      const search = (document.getElementById('products-search')?.value || '').toLowerCase();
+      const filtered = search
+        ? _allProductsData.filter(p => (p.sku || '').toLowerCase().includes(search) || (p.name || '').toLowerCase().includes(search))
+        : _allProductsData;
+      _renderFilteredProducts(filtered);
+    }
+
+    function _renderFilteredProducts(data) {
       const tbody = document.querySelector('#table-products tbody');
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Sin resultados</td></tr>';
+        return;
+      }
       tbody.innerHTML = data.map(p => `
         <tr>
           <td><code>${p.sku}</code></td>
           <td>${p.name}</td>
-          <td>$${p.base_cost.toLocaleString()}</td>
-          <td>$${p.list_price.toLocaleString()}</td>
+          <td>$${(p.base_cost || 0).toLocaleString()}</td>
+          <td>$${(p.list_price || 0).toLocaleString()}</td>
         </tr>
       `).join('');
     }
@@ -16589,13 +16619,16 @@
             const daysDiff = Math.floor((now - d) / 86400000);
             const label = d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
             const color = daysDiff > 60 ? '#ef4444' : daysDiff > 30 ? '#f59e0b' : '#10b981';
-            return `<span style="color:${color};font-weight:600;" title="${d.toLocaleDateString('es-CL')}">${label}</span>`;
+            return `<span style="color:${color};font-weight:600;" title="hace ${daysDiff} día${daysDiff !== 1 ? 's' : ''} — ${d.toLocaleDateString('es-CL')}">${label}</span>`;
           })()}</td>
           <td>
             <div style="display:flex;gap:4px;">
               <button class="btn-icon" onclick="openClientModal('${c.id}')" title="Editar cliente">
                 <i data-lucide="pencil" style="width:13px;height:13px;"></i>
               </button>
+              ${c.phone ? `<a href="tel:${c.phone.replace(/\s+/g,'')}" class="btn-icon" title="Llamar: ${c.phone}" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">
+                <i data-lucide="phone" style="width:13px;height:13px;color:#10b981;"></i>
+              </a>` : ''}
               ${hasGps ? `<button class="btn-icon" title="Ver en Google Maps" onclick="window.open('https://www.google.com/maps?q=${c.lat},${c.lng}','_blank')">
                 <i data-lucide="map-pin" style="width:13px;height:13px;"></i>
               </button>` : ''}
