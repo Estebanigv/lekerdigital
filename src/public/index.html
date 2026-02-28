@@ -9119,6 +9119,7 @@
               </div>
               <div style="display:flex;gap:4px;flex-shrink:0;align-items:center;margin-top:1px;">
                 ${hasGps && !isDone ? `<button onclick="openWazeToClient(${client.lat},${client.lng})" style="background:rgba(51,204,255,0.1);border:1px solid rgba(51,204,255,0.3);border-radius:6px;cursor:pointer;padding:4px 6px;display:flex;align-items:center;" title="Waze"><i data-lucide="navigation" style="width:11px;height:11px;color:#33ccff;"></i></button>` : ''}
+                ${hasGps && !isDone ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${client?.lat},${client?.lng}" target="_blank" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:6px;cursor:pointer;padding:4px 6px;display:flex;align-items:center;" title="Google Maps"><i data-lucide="map" style="width:11px;height:11px;color:#10b981;"></i></a>` : ''}
                 ${!isDone && client?.id ? `<button onclick="goToCheckinClient('${client.id}')" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:6px;cursor:pointer;padding:4px 8px;font-size:10px;font-weight:600;color:#6366f1;">Visitar</button>` : ''}
                 ${isDone ? '<span style="font-size:10px;color:#10b981;font-weight:600;">✓ Hecho</span>' : ''}
               </div>
@@ -9186,6 +9187,7 @@
             </div>
             <div style="display:flex;gap:4px;flex-shrink:0;align-items:center;margin-top:1px;">
               ${hasGps ? `<button onclick="openWazeToClient(${client.lat},${client.lng})" style="background:rgba(51,204,255,0.1);border:1px solid rgba(51,204,255,0.3);border-radius:6px;cursor:pointer;padding:4px 6px;display:flex;align-items:center;" title="Waze"><i data-lucide="navigation" style="width:11px;height:11px;color:#33ccff;"></i></button>` : ''}
+              ${hasGps ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${client?.lat},${client?.lng}" target="_blank" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:6px;cursor:pointer;padding:4px 6px;display:flex;align-items:center;" title="Google Maps"><i data-lucide="map" style="width:11px;height:11px;color:#10b981;"></i></a>` : ''}
               ${client?.id ? `<button onclick="goToCheckinClient('${client.id}')" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:6px;cursor:pointer;padding:4px 8px;font-size:10px;font-weight:600;color:#6366f1;">Visitar</button>` : ''}
             </div>
           </div>`;
