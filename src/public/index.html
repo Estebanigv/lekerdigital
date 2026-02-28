@@ -5498,6 +5498,12 @@
                 <option value="has">Con GPS</option>
                 <option value="none">Sin GPS</option>
               </select>
+              <select id="crm-visit-filter" class="form-control" style="max-width: 150px; font-size: 13px;" onchange="filterCrmClients()">
+                <option value="">Toda visita</option>
+                <option value="never">Sin visita nunca</option>
+                <option value="60">Sin visita 60+ días</option>
+                <option value="30">Sin visita 30+ días</option>
+              </select>
               <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;" onclick="resetCrmFilters()">
                 <i data-lucide="x" style="width: 13px; height: 13px;"></i> Limpiar
               </button>
@@ -16458,7 +16464,9 @@
       const zone   = document.getElementById('crm-zone-filter')?.value || '';
       const seg    = document.getElementById('crm-seg-filter')?.value || '';
       const gps    = document.getElementById('crm-gps-filter')?.value || '';
+      const visit  = document.getElementById('crm-visit-filter')?.value || '';
 
+      const now = new Date();
       _crmFiltered = clients.filter(c => {
         if (search) {
           const extId = (c.external_id || '').toLowerCase();
@@ -16471,6 +16479,13 @@
         const hasGps = !!(c.lat && c.lng);
         if (gps === 'has' && !hasGps) return false;
         if (gps === 'none' && hasGps) return false;
+        if (visit === 'never' && c.last_visit_at) return false;
+        if (visit === '60' || visit === '30') {
+          const days = parseInt(visit);
+          if (!c.last_visit_at) return true; // no visit = older than any threshold
+          const daysDiff = Math.floor((now - new Date(c.last_visit_at)) / 86400000);
+          if (daysDiff < days) return false;
+        }
         return true;
       });
 
@@ -16609,7 +16624,7 @@
     }
 
     function resetCrmFilters() {
-      ['crm-search', 'crm-vendor-filter', 'crm-zone-filter', 'crm-seg-filter', 'crm-gps-filter']
+      ['crm-search', 'crm-vendor-filter', 'crm-zone-filter', 'crm-seg-filter', 'crm-gps-filter', 'crm-visit-filter']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       filterCrmClients();
     }
