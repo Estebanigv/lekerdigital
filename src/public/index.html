@@ -20823,6 +20823,103 @@
       _initDirColumnResizers(tableId);
     }
 
+    // Auto-sync desde Google Sheets al abrir Direcciones (máx 1 vez/5min)
+    let _lastSheetsSync = 0;
+    async function _silentSyncFromSheets() {
+      const now = Date.now();
+      if (now - _lastSheetsSync < 5 * 60 * 1000) return;
+      _lastSheetsSync = now;
+
+      const badge = document.getElementById('gs-badge-direcciones');
+      if (badge) { badge.textContent = '⟳'; badge.style.color = '#6366f1'; }
+
+      try {
+        const res = await fetch(`${API}/api/gsheets/Direcciones`);
+        const result = await res.json();
+        if (!result.success || !result.data || result.data.length < 2) {
+          if (badge) badge.textContent = '';
+          return;
+        }
+        gsheetsAllDirecciones = cleanSheetData(result.data);
+
+        const headers = gsheetsAllDirecciones[0].map(h => String(h || '').trim().toLowerCase());
+        const rows = gsheetsAllDirecciones.slice(1).filter(r => r.some(c => c !== '' && c != null));
+        const colCode = headers.findIndex(h => h.includes('cod'));
+        if (colCode === -1) { if (badge) badge.textContent = ''; return; }
+        const colRazon    = headers.findIndex(h => h.includes('raz'));
+        const colFantasia = headers.findIndex(h => h.includes('fan'));
+        const colDir      = headers.findIndex(h => h.includes('direcc') || h.includes('address'));
+        const colComuna   = headers.findIndex(h => h.includes('comun'));
+        const colCiudad   = headers.findIndex(h => h.includes('ciudad'));
+        const colRegion   = headers.findIndex(h => h.includes('region') || h.includes('región'));
+        const colLink     = headers.findIndex(h => h.includes('link') || h.includes('geo'));
+        const cell = (row, idx) => idx >= 0 && row[idx] ? String(row[idx]).trim() : '';
+
+        const importRows = rows.map(row => ({
+          external_id:  cell(row, colCode),
+          name:         cell(row, colRazon) || cell(row, colFantasia) || cell(row, colCode),
+          fantasy_name: cell(row, colFantasia) || null,
+          address:      cell(row, colDir)     || null,
+          commune:      cell(row, colComuna)  || null,
+          city:         cell(row, colCiudad)  || null,
+          region:       cell(row, colRegion)  || null,
+          geo_link:     cell(row, colLink)    || null
+        })).filter(r => r.external_id);
+
+        // Solo filas que cambiaron vs allClients
+        const clientMap = {};
+        allClients.forEach(c => { clientMap[c.external_id] = c; });
+        const changed = importRows.filter(r => {
+          const c = clientMap[r.external_id];
+          if (!c) return true;
+          return (r.address      && r.address      !== c.address)      ||
+                 (r.commune      && r.commune      !== c.commune)      ||
+                 (r.name         && r.name         !== c.name)         ||
+                 (r.fantasy_name && r.fantasy_name !== c.fantasy_name) ||
+                 (r.geo_link     && r.geo_link     !== c.geo_link)     ||
+                 (r.region       && r.region       !== c.region);
+        });
+
+        if (changed.length === 0) {
+          if (badge) badge.textContent = '';
+          return;
+        }
+
+        // Sync solo filas cambiadas
+        let totalCreated = 0, totalUpdated = 0;
+        const batchSize = 200;
+        for (let i = 0; i < changed.length; i += batchSize) {
+          const res2 = await fetch(`${API}/api/clients/import-from-sheets`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rows: changed.slice(i, i + batchSize) })
+          });
+          const d = await res2.json();
+          if (d.success && d.data) {
+            totalCreated += d.data.created || 0;
+            totalUpdated += d.data.updated || 0;
+          }
+        }
+
+        // Recargar allClients y refrescar tabla
+        const clientsRes = await fetch(`${API}/api/clients`);
+        const clientsData = await clientsRes.json();
+        if (clientsData.success) {
+          allClients = clientsData.data;
+          filterDireccionesDB();
+          populateDirFilters();
+        }
+
+        if (totalCreated + totalUpdated > 0) {
+          showToast('success', 'Excel sincronizado', `${totalCreated > 0 ? totalCreated + ' nuevos' : ''}${totalCreated > 0 && totalUpdated > 0 ? ', ' : ''}${totalUpdated > 0 ? totalUpdated + ' actualizados' : ''} desde Google Sheets`);
+        }
+        if (badge) badge.textContent = '';
+      } catch (e) {
+        if (badge) badge.textContent = '';
+        // Falla silenciosa — no interrumpe la UI
+      }
+    }
+
     function initDireccionesFromDB() {
       if (!allClients || allClients.length === 0) return;
       populateDirFilters();
@@ -20837,6 +20934,9 @@
       }
 
       filterDireccionesDB();
+
+      // Sync automático desde Google Sheets en background
+      _silentSyncFromSheets();
 
       // Show import banner if Sheet has many more clients than DB
       const sheetCount = gsheetsAllDirecciones ? gsheetsAllDirecciones.length - 1 : 0;
