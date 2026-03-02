@@ -300,6 +300,16 @@ app.delete('/api/clients/:id', async (req, res) => {
   }
 });
 
+// Geocodificar cliente (actualiza lat/lng usando su dirección actual)
+app.post('/api/clients/:id/geocode', authorize('admin', 'supervisor'), async (req, res) => {
+  try {
+    const result = await routesService.geocodeClient(req.params.id);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/api/clients/import-from-sheets', authorize('admin'), async (req, res) => {
   try {
     const { rows } = req.body;

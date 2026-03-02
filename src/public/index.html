@@ -3710,6 +3710,18 @@
         padding-bottom: 8px;
       }
       .monthly-calendar-grid { min-width: 560px !important; }
+
+      /* --- LOGÍSTICA CRM: filtros en grilla 2 col --- */
+      .crm-filters {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+      }
+      .crm-filters .crm-search-wrap { grid-column: 1 / -1 !important; }
+      .crm-filters .crm-filter-actions { grid-column: 1 / -1 !important; display: flex !important; gap: 8px !important; align-items: center !important; }
+      .crm-filters select.form-control { max-width: 100% !important; }
+      #crm-stats-bar { gap: 10px !important; justify-content: flex-start !important; }
+      #crm-stats-bar > div { min-width: 60px; }
     }
   </style>
 </head>
@@ -3720,7 +3732,7 @@
       <div class="login-logo">
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
         <p>Sistema de Gestión Logística</p>
-        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.5</div>
+        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.9</div>
       </div>
 
       <!-- Login Form -->
@@ -3797,7 +3809,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.5</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.2.9</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -4221,49 +4233,31 @@
               </button>
             </div>
             <div class="card-body">
-              <!-- Segmentos A-E -->
+              <!-- KPIs reales calculados desde allClients -->
               <div id="segmentation-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                <div style="text-align: center; padding: 14px 8px; background: rgba(217,119,6,0.08); border-radius: 10px; border: 1px solid rgba(217,119,6,0.3); cursor: pointer;" onclick="goToClientsBySegment('A')">
-                  <div style="font-size: 26px; font-weight: 700; color: #d97706;" id="seg-A-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">A · Prioritario</div>
+                <div style="text-align: center; padding: 14px 8px; background: rgba(212,175,55,0.08); border-radius: 10px; border: 1px solid rgba(212,175,55,0.3); cursor: pointer;" onclick="goToClientsBySegmentation('80-20')">
+                  <div style="font-size: 26px; font-weight: 700; color: #b8860b;" id="seg-A-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">⭐ 80/20 Clave</div>
                 </div>
-                <div style="text-align: center; padding: 14px 8px; background: rgba(59,130,246,0.08); border-radius: 10px; border: 1px solid rgba(59,130,246,0.2); cursor: pointer;" onclick="goToClientsBySegment('B')">
+                <div style="text-align: center; padding: 14px 8px; background: rgba(59,130,246,0.08); border-radius: 10px; border: 1px solid rgba(59,130,246,0.2); cursor: pointer;" onclick="filterCrmAndGo('has_geo')">
                   <div style="font-size: 26px; font-weight: 700; color: #3b82f6;" id="seg-B-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">B · Con dirección</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Con geo</div>
                 </div>
-                <div style="text-align: center; padding: 14px 8px; background: rgba(5,150,105,0.08); border-radius: 10px; border: 1px solid rgba(5,150,105,0.2); cursor: pointer;" onclick="goToClientsBySegment('C')">
-                  <div style="font-size: 26px; font-weight: 700; color: #059669;" id="seg-C-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">C · Con vendedor</div>
+                <div style="text-align: center; padding: 14px 8px; background: rgba(16,185,129,0.08); border-radius: 10px; border: 1px solid rgba(16,185,129,0.2); cursor: pointer;" onclick="filterCrmAndGo('has_gps')">
+                  <div style="font-size: 26px; font-weight: 700; color: #10b981;" id="seg-C-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Con lat/lng</div>
                 </div>
-                <div style="text-align: center; padding: 14px 8px; background: rgba(249,115,22,0.08); border-radius: 10px; border: 1px solid rgba(249,115,22,0.2); cursor: pointer;" onclick="goToClientsBySegment('D')">
-                  <div style="font-size: 26px; font-weight: 700; color: #f97316;" id="seg-D-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">D · Potencial</div>
+                <div style="text-align: center; padding: 14px 8px; background: rgba(99,102,241,0.08); border-radius: 10px; border: 1px solid rgba(99,102,241,0.2); cursor: pointer;" onclick="filterCrmAndGo('has_vendor')">
+                  <div style="font-size: 26px; font-weight: 700; color: #6366f1;" id="seg-D-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Con vendedor</div>
                 </div>
-                <div style="text-align: center; padding: 14px 8px; background: rgba(156,163,175,0.08); border-radius: 10px; border: 1px solid rgba(156,163,175,0.2); cursor: pointer;" onclick="goToClientsBySegment('E')">
-                  <div style="font-size: 26px; font-weight: 700; color: #9ca3af;" id="seg-E-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">E · Sin dirección</div>
+                <div style="text-align: center; padding: 14px 8px; background: rgba(239,68,68,0.06); border-radius: 10px; border: 1px solid rgba(239,68,68,0.2); cursor: pointer;" onclick="filterCrmAndGo('no_geo')">
+                  <div style="font-size: 26px; font-weight: 700; color: #ef4444;" id="seg-E-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Sin geo</div>
                 </div>
-                <div style="text-align: center; padding: 14px 8px; background: var(--bg-hover); border-radius: 10px; border: 1px solid var(--border); cursor: pointer;" onclick="goToClientsBySegmentation('')">
+                <div style="text-align: center; padding: 14px 8px; background: var(--bg-hover); border-radius: 10px; border: 1px solid var(--border); cursor: pointer;" onclick="document.querySelector('[data-tab=crm]')?.click()">
                   <div style="font-size: 26px; font-weight: 700; color: var(--text-primary);" id="seg-total-count">-</div>
                   <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Total</div>
-                </div>
-              </div>
-              <!-- Sub-segmentación comercial (80-20, L, N) -->
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
-                <div style="text-align: center; padding: 10px 6px; background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.25); border-radius: 8px; cursor: pointer;" onclick="goToClientsBySegmentation('80-20')">
-                  <div style="font-size: 20px; font-weight: 700; color: #b8860b;" id="seg-8020-count">-</div>
-                  <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">80/20</div>
-                  <div style="font-size: 9px; color: var(--text-muted);">Clave</div>
-                </div>
-                <div style="text-align: center; padding: 10px 6px; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2); border-radius: 8px; cursor: pointer;" onclick="goToClientsBySegmentation('L')">
-                  <div style="font-size: 20px; font-weight: 700; color: #2563eb;" id="seg-L-count">-</div>
-                  <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">L</div>
-                  <div style="font-size: 9px; color: var(--text-muted);">Con ventas</div>
-                </div>
-                <div style="text-align: center; padding: 10px 6px; background: var(--bg-hover); border-radius: 8px; cursor: pointer;" onclick="goToClientsBySegmentation('N')">
-                  <div style="font-size: 20px; font-weight: 700; color: #6b7280;" id="seg-N-count">-</div>
-                  <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">N</div>
-                  <div style="font-size: 9px; color: var(--text-muted);">Nuevos</div>
                 </div>
               </div>
             </div>
@@ -4284,7 +4278,7 @@
         <div class="card">
           <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <h3><i data-lucide="map" style="width: 18px; height: 18px;"></i> Mapa de Clientes</h3>
-            <div id="geocode-alert" style="display: none; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 8px 16px; border-radius: 8px; font-size: 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(29,78,216,0.3);">
+            <div id="geocode-alert" style="display: none; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 8px 16px; border-radius: 8px; font-size: 12px; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(29,78,216,0.3);">
               <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i>
               <span><strong id="geocode-count">0</strong> clientes sin ubicación</span>
               <button id="btn-geocode-header" onclick="geocodeClientsWithoutCoords()" style="background: white; color: #1d4ed8; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
@@ -4319,38 +4313,41 @@
                 <!-- Segment Filters -->
                 <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 10px;">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-                    <span style="font-weight: 600; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Segmentación</span>
+                    <div>
+                      <span style="font-weight: 600; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Segmentación</span>
+                      <div style="font-size: 9px; color: #9ca3af; margin-top: 1px;">total · puntos en mapa = con lat/lng</div>
+                    </div>
                     <button onclick="filterMapBySegment('ALL')" style="font-size: 9px; padding: 2px 7px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Ver todos</button>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('80-20')" data-segment="80-20" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 0;">
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('80-20')" data-segment="80-20" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
                     <div class="legend-dot seg-8020"></div>
                     <span style="flex: 1; font-size: 11px; font-weight: 600;">80/20 — Clave</span>
                     <span id="count-seg-8020" style="font-size: 10px; background: rgba(245,158,11,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
                     <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('L')" data-segment="L" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('L')" data-segment="L" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
                     <div class="legend-dot seg-l"></div>
                     <span style="flex: 1; font-size: 11px;">L — Con ventas</span>
                     <span id="count-seg-l" style="font-size: 10px; background: rgba(59,130,246,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
                     <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('N')" data-segment="N" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('N')" data-segment="N" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
                     <div class="legend-dot seg-n"></div>
                     <span style="flex: 1; font-size: 11px;">N — Nuevos</span>
                     <span id="count-seg-n" style="font-size: 10px; background: rgba(148,163,184,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
                     <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('none')" data-segment="none" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center;">
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('none')" data-segment="none" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
                     <div class="legend-dot seg-none"></div>
                     <span style="flex: 1; font-size: 11px;">Sin clasificar</span>
                     <span id="count-seg-none" style="font-size: 10px; background: rgba(203,213,225,0.4); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
                     <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('FOCO')" data-segment="FOCO" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; align-items: center;">
+                  <div class="legend-item" data-segment="SIN_GEO" style="padding: 5px 8px; border-radius: 6px; margin: 2px 0; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; align-items: center; opacity: 0.7;" title="Clientes sin coordenadas GPS — no visibles en el mapa">
                     <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.4); margin-right: 8px; flex-shrink:0;"></div>
-                    <span style="flex: 1; font-size: 11px;">FOCO</span>
-                    <span id="count-seg-foco" style="font-size: 10px; background: rgba(239,68,68,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
-                    <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
+                    <span style="flex: 1; font-size: 11px;">Sin GEO</span>
+                    <span id="count-seg-singeo" style="font-size: 10px; background: rgba(239,68,68,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
+                    <i data-lucide="map-pin-off" style="width:12px;height:12px;flex-shrink:0;color:#ef4444;"></i>
                   </div>
                   <button onclick="filterMapBySegment('ALL')" style="width: 100%; margin-top: 8px; padding: 5px 8px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
                     Mostrar Todos
@@ -4358,9 +4355,21 @@
                 </div>
                 <!-- Location Stats -->
                 <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 8px 10px; margin-top: 8px;">
-                  <div style="display: flex; justify-content: space-between; font-size: 11px;">
-                    <span style="color: var(--text-muted);">Con GPS: <strong id="stats-with-coords" style="color: var(--success);">0</strong></span>
-                    <span style="color: var(--text-muted);">Sin GPS: <strong id="stats-without-coords" style="color: var(--warning);">0</strong></span>
+                  <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; margin-bottom: 6px;">Cobertura GPS</div>
+                  <!-- Asignados con GPS (el dato relevante) -->
+                  <div style="margin-bottom: 5px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
+                      <span style="color: #374151; font-weight: 500;">Asignados</span>
+                      <span><strong id="stats-assigned-gps" style="color: #10b981;">0</strong><span style="color: #9ca3af; font-size: 10px;"> / <span id="stats-assigned-total">0</span></span></span>
+                    </div>
+                    <div style="height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden;">
+                      <div id="stats-assigned-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #06b6d4); border-radius: 2px; transition: width 0.5s;"></div>
+                    </div>
+                  </div>
+                  <!-- Total (secundario) -->
+                  <div style="display: flex; justify-content: space-between; font-size: 10px; color: #9ca3af;">
+                    <span>Con lat/lng: <strong id="stats-with-coords" style="color: #10b981;">0</strong></span>
+                    <span>Sin lat/lng: <strong id="stats-without-coords" style="color: #f59e0b;">0</strong></span>
                   </div>
                   <button id="btn-geocode" onclick="geocodeClientsWithoutCoords()" style="width: 100%; padding: 4px 6px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; display: none; margin-top: 6px;">
                     <i data-lucide="map-pin" style="width: 10px; height: 10px; vertical-align: middle;"></i> Geocodificar
@@ -5491,10 +5500,10 @@
         <!-- Filters -->
         <div class="card" style="margin-bottom: 16px;">
           <div class="card-body" style="padding: 12px 16px;">
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-              <div style="position: relative; flex: 1; min-width: 180px;">
+            <div class="crm-filters" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+              <div class="crm-search-wrap" style="position: relative; flex: 1; min-width: 200px;">
                 <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-muted);"></i>
-                <input id="crm-search" type="text" class="form-control" placeholder="Buscar por código, nombre, dirección, comuna o teléfono..." style="padding-left: 32px;" oninput="filterCrmClients()">
+                <input id="crm-search" type="text" class="form-control" placeholder="Buscar código, nombre, dirección, teléfono..." style="padding-left: 32px;" oninput="filterCrmClients()">
               </div>
               <select id="crm-vendor-filter" class="form-control" style="max-width: 180px; font-size: 13px;" onchange="filterCrmClients()">
                 <option value="">Todos los vendedores</option>
@@ -5508,10 +5517,12 @@
                 <option value="L">L Con ventas</option>
                 <option value="N">N Nuevos</option>
               </select>
-              <select id="crm-gps-filter" class="form-control" style="max-width: 120px; font-size: 13px;" onchange="filterCrmClients()">
-                <option value="">Todo GPS</option>
-                <option value="has">Con GPS</option>
-                <option value="none">Sin GPS</option>
+              <select id="crm-gps-filter" class="form-control" style="max-width: 130px; font-size: 13px;" onchange="filterCrmClients()">
+                <option value="">Todo geo</option>
+                <option value="has_geo">Con geo-link</option>
+                <option value="no_geo">Sin geo-link</option>
+                <option value="has">Con lat/lng</option>
+                <option value="none">Sin lat/lng</option>
               </select>
               <select id="crm-visit-filter" class="form-control" style="max-width: 150px; font-size: 13px;" onchange="filterCrmClients()">
                 <option value="">Toda visita</option>
@@ -5519,13 +5530,15 @@
                 <option value="60">Sin visita 60+ días</option>
                 <option value="30">Sin visita 30+ días</option>
               </select>
-              <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;" onclick="resetCrmFilters()">
-                <i data-lucide="x" style="width: 13px; height: 13px;"></i> Limpiar
-              </button>
-              <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;" onclick="exportCrmCsv()">
-                <i data-lucide="download" style="width: 13px; height: 13px;"></i> CSV
-              </button>
-              <span id="crm-count-label" style="font-size: 12px; color: var(--text-muted); white-space: nowrap;"></span>
+              <div class="crm-filter-actions">
+                <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;" onclick="resetCrmFilters()">
+                  <i data-lucide="x" style="width: 13px; height: 13px;"></i> Limpiar
+                </button>
+                <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;" onclick="exportCrmCsv()">
+                  <i data-lucide="download" style="width: 13px; height: 13px;"></i> CSV
+                </button>
+                <span id="crm-count-label" style="font-size: 12px; color: var(--text-muted); white-space: nowrap; margin-left: 4px;"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -5540,9 +5553,9 @@
                     <th style="width: 90px;">Código</th>
                     <th>Cliente</th>
                     <th>Dirección / Comuna</th>
-                    <th style="width: 110px;">Zona</th>
-                    <th style="width: 150px;">Vendedor</th>
-                    <th style="width: 90px;">Segment.</th>
+                    <th style="width: 130px;">Zona</th>
+                    <th style="width: 140px;">Vendedor</th>
+                    <th style="width: 95px;">Segment.</th>
                     <th style="width: 80px;">GPS</th>
                     <th style="width: 90px;">Últ. Visita</th>
                     <th style="width: 90px;">Acciones</th>
@@ -7259,28 +7272,28 @@
         <input type="hidden" id="client-id">
         <div class="form-group">
           <label>Código *</label>
-          <input type="text" id="client-code" class="form-control" placeholder="Ej: 12345678-9">
+          <input type="text" id="client-code" class="form-control" placeholder="Ej: 12345678-9" autocomplete="off">
         </div>
         <div class="form-group">
           <label>Razón Social *</label>
-          <input type="text" id="client-name" class="form-control" placeholder="Nombre legal">
+          <input type="text" id="client-name" class="form-control" placeholder="Nombre legal" autocomplete="off">
         </div>
         <div class="form-group">
           <label>Nombre Fantasía</label>
-          <input type="text" id="client-fantasy" class="form-control" placeholder="Nombre comercial">
+          <input type="text" id="client-fantasy" class="form-control" placeholder="Nombre comercial" autocomplete="off">
         </div>
         <div class="form-group">
           <label>Dirección</label>
-          <input type="text" id="client-address" class="form-control" placeholder="Calle, número">
+          <input type="text" id="client-address" class="form-control" placeholder="Calle, número" autocomplete="off">
         </div>
         <div class="grid-2">
           <div class="form-group">
             <label>Comuna</label>
-            <input type="text" id="client-commune" class="form-control" placeholder="Comuna">
+            <input type="text" id="client-commune" class="form-control" placeholder="Comuna" autocomplete="off">
           </div>
           <div class="form-group">
             <label>Zona</label>
-            <input type="text" id="client-zone" class="form-control" placeholder="Zona de reparto">
+            <input type="text" id="client-zone" class="form-control" placeholder="Zona de reparto" autocomplete="off">
           </div>
         </div>
         <div class="grid-2">
@@ -8289,26 +8302,26 @@
 
     // Add client markers to map using lat/lng from client data
     // Store markers with metadata for filtering
-    let markersBySegment = { '80-20': [], 'L': [], 'N': [], 'none': [], 'FOCO': [] };
-    let activeSegmentFilters = { '80-20': true, 'L': true, 'N': true, 'none': true, 'FOCO': true };
+    let markersBySegment = { '80-20': [], 'L': [], 'N': [], 'none': [] };
+    let activeSegmentFilters = { '80-20': true, 'L': true, 'N': true, 'none': true };
 
     function addClientMarkers(clients) {
       // Clear existing markers
       mainMapMarkers.forEach(m => m.setMap(null));
       mainMapMarkers = [];
       clientMarkers = [];
-      markersBySegment = { '80-20': [], 'L': [], 'N': [], 'none': [], 'FOCO': [] };
+      markersBySegment = { '80-20': [], 'L': [], 'N': [], 'none': [] };
 
       const bounds = new google.maps.LatLngBounds();
       let markersWithCoords = 0;
       let markersWithoutCoords = 0;
-      let segmentCounts = { '80-20': 0, 'L': 0, 'N': 0, 'none': 0, 'FOCO': 0 };
+      let segmentCounts = { '80-20': 0, 'L': 0, 'N': 0, 'none': 0, 'SIN_GEO': 0 };
 
-      // Count ALL clients' segmentation first (not just GPS ones)
+      // Count ALL clients by segmentation (total, not just GPS)
       clients.forEach(c => {
         const s = c.segmentation || 'none';
         segmentCounts[s] = (segmentCounts[s] || 0) + 1;
-        if (c.priority === 'FOCO') segmentCounts.FOCO++;
+        if (!c.lat || !c.lng) segmentCounts.SIN_GEO++;
       });
 
       // Chile bounds: lat -17 to -56, lng -76 to -66
@@ -8338,18 +8351,17 @@
         const segColors = { '80-20': '#f59e0b', 'L': '#3b82f6', 'N': '#94a3b8', 'none': '#cbd5e1' };
         const seg = client.segmentation || 'none';
         const color = segColors[seg] || '#cbd5e1';
-        const isFoco = client.priority === 'FOCO';
 
         const marker = new google.maps.Marker({
           position: position,
           map: mainMap,
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
-            fillColor: isFoco ? '#ef4444' : color,
+            fillColor: color,
             fillOpacity: seg === 'none' ? 0.5 : 1,
             strokeColor: '#fff',
-            strokeWeight: isFoco ? 2 : (seg === '80-20' ? 2 : 1.5),
-            scale: isFoco ? 12 : (seg === '80-20' ? 10 : 7)
+            strokeWeight: seg === '80-20' ? 2 : 1.5,
+            scale: seg === '80-20' ? 10 : 7
           },
           title: client.name
         });
@@ -8358,7 +8370,6 @@
         marker.clientData = client;
         marker.segment = client.segment || 'E';
         marker.segmentation = seg;
-        marker.isFoco = isFoco;
 
         const segLabel = { '80-20': '80/20 Clave', 'L': 'L · Con ventas', 'N': 'N · Nuevo', 'none': '' };
         const infoContent = `
@@ -8375,7 +8386,6 @@
             <div style="margin-top: 10px; display: flex; gap: 4px; flex-wrap: wrap;">
               ${seg !== 'none' ? `<span style="background: ${color}; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">${segLabel[seg] || seg}</span>` : ''}
               ${client.segment ? `<span style="background: #e5e7eb; color: #374151; padding: 3px 10px; border-radius: 4px; font-size: 11px;">Seg ${client.segment}</span>` : ''}
-              ${isFoco ? '<span style="background: #ef4444; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 500;">FOCO</span>' : ''}
             </div>
             ${client.zone ? `<div style="margin-top: 6px; font-size: 11px; color: #9ca3af;">Zona: ${client.zone}</div>` : ''}
           </div>
@@ -8392,14 +8402,13 @@
         // Store by segmentation for filtering
         if (!markersBySegment[seg]) markersBySegment[seg] = [];
         markersBySegment[seg].push(marker);
-        if (isFoco) markersBySegment.FOCO.push(marker);
       });
 
       // Update map stats
       updateMapStats(markersWithCoords, markersWithoutCoords);
 
       // Update segmentation counts in legend
-      const _countMap = { '80-20': 'count-seg-8020', 'L': 'count-seg-l', 'N': 'count-seg-n', 'none': 'count-seg-none', 'FOCO': 'count-seg-foco' };
+      const _countMap = { '80-20': 'count-seg-8020', 'L': 'count-seg-l', 'N': 'count-seg-n', 'none': 'count-seg-none', 'SIN_GEO': 'count-seg-singeo' };
       Object.entries(_countMap).forEach(([key, id]) => {
         const el = document.getElementById(id);
         if (el) el.textContent = segmentCounts[key] || 0;
@@ -8425,7 +8434,7 @@
     const _segKeys = ['80-20', 'L', 'N', 'none'];
     function filterMapBySegment(segment) {
       if (segment === 'ALL') {
-        activeSegmentFilters = { '80-20': true, 'L': true, 'N': true, 'none': true, 'FOCO': true };
+        activeSegmentFilters = { '80-20': true, 'L': true, 'N': true, 'none': true };
         mainMapMarkers.forEach(m => m.setMap(mainMap));
         document.querySelectorAll('.legend-filter').forEach(el => el.classList.add('active'));
         return;
@@ -8447,18 +8456,9 @@
       }
 
       // Show/hide markers
-      const onlyFoco = !_segKeys.some(k => activeSegmentFilters[k]) && activeSegmentFilters.FOCO;
       mainMapMarkers.forEach(marker => {
         const markerSeg = marker.segmentation;
-        const isFoco = marker.isFoco;
-        let shouldShow = false;
-        if (onlyFoco) {
-          shouldShow = isFoco;
-        } else {
-          if (activeSegmentFilters[markerSeg]) shouldShow = true;
-          if (activeSegmentFilters.FOCO && isFoco) shouldShow = true;
-        }
-        marker.setMap(shouldShow ? mainMap : null);
+        marker.setMap(activeSegmentFilters[markerSeg] ? mainMap : null);
       });
     }
 
@@ -8579,6 +8579,19 @@
       if (withCoordsEl) withCoordsEl.textContent = withCoords;
       if (withoutCoordsEl) withoutCoordsEl.textContent = withoutCoords;
 
+      // Cobertura GPS de clientes ASIGNADOS (el dato relevante para operaciones)
+      if (allClients) {
+        const assigned = allClients.filter(c => c.assigned_user_id);
+        const assignedWithGPS = assigned.filter(c => c.lat && c.lng);
+        const pct = assigned.length > 0 ? Math.round(assignedWithGPS.length / assigned.length * 100) : 0;
+        const el1 = document.getElementById('stats-assigned-gps');
+        const el2 = document.getElementById('stats-assigned-total');
+        const bar = document.getElementById('stats-assigned-bar');
+        if (el1) el1.textContent = assignedWithGPS.length;
+        if (el2) el2.textContent = assigned.length;
+        if (bar) bar.style.width = pct + '%';
+      }
+
       // Count clients that can be geocoded (have address or commune)
       const geocodable = allClients ? allClients.filter(c => !c.lat && !c.lng && (c.address || c.commune)).length : 0;
       const noAddressCount = allClients ? allClients.filter(c => !c.lat && !c.lng && !c.address && !c.commune).length : 0;
@@ -8674,7 +8687,7 @@
       }
       if (btnLegend) { btnLegend.disabled = true; }
 
-      const totalToProcess = Math.min(clientsToGeocode.length, 200);
+      const totalToProcess = Math.min(clientsToGeocode.length, 500);
       updateGeocodeStats(0, 0, totalToProcess, 0);
       geocodeLogEntry(`Iniciando proceso: ${totalToProcess} clientes de ${clientsToGeocode.length}`, 'info');
 
@@ -8765,6 +8778,7 @@
       geocodeLogEntry(`Resultado: ${success} OK, ${errors} errores de ${processed} procesados`, 'info');
 
       addClientMarkers(allClients);
+      refreshSegmentationFromAllClients();
 
       const remaining = allClients.filter(c => !c.lat && !c.lng && (c.address || c.commune)).length;
 
@@ -8791,6 +8805,8 @@
     // Dashboard loading progress
     let _sheetsSkipped = false;
     let _sheetsSkipResolve = null;
+    let _currentLoadPct = 0;   // tracks current loading % for CRM spinner sync
+    let _currentLoadLabel = 'Cargando...';
 
     function skipSheetsLoad() {
       _sheetsSkipped = true;
@@ -8801,6 +8817,8 @@
     }
 
     function updateDashLoadingProgress(pct, label) {
+      _currentLoadPct = pct;
+      if (label) _currentLoadLabel = label;
       const fill = document.getElementById('dash-loading-fill');
       const pctEl = document.getElementById('dash-loading-pct');
       const labelEl = document.getElementById('dash-loading-label');
@@ -8808,6 +8826,13 @@
       if (fill) fill.style.width = pct + '%';
       if (pctEl) pctEl.textContent = pct + '%';
       if (labelEl && label) labelEl.textContent = label;
+      // Mirror progress to CRM spinner if visible
+      const crmPct = document.getElementById('crm-loading-pct');
+      const crmLbl = document.getElementById('crm-loading-label');
+      const crmFill = document.getElementById('crm-loading-fill');
+      if (crmPct) crmPct.textContent = pct + '%';
+      if (crmLbl && label) crmLbl.textContent = label;
+      if (crmFill) crmFill.style.width = pct + '%';
       // Show skip button when stuck on Sheets step
       if (skipBtn) skipBtn.style.display = (pct >= 60 && pct < 100) ? 'inline-block' : 'none';
       if (pct >= 100) {
@@ -8937,6 +8962,10 @@
         populateZoneFilter();
         initReassignSection();
         renderClientsTablePaginated();
+        // Re-render CRM if it has no data yet, or if the user is currently on it
+        if (!_crmFiltered || _crmFiltered.length === 0 || document.getElementById('panel-crm')?.classList.contains('active')) {
+          renderCrmPanel();
+        }
         renderProductsTable(products.data);
         renderPricesTable(prices.data);
 
@@ -13183,9 +13212,17 @@
         if (data.success) {
           showToast('success', 'Ubicación guardada', 'El cliente ahora tiene coordenadas GPS');
           closeEditLocationModal();
-          // Refresh data
-          await loadData();
+          // Patch allClients immediately so route map refreshes without stale SW cache
+          if (data.data) {
+            const idx = allClients.findIndex(c => c.id === editingClientId);
+            if (idx >= 0) allClients[idx] = { ...allClients[idx], ...data.data };
+          } else {
+            const idx = allClients.findIndex(c => c.id === editingClientId);
+            if (idx >= 0) { allClients[idx].lat = lat; allClients[idx].lng = lng; }
+          }
+          refreshSegmentationFromAllClients();
           loadExecutiveClients();
+          setTimeout(() => loadData(), 300);
         } else {
           showToast('error', 'Error', data.error || 'No se pudo guardar');
         }
@@ -15026,6 +15063,13 @@
         observations: document.getElementById('client-observations').value.trim() || null
       };
 
+      // Detect address change before saving (for auto-geocode trigger)
+      const originalClient = id ? allClients.find(c => c.id === id) : null;
+      const addressChanged = originalClient && clientData.address && (
+        clientData.address !== originalClient.address ||
+        clientData.commune !== originalClient.commune
+      );
+
       try {
         const url = id ? `${API}/api/clients/${id}` : `${API}/api/clients`;
         const method = id ? 'PUT' : 'POST';
@@ -15041,12 +15085,58 @@
         if (data.success) {
           showToast('success', id ? 'Cliente actualizado' : 'Cliente creado', name);
           closeClientModal();
-          loadData();
+
+          // Patch allClients immediately with fresh data from API response
+          // (avoids stale SW cache issue from calling loadData() directly)
+          if (data.data) {
+            if (id) {
+              const idx = allClients.findIndex(c => c.id === id);
+              if (idx >= 0) allClients[idx] = { ...allClients[idx], ...data.data };
+            } else {
+              allClients.push(data.data);
+            }
+          }
+
+          // Refresh CRM panel with updated data
+          renderCrmPanel();
+          setTimeout(() => refreshSegmentationFromAllClients(), 500);
+
+          // Full data reload in background for other panels
+          setTimeout(() => loadData(), 200);
+
+          // Auto-geocode if address changed (updates GPS for route planner)
+          if (addressChanged && id) {
+            _geocodeClientAfterSave(id);
+          } else if (!id && data.data?.id && clientData.address) {
+            // New client with address — geocode immediately
+            _geocodeClientAfterSave(data.data.id);
+          }
         } else {
           showToast('error', 'Error', data.error);
         }
       } catch (error) {
         showToast('error', 'Error de conexión', error.message);
+      }
+    }
+
+    // Auto-geocode after address save: updates lat/lng and patches allClients
+    async function _geocodeClientAfterSave(clientId) {
+      try {
+        const res = await fetch(`${API}/api/clients/${clientId}/geocode`, { method: 'POST' });
+        const result = await res.json();
+        if (result.success && result.data) {
+          const idx = allClients.findIndex(c => c.id === clientId);
+          if (idx >= 0) {
+            allClients[idx].lat = result.data.lat;
+            allClients[idx].lng = result.data.lng;
+            allClients[idx].address_status = result.data.address_status;
+          }
+          if (result.data.lat) {
+            showToast('success', 'GPS actualizado', 'Coordenadas actualizadas con la nueva dirección');
+          }
+        }
+      } catch (e) {
+        // Geocoding failure is non-critical — silently ignore
       }
     }
 
@@ -16370,14 +16460,19 @@
     }
 
     function goToVendorGestionar(userId) {
-      switchRouteTab('gestionar');
-      goToRouteStep(1);
-      const user = allUsers.find(u => u.id === userId);
-      if (user) {
-        const searchInput = document.getElementById('executive-search');
-        if (searchInput) searchInput.value = user.full_name || user.name;
-        selectExecutive(userId);
-      }
+      // Navegar al panel de Rutas primero (por si estamos en Dashboard u otro panel)
+      const routesTab = document.querySelector('[data-tab=routes]');
+      if (routesTab) routesTab.click();
+      setTimeout(() => {
+        switchRouteTab('gestionar');
+        goToRouteStep(1);
+        const user = allUsers.find(u => u.id === userId);
+        if (user) {
+          const searchInput = document.getElementById('executive-search');
+          if (searchInput) searchInput.value = user.full_name || user.name;
+          selectExecutive(userId);
+        }
+      }, 150);
     }
 
     // =============================================
@@ -16569,91 +16664,184 @@
     let _crmPage = 1;
     const CRM_PAGE_SIZE = 50;
 
+    // Title case helper: "ZONA CENTRO SUR" → "Zona Centro Sur"
+    function _crmTitleCase(str) {
+      if (!str) return str;
+      return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    // Vendor name lookup from allUsers (API returns only assigned_user_id, not nested object)
+    function _crmVendorName(c) {
+      if (!c.assigned_user_id) return null;
+      return (allUsers || []).find(u => u.id === c.assigned_user_id)?.full_name || null;
+    }
+
+    // Build current filter values from DOM
+    function _buildCrmFilters() {
+      return {
+        search: (document.getElementById('crm-search')?.value || '').toLowerCase().trim(),
+        vendor: document.getElementById('crm-vendor-filter')?.value || '',
+        zone:   document.getElementById('crm-zone-filter')?.value || '',
+        seg:    document.getElementById('crm-seg-filter')?.value || '',
+        gps:    document.getElementById('crm-gps-filter')?.value || '',
+        visit:  document.getElementById('crm-visit-filter')?.value || '',
+        now: new Date()
+      };
+    }
+
+    // Test a single client against filters; pass exclude=fieldName to skip that field
+    function _crmClientMatches(c, f, exclude) {
+      if (exclude !== 'search' && f.search) {
+        const extId   = (c.external_id || '').toLowerCase();
+        const name    = (c.fantasy_name || c.name || '').toLowerCase();
+        const commune = (c.commune || '').toLowerCase();
+        const address = (c.address || '').toLowerCase();
+        const phone   = (c.phone || '').replace(/\s+/g, '');
+        const sNorm   = f.search.replace(/\s+/g, '');
+        if (!extId.includes(f.search) && !name.includes(f.search) && !(c.name||'').toLowerCase().includes(f.search) && !commune.includes(f.search) && !address.includes(f.search) && !phone.includes(sNorm)) return false;
+      }
+      if (exclude !== 'vendor' && f.vendor) {
+        if (f.vendor === '__none__') { if (c.assigned_user_id) return false; }
+        else if (_crmVendorName(c) !== f.vendor) return false;
+      }
+      if (exclude !== 'zone'   && f.zone   && (c.zone || c.commune || '') !== f.zone) return false;
+      if (exclude !== 'seg'    && f.seg    && (c.segmentation || '') !== f.seg) return false;
+      if (exclude !== 'gps') {
+        const hasGps = !!(c.lat && c.lng);
+        const hasGeo = !!c.geo_link;
+        if (f.gps === 'has' && !hasGps) return false;
+        if (f.gps === 'none' && hasGps) return false;
+        if (f.gps === 'has_geo' && !hasGeo) return false;
+        if (f.gps === 'no_geo' && hasGeo) return false;
+      }
+      if (exclude !== 'visit' && f.visit) {
+        if (f.visit === 'never' && c.last_visit_at) return false;
+        if (f.visit === '60' || f.visit === '30') {
+          const days = parseInt(f.visit);
+          if (c.last_visit_at) {
+            const daysDiff = Math.floor((f.now - new Date(c.last_visit_at)) / 86400000);
+            if (daysDiff < days) return false;
+          }
+        }
+      }
+      return true;
+    }
+
     function renderCrmPanel() {
       _crmPage = 1;
-      _populateCrmFilters();
+      if (!allClients || allClients.length === 0) {
+        const tbody = document.getElementById('crm-clients-body');
+        const _lp = _currentLoadPct || 0;
+        const _ll = _currentLoadLabel || 'Cargando datos...';
+        if (tbody) tbody.innerHTML = `
+          <tr><td colspan="9" style="text-align:center;padding:60px 20px;">
+            <div style="display:inline-flex;flex-direction:column;align-items:center;gap:14px;max-width:280px;width:100%;">
+              <div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+              <div style="width:100%;text-align:center;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span id="crm-loading-label" style="font-size:12px;color:var(--text-muted);">${_ll}</span>
+                  <span id="crm-loading-pct" style="font-size:12px;font-weight:700;color:#6366f1;">${_lp}%</span>
+                </div>
+                <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;">
+                  <div id="crm-loading-fill" style="height:100%;width:${_lp}%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:3px;transition:width 0.4s ease;"></div>
+                </div>
+              </div>
+            </div>
+          </td></tr>`;
+        const countLabel = document.getElementById('crm-count-label');
+        if (countLabel) countLabel.textContent = '';
+        return;
+      }
+      _updateCrmStatsBar();
       _applyCrmFilter();
     }
 
-    function _populateCrmFilters() {
+    function _updateCrmStatsBar() {
       const clients = allClients || [];
-      // Vendors
-      const vendorSel = document.getElementById('crm-vendor-filter');
-      if (vendorSel) {
-        const vendorNames = [...new Set(clients.map(c => c.assigned_user?.full_name).filter(Boolean))].sort();
-        vendorSel.innerHTML = '<option value="">Todos los vendedores</option>' +
-          vendorNames.map(n => `<option value="${n}">${n}</option>`).join('');
-      }
-      // Zones
-      const zoneSel = document.getElementById('crm-zone-filter');
-      if (zoneSel) {
-        const zones = [...new Set(clients.map(c => c.zone || c.commune).filter(Boolean))].sort();
-        zoneSel.innerHTML = '<option value="">Todas las zonas</option>' +
-          zones.map(z => `<option value="${z}">${z}</option>`).join('');
-      }
-      // Stats bar
       const total = clients.length;
       const c8020 = clients.filter(c => c.segmentation === '80-20').length;
-      const noGps = clients.filter(c => !c.lat || !c.lng).length;
+      const conGps = clients.filter(c => c.lat && c.lng).length;
+      const noGps = total - conGps;
       const sinVendedor = clients.filter(c => !c.assigned_user_id).length;
       const statsBar = document.getElementById('crm-stats-bar');
+      const btnStyle = 'cursor:pointer;text-align:center;padding:4px 6px;border-radius:8px;transition:background 0.15s;';
+      const hov = 'onmouseover="this.style.background=\'rgba(255,255,255,0.12)\'" onmouseout="this.style.background=\'transparent\'"';
       if (statsBar) {
         statsBar.innerHTML = `
-          <div style="text-align:center;color:white;">
-            <div style="font-size:20px;font-weight:700;">${total.toLocaleString('es-CL')}</div>
-            <div style="font-size:10px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;">Clientes</div>
+          <div style="${btnStyle}" ${hov} onclick="crmQuickFilter('all')" title="Ver todos los clientes">
+            <div style="font-size:18px;font-weight:700;color:white;">${total.toLocaleString('es-CL')}</div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.5px;">Total clientes</div>
           </div>
-          <div style="text-align:center;color:#fde68a;">
-            <div style="font-size:20px;font-weight:700;">⭐ ${c8020.toLocaleString('es-CL')}</div>
-            <div style="font-size:10px;opacity:0.8;text-transform:uppercase;letter-spacing:0.5px;">80/20 Clave</div>
+          <div style="width:1px;background:rgba(255,255,255,0.2);align-self:stretch;"></div>
+          <div style="${btnStyle}" ${hov} onclick="crmQuickFilter('80-20')" title="Filtrar clientes 80/20 Clave">
+            <div style="font-size:18px;font-weight:700;color:#fde68a;">⭐ ${c8020.toLocaleString('es-CL')}</div>
+            <div style="font-size:9px;color:rgba(253,230,138,0.85);text-transform:uppercase;letter-spacing:0.5px;">80/20 Clave</div>
           </div>
-          <div style="text-align:center;color:#fca5a5;">
-            <div style="font-size:20px;font-weight:700;">${noGps.toLocaleString('es-CL')}</div>
-            <div style="font-size:10px;opacity:0.8;text-transform:uppercase;letter-spacing:0.5px;">Sin GPS</div>
+          <div style="width:1px;background:rgba(255,255,255,0.2);align-self:stretch;"></div>
+          <div style="${btnStyle}" ${hov} onclick="crmQuickFilter('has_gps')" title="Filtrar clientes con lat/lng">
+            <div style="font-size:18px;font-weight:700;color:#86efac;">${conGps.toLocaleString('es-CL')}</div>
+            <div style="font-size:9px;color:rgba(134,239,172,0.85);text-transform:uppercase;letter-spacing:0.5px;">Con lat/lng</div>
           </div>
-          <div style="text-align:center;color:#a5f3fc;">
-            <div style="font-size:20px;font-weight:700;">${sinVendedor.toLocaleString('es-CL')}</div>
-            <div style="font-size:10px;opacity:0.8;text-transform:uppercase;letter-spacing:0.5px;">Sin vendedor</div>
+          <div style="width:1px;background:rgba(255,255,255,0.2);align-self:stretch;"></div>
+          <div style="${btnStyle}" ${hov} onclick="crmQuickFilter('no_gps')" title="Filtrar clientes sin lat/lng">
+            <div style="font-size:18px;font-weight:700;color:#fca5a5;">${noGps.toLocaleString('es-CL')}</div>
+            <div style="font-size:9px;color:rgba(252,165,165,0.85);text-transform:uppercase;letter-spacing:0.5px;">Sin lat/lng</div>
+          </div>
+          <div style="width:1px;background:rgba(255,255,255,0.2);align-self:stretch;"></div>
+          <div style="${btnStyle}" ${hov} onclick="crmQuickFilter('sin_vendedor')" title="Filtrar clientes sin vendedor asignado">
+            <div style="font-size:18px;font-weight:700;color:#a5f3fc;">${sinVendedor.toLocaleString('es-CL')}</div>
+            <div style="font-size:9px;color:rgba(165,243,252,0.85);text-transform:uppercase;letter-spacing:0.5px;">Sin vendedor</div>
           </div>`;
+      }
+    }
+
+    // Update dropdown options based on cascading filters (each dropdown shows only
+    // values available given all OTHER active filters)
+    function _updateCrmDropdowns(f) {
+      const clients = allClients || [];
+
+      // Vendor: options from clients matching everything EXCEPT vendor filter
+      const forVendor = clients.filter(c => _crmClientMatches(c, f, 'vendor'));
+      const vendorNames = [...new Set(forVendor.map(c => _crmVendorName(c)).filter(Boolean))].sort();
+      const vendorSel = document.getElementById('crm-vendor-filter');
+      if (vendorSel) {
+        const cur = vendorSel.value;
+        vendorSel.innerHTML = '<option value="">Todos los vendedores</option>' +
+          '<option value="__none__"' + (cur === '__none__' ? ' selected' : '') + '>Sin asignar</option>' +
+          vendorNames.map(n => `<option value="${n}"${n === cur ? ' selected' : ''}>${n}</option>`).join('');
+      }
+
+      // Zone: options from clients matching everything EXCEPT zone filter
+      const forZone = clients.filter(c => _crmClientMatches(c, f, 'zone'));
+      const zones = [...new Set(forZone.map(c => c.zone || c.commune).filter(Boolean))].sort();
+      const zoneSel = document.getElementById('crm-zone-filter');
+      if (zoneSel) {
+        const cur = zoneSel.value;
+        zoneSel.innerHTML = '<option value="">Todas las zonas</option>' +
+          zones.map(z => `<option value="${z}"${z === cur ? ' selected' : ''}>${_crmTitleCase(z)}</option>`).join('');
+      }
+
+      // Segmentation: options from clients matching everything EXCEPT seg filter
+      const forSeg = clients.filter(c => _crmClientMatches(c, f, 'seg'));
+      const segsAvail = new Set(forSeg.map(c => c.segmentation).filter(Boolean));
+      const segSel = document.getElementById('crm-seg-filter');
+      if (segSel) {
+        const cur = segSel.value;
+        const segDefs = [
+          { val: '80-20', label: '⭐ 80/20 Clave' },
+          { val: 'L',     label: 'L Con ventas' },
+          { val: 'N',     label: 'N Nuevos' }
+        ].filter(o => segsAvail.has(o.val));
+        segSel.innerHTML = '<option value="">Toda segmentación</option>' +
+          segDefs.map(o => `<option value="${o.val}"${o.val === cur ? ' selected' : ''}>${o.label}</option>`).join('');
       }
     }
 
     function _applyCrmFilter() {
       const clients = allClients || [];
-      const search = (document.getElementById('crm-search')?.value || '').toLowerCase().trim();
-      const vendor = document.getElementById('crm-vendor-filter')?.value || '';
-      const zone   = document.getElementById('crm-zone-filter')?.value || '';
-      const seg    = document.getElementById('crm-seg-filter')?.value || '';
-      const gps    = document.getElementById('crm-gps-filter')?.value || '';
-      const visit  = document.getElementById('crm-visit-filter')?.value || '';
+      const f = _buildCrmFilters();
 
-      const now = new Date();
-      _crmFiltered = clients.filter(c => {
-        if (search) {
-          const extId   = (c.external_id || '').toLowerCase();
-          const name    = (c.fantasy_name || c.name || '').toLowerCase();
-          const fullName = (c.name || '').toLowerCase();
-          const commune = (c.commune || '').toLowerCase();
-          const address = (c.address || '').toLowerCase();
-          const phone   = (c.phone || '').replace(/\s+/g, '');
-          const sNorm   = search.replace(/\s+/g, '');
-          if (!extId.includes(search) && !name.includes(search) && !fullName.includes(search) && !commune.includes(search) && !address.includes(search) && !phone.includes(sNorm)) return false;
-        }
-        if (vendor && (c.assigned_user?.full_name || '') !== vendor) return false;
-        if (zone   && (c.zone || c.commune || '') !== zone) return false;
-        if (seg    && (c.segmentation || '') !== seg) return false;
-        const hasGps = !!(c.lat && c.lng);
-        if (gps === 'has' && !hasGps) return false;
-        if (gps === 'none' && hasGps) return false;
-        if (visit === 'never' && c.last_visit_at) return false;
-        if (visit === '60' || visit === '30') {
-          const days = parseInt(visit);
-          if (!c.last_visit_at) return true; // no visit = older than any threshold
-          const daysDiff = Math.floor((now - new Date(c.last_visit_at)) / 86400000);
-          if (daysDiff < days) return false;
-        }
-        return true;
-      });
+      _crmFiltered = clients.filter(c => _crmClientMatches(c, f));
 
       // Sort: 80-20 first, then L, then rest; within group alphabetically
       const segOrder = { '80-20': 0, 'L': 1 };
@@ -16664,6 +16852,7 @@
         return (a.fantasy_name || a.name || '').localeCompare(b.fantasy_name || b.name || '');
       });
 
+      _updateCrmDropdowns(f);
       _renderCrmTable();
     }
 
@@ -16687,14 +16876,19 @@
         return;
       }
 
-      const ZONE_COLORS = {
-        'RM': '#6366f1', 'Santiago': '#6366f1',
-        'Concepción': '#059669', 'Temuco': '#f59e0b', 'Puerto Montt': '#3b82f6'
-      };
+      // Generate a stable color from zone name using simple hash
+      function _zoneColor(name) {
+        const PALETTE = ['#6366f1','#059669','#f59e0b','#3b82f6','#ec4899','#14b8a6','#8b5cf6','#f97316'];
+        let h = 0;
+        for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+        return PALETTE[h % PALETTE.length];
+      }
 
       tbody.innerHTML = page.map(c => {
-        const vendorName = c.assigned_user?.full_name || '<span style="color:var(--text-muted);font-style:italic;">Sin asignar</span>';
-        const zoneName   = c.zone || c.commune || '-';
+        const vendorFullName = _crmVendorName(c);
+        const vendorName = vendorFullName || '<span style="color:var(--text-muted);font-style:italic;">Sin asignar</span>';
+        const zoneRaw    = c.zone || c.commune || '-';
+        const zoneName   = _crmTitleCase(zoneRaw);
         const seg        = c.segmentation || '';
         const hasGps     = !!(c.lat && c.lng);
         const addrStatus = c.address_status || (hasGps ? 'auto' : 'pending');
@@ -16702,18 +16896,18 @@
         // Segmentation badge
         let segBadge = '';
         if (seg === '80-20') {
-          segBadge = '<span style="font-size:11px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:2px 8px;border-radius:10px;">⭐ 80/20</span>';
+          segBadge = '<span style="font-size:11px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:2px 8px;border-radius:10px;white-space:nowrap;display:inline-block;">⭐ 80/20</span>';
         } else if (seg === 'L') {
-          segBadge = '<span style="font-size:11px;font-weight:600;background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.25);padding:2px 8px;border-radius:10px;">L Venta</span>';
+          segBadge = '<span style="font-size:11px;font-weight:600;background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.25);padding:2px 8px;border-radius:10px;white-space:nowrap;display:inline-block;">L Venta</span>';
         } else if (seg === 'N') {
-          segBadge = '<span style="font-size:11px;color:var(--text-muted);border:1px solid var(--border);padding:2px 8px;border-radius:10px;">N Nuevo</span>';
+          segBadge = '<span style="font-size:11px;color:var(--text-muted);border:1px solid var(--border);padding:2px 8px;border-radius:10px;white-space:nowrap;display:inline-block;">N Nuevo</span>';
         } else {
           segBadge = '<span style="font-size:11px;color:var(--text-muted);">-</span>';
         }
 
         // Name badge (80/20 inline)
         const nameBadge = seg === '80-20'
-          ? '<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;margin-left:4px;">80/20</span>'
+          ? '<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;margin-left:4px;white-space:nowrap;vertical-align:middle;">80/20</span>'
           : '';
 
         // GPS indicator
@@ -16731,8 +16925,9 @@
         const addrText = c.address ? (c.address.length > 28 ? c.address.substring(0, 28) + '…' : c.address) : '-';
 
         // Zone color chip
-        const zoneColor = ZONE_COLORS[zoneName] || '#6b7280';
-        const zoneChip = `<span style="font-size:11px;background:${zoneColor}18;color:${zoneColor};border:1px solid ${zoneColor}35;padding:2px 8px;border-radius:10px;font-weight:500;">${zoneName}</span>`;
+        const zoneColor = _zoneColor(zoneRaw);
+        const zoneNameShort = zoneName.length > 18 ? zoneName.substring(0, 18) + '…' : zoneName;
+        const zoneChip = `<span title="${zoneName}" style="font-size:11px;background:${zoneColor}18;color:${zoneColor};border:1px solid ${zoneColor}35;padding:2px 8px;border-radius:10px;font-weight:500;white-space:nowrap;display:inline-block;">${zoneNameShort}</span>`;
 
         return `<tr>
           <td><code style="font-size:11px;background:var(--bg-hover);padding:2px 6px;border-radius:4px;">${c.external_id || '-'}</code></td>
@@ -16796,6 +16991,24 @@
       ['crm-search', 'crm-vendor-filter', 'crm-zone-filter', 'crm-seg-filter', 'crm-gps-filter', 'crm-visit-filter']
         .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       filterCrmClients();
+    }
+
+    // Quick filter from stats bar header clicks
+    function crmQuickFilter(type) {
+      resetCrmFilters();
+      if (type === 'all') return; // already reset = show all
+      setTimeout(() => {
+        if (type === '80-20') {
+          const s = document.getElementById('crm-seg-filter'); if (s) s.value = '80-20';
+        } else if (type === 'has_gps') {
+          const s = document.getElementById('crm-gps-filter'); if (s) s.value = 'has';
+        } else if (type === 'no_gps') {
+          const s = document.getElementById('crm-gps-filter'); if (s) s.value = 'none';
+        } else if (type === 'sin_vendedor') {
+          const s = document.getElementById('crm-vendor-filter'); if (s) s.value = '__none__';
+        }
+        _applyCrmFilter();
+      }, 10);
     }
 
     function _crmPageGo(page) {
@@ -19651,6 +19864,7 @@
 
     // Vendedores / Zonales
     let gsheetsVendedoresParsed = [];
+    let _vendorStatsForCards = null; // caché stats del mes para fichas
 
     const ZONE_COLORS = {
       'zona norte': { bg: 'rgba(59,130,246,0.08)', color: '#3b82f6', border: 'rgba(59,130,246,0.2)', icon: 'compass' },
@@ -19726,11 +19940,27 @@
 
     let vendedoresViewMode = 'zonales'; // 'zonales' or 'todos'
 
-    function renderVendedoresCards(vendedores) {
+    async function renderVendedoresCards(vendedores) {
       const container = document.getElementById('gs-vendedores-body');
       if (!vendedores || vendedores.length === 0) {
         container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">Sin resultados</p>';
         return;
+      }
+
+      // Cargar stats del mes si no están en caché
+      if (!_vendorStatsForCards) {
+        try {
+          const month = new Date().toISOString().slice(0, 7);
+          const res = await fetch(`${API}/api/dashboard/vendor-stats?month=${month}`);
+          const data = await res.json();
+          _vendorStatsForCards = {};
+          if (data.success) {
+            (data.data || []).forEach(s => {
+              const u = (allUsers || []).find(u => u.full_name === s.name);
+              if (u) _vendorStatsForCards[u.id] = s;
+            });
+          }
+        } catch(e) { _vendorStatsForCards = {}; }
       }
 
       const zonales = vendedores.filter(v => v.isZonal);
@@ -19831,19 +20061,170 @@
       }
     }
 
+    function openVendorDetail(userId) {
+      const user = (allUsers || []).find(u => u.id === userId);
+      if (!user) return;
+
+      const vStats = (_vendorStatsForCards || {})[userId] || null;
+      const vendorClients = (allClients || []).filter(c => c.assigned_user_id === userId);
+      const clients8020 = vendorClients.filter(c => c.segmentation === '80-20');
+      const clientsGPS = vendorClients.filter(c => c.lat && c.lng);
+      const pct8020 = vendorClients.length > 0 ? Math.round(clients8020.length / vendorClients.length * 100) : 0;
+      const gpsPct = vendorClients.length > 0 ? Math.round(clientsGPS.length / vendorClients.length * 100) : 0;
+      const efecPct = vStats && vStats.totalVisits > 0 ? Math.round(vStats.clientsWithSale / vStats.totalVisits * 100) : 0;
+      const avgPerDay = vStats && vStats.daysWorked > 0 ? (Math.round(vStats.totalVisits / vStats.daysWorked * 10) / 10) : 0;
+
+      // Info de GSheets (mail, cel, zona, zonal, region)
+      const firstName = user.full_name.split(' ')[0].toLowerCase();
+      const gv = (gsheetsVendedoresParsed || []).find(v => !v.isZonal && v.name && v.name.toLowerCase().includes(firstName));
+      const mail = (gv && gv.mail) || user.email || '';
+      const cel = (gv && gv.cel) || '';
+      const zona = (gv && gv.zona) || '';
+      const zonal = (gv && gv.zonal) || '';
+      const region = (gv && gv.region) || '';
+      const zc = ZONE_COLORS[zona.toLowerCase()] || { color: '#6366f1', bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.2)' };
+
+      // Lista de clientes ordenada: 80/20 primero
+      const sorted = [...vendorClients].sort((a, b) => {
+        if (a.segmentation === '80-20' && b.segmentation !== '80-20') return -1;
+        if (b.segmentation === '80-20' && a.segmentation !== '80-20') return 1;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+      const clientListHtml = sorted.map(c => {
+        const is8020 = c.segmentation === '80-20';
+        const hasGPS = c.lat && c.lng;
+        const editFn = `document.getElementById('vendor-detail-modal').remove();openClientModal('${c.id}')`;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+          <span style="width:6px;height:6px;border-radius:50%;background:${is8020 ? '#b8860b' : hasGPS ? '#10b981' : 'var(--text-muted)'};flex-shrink:0;"></span>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:1px;">
+              ${c.external_id ? `<span onclick="${editFn}" style="font-size:10px;font-weight:700;color:var(--accent);background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);padding:0 5px;border-radius:4px;cursor:pointer;flex-shrink:0;" title="Editar cliente">${c.external_id}</span>` : ''}
+              <span style="font-size:12px;font-weight:${is8020 ? '600' : '400'};color:${is8020 ? '#b8860b' : 'var(--text-primary)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</span>
+            </div>
+            <div style="font-size:10px;color:var(--text-muted);">${[c.commune, c.address].filter(Boolean).join(' — ')}</div>
+          </div>
+          ${is8020 ? '<span style="font-size:9px;background:rgba(212,175,55,0.15);color:#b8860b;border:1px solid rgba(212,175,55,0.3);padding:1px 5px;border-radius:4px;font-weight:600;flex-shrink:0;">⭐</span>' : ''}
+          <i data-lucide="${hasGPS ? 'map-pin' : 'map-pin-off'}" style="width:11px;height:11px;color:${hasGPS ? '#10b981' : 'var(--text-muted)'};opacity:${hasGPS ? '1' : '0.4'};flex-shrink:0;"></i>
+          <button onclick="${editFn}" style="background:none;border:1px solid var(--border);border-radius:5px;padding:2px 5px;cursor:pointer;color:var(--text-muted);flex-shrink:0;display:inline-flex;align-items:center;" title="Editar cliente">
+            <i data-lucide="pencil" style="width:10px;height:10px;"></i>
+          </button>
+        </div>`;
+      }).join('');
+
+      // Desglose semanal
+      const weeklyHtml = (vStats && vStats.weekly && vStats.weekly.length > 0)
+        ? `<div style="margin-bottom:16px;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:6px;">Semanas del mes</div>
+            ${vStats.weekly.map(w => `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid var(--border);">
+              <span>${w.week}</span><span style="color:var(--text-muted);">${w.clients} cl. · ${w.days} días</span>
+            </div>`).join('')}
+          </div>` : '';
+
+      // Eliminar modal previo
+      const prev = document.getElementById('vendor-detail-modal');
+      if (prev) prev.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'vendor-detail-modal';
+      modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);';
+      modal.onclick = e => { if (e.target === modal) modal.remove(); };
+
+      modal.innerHTML = `<div style="background:var(--bg-card);border-radius:16px;max-width:600px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.35);overflow:hidden;">
+        <!-- Header -->
+        <div style="padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:${zc.bg};flex-shrink:0;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:${zc.color};display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:700;">
+              ${user.full_name.split(' ').map(n => n[0] || '').join('').substring(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <div style="font-size:17px;font-weight:700;">${user.full_name}</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;">
+                ${zona ? `<span style="font-size:10px;background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 7px;border-radius:10px;font-weight:700;">${zona}</span>` : ''}
+                ${zonal ? `<span style="font-size:11px;color:var(--text-muted);">Reporta a ${zonal}</span>` : ''}
+                ${region ? `<span style="font-size:11px;color:var(--text-muted);">· ${region}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <button onclick="document.getElementById('vendor-detail-modal').remove()" style="width:30px;height:30px;border:none;background:var(--bg-hover);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);flex-shrink:0;">
+            <i data-lucide="x" style="width:15px;height:15px;"></i>
+          </button>
+        </div>
+        <!-- Cuerpo -->
+        <div style="overflow-y:auto;flex:1;padding:18px 22px;">
+          <!-- Contacto + Gestionar -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+            ${mail ? `<a href="mailto:${mail}" onclick="event.stopPropagation()" style="font-size:12px;color:var(--accent);text-decoration:none;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);padding:5px 12px;border-radius:8px;display:inline-flex;align-items:center;gap:5px;"><i data-lucide="mail" style="width:12px;height:12px;"></i>${mail}</a>` : ''}
+            ${cel ? `<a href="tel:${cel.replace(/\s/g, '')}" onclick="event.stopPropagation()" style="font-size:12px;color:var(--text-secondary);text-decoration:none;background:var(--bg-hover);border:1px solid var(--border);padding:5px 12px;border-radius:8px;display:inline-flex;align-items:center;gap:5px;"><i data-lucide="phone" style="width:12px;height:12px;"></i>${cel}</a>` : ''}
+            <button onclick="goToVendorGestionar('${userId}');document.getElementById('vendor-detail-modal').remove()" style="font-size:12px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:8px;cursor:pointer;padding:5px 12px;font-weight:600;color:#6366f1;display:inline-flex;align-items:center;gap:5px;"><i data-lucide="route" style="width:12px;height:12px;"></i>Gestionar Rutas</button>
+          </div>
+          <!-- Stats 2x2 -->
+          ${vStats ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px;">
+            <div style="text-align:center;padding:10px;background:var(--bg-hover);border-radius:10px;">
+              <div style="font-size:26px;font-weight:800;color:var(--accent);">${vStats.clientsWithSale}</div>
+              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Con venta</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:var(--bg-hover);border-radius:10px;">
+              <div style="font-size:26px;font-weight:800;color:#10b981;">${vStats.totalVisits}</div>
+              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Visitas · ${vStats.daysWorked} días (${avgPerDay}/día)</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.2);border-radius:10px;">
+              <div style="font-size:26px;font-weight:800;color:#b8860b;">${clients8020.length}</div>
+              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Clientes 80/20</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:${efecPct>=60?'rgba(16,185,129,0.08)':'var(--bg-hover)'};border:1px solid ${efecPct>=60?'rgba(16,185,129,0.2)':'transparent'};border-radius:10px;">
+              <div style="font-size:26px;font-weight:800;color:${efecPct>=60?'#10b981':efecPct>=30?'#f59e0b':'var(--text-muted)'};">${efecPct}%</div>
+              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Efectividad</div>
+            </div>
+          </div>` : '<p style="color:var(--text-muted);font-size:12px;padding:8px 0;margin-bottom:12px;">Sin datos de visitas este mes</p>'}
+          <!-- Barras GPS + 80/20 -->
+          ${vendorClients.length > 0 ? `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+                <span style="color:var(--text-muted);">80/20 — ${clients8020.length} de ${vendorClients.length} clientes</span>
+                <span style="font-weight:700;color:#b8860b;">${pct8020}%</span>
+              </div>
+              <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${pct8020}%;background:linear-gradient(90deg,#d4af37,#b8860b);border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+                <span style="color:var(--text-muted);">GPS — ${clientsGPS.length} de ${vendorClients.length} clientes</span>
+                <span style="font-weight:700;color:${gpsPct>=70?'#10b981':gpsPct>=40?'#f59e0b':'#ef4444'};">${gpsPct}%</span>
+              </div>
+              <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${gpsPct}%;background:linear-gradient(90deg,#3b82f6,#06b6d4);border-radius:3px;"></div></div>
+            </div>
+          </div>` : ''}
+          ${weeklyHtml}
+          <!-- Lista clientes -->
+          <div>
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:8px;">Clientes asignados (${vendorClients.length})</div>
+            <div style="max-height:260px;overflow-y:auto;">
+              ${clientListHtml || '<p style="color:var(--text-muted);font-size:12px;">Sin clientes asignados</p>'}
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+      document.body.appendChild(modal);
+      lucide.createIcons();
+    }
+
     function buildVendedorCard(v, isZonal) {
       const zc = ZONE_COLORS[v.zona.toLowerCase()] || { bg: 'var(--bg-hover)', color: 'var(--text-muted)', border: 'var(--border)', icon: 'map-pin' };
       const borderLeft = isZonal ? `border-left: 3px solid ${zc.color};` : '';
       const bgCard = isZonal ? `background: ${zc.bg};` : 'background: var(--bg-card);';
 
-      // Cross-reference with allUsers/allClients for client + route stats
       let clientStats = '';
       let routeStatus = '';
       let gestionarBtn = '';
+      let metricsHtml = '';
+      let userId = null;
+
       if (!isZonal) {
         const firstName = v.name.split(' ')[0].toLowerCase();
         const user = (allUsers || []).find(u => u.role === 'executive' && u.full_name && u.full_name.toLowerCase().includes(firstName));
         if (user) {
+          userId = user.id;
+
           // Client stats
           const vc = (allClients || []).filter(c => c.assigned_user_id === user.id);
           const vc8020 = vc.filter(c => c.segmentation === '80-20');
@@ -19858,19 +20239,36 @@
             </div>`;
           }
 
+          // Métricas mensuales desde caché
+          const vStats = (_vendorStatsForCards || {})[user.id] || null;
+          if (vStats) {
+            const efecPct = vStats.totalVisits > 0 ? Math.round(vStats.clientsWithSale / vStats.totalVisits * 100) : 0;
+            metricsHtml = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px;">
+              <div style="text-align:center;padding:5px 2px;background:var(--bg-hover);border-radius:6px;">
+                <div style="font-size:14px;font-weight:700;color:var(--accent);">${vStats.clientsWithSale}</div>
+                <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;">Vtas</div>
+              </div>
+              <div style="text-align:center;padding:5px 2px;background:var(--bg-hover);border-radius:6px;">
+                <div style="font-size:14px;font-weight:700;color:#10b981;">${vStats.totalVisits}</div>
+                <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;">Vis.</div>
+              </div>
+              <div style="text-align:center;padding:5px 2px;background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.2);border-radius:6px;">
+                <div style="font-size:14px;font-weight:700;color:#b8860b;">${vc8020.length}</div>
+                <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;">80/20</div>
+              </div>
+              <div style="text-align:center;padding:5px 2px;background:${efecPct>=60?'rgba(16,185,129,0.08)':'var(--bg-hover)'};border:1px solid ${efecPct>=60?'rgba(16,185,129,0.2)':'transparent'};border-radius:6px;">
+                <div style="font-size:14px;font-weight:700;color:${efecPct>=60?'#10b981':efecPct>=30?'#f59e0b':'var(--text-muted)'};">${efecPct}%</div>
+                <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;">Efec.</div>
+              </div>
+            </div>`;
+          }
+
           // Route status today
           const activeRoute = (todayRoutesData || []).find(r => r.user_id === user.id);
-          const scheduleData = window._dashboardScheduleData;
-          const hasSchedule = scheduleData && Object.values(scheduleData.schedule || {}).some(dayData => {
-            return (dayData.clients || dayData.route || []).some(c => c.assigned_user_id === user.id || c.user_id === user.id) ||
-                   (scheduleData.schedule[new Date().toISOString().split('T')[0]] &&
-                    scheduleData.userId === user.id);
-          });
           const todayScheduled = (todayScheduledData || {})[user.id] || [];
-
           if (activeRoute && activeRoute.status === 'active') {
             const visits = activeRoute.visits || [];
-            const done = visits.filter(v => v.status === 'completed').length;
+            const done = visits.filter(vv => vv.status === 'completed').length;
             const total = todayScheduled.length || visits.length;
             routeStatus = `<div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
               <span style="width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;animation:pulse 1.5s infinite;"></span>
@@ -19890,12 +20288,14 @@
             </div>`;
           }
 
-          // Gestionar quick-link
-          gestionarBtn = `<button onclick="goToVendorGestionar('${user.id}')" style="margin-top:2px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:6px;cursor:pointer;padding:3px 10px;font-size:10px;font-weight:600;color:#6366f1;display:inline-flex;align-items:center;gap:3px;"><i data-lucide="route" style="width:10px;height:10px;"></i> Gestionar</button>`;
+          gestionarBtn = `<button onclick="event.stopPropagation();goToVendorGestionar('${user.id}')" style="margin-top:2px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:6px;cursor:pointer;padding:3px 10px;font-size:10px;font-weight:600;color:#6366f1;display:inline-flex;align-items:center;gap:3px;"><i data-lucide="route" style="width:10px;height:10px;"></i> Gestionar</button>`;
         }
       }
 
-      return `<div style="${bgCard}${borderLeft}border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:box-shadow 0.15s;" onmouseenter="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseleave="this.style.boxShadow='none'">
+      const clickable = userId ? `onclick="openVendorDetail('${userId}')"` : '';
+      const pointer = userId ? 'cursor:pointer;' : '';
+
+      return `<div ${clickable} style="${bgCard}${borderLeft}${pointer}border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:box-shadow 0.15s;" onmouseenter="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'" onmouseleave="this.style.boxShadow='none'">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div style="display:flex;align-items:center;gap:8px;min-width:0;">
             <div style="width:36px;height:36px;min-width:36px;border-radius:50%;background:${zc.color};display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:700;">
@@ -19914,11 +20314,13 @@
         </div>
         ${routeStatus}
         ${clientStats}
+        ${metricsHtml}
         ${gestionarBtn ? `<div style="margin-top:8px;">${gestionarBtn}</div>` : ''}
-        ${(v.mail || v.cel) ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
+        ${(v.mail || v.cel) ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;" onclick="event.stopPropagation()">
           ${v.mail ? `<a href="mailto:${v.mail}" style="font-size:11px;color:var(--accent);text-decoration:none;background:rgba(59,130,246,0.06);padding:3px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="mail" style="width:10px;height:10px;"></i>${v.mail}</a>` : ''}
           ${v.cel ? `<a href="tel:${v.cel.replace(/\s/g,'')}" style="font-size:11px;color:var(--text-secondary);text-decoration:none;background:var(--bg-hover);padding:3px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="phone" style="width:10px;height:10px;"></i>${v.cel}</a>` : ''}
         </div>` : ''}
+        ${userId ? '<div style="margin-top:6px;font-size:9px;color:var(--text-muted);text-align:right;opacity:0.6;">Toca para ver detalle →</div>' : ''}
       </div>`;
     }
 
@@ -22226,28 +22628,64 @@
       }
     }
 
+    // Recalcula conteos desde allClients (en memoria) — siempre actualizado
+    function refreshSegmentationFromAllClients() {
+      if (!allClients || allClients.length === 0) return;
+      const fmt = n => n.toLocaleString('es-CL');
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = fmt(v); };
+
+      const seg8020   = allClients.filter(c => c.segmentation === '80-20').length;
+      const conGeo    = allClients.filter(c => c.geo_link).length;          // URL de Maps (= "con geo" en Datos Comerciales)
+      const conGPS    = allClients.filter(c => c.lat && c.lng).length;      // Coordenadas exactas en DB
+      const conVend   = allClients.filter(c => c.assigned_user_id).length;
+      const sinGeo    = allClients.filter(c => !c.geo_link).length;         // Sin link (= "sin geo" en Datos Comerciales)
+      const total     = allClients.length;
+
+      // Tarjetas KPI
+      set('seg-A-count', seg8020);   // 80/20 Clave
+      set('seg-B-count', conGeo);    // Con geo (= geo_link, coincide con Datos Comerciales)
+      set('seg-C-count', conGPS);    // Con lat/lng (coordenadas exactas)
+      set('seg-D-count', conVend);   // Con vendedor
+      set('seg-E-count', sinGeo);    // Sin geo
+      set('seg-total-count', total);
+
+      // Stat card en header
+      const sub8020 = document.getElementById('stat-clients-8020');
+      if (sub8020) sub8020.textContent = fmt(seg8020);
+    }
+
+    // Navega al CRM con filtro predefinido
+    function filterCrmAndGo(filter) {
+      document.querySelector('[data-tab=crm]')?.click();
+      setTimeout(() => {
+        const gpsFilter = document.getElementById('crm-gps-filter');
+        resetCrmFilters && resetCrmFilters();
+        if (gpsFilter) {
+          if (filter === 'has_geo')    gpsFilter.value = 'has_geo';
+          else if (filter === 'no_geo')  gpsFilter.value = 'no_geo';
+          else if (filter === 'has_gps') gpsFilter.value = 'has';
+          // has_vendor: sin filtro geo, muestra todos
+        }
+        _applyCrmFilter && _applyCrmFilter();
+      }, 200);
+    }
+
     async function loadSegmentationStats() {
+      // Primero calcular desde allClients si están disponibles
+      refreshSegmentationFromAllClients();
+
       try {
         const res = await fetch(`${API}/api/clients/segmentation-stats`);
         const data = await res.json();
         if (data.success) {
-          // Segmentation (80-20, L, N)
-          const el8020 = document.getElementById('seg-8020-count');
-          if (el8020) el8020.textContent = (data.data['80-20'] || 0).toLocaleString('es-CL');
-          // Update stat card sub-label
+          const fmt = n => (n || 0).toLocaleString('es-CL');
+          // Actualizar total y 80/20 desde API si allClients no estaba disponible
+          const elA = document.getElementById('seg-A-count');
+          if (elA && elA.textContent === '-') elA.textContent = fmt(data.data['80-20']);
+          const elTotal = document.getElementById('seg-total-count');
+          if (elTotal && elTotal.textContent === '-') elTotal.textContent = fmt(data.data.total);
           const sub8020 = document.getElementById('stat-clients-8020');
-          if (sub8020) sub8020.textContent = (data.data['80-20'] || 0).toLocaleString('es-CL');
-          document.getElementById('seg-L-count').textContent = (data.data.L || 0).toLocaleString('es-CL');
-          document.getElementById('seg-N-count').textContent = (data.data.N || 0).toLocaleString('es-CL');
-          document.getElementById('seg-total-count').textContent = (data.data.total || 0).toLocaleString('es-CL');
-
-          // Segments A-E
-          if (data.data.segments) {
-            ['A','B','C','D','E'].forEach(s => {
-              const el = document.getElementById('seg-' + s + '-count');
-              if (el) el.textContent = (data.data.segments[s] || 0).toLocaleString('es-CL');
-            });
-          }
+          if (sub8020) sub8020.textContent = fmt(data.data['80-20']);
 
           // Regions chart
           if (data.data.regions) {
@@ -24292,11 +24730,13 @@
         const data = await res.json();
 
         if (data.success && data.data.length > 0) {
+          _vendorStatsForCards = {}; // poblar caché compartida con fichas
           let html = '';
           data.data.forEach(vendor => {
             // Cross-reference allClients to get 80/20 count for this vendor
             const user = (allUsers || []).find(u => u.full_name === vendor.name);
             const userId = user ? user.id : null;
+            if (userId) _vendorStatsForCards[userId] = vendor;
             const vendorClients = userId ? (allClients || []).filter(c => c.assigned_user_id === userId) : [];
             const clients8020 = vendorClients.filter(c => c.segmentation === '80-20');
             const clientsL = vendorClients.filter(c => c.segmentation === 'L');
@@ -24316,7 +24756,7 @@
             });
 
             html += `
-              <div class="vendor-stat-card" style="border-top: 3px solid ${zc.color};">
+              <div class="vendor-stat-card" onclick="${userId ? `openVendorDetail('${userId}')` : ''}" style="border-top: 3px solid ${zc.color};${userId ? 'cursor:pointer;' : ''}">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
                   <div style="width:34px;height:34px;border-radius:50%;background:${zc.color};color:white;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">${vendor.name.split(' ').map(n=>n[0]||'').join('').substring(0,2).toUpperCase()}</div>
                   <div style="flex:1;min-width:0;">

@@ -533,6 +533,62 @@ class RoutesService {
   }
 
   /**
+   * Geocodifica un cliente usando su dirección actual y actualiza lat/lng en la DB
+   */
+  async geocodeClient(clientId) {
+    const { data: client, error } = await supabase
+      .from('clients')
+      .select('id, address, commune')
+      .eq('id', clientId)
+      .single();
+
+    if (error || !client?.address) throw new Error('Cliente sin dirección registrada');
+
+    const parts = [client.address, client.commune, 'Chile'].filter(Boolean);
+    const loc = await this._geocodeAddress(parts.join(', '));
+
+    const { data: updated, error: updateError } = await supabase
+      .from('clients')
+      .update({ lat: loc.lat, lng: loc.lng, address_status: 'confirmed' })
+      .eq('id', clientId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+    return updated;
+  }
+
+  /**
+   * Helper: geocodifica una dirección usando Google Maps Geocoding API
+   */
+  _geocodeAddress(address) {
+    const https = require('https');
+    const key = process.env.GOOGLE_MAPS_KEY || 'AIzaSyA7s1MSGD_1AXZgRHue38c1TteTFiwnt4Q';
+    return new Promise((resolve, reject) => {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}&region=cl&language=es`;
+      https.get(url, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            if (json.status === 'OK' && json.results[0]) {
+              const loc = json.results[0].geometry.location;
+              const inChile = loc.lat >= -56 && loc.lat <= -17 && loc.lng >= -76 && loc.lng <= -66;
+              if (inChile) resolve({ lat: loc.lat, lng: loc.lng });
+              else reject(new Error('Dirección fuera de Chile'));
+            } else {
+              reject(new Error(json.status || 'Sin resultados de geocodificación'));
+            }
+          } catch (e) {
+            reject(new Error('Error al procesar respuesta de geocodificación'));
+          }
+        });
+      }).on('error', err => reject(err));
+    });
+  }
+
+  /**
    * Helper: sincroniza dirección de un cliente al Google Sheet
    * Se ejecuta de forma no-bloqueante para no retrasar la respuesta al usuario
    */

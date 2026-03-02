@@ -1,4 +1,4 @@
-const CACHE_NAME = 'leker-v2.2.5';
+const CACHE_NAME = 'leker-v2.2.10';
 
 const STATIC_ASSETS = [
   '/favicon.svg',
@@ -44,16 +44,19 @@ self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests (Google Apps Script, external APIs)
   if (url.origin !== self.location.origin) return;
 
-  // API calls: network-first
+  // API calls: stale-while-revalidate
+  // Returns cached response INSTANTLY, updates cache in background → reload is fast
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
-      fetch(request)
-        .then((res) => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(request, clone));
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(request);
+        const fetchPromise = fetch(request).then((res) => {
+          if (res.ok) cache.put(request, res.clone());
           return res;
-        })
-        .catch(() => caches.match(request))
+        }).catch(() => null);
+        // If we have a cached response, return it immediately and update in background
+        return cached || fetchPromise;
+      })
     );
     return;
   }
