@@ -25191,13 +25191,22 @@
   </div>
 <script>
 if ('serviceWorker' in navigator) {
+  // Auto-reload cuando el nuevo SW toma control (solo si ya había un SW previo)
+  const _hadController = !!navigator.serviceWorker.controller;
+  let _swRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!_hadController || _swRefreshing) return;
+    _swRefreshing = true;
+    showToast('info', 'Actualizando LEKER...', 'Nueva versión instalada, recargando...', 2500);
+    setTimeout(() => window.location.reload(), 2000);
+  });
+
   navigator.serviceWorker.register('/service-worker.js').then(reg => {
     reg.addEventListener('updatefound', () => {
       const newWorker = reg.installing;
       newWorker.addEventListener('statechange', () => {
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          // New version available — show persistent toast
-          showToast('info', 'Nueva versión disponible', 'Recarga la página para actualizar LEKER', 15000);
+          showToast('info', 'Nueva versión detectada', 'Instalando actualización...', 3000);
         }
       });
     });
