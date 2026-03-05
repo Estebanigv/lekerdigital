@@ -3732,7 +3732,7 @@
       <div class="login-logo">
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
         <p>Sistema de Gestión Logística</p>
-        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.4.4</div>
+        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.4.5</div>
       </div>
 
       <!-- Login Form -->
@@ -3809,7 +3809,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.4.4</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.4.5</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -6760,6 +6760,9 @@
                   </button>
                   <button class="btn" onclick="importAllFromSheets()" style="background: #10b981; color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;" id="btn-import-sheets" title="Importar todos los clientes de Google Sheets a Supabase">
                     <i data-lucide="database" style="width: 13px; height: 13px;"></i> Importar Excel → DB
+                  </button>
+                  <button class="btn" id="btn-test-sheet-sync" onclick="testSheetSync()" style="background: #f59e0b; color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;" title="Probar si el Apps Script está funcionando">
+                    <i data-lucide="zap" style="width: 13px; height: 13px;"></i> Test Excel
                   </button>
                   <button class="btn" id="btn-batch-geo" onclick="batchGenerateGeoLinks()" style="background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;">
                     <i data-lucide="locate" style="width: 13px; height: 13px;"></i> Cargar Geo
@@ -20984,18 +20987,23 @@
         })).filter(r => r.external_id);
 
         // Solo filas que cambiaron vs allClients
-        // Limpiar marcas de edición de plataforma expiradas (>10 min)
+        // Limpiar marcas de edición de plataforma expiradas (>30 min), usar localStorage
         const now10 = Date.now();
-        if (window._platformEditedIds) {
-          Object.keys(window._platformEditedIds).forEach(k => {
-            if (now10 - window._platformEditedIds[k] > 10 * 60 * 1000) delete window._platformEditedIds[k];
+        let _ped = {};
+        try {
+          _ped = JSON.parse(localStorage.getItem('leker_platform_edits') || '{}');
+          let changed_ped = false;
+          Object.keys(_ped).forEach(k => {
+            if (now10 - _ped[k] > 30 * 60 * 1000) { delete _ped[k]; changed_ped = true; }
           });
-        }
+          if (changed_ped) localStorage.setItem('leker_platform_edits', JSON.stringify(_ped));
+        } catch(_e) {}
+
         const clientMap = {};
         allClients.forEach(c => { clientMap[c.external_id] = c; });
         const changed = importRows.filter(r => {
           // Protección: no sobreescribir clientes editados recientemente en la plataforma
-          if (window._platformEditedIds && window._platformEditedIds[r.external_id]) return false;
+          if (_ped[r.external_id]) return false;
           const c = clientMap[r.external_id];
           if (!c) { r._syncTag = 'nuevo'; return true; }
           const isDiff = (r.address      && r.address      !== c.address)      ||
@@ -21011,7 +21019,9 @@
         // Verificar eliminaciones aunque no haya cambios
         if (changed.length === 0) {
           const sheetIds0 = new Set(importRows.map(r => r.external_id));
-          const dbWithExtId = allClients.filter(c => c.external_id && !sheetIds0.has(c.external_id));
+          let _ped0 = {};
+          try { _ped0 = JSON.parse(localStorage.getItem('leker_platform_edits') || '{}'); } catch(_e) {}
+          const dbWithExtId = allClients.filter(c => c.external_id && !sheetIds0.has(c.external_id) && !_ped0[c.external_id]);
           if (dbWithExtId.length > 0) {
             try {
               const delRes = await fetch(`${API}/api/clients/sync-deletions`, {
@@ -21103,6 +21113,48 @@
         if (badge) badge.textContent = '';
         // Falla silenciosa — no interrumpe la UI
       }
+    }
+
+    async function testSheetSync() {
+      const btn = document.getElementById('btn-test-sheet-sync');
+      btn.disabled = true;
+      btn.textContent = 'Probando...';
+
+      // Usar el primer cliente con external_id como prueba
+      const testClient = allClients.find(c => c.external_id && c.id);
+      if (!testClient) {
+        showToast('error', 'Test Excel', 'No hay clientes para probar');
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="zap" style="width:13px;height:13px;"></i> Test Excel';
+        lucide.createIcons();
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/api/clients/${testClient.id}/sync-to-sheet`, { method: 'POST' });
+        const data = await res.json();
+
+        if (!data.scriptConfigured && data.scriptUrl === 'NO CONFIGURADO') {
+          showToast('error', 'Test Excel — FALLO', 'GOOGLE_SHEETS_SCRIPT_URL no está configurado en el servidor', 10000);
+        } else if (data.sheetResult && data.sheetResult.success) {
+          const updated = data.sheetResult.updated || 0;
+          const notFound = data.sheetResult.notFound || [];
+          if (notFound.length > 0) {
+            showToast('warning', 'Test Excel — PARCIAL', `Código "${testClient.external_id}" NO encontrado en Excel. El Apps Script no pudo ubicar la fila. Verifica el nombre de la columna "Código" en tu Excel.`, 12000);
+          } else {
+            showToast('success', 'Test Excel — OK ✓', `Sync funciona. Cliente "${testClient.external_id}" actualizado en Excel (${updated} fila/s). El problema puede ser con otros códigos específicos.`, 10000);
+          }
+        } else {
+          const err = data.sheetResult ? data.sheetResult.error : 'sin respuesta';
+          showToast('error', 'Test Excel — FALLO', `Error del Apps Script: ${err}. Debes redesplegar el script con el código nuevo.`, 12000);
+        }
+      } catch(e) {
+        showToast('error', 'Test Excel — Error', e.message, 8000);
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="zap" style="width:13px;height:13px;"></i> Test Excel';
+      lucide.createIcons();
     }
 
     function initDireccionesFromDB() {
@@ -21426,10 +21478,13 @@
           }
 
           // Marcar este cliente como "editado en plataforma" para que
-          // el sync de GSheets no lo sobreescriba en los próximos 10 min
+          // el sync de GSheets no lo sobreescriba en los próximos 30 min
           if (body.external_id) {
-            if (!window._platformEditedIds) window._platformEditedIds = {};
-            window._platformEditedIds[body.external_id] = Date.now();
+            try {
+              const _ped = JSON.parse(localStorage.getItem('leker_platform_edits') || '{}');
+              _ped[body.external_id] = Date.now();
+              localStorage.setItem('leker_platform_edits', JSON.stringify(_ped));
+            } catch(_e) {}
           }
 
           // Mostrar estado real del sync con Excel
