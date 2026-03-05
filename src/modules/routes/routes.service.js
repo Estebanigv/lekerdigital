@@ -522,14 +522,17 @@ class RoutesService {
       throw error;
     }
 
-    // Sync to Google Sheet (non-blocking) — full client sync
+    // Sync to Google Sheet — full client sync
+    let sheetSync = { success: false };
     if (data && data.external_id) {
-      this._syncClientToSheet(data, updatedByUserId).catch(err =>
-        console.error('[Routes] Error sync client to sheet:', err.message)
-      );
+      try {
+        sheetSync = await this._syncClientToSheet(data, updatedByUserId);
+      } catch (err) {
+        console.error('[Routes] Error sync client to sheet:', err.message);
+      }
     }
 
-    return data;
+    return { ...data, _sheetSync: sheetSync };
   }
 
   /**
