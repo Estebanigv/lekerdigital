@@ -707,6 +707,65 @@ class RoutesService {
     return { updated: data.length, fromUserId, toUserId };
   }
 
+  /**
+   * Elimina clientes de la DB cuyo external_id no está en la lista de GSheets.
+   * Recibe el set completo de external_ids presentes en GSheets.
+   */
+  async syncDeletions(sheetExternalIds) {
+    const sheetSet = new Set(sheetExternalIds.map(id => String(id).trim()).filter(Boolean));
+    const results = { deleted: 0, deletedCodes: [] };
+
+    // Obtener todos los external_ids de la DB (paginado)
+    const dbIds = [];
+    let from = 0;
+    const batchSize = 1000;
+    let hasMore = true;
+    while (hasMore) {
+      const { data } = await supabase
+        .from('clients')
+        .select('external_id')
+        .not('external_id', 'is', null)
+        .range(from, from + batchSize - 1);
+      if (data && data.length > 0) {
+        data.forEach(c => { if (c.external_id) dbIds.push(c.external_id); });
+        from += batchSize;
+        hasMore = data.length === batchSize;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    const orphans = dbIds.filter(id => !sheetSet.has(id));
+    if (orphans.length === 0) return results;
+
+    console.log(`[SyncDel] Eliminando ${orphans.length} clientes no presentes en GSheets`);
+    // Borrar en lotes de 500
+    for (let i = 0; i < orphans.length; i += 500) {
+      const batch = orphans.slice(i, i + 500);
+      const { data, error } = await supabase
+        .from('clients')
+        .delete()
+        .in('external_id', batch)
+        .select('external_id');
+      if (!error && data) {
+        results.deleted += data.length;
+        results.deletedCodes.push(...data.map(d => d.external_id));
+      }
+    }
+
+    return results;
+  }
+
+  async getClientById(clientId) {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', clientId)
+      .single();
+    if (error) return null;
+    return data;
+  }
+
   async deleteClient(clientId) {
     // Get client info before deleting (for sheet sync)
     const { data: client } = await supabase

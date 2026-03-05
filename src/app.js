@@ -291,6 +291,33 @@ app.put('/api/clients/:id', async (req, res) => {
   }
 });
 
+// Sync explícito de un cliente al Google Sheet
+app.post('/api/clients/:id/sync-to-sheet', authorize('admin', 'supervisor'), async (req, res) => {
+  try {
+    const client = await routesService.getClientById(req.params.id);
+    if (!client) return res.status(404).json({ success: false, error: 'Cliente no encontrado' });
+    const userId = req.user ? req.user.id : null;
+    const result = await routesService._syncClientToSheet(client, userId);
+    res.json({ success: true, sheetResult: result, scriptUrl: process.env.GOOGLE_SHEETS_SCRIPT_URL ? 'configurado' : 'NO CONFIGURADO' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Sync deletions: elimina clientes en DB que ya no están en GSheets
+app.post('/api/clients/sync-deletions', authorize('admin', 'supervisor'), async (req, res) => {
+  try {
+    const { externalIds } = req.body;
+    if (!Array.isArray(externalIds) || externalIds.length === 0) {
+      return res.status(400).json({ success: false, error: 'externalIds requerido' });
+    }
+    const result = await routesService.syncDeletions(externalIds);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.delete('/api/clients/:id', async (req, res) => {
   try {
     await routesService.deleteClient(req.params.id);
