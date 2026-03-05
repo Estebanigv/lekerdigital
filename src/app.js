@@ -284,8 +284,9 @@ app.post('/api/clients', async (req, res) => {
 app.put('/api/clients/:id', async (req, res) => {
   try {
     const userId = req.user ? req.user.id : null;
-    const client = await routesService.updateClient(req.params.id, req.body, userId);
-    res.json({ success: true, message: 'Cliente actualizado', data: client });
+    const result = await routesService.updateClient(req.params.id, req.body, userId);
+    const { _sheetSync, _scriptConfigured, ...client } = result;
+    res.json({ success: true, message: 'Cliente actualizado', data: client, sheetSync: _sheetSync, scriptConfigured: _scriptConfigured });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
   }

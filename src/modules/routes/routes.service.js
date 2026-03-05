@@ -522,15 +522,21 @@ class RoutesService {
       throw error;
     }
 
-    // Sync to Google Sheet — con timeout para no bloquear la respuesta en Vercel
+    // Sync to Google Sheet — captura resultado para informar al cliente
+    let sheetSync = null;
     if (data && data.external_id) {
-      const syncPromise = this._syncClientToSheet(data, updatedByUserId)
-        .catch(err => console.error('[Routes] Sheet sync error:', err.message));
-      // Esperar máx 8s; si tarda más, continúa en background
-      await Promise.race([syncPromise, new Promise(r => setTimeout(r, 8000))]);
+      try {
+        sheetSync = await Promise.race([
+          this._syncClientToSheet(data, updatedByUserId),
+          new Promise(r => setTimeout(() => r({ success: false, error: 'timeout' }), 8000))
+        ]);
+      } catch (err) {
+        sheetSync = { success: false, error: err.message };
+        console.error('[Routes] Sheet sync error:', err.message);
+      }
     }
 
-    return data;
+    return { ...data, _sheetSync: sheetSync, _scriptConfigured: !!process.env.GOOGLE_SHEETS_SCRIPT_URL };
   }
 
   /**
