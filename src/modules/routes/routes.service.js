@@ -649,6 +649,12 @@ class RoutesService {
 
     if (result.success) {
       console.log(`[Routes] Client synced to Sheet: ${client.external_id}`);
+    } else if (result.error && result.error.includes('no reconocida')) {
+      // Apps Script doesn't have updateClient handler yet — fall back to updateAddress
+      console.warn(`[Routes] updateClient not supported by Apps Script, falling back to updateAddress for ${client.external_id}`);
+      await googleSheetsService.syncAddressToSheet(
+        client.external_id, client.address, client.commune, updatedByName, client.geo_link
+      ).catch(err => console.warn('[Routes] updateAddress fallback failed:', err.message));
     } else if (result.error) {
       console.warn(`[Routes] Sheet sync failed for ${client.external_id}: ${result.error}`);
     }

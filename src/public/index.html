@@ -20803,9 +20803,14 @@
         }
 
         const br = 'border-right:1px solid var(--border);';
+        // Badge para clientes recién sincronizados desde GSheets (válido 10 min)
+        const syncAge = c._syncAt ? (Date.now() - c._syncAt) : Infinity;
+        const syncBadge = c._syncTag && syncAge < 600000
+          ? `<span style="display:inline-block;margin-left:4px;padding:0px 4px;font-size:9px;font-weight:700;border-radius:3px;vertical-align:middle;${c._syncTag === 'nuevo' ? 'background:rgba(16,185,129,0.2);color:#059669;' : 'background:rgba(245,158,11,0.2);color:#b45309;'}">${c._syncTag === 'nuevo' ? 'NUEVO' : 'SYNC'}</span>`
+          : '';
         html += `<tr style="${rowBg}">
           <td style="padding:3px 5px;overflow:hidden;${br}"><code style="font-size:10px;background:var(--bg-hover);padding:1px 3px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">${code}</code></td>
-          <td style="padding:3px 5px;overflow:hidden;${br}"><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="${name}">${name}</div>${sub}</td>
+          <td style="padding:3px 5px;overflow:hidden;${br}"><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="${name}">${name}${syncBadge}</div>${sub}</td>
           <td style="padding:3px 5px;font-size:11px;overflow:hidden;${br}" title="${dir}"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir || '<span style="opacity:0.3">—</span>'}</div></td>
           <td style="padding:3px 5px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${br}">${commune}</td>
           <td style="padding:3px 5px;font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${br}">${city}</td>
@@ -20871,13 +20876,15 @@
         allClients.forEach(c => { clientMap[c.external_id] = c; });
         const changed = importRows.filter(r => {
           const c = clientMap[r.external_id];
-          if (!c) return true;
-          return (r.address      && r.address      !== c.address)      ||
-                 (r.commune      && r.commune      !== c.commune)      ||
-                 (r.name         && r.name         !== c.name)         ||
-                 (r.fantasy_name && r.fantasy_name !== c.fantasy_name) ||
-                 (r.geo_link     && r.geo_link     !== c.geo_link)     ||
-                 (r.region       && r.region       !== c.region);
+          if (!c) { r._syncTag = 'nuevo'; return true; }
+          const isDiff = (r.address      && r.address      !== c.address)      ||
+                         (r.commune      && r.commune      !== c.commune)      ||
+                         (r.name         && r.name         !== c.name)         ||
+                         (r.fantasy_name && r.fantasy_name !== c.fantasy_name) ||
+                         (r.geo_link     && r.geo_link     !== c.geo_link)     ||
+                         (r.region       && r.region       !== c.region);
+          if (isDiff) r._syncTag = 'actualizado';
+          return isDiff;
         });
 
         if (changed.length === 0) {
@@ -20907,6 +20914,16 @@
         const clientsData = await clientsRes.json();
         if (clientsData.success) {
           allClients = clientsData.data;
+          // Marcar clientes recién sincronizados para mostrar badge en tabla
+          const syncNow = Date.now();
+          const syncTagMap = {};
+          changed.forEach(r => { if (r._syncTag) syncTagMap[r.external_id] = r._syncTag; });
+          allClients.forEach(c => {
+            if (syncTagMap[c.external_id]) {
+              c._syncTag = syncTagMap[c.external_id];
+              c._syncAt = syncNow;
+            }
+          });
           filterDireccionesDB();
           populateDirFilters();
           refreshSegmentationFromAllClients();
