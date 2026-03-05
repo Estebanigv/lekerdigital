@@ -3732,7 +3732,7 @@
       <div class="login-logo">
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
         <p>Sistema de Gestión Logística</p>
-        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.3.5</div>
+        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.3.6</div>
       </div>
 
       <!-- Login Form -->
@@ -3809,7 +3809,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.3.5</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.3.6</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -4012,6 +4012,23 @@
         <h1 class="page-title" id="page-title">Dashboard</h1>
       </div>
       <div class="topbar-actions">
+        <!-- Botón novedades GSheets -->
+        <div style="position:relative;" id="sync-notif-wrap" title="Novedades desde Excel">
+          <button onclick="toggleSyncPanel()" style="position:relative;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;transition:background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
+            <i data-lucide="bell" style="width:20px;height:20px;"></i>
+            <span id="sync-notif-badge" style="display:none;position:absolute;top:2px;right:2px;min-width:16px;height:16px;background:#ef4444;color:white;font-size:9px;font-weight:700;border-radius:8px;padding:0 3px;line-height:16px;text-align:center;"></span>
+          </button>
+          <!-- Panel desplegable -->
+          <div id="sync-notif-panel" style="display:none;position:absolute;right:0;top:calc(100% + 6px);width:320px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:999;overflow:hidden;">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:13px;font-weight:700;color:var(--text-primary);">Novedades desde Excel</span>
+              <button onclick="clearSyncNotifs()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-muted);padding:2px 6px;border-radius:4px;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">Limpiar</button>
+            </div>
+            <div id="sync-notif-list" style="max-height:320px;overflow-y:auto;padding:8px 0;">
+              <p style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Sin novedades recientes</p>
+            </div>
+          </div>
+        </div>
         <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
           <i data-lucide="sun" class="icon-sun"></i>
           <i data-lucide="moon" class="icon-moon"></i>
@@ -14091,6 +14108,8 @@
     document.addEventListener('DOMContentLoaded', () => {
       const chevron = document.getElementById('executives-chevron');
       if (chevron) chevron.style.transform = 'rotate(0deg)';
+      // Renderizar panel de novedades con historial guardado
+      _renderSyncPanel();
     });
 
     function toggleExecutiveDetails(execId) {
@@ -20833,6 +20852,82 @@
 
     // Auto-sync desde Google Sheets al abrir Direcciones (máx 1 vez/5min)
     let _lastSheetsSync = 0;
+    let _syncNotifItems = JSON.parse(localStorage.getItem('leker_sync_notifs') || '[]');
+
+    function _saveSyncNotifs() {
+      // Mantener solo últimos 50 y últimas 24h
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      _syncNotifItems = _syncNotifItems.filter(n => n.ts > cutoff).slice(-50);
+      localStorage.setItem('leker_sync_notifs', JSON.stringify(_syncNotifItems));
+    }
+
+    function _addSyncNotifs(changed) {
+      const ts = Date.now();
+      changed.forEach(r => {
+        _syncNotifItems.unshift({ ts, code: r.external_id, name: r.name || r.external_id, tag: r._syncTag || 'actualizado' });
+      });
+      _saveSyncNotifs();
+      _renderSyncPanel();
+    }
+
+    function _renderSyncPanel() {
+      const badge = document.getElementById('sync-notif-badge');
+      const list = document.getElementById('sync-notif-list');
+      if (!badge || !list) return;
+      const unseen = _syncNotifItems.filter(n => !n.seen).length;
+      if (unseen > 0) {
+        badge.style.display = 'block';
+        badge.textContent = unseen > 9 ? '9+' : unseen;
+      } else {
+        badge.style.display = 'none';
+      }
+      if (_syncNotifItems.length === 0) {
+        list.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Sin novedades recientes</p>';
+        return;
+      }
+      list.innerHTML = _syncNotifItems.map(n => {
+        const date = new Date(n.ts).toLocaleString('es-CL', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+        const color = n.tag === 'nuevo' ? '#059669' : '#b45309';
+        const bg = n.tag === 'nuevo' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)';
+        const label = n.tag === 'nuevo' ? 'NUEVO' : 'SYNC';
+        return `<div style="padding:8px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+          <span style="background:${bg};color:${color};font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;white-space:nowrap;">${label}</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.name}</div>
+            <div style="font-size:10px;color:var(--text-muted);">${n.code} · ${date}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function toggleSyncPanel() {
+      const panel = document.getElementById('sync-notif-panel');
+      if (!panel) return;
+      const isOpen = panel.style.display !== 'none';
+      panel.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) {
+        // Marcar como vistos
+        _syncNotifItems.forEach(n => n.seen = true);
+        _saveSyncNotifs();
+        _renderSyncPanel();
+      }
+    }
+
+    function clearSyncNotifs() {
+      _syncNotifItems = [];
+      _saveSyncNotifs();
+      _renderSyncPanel();
+      document.getElementById('sync-notif-panel').style.display = 'none';
+    }
+
+    // Cerrar panel al click fuera
+    document.addEventListener('click', function(e) {
+      const wrap = document.getElementById('sync-notif-wrap');
+      if (wrap && !wrap.contains(e.target)) {
+        const panel = document.getElementById('sync-notif-panel');
+        if (panel) panel.style.display = 'none';
+      }
+    });
     async function _silentSyncFromSheets() {
       const now = Date.now();
       if (now - _lastSheetsSync < 60 * 1000) return; // 1 min throttle
@@ -20939,6 +21034,8 @@
           if (totalCreated > 0) parts.push(totalCreated + ' nuevos');
           if (totalUpdated > 0) parts.push(totalUpdated + ' actualizados');
           showToast('success', 'Excel sincronizado', parts.join(', ') + ' desde Google Sheets');
+          // Agregar al panel de novedades
+          _addSyncNotifs(changed);
         }
         if (totalGeoReset > 0) {
           showToast('warning', 'Geocodificación pendiente', `${totalGeoReset} clientes con dirección cambiada — ve a Direcciones y haz click en "Cargar Geo"`, 8000);
