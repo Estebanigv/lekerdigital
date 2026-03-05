@@ -538,14 +538,33 @@ class RoutesService {
   async geocodeClient(clientId) {
     const { data: client, error } = await supabase
       .from('clients')
-      .select('id, address, commune')
+      .select('id, address, commune, city, region, geo_link')
       .eq('id', clientId)
       .single();
 
     if (error || !client?.address) throw new Error('Cliente sin dirección registrada');
 
-    const parts = [client.address, client.commune, 'Chile'].filter(Boolean);
-    const loc = await this._geocodeAddress(parts.join(', '));
+    let loc = null;
+
+    // 1) Intentar extraer coordenadas del geo_link si tiene formato ?q=lat,lng
+    if (client.geo_link) {
+      const coordMatch = client.geo_link.match(/[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+      if (coordMatch) {
+        const lat = parseFloat(coordMatch[1]);
+        const lng = parseFloat(coordMatch[2]);
+        const inChile = lat >= -56 && lat <= -17 && lng >= -76 && lng <= -66;
+        if (inChile) {
+          loc = { lat, lng };
+          console.log(`[Geocode] Coords from geo_link for ${clientId}: ${lat},${lng}`);
+        }
+      }
+    }
+
+    // 2) Si no hay coords en geo_link, geocodificar con dirección completa (incluye ciudad y región)
+    if (!loc) {
+      const parts = [client.address, client.commune, client.city, client.region, 'Chile'].filter(Boolean);
+      loc = await this._geocodeAddress(parts.join(', '));
+    }
 
     const { data: updated, error: updateError } = await supabase
       .from('clients')
