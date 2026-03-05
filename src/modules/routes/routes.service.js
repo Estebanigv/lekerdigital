@@ -671,18 +671,24 @@ class RoutesService {
       if (user) updatedByName = user.email || user.full_name;
     }
 
-    const result = await googleSheetsService.syncClientToSheet(client, updatedByName);
+    if (!googleSheetsService.isConfigured()) {
+      console.warn(`[Routes] GOOGLE_SHEETS_SCRIPT_URL no configurado — sync omitido`);
+      return { success: false, error: 'GOOGLE_SHEETS_SCRIPT_URL no configurado' };
+    }
 
-    if (result.success) {
-      console.log(`[Routes] Client synced to Sheet: ${client.external_id}`);
-    } else if (result.error && result.error.includes('no reconocida')) {
-      // Apps Script doesn't have updateClient handler yet — fall back to updateAddress
-      console.warn(`[Routes] updateClient not supported by Apps Script, falling back to updateAddress for ${client.external_id}`);
-      await googleSheetsService.syncAddressToSheet(
-        client.external_id, client.address, client.commune, updatedByName, client.geo_link
-      ).catch(err => console.warn('[Routes] updateAddress fallback failed:', err.message));
-    } else if (result.error) {
-      console.warn(`[Routes] Sheet sync failed for ${client.external_id}: ${result.error}`);
+    const result = await googleSheetsService.syncClientToSheet(client, updatedByName);
+    console.log(`[Routes] syncClientToSheet(${client.external_id}) →`, JSON.stringify(result));
+
+    if (!result.success) {
+      // Fallback: intentar updateAddress si updateClient no está soportado
+      if (result.error && (result.error.includes('no reconocida') || result.error.includes('acción'))) {
+        console.warn(`[Routes] Fallback a updateAddress para ${client.external_id}`);
+        const fallback = await googleSheetsService.syncAddressToSheet(
+          client.external_id, client.address, client.commune, updatedByName, client.geo_link
+        ).catch(err => ({ success: false, error: err.message }));
+        console.log(`[Routes] updateAddress fallback →`, JSON.stringify(fallback));
+        return fallback;
+      }
     }
 
     return result;

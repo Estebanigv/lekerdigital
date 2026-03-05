@@ -6,7 +6,11 @@ const https = require('https');
 
 class GoogleSheetsService {
   constructor() {
-    this.scriptUrl = process.env.GOOGLE_SHEETS_SCRIPT_URL || '';
+    // No cachear en constructor — leer siempre del env para que un redeploy lo actualice
+  }
+
+  get scriptUrl() {
+    return process.env.GOOGLE_SHEETS_SCRIPT_URL || '';
   }
 
   isConfigured() {
