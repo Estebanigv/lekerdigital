@@ -792,11 +792,25 @@ class RoutesService {
       }
     }
 
+    results.geoReset = 0;
+
     for (let i = 0; i < validRows.length; i += batchSize) {
-      const batch = validRows.slice(i, i + batchSize).map(row => {
+      const batchRows = validRows.slice(i, i + batchSize);
+      const batchIds = batchRows.map(r => r.external_id.trim());
+
+      // Fetch current address/commune for existing clients in this batch
+      const { data: existingData } = await supabase
+        .from('clients')
+        .select('external_id, address, commune')
+        .in('external_id', batchIds);
+      const existingMap = {};
+      if (existingData) existingData.forEach(c => { existingMap[c.external_id] = c; });
+
+      const batch = batchRows.map(row => {
+        const extId = row.external_id.trim();
         const obj = {
-          external_id: row.external_id.trim(),
-          name: row.name || row.external_id.trim(),
+          external_id: extId,
+          name: row.name || extId,
           fantasy_name: row.fantasy_name || null,
           address: row.address || null,
           commune: row.commune || null
@@ -805,6 +819,22 @@ class RoutesService {
         if (availableCols.has('city')) obj.city = row.city || null;
         if (availableCols.has('region')) obj.region = row.region || null;
         if (availableCols.has('geo_link')) obj.geo_link = row.geo_link || null;
+
+        // Reset lat/lng when address changed so client gets re-geocoded
+        const prev = existingMap[extId];
+        if (prev) {
+          const addrChanged = row.address && row.address !== prev.address;
+          const communeChanged = row.commune && row.commune !== prev.commune;
+          if (addrChanged || communeChanged) {
+            obj.lat = null;
+            obj.lng = null;
+            obj.address_status = 'pending';
+            results.geoReset++;
+          }
+        } else {
+          // New client — starts without coords, will need geocoding
+          obj.address_status = 'pending';
+        }
         return obj;
       });
 
@@ -829,6 +859,7 @@ class RoutesService {
       }
     }
 
+    console.log(`[Import] Completado: ${results.created} creados, ${results.updated} actualizados, ${results.geoReset} con geo reseteado`);
     return results;
   }
 

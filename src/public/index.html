@@ -20886,7 +20886,7 @@
         }
 
         // Sync solo filas cambiadas
-        let totalCreated = 0, totalUpdated = 0;
+        let totalCreated = 0, totalUpdated = 0, totalGeoReset = 0;
         const batchSize = 200;
         for (let i = 0; i < changed.length; i += batchSize) {
           const res2 = await fetch(`${API}/api/clients/import-from-sheets`, {
@@ -20898,6 +20898,7 @@
           if (d.success && d.data) {
             totalCreated += d.data.created || 0;
             totalUpdated += d.data.updated || 0;
+            totalGeoReset += d.data.geoReset || 0;
           }
         }
 
@@ -20908,10 +20909,17 @@
           allClients = clientsData.data;
           filterDireccionesDB();
           populateDirFilters();
+          refreshSegmentationFromAllClients();
         }
 
         if (totalCreated + totalUpdated > 0) {
-          showToast('success', 'Excel sincronizado', `${totalCreated > 0 ? totalCreated + ' nuevos' : ''}${totalCreated > 0 && totalUpdated > 0 ? ', ' : ''}${totalUpdated > 0 ? totalUpdated + ' actualizados' : ''} desde Google Sheets`);
+          const parts = [];
+          if (totalCreated > 0) parts.push(totalCreated + ' nuevos');
+          if (totalUpdated > 0) parts.push(totalUpdated + ' actualizados');
+          showToast('success', 'Excel sincronizado', parts.join(', ') + ' desde Google Sheets');
+        }
+        if (totalGeoReset > 0) {
+          showToast('warning', 'Geocodificación pendiente', `${totalGeoReset} clientes con dirección cambiada — ve a Direcciones y haz click en "Cargar Geo"`, 8000);
         }
         if (badge) badge.textContent = '';
       } catch (e) {
@@ -21329,7 +21337,7 @@
       if (progressDiv) progressDiv.style.display = 'block';
 
       const batchSize = 200;
-      let totalCreated = 0, totalUpdated = 0, totalErrors = 0;
+      let totalCreated = 0, totalUpdated = 0, totalErrors = 0, totalGeoReset = 0;
 
       try {
         for (let i = 0; i < importRows.length; i += batchSize) {
@@ -21351,14 +21359,18 @@
             totalCreated += data.data.created || 0;
             totalUpdated += data.data.updated || 0;
             totalErrors += (data.data.errors || []).length;
+            totalGeoReset += data.data.geoReset || 0;
           }
         }
 
         if (progressTitle) progressTitle.textContent = 'Importación completada';
-        if (progressDetail) progressDetail.textContent = `${totalCreated} creados, ${totalUpdated} actualizados${totalErrors ? `, ${totalErrors} errores` : ''}`;
+        if (progressDetail) progressDetail.textContent = `${totalCreated} creados, ${totalUpdated} actualizados${totalGeoReset ? `, ${totalGeoReset} pendientes de geocodificar` : ''}${totalErrors ? `, ${totalErrors} errores` : ''}`;
         if (progressBar) progressBar.style.width = '100%';
 
         showToast('success', 'Importación completa', `${totalCreated} creados, ${totalUpdated} actualizados`);
+        if (totalGeoReset > 0) {
+          showToast('warning', 'Geocodificación pendiente', `${totalGeoReset} clientes con dirección cambiada necesitan geocodificarse — haz click en "Cargar Geo"`, 8000);
+        }
 
         // Reload allClients from DB
         const clientsRes = await fetch(`${API}/api/clients`);
@@ -21367,6 +21379,7 @@
           allClients = clientsData.data;
           filterDireccionesDB();
           populateDirFilters();
+          refreshSegmentationFromAllClients();
         }
 
         // Hide progress after 3 seconds
