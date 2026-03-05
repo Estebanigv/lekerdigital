@@ -3732,7 +3732,7 @@
       <div class="login-logo">
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 220px; height: auto; margin-bottom: 8px;">
         <p>Sistema de Gestión Logística</p>
-        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.4.0</div>
+        <div style="font-size: 11px; color: #818cf8; margin-top: 6px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.4.1</div>
       </div>
 
       <!-- Login Form -->
@@ -3809,7 +3809,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.4.0</div>
+        <div class="sidebar-version" style="font-size: 11px; color: #818cf8; margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: rgba(99,102,241,0.1); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.4.1</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -6786,7 +6786,13 @@
               </div>
               <div class="card-body" style="padding: 0;">
                 <div id="gs-direcciones-body" style="overflow-x: auto;">
-                  <p style="text-align: center; color: var(--text-muted); padding: 20px;">Cargando clientes...</p>
+                  <div style="padding:40px 20px;text-align:center;">
+                    <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;" id="crm-loading-label">Cargando datos del servidor...</div>
+                    <div style="height:6px;background:var(--bg-hover);border-radius:3px;overflow:hidden;max-width:320px;margin:0 auto 10px;">
+                      <div id="crm-loading-fill" style="height:100%;background:var(--accent);width:0%;transition:width 0.4s ease;border-radius:3px;"></div>
+                    </div>
+                    <div style="font-size:13px;color:var(--accent);font-weight:700;" id="crm-loading-pct">0%</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -21281,10 +21287,10 @@
 
       const overlay = document.createElement('div');
       overlay.id = 'modal-edit-client-full';
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;';
 
       overlay.innerHTML = `
-        <div style="background:var(--bg-card);border-radius:14px;padding:0;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;max-height:90vh;overflow-y:auto;">
+        <div onclick="event.stopPropagation()" style="background:var(--bg-card);border-radius:14px;padding:0;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;margin:auto;">
           <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
             <div>
               <h3 style="margin:0;font-size:15px;font-weight:700;color:var(--text-primary);">${isAdmin ? 'Editar' : 'Ver'} Cliente</h3>
@@ -21389,7 +21395,12 @@
       }
 
       btn.disabled = true;
-      btn.textContent = 'Guardando...';
+      btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><svg style="animation:spin 1s linear infinite;width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Guardando...</span>';
+      if (!document.getElementById('spin-style')) {
+        const s = document.createElement('style'); s.id = 'spin-style';
+        s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+        document.head.appendChild(s);
+      }
 
       try {
         const res = await fetch(`${API}/api/clients/${clientId}`, {
@@ -21435,6 +21446,7 @@
         showToast('error', 'Error', e.message);
         btn.disabled = false;
         btn.textContent = 'Guardar';
+      }
       }
     }
 
