@@ -1479,7 +1479,7 @@ class RoutesService {
     // Construir query base
     let query = supabase
       .from('clients')
-      .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segment, priority, zone')
+      .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, priority, zone')
       .eq('assigned_user_id', userId)
       .not('lat', 'is', null)
       .not('lng', 'is', null);
