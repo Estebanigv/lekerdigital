@@ -6,7 +6,7 @@ const { authenticate, authorize, JWT_SECRET } = require('../../middlewares/auth'
 
 const router = express.Router();
 
-const TOKEN_EXPIRY = '8h';
+const TOKEN_EXPIRY = '30d';
 
 /**
  * POST /api/auth/login

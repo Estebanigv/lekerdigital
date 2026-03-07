@@ -442,31 +442,34 @@ class RoutesService {
   // =============================================
 
   async getAllClients() {
-    // Get all clients using pagination to bypass Supabase default limit
-    let allClients = [];
-    let from = 0;
     const batchSize = 1000;
-    let hasMore = true;
 
-    while (hasMore) {
-      let { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('name')
-        .range(from, from + batchSize - 1);
+    // Get exact count first (fast HEAD request)
+    const { count, error: countError } = await supabase
+      .from('clients')
+      .select('*', { count: 'exact', head: true });
+    if (countError) throw countError;
 
-      if (error) throw error;
+    if (!count || count === 0) return [];
 
-      if (data && data.length > 0) {
-        allClients = allClients.concat(data);
-        from += batchSize;
-        hasMore = data.length === batchSize;
-      } else {
-        hasMore = false;
-      }
+    // Build all batch ranges and fetch in parallel
+    const batches = [];
+    for (let from = 0; from < count; from += batchSize) {
+      batches.push(
+        supabase
+          .from('clients')
+          .select('*')
+          .order('name')
+          .range(from, Math.min(from + batchSize - 1, count - 1))
+          .then(({ data, error }) => {
+            if (error) throw error;
+            return data || [];
+          })
+      );
     }
 
-    return allClients;
+    const results = await Promise.all(batches);
+    return results.flat();
   }
 
   async getClientCount() {

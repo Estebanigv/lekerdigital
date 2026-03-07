@@ -4281,6 +4281,75 @@
       .crm-filters select.form-control { max-width: 100% !important; }
       #crm-stats-bar { gap: 10px !important; justify-content: flex-start !important; }
       #crm-stats-bar > div { min-width: 60px; }
+
+      /* --- GESTIONAR RUTAS: mapa más compacto --- */
+      .map-container[style*="calc(100vh"] {
+        height: 55vh !important;
+        min-height: 300px !important;
+        max-height: none !important;
+      }
+      /* Overlay panels del mapa: reposicionar para mobile */
+      .map-overlay { flex-direction: column !important; top: 8px !important; right: 8px !important; gap: 6px !important; }
+
+      /* --- DATA TABS: scroll horizontal en mobile --- */
+      .data-tabs {
+        overflow-x: auto !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+      }
+      .data-tabs::-webkit-scrollbar { display: none; }
+      .data-tab { flex-shrink: 0; }
+
+      /* --- TOPBAR: page title no overflow --- */
+      .page-title {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        max-width: calc(100vw - 180px) !important;
+      }
+
+      /* --- NOTAS VENDEDOR: textarea min-width 0 --- */
+      #gs-vendedores-notas-body > div > div[style*="min-width: 300px"] {
+        min-width: 0 !important;
+        width: 100% !important;
+      }
+
+      /* --- PANEL TOPBAR DE SYNC: no desborde en pantallas chicas --- */
+      #sync-notif-panel {
+        max-width: calc(100vw - 16px) !important;
+        right: 0 !important;
+      }
+
+      /* --- LOGIN CARD: menos padding en mobile --- */
+      .login-card { padding: 24px 20px !important; }
+      .login-overlay { padding: 16px !important; }
+    }
+
+    @media (max-width: 480px) {
+      /* LOGIN: mínimo padding en phones pequeños */
+      .login-card { padding: 20px 14px !important; border-radius: 10px !important; }
+      .login-logo { margin-bottom: 18px !important; }
+      .login-logo img { max-width: 160px !important; }
+
+      /* CRM: 1 col en phones muy pequeños */
+      .crm-filters { grid-template-columns: 1fr !important; }
+
+      /* RUTA MAPA: reducir más */
+      .map-container[style*="calc(100vh"] {
+        height: 45vh !important;
+        min-height: 250px !important;
+      }
+
+      /* DATA TABS: texto más pequeño */
+      .data-tab { font-size: 11px !important; padding: 6px 10px !important; }
+
+      /* PAGE TITLE: más corto */
+      .page-title { max-width: calc(100vw - 140px) !important; }
+
+      /* TOPBAR ACTIONS: ocultar texto, solo íconos */
+      .topbar-user-name { display: none !important; }
     }
   </style>
 </head>
@@ -6079,7 +6148,7 @@
             <div class="crm-filters" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
               <div class="crm-search-wrap" style="position: relative; flex: 1; min-width: 200px;">
                 <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-muted);"></i>
-                <input id="crm-search" type="text" class="form-control" placeholder="Buscar código, nombre, dirección, teléfono..." style="padding-left: 32px;" oninput="filterCrmClients()">
+                <input id="crm-search" type="text" class="form-control" placeholder="Buscar código, nombre, dirección, teléfono..." style="padding-left: 32px;" oninput="filterCrmClients(true)">
               </div>
               <select id="crm-vendor-filter" class="form-control" style="max-width: 180px; font-size: 13px;" onchange="filterCrmClients()">
                 <option value="">Todos los vendedores</option>
@@ -8136,9 +8205,22 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Google Maps JS -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7s1MSGD_1AXZgRHue38c1TteTFiwnt4Q&libraries=places,geometry"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7s1MSGD_1AXZgRHue38c1TteTFiwnt4Q&libraries=places,geometry" defer></script>
 
   <script>
+    // Debounced lucide icon renderer — agrupa múltiples llamadas en un solo tick
+    let _lucideTimer = null;
+    function _createIcons(scope) {
+      if (scope) {
+        // Scoped: render inmediato solo en el contenedor dado
+        try { lucide.createIcons({ attrs: {}, nodes: scope.querySelectorAll('[data-lucide]') }); } catch(e) {}
+        return;
+      }
+      // Global: debounce para colapsar múltiples llamadas seguidas
+      clearTimeout(_lucideTimer);
+      _lucideTimer = setTimeout(() => { try { lucide.createIcons(); } catch(e) {} }, 16);
+    }
+
     // Initialize Lucide icons
     lucide.createIcons();
 
@@ -8167,7 +8249,7 @@
       `;
 
       container.appendChild(toast);
-      lucide.createIcons();
+      _createIcons();
 
       // Auto remove
       setTimeout(() => {
@@ -8202,7 +8284,7 @@
       document.documentElement.setAttribute('data-theme', theme);
       localStorage.setItem('leker-theme', theme);
       updateMapTiles(theme);
-      lucide.createIcons();
+      _createIcons();
     }
 
     function toggleSidebar() {
@@ -8629,7 +8711,7 @@
       if (adminNameEl) adminNameEl.textContent = currentUser.full_name || 'Usuario';
       if (adminEmailEl) adminEmailEl.textContent = currentUser.email || '';
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     // Password management for admin
@@ -8712,7 +8794,7 @@
       main.style.marginLeft = isCollapsed ? '68px' : '240px';
       localStorage.setItem('leker_sidebar_collapsed', isCollapsed);
       // Re-create icons for the collapse btn
-      lucide.createIcons();
+      _createIcons();
     }
 
     function expandSidebar() {
@@ -8721,7 +8803,7 @@
         sidebar.classList.remove('collapsed');
         document.querySelector('.main').style.marginLeft = '240px';
         localStorage.setItem('leker_sidebar_collapsed', false);
-        lucide.createIcons();
+        _createIcons();
       }
     }
 
@@ -8935,7 +9017,19 @@
       // Chile bounds: lat -17 to -56, lng -76 to -66
       const isInChile = (lat, lng) => lat >= -56 && lat <= -17 && lng >= -76 && lng <= -66;
 
-      clients.forEach(client => {
+      // Limit markers: 80/20 all + L hasta 600 + N hasta 200 (evita lag con 7k+ markers)
+      const MAX_L = 600, MAX_N = 200;
+      let countL = 0, countN = 0;
+      const clientsToRender = clients.filter(c => {
+        if (!c.lat || !c.lng) return false;
+        const seg = c.segmentation || 'none';
+        if (seg === '80-20') return true;
+        if (seg === 'L') return countL++ < MAX_L;
+        if (seg === 'N') return countN++ < MAX_N;
+        return false; // omitir 'none' del mapa principal (ruido visual)
+      });
+
+      clientsToRender.forEach(client => {
         // Check if client has coordinates
         if (!client.lat || !client.lng) {
           markersWithoutCoords++;
@@ -9089,7 +9183,7 @@
         if (icon) icon.setAttribute('data-lucide', 'maximize-2');
         if (lbl) lbl.textContent = 'Expandir';
       }
-      lucide.createIcons();
+      _createIcons();
       if (mainMap) setTimeout(() => google.maps.event.trigger(mainMap, 'resize'), 350);
     }
 
@@ -9220,7 +9314,7 @@
         console.log(`Diagnóstico de clientes: ${withCoords} con coords, ${geocodable} con dirección para geocodificar, ${noAddressCount} sin dirección ni coords`);
       }
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     let geocodingCancelled = false;
@@ -9231,7 +9325,7 @@
       panel.classList.add('open');
       panel.classList.remove('minimized');
       geocodePanelMinimized = false;
-      lucide.createIcons();
+      _createIcons();
     }
 
     function closeGeocodePanel() {
@@ -9256,7 +9350,7 @@
       log.insertBefore(entry, log.firstChild);
       // Keep max 100 entries
       while (log.children.length > 100) log.removeChild(log.lastChild);
-      lucide.createIcons();
+      _createIcons();
     }
 
     function updateGeocodeStats(ok, err, pending, pct) {
@@ -9407,7 +9501,7 @@
         }
       }
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     // Dashboard loading progress
@@ -9579,8 +9673,8 @@
 
         updateDashLoadingProgress(35, 'Renderizando tablas...');
 
-        // Add markers to map
-        addClientMarkers(clients.data);
+        // Add markers to map — diferido para no bloquear el render del UI
+        setTimeout(() => addClientMarkers(clients.data), 300);
 
         updateDashLoadingProgress(45, 'Cargando rutas del día...');
 
@@ -9642,7 +9736,7 @@
         renderTodayRoutesTable();
 
         // Re-init icons
-        lucide.createIcons();
+        _createIcons();
 
         updateDashLoadingProgress(60, 'Conectando Google Sheets...');
 
@@ -9971,7 +10065,7 @@
       renderExecCobranzas(myClients);
 
       // Re-init icons
-      lucide.createIcons();
+      _createIcons();
     }
 
     function _renderExecClientsTable(search) {
@@ -10039,7 +10133,7 @@
       if (list.length > 100) {
         tbody.innerHTML += `<tr><td colspan="${colSpan}" style="text-align:center;color:var(--text-muted);font-size:12px;">...y ${list.length - 100} más</td></tr>`;
       }
-      lucide.createIcons();
+      _createIcons();
     }
 
     function filterExecClients() {
@@ -10058,7 +10152,7 @@
       const withGPS = clients.filter(c => c.lat && c.lng);
       if (withGPS.length === 0) {
         mapDiv.innerHTML = '<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 12px; gap: 8px;"><i data-lucide="map-pin-off" style="width: 28px; height: 28px; opacity: 0.3;"></i>Sin ubicaciones GPS</div>';
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -10458,7 +10552,7 @@
       const originalText = submitBtn.innerHTML;
       submitBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i> Obteniendo ubicación...';
       submitBtn.disabled = true;
-      lucide.createIcons();
+      _createIcons();
 
       // Get geolocation
       let lat = null, lng = null;
@@ -10482,7 +10576,7 @@
       }
 
       submitBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i> Registrando...';
-      lucide.createIcons();
+      _createIcons();
 
       const clientId = document.getElementById('checkin-client').value;
 
@@ -10603,7 +10697,7 @@
       } finally {
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-        lucide.createIcons();
+        _createIcons();
       }
     });
 
@@ -10938,7 +11032,7 @@
       document.getElementById('route-legend').style.display = 'block';
 
       // Refresh icons
-      lucide.createIcons();
+      _createIcons();
     }
 
     function getOutcomeLabel(outcome) {
@@ -11124,7 +11218,7 @@
           infoPanel.style.display = 'block';
           form.querySelector('button[type="submit"]').innerHTML = '<i data-lucide="play" style="width: 16px; height: 16px;"></i> Ya hay ruta activa';
           form.querySelector('button[type="submit"]').disabled = true;
-          lucide.createIcons();
+          _createIcons();
           return;
         }
 
@@ -11155,7 +11249,7 @@
           hint.style.display = 'none';
         }
 
-        lucide.createIcons();
+        _createIcons();
 
       } catch (error) {
         console.error('Error checking active route:', error);
@@ -11174,7 +11268,7 @@
       document.getElementById('end-route-km-input').min = startKm;
       const modal = document.getElementById('end-route-modal');
       modal.style.display = 'flex';
-      lucide.createIcons();
+      _createIcons();
 
       // Live diff calculation
       document.getElementById('end-route-km-input').oninput = function() {
@@ -11281,7 +11375,7 @@
         </div>
       `;
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     // View active route on map
@@ -11529,7 +11623,7 @@
         jornadaWrapper.style.display = hasActiveRoute ? 'none' : 'block';
       }
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     // Preview: show vendor start point + all clients on map when selected
@@ -12015,7 +12109,7 @@
       document.getElementById('opt-fuel-price').textContent = `$${(stats.fuelPriceCLP || stats.vehicleConfig?.FUEL_PRICE_CLP || 1141).toLocaleString('es-CL')}/L`;
 
       panel.style.display = 'block';
-      lucide.createIcons();
+      _createIcons();
     }
 
     function selectOptDay(date) {
@@ -12139,7 +12233,7 @@
 
       document.getElementById('opt-day-detail-clients').innerHTML = clientsHtml;
       detailPanel.style.display = 'block';
-      lucide.createIcons();
+      _createIcons();
     }
 
     function openDayRouteInMapsFromOpt() {
@@ -12296,7 +12390,7 @@
         </div>
         ${daysHtml}
       `;
-      lucide.createIcons();
+      _createIcons();
     }
 
     function closeOptimizedRoutePanel() {
@@ -12357,7 +12451,7 @@
       }
 
       document.getElementById('schedule-route-modal').style.display = 'flex';
-      lucide.createIcons();
+      _createIcons();
     }
 
     function closeScheduleRouteModal() {
@@ -12458,7 +12552,7 @@
           <div id="schedule-progress-text" style="font-size:12px;color:var(--text-muted);margin-top:10px;font-weight:600;">Preparando...</div>
           <p style="color:var(--text-muted); font-size:11px; margin:16px 0 0 0; opacity:0.7;">LEKER Logistics</p>
         </div>`;
-      lucide.createIcons();
+      _createIcons();
 
       // Animate progress text and percentage
       const progressTextEl = document.getElementById('schedule-progress-text');
@@ -12512,7 +12606,7 @@
             clearInterval(stepInterval);
             showToast('error', 'Error', data.error || 'No se pudo programar la ruta');
             modalContent.innerHTML = originalContent;
-            lucide.createIcons();
+            _createIcons();
             return;
           }
 
@@ -12529,14 +12623,14 @@
               <p style="color:var(--text-muted); font-size:14px; margin:0;">${scheduledClientCount} clientes en ${newDates.length} días</p>
               <style>@keyframes scaleIn{0%{transform:scale(0)}50%{transform:scale(1.15)}100%{transform:scale(1)}}</style>
             </div>`;
-          lucide.createIcons();
+          _createIcons();
 
         } else {
           const date = singleDate;
           if (!date) {
             showToast('warning', 'Sin fecha', 'Selecciona una fecha');
             modalContent.innerHTML = originalContent;
-            lucide.createIcons();
+            _createIcons();
             return;
           }
           firstDate = date;
@@ -12553,7 +12647,7 @@
             clearInterval(stepInterval);
             showToast('error', 'Error', data.error || 'No se pudo programar la ruta');
             modalContent.innerHTML = originalContent;
-            lucide.createIcons();
+            _createIcons();
             return;
           }
 
@@ -12570,14 +12664,14 @@
               <h3 style="margin:0 0 8px 0; color:var(--success); font-size:16px;">Ruta programada</h3>
               <p style="color:var(--text-muted); font-size:13px; margin:0;">${clients.length} clientes para ${dateLabel}</p>
             </div>`;
-          lucide.createIcons();
+          _createIcons();
         }
 
         // Brief pause to show success animation
         await new Promise(r => setTimeout(r, 1200));
         closeScheduleRouteModal();
         modalContent.innerHTML = originalContent;
-        lucide.createIcons();
+        _createIcons();
 
         // 1. Calculate target week BEFORE switching tab
         const targetDate = new Date(firstDate + 'T12:00:00');
@@ -12608,7 +12702,7 @@
         console.error('Error scheduling route:', e);
         showToast('error', 'Error', 'Error al programar: ' + (e.message || 'Error desconocido'));
         modalContent.innerHTML = originalContent;
-        lucide.createIcons();
+        _createIcons();
       }
     }
 
@@ -12961,7 +13055,7 @@
         startBtn.innerHTML = '<i data-lucide="play-circle" style="width:16px;height:16px;"></i> Iniciar Jornada';
         startBtn.onclick = () => startDayFromVisits(execId);
         routeSelect.parentNode.appendChild(startBtn);
-        lucide.createIcons();
+        _createIcons();
       } else {
         routeSelect.innerHTML = `<option value="">Sin ruta activa hoy</option>`;
         statusEl.textContent = 'Sin Ruta';
@@ -12989,7 +13083,7 @@
       if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:16px;height:16px;"></i> Iniciando...';
-        lucide.createIcons();
+        _createIcons();
       }
 
       try {
@@ -13030,7 +13124,7 @@
         if (btn) {
           btn.disabled = false;
           btn.innerHTML = '<i data-lucide="play-circle" style="width:16px;height:16px;"></i> Iniciar Jornada';
-          lucide.createIcons();
+          _createIcons();
         }
       }
     }
@@ -13064,7 +13158,7 @@
           <i data-lucide="clipboard" style="width: 40px; height: 40px;"></i>
           <p style="font-size: 13px;">Sin visitas ni clientes programados para ${execName}</p>
         </div>`;
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -13173,7 +13267,7 @@
       });
 
       container.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     // Overview of all vendors when no vendor is selected
@@ -13329,7 +13423,7 @@
       });
 
       container.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     function onRouteSelected() {
@@ -13349,7 +13443,7 @@
             <p style="font-size: 13px;">Selecciona un vendedor para ver sus clientes asignados</p>
           </div>
         `;
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -13365,7 +13459,7 @@
             </button>
           </div>
         `;
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -13494,7 +13588,7 @@
       }
 
       listDiv.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     function toggleDayClients(panelId, headerEl) {
@@ -13506,7 +13600,7 @@
       const icon = headerEl.querySelector('.day-toggle-icon');
       if (icon) {
         icon.setAttribute('data-lucide', isOpen ? 'chevron-right' : 'chevron-down');
-        lucide.createIcons();
+        _createIcons();
       }
     }
 
@@ -13563,7 +13657,7 @@
       if (sortedClients.length > 50) {
         listDiv.innerHTML += `<div style="padding: 8px; text-align: center; color: var(--text-muted); font-size: 12px;">... y ${sortedClients.length - 50} más</div>`;
       }
-      lucide.createIcons();
+      _createIcons();
     }
 
     function removeClientFromRoute(clientId, date) {
@@ -13893,7 +13987,7 @@
               <div style="font-size: 12px;">Sin clientes asignados</div>
             </div>
           `;
-          lucide.createIcons();
+          _createIcons();
         }
         return;
       }
@@ -14031,7 +14125,7 @@
       }
 
       modal.style.display = 'flex';
-      lucide.createIcons();
+      _createIcons();
     }
 
     function closeAssignClientsModal() {
@@ -14361,7 +14455,7 @@
       const btn = document.getElementById('exec-refresh-btn');
       const icon = btn?.querySelector('i[data-lucide]');
       if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; }
-      if (icon) { icon.setAttribute('data-lucide', 'loader-2'); icon.classList.add('spin'); lucide.createIcons(); }
+      if (icon) { icon.setAttribute('data-lucide', 'loader-2'); icon.classList.add('spin'); _createIcons(); }
       try {
         const [todayRes, schedRes] = await Promise.all([
           fetch(`${API}/api/daily-routes/today`),
@@ -14379,7 +14473,7 @@
         showToast('error', 'Error', 'No se pudo actualizar');
       } finally {
         if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
-        if (icon) { icon.setAttribute('data-lucide', 'refresh-cw'); icon.classList.remove('spin'); lucide.createIcons(); }
+        if (icon) { icon.setAttribute('data-lucide', 'refresh-cw'); icon.classList.remove('spin'); _createIcons(); }
       }
     }
 
@@ -14462,7 +14556,7 @@
     async function startDayFromDashboard() {
       if (!currentUser) return;
       const btn = document.getElementById('exec-start-day-btn');
-      if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:14px;height:14px;vertical-align:-2px;"></i> Iniciando...'; lucide.createIcons(); }
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:14px;height:14px;vertical-align:-2px;"></i> Iniciando...'; _createIcons(); }
       await startDayFromVisits(currentUser.id);
       // After starting, navigate to Visits tab so exec can begin check-ins
       setTimeout(() => document.querySelector('[data-tab="visits"]')?.click(), 300);
@@ -14576,7 +14670,7 @@
             <p>No hay vendedores registrados</p>
           </div>
         `;
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -14682,7 +14776,7 @@
       });
 
       container.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     let executivesCardOpen = true; // Start expanded
@@ -14726,7 +14820,7 @@
         details.style.display = 'none';
         chevron.style.transform = 'rotate(0deg)';
       }
-      lucide.createIcons();
+      _createIcons();
     }
 
     // Toggle vendor's client list (expandable)
@@ -14781,7 +14875,7 @@
 
         html += '</div></div>';
         container.innerHTML = html;
-        lucide.createIcons();
+        _createIcons();
       } catch (e) {
         container.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--danger); font-size: 12px;">Error al cargar clientes</div>';
       }
@@ -14900,7 +14994,7 @@
 
       document.getElementById('reassign-preview').style.display = 'none';
       modal.style.display = 'flex';
-      lucide.createIcons();
+      _createIcons();
     }
 
     function closeReassignModal() {
@@ -15033,7 +15127,7 @@
 
       btn.disabled = false;
       btn.innerHTML = '<i data-lucide="arrow-left-right" style="width: 16px; height: 16px;"></i> Reasignar Seleccionados';
-      lucide.createIcons();
+      _createIcons();
     }
 
     // Render tables
@@ -15170,7 +15264,7 @@
       document.getElementById('btn-prev-clients').disabled = currentClientsPage <= 1;
       document.getElementById('btn-next-clients').disabled = currentClientsPage >= totalPages;
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     function prevClientsPage() {
@@ -15263,7 +15357,7 @@
       }).join('');
 
       resultsDiv.style.display = 'block';
-      lucide.createIcons();
+      _createIcons();
 
       // Add hover effect
       resultsDiv.querySelectorAll('.client-search-item').forEach(item => {
@@ -15329,7 +15423,7 @@
       `;
       cardDiv.style.display = 'block';
       cardDiv.style.position = 'relative';
-      lucide.createIcons();
+      _createIcons();
 
       // Default outcome to 'sale' for exec workflow (most common outcome)
       const outcomeEl = document.getElementById('checkin-outcome');
@@ -15650,7 +15744,7 @@
       }
 
       modal.style.display = 'flex';
-      lucide.createIcons();
+      _createIcons();
     }
 
     function closeClientModal() {
@@ -15991,7 +16085,7 @@
           </tr>
         `;
       }).join('');
-      lucide.createIcons();
+      _createIcons();
     }
 
     async function deleteRouteById(routeId) {
@@ -16023,7 +16117,7 @@
       document.getElementById('end-route-km-input').min = startKm;
       const modal = document.getElementById('end-route-modal');
       modal.style.display = 'flex';
-      lucide.createIcons();
+      _createIcons();
 
       // Calculate estimated km for comparison
       let estimatedKm = 0;
@@ -16351,7 +16445,7 @@
       });
 
       tbody.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     // Toggle client list inline in table
@@ -16445,7 +16539,7 @@
       document.getElementById('edit-user-geocode-status').style.display = 'none';
 
       document.getElementById('modal-edit-user').style.display = 'flex';
-      lucide.createIcons();
+      _createIcons();
     }
 
     function closeEditUserModal() {
@@ -16642,7 +16736,7 @@
       } catch (e) {
         originList.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--danger); font-size: 12px;">Error al cargar clientes</div>';
       }
-      lucide.createIcons();
+      _createIcons();
     }
 
     function renderSectionOriginList() {
@@ -16713,7 +16807,7 @@
             <div style="font-size: 12px;">Selecciona clientes de la izquierda</div>
           </div>
         `;
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -16738,7 +16832,7 @@
           </div>
         `;
       }).join('');
-      lucide.createIcons();
+      _createIcons();
     }
 
     function updateSectionPreview() {
@@ -16777,7 +16871,7 @@
       const btn = document.getElementById('btn-section-reassign');
       btn.disabled = true;
       btn.innerHTML = '<i data-lucide="loader" style="width: 18px; height: 18px;"></i> Reasignando...';
-      lucide.createIcons();
+      _createIcons();
 
       try {
         let response;
@@ -16810,7 +16904,7 @@
 
       btn.disabled = false;
       btn.innerHTML = '<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> Confirmar Reasignación';
-      lucide.createIcons();
+      _createIcons();
     }
 
     function resetSectionReassign() {
@@ -16867,7 +16961,7 @@
           </tr>
         `;
       }).join('');
-      lucide.createIcons();
+      _createIcons();
     }
 
     document.getElementById('form-add-vehicle').addEventListener('submit', async (e) => {
@@ -16951,7 +17045,7 @@
       });
       document.getElementById(`subpanel-${tabName}`).classList.add('active');
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     // =============================================
@@ -17014,7 +17108,7 @@
         }
       }
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     function goToRouteStep(step) {
@@ -17064,7 +17158,7 @@
         }
       }, 150);
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     // Navigate to gestionar tab with specific vendor pre-selected
@@ -17189,7 +17283,7 @@
 
       panel.innerHTML = html;
       panel.style.display = 'block';
-      lucide.createIcons();
+      _createIcons();
     }
 
     // =============================================
@@ -17211,7 +17305,7 @@
           container.dataset.loaded = '1';
         }
       }
-      lucide.createIcons();
+      _createIcons();
     }
 
     function renderExecDetailContent(userId, container) {
@@ -17264,7 +17358,7 @@
         html += '</div>';
       });
       container.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     function toggleExecDayDetail(panelId, headerEl) {
@@ -17274,7 +17368,7 @@
       panel.style.display = isVisible ? 'none' : 'block';
       if (isVisible) headerEl.classList.remove('expanded');
       else headerEl.classList.add('expanded');
-      lucide.createIcons();
+      _createIcons();
     }
 
     // ─── Logística CRM Panel ───────────────────────────────────────────────────
@@ -17598,12 +17692,18 @@
             <button class="btn btn-secondary" style="padding:4px 10px;font-size:12px;" onclick="_crmPageGo(${_crmPage + 1})" ${_crmPage >= totalPages ? 'disabled' : ''}>Siguiente ›</button>
           </div>`;
       }
-      lucide.createIcons();
+      _createIcons();
     }
 
-    function filterCrmClients() {
-      _crmPage = 1;
-      _applyCrmFilter();
+    let _crmSearchTimer = null;
+    function filterCrmClients(debounce) {
+      if (debounce) {
+        clearTimeout(_crmSearchTimer);
+        _crmSearchTimer = setTimeout(() => { _crmPage = 1; _applyCrmFilter(); }, 200);
+      } else {
+        _crmPage = 1;
+        _applyCrmFilter();
+      }
     }
 
     function resetCrmFilters() {
@@ -17839,7 +17939,7 @@
       } catch (err) {
         console.error('Error updating route dashboard:', err);
       }
-      lucide.createIcons();
+      _createIcons();
     }
 
     function updateDataTabCounts() {
@@ -17876,7 +17976,7 @@
 
       resultDiv.style.display = 'block';
       resultDiv.innerHTML = '<div style="color: var(--accent);"><i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i> Procesando archivo...</div>';
-      lucide.createIcons();
+      _createIcons();
 
       try {
         const res = await fetch(`${API}/api/upload/clients`, {
@@ -17939,7 +18039,7 @@
         <i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i>
         Procesando ${categoryNames[category]}...
       </div>`;
-      lucide.createIcons();
+      _createIcons();
 
       try {
         const res = await fetch(`${API}/api/upload/${category}`, {
@@ -17977,7 +18077,7 @@
           `;
           showToast('error', 'Error en importación', data.error);
         }
-        lucide.createIcons();
+        _createIcons();
       } catch (error) {
         resultDiv.innerHTML = `<div style="color: var(--danger);">Error: ${error.message}</div>`;
         showToast('error', 'Error de conexión', error.message);
@@ -18097,7 +18197,7 @@
           document.getElementById('sidebar-overlay').classList.remove('active');
         }
 
-        lucide.createIcons();
+        _createIcons();
       });
     });
 
@@ -18191,7 +18291,7 @@
       // Check distance if we have both locations
       checkDistanceToClient();
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     // Calculate distance between current GPS and client location
@@ -18211,7 +18311,7 @@
           <i data-lucide="alert-triangle" style="width: 14px; height: 14px; color: var(--warning);"></i>
           <span style="color: var(--warning);">Cliente sin coordenadas GPS. Se usará tu ubicación actual.</span>
         `;
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -18251,7 +18351,7 @@
         `;
       }
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     // Haversine formula to calculate distance between two points
@@ -18401,7 +18501,7 @@
           <i data-lucide="x-circle" style="width: 16px; height: 16px; color: var(--danger);"></i>
           <span style="color: var(--danger);">GPS no disponible en este dispositivo</span>
         `;
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -18422,7 +18522,7 @@
               (±${Math.round(currentGpsPosition.accuracy)}m)
             </span>
           `;
-          lucide.createIcons();
+          _createIcons();
           // Update distance check if client is selected
           checkDistanceToClient();
         },
@@ -18438,7 +18538,7 @@
             <span style="color: var(--warning);">${errorMsg}</span>
             <button onclick="updateGpsStatus()" class="btn btn-secondary" style="margin-left: auto; padding: 4px 8px; font-size: 11px;">Reintentar</button>
           `;
-          lucide.createIcons();
+          _createIcons();
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
@@ -18512,7 +18612,7 @@
             </td>
           </tr>
         `;
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -18587,7 +18687,7 @@
         `;
       }).join('');
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     function updateUserStats() {
@@ -18846,7 +18946,7 @@
             </div>
           `).join('');
 
-          lucide.createIcons();
+          _createIcons();
         } else {
           listEl.innerHTML = `
             <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 12px;">
@@ -19269,7 +19369,7 @@
             </div>
           </div>
         `;
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -19374,7 +19474,7 @@
         </div>
       `;
       document.body.appendChild(modal);
-      lucide.createIcons();
+      _createIcons();
       document.getElementById('new-user-name').focus();
     }
 
@@ -19493,7 +19593,7 @@
         </div>
       `;
       document.body.appendChild(modal);
-      lucide.createIcons();
+      _createIcons();
     }
 
     async function deleteUserExecute(userId, btn) {
@@ -19538,7 +19638,7 @@
 
       if (allTodayRoutes.length === 0) {
         container.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px;"><i data-lucide="route" style="width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.4;"></i><p>No hay rutas hoy</p></div>';
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -19594,7 +19694,7 @@
       }
       html += '</div>';
       container.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     function renderDashboardSummary() {
@@ -19747,7 +19847,7 @@
             ${clients8020.length > 0 ? `<div style="margin-top:4px;font-size:10px;font-weight:700;color:#b8860b;">⭐ ${clients8020.length} 80/20</div>` : ''}
           </div>`;
         });
-        if (fallbackHtml) { zonasContainer.innerHTML = fallbackHtml; lucide.createIcons(); }
+        if (fallbackHtml) { zonasContainer.innerHTML = fallbackHtml; _createIcons(); }
       }
       if (zonasContainer && gsheetsVendedoresParsed && gsheetsVendedoresParsed.length > 0) {
         const ZONAS = ['Zona Norte', 'Zona Centro', 'Zona Centro Sur', 'Zona Sur'];
@@ -19786,10 +19886,10 @@
           </div>`;
         });
         zonasContainer.innerHTML = html;
-        lucide.createIcons();
+        _createIcons();
       }
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     // =============================================
@@ -19822,7 +19922,7 @@
         initDireccionesFromDB();
       }
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     // Progress helper for GSheets loader
@@ -19873,7 +19973,7 @@
               el.style.fontWeight = 'normal';
             }
           });
-          try { lucide.createIcons(); } catch(e) {}
+          try { _createIcons(); } catch(e) {}
         }
       }
     }
@@ -19931,7 +20031,7 @@
           if (errorDiv) errorDiv.style.display = 'none';
           if (notConfigured) notConfigured.style.display = 'block';
           if (initialLoad) updateDashLoadingProgress(100, 'Listo (Google Sheets no configurado)');
-          lucide.createIcons();
+          _createIcons();
           return;
         }
         if (statusData.scriptUrl) _gsScriptUrl = statusData.scriptUrl;
@@ -19960,7 +20060,7 @@
           renderDashboardSummary();
           updateDashLoadingProgress(100, 'Dashboard listo');
         }
-        lucide.createIcons();
+        _createIcons();
 
         // Auto-generate geo links in background (silent)
         setTimeout(() => batchGenerateGeoLinks(false), 2000);
@@ -19982,7 +20082,7 @@
       if (notConfigured) notConfigured.style.display = 'none';
       if (errorDiv) errorDiv.style.display = 'none';
       if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.style.opacity='0.7'; refreshBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:15px;height:15px;"></i> Cargando...'; }
-      lucide.createIcons();
+      _createIcons();
 
       _gsLoadProgress(10, 'Conectando con Google Sheets...', 'Solicitando datos...');
       if (initialLoad) updateDashLoadingProgress(65, 'Descargando datos de Google Sheets...');
@@ -20080,7 +20180,7 @@
         }
       } finally {
         if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.style.opacity='1'; refreshBtn.innerHTML = '<i data-lucide="refresh-cw" style="width:15px;height:15px;"></i> Actualizar Datos'; }
-        lucide.createIcons();
+        _createIcons();
       }
     }
 
@@ -20193,7 +20293,7 @@
         container.innerHTML = buildTableHtml(headers, dataRows, opts);
       }
 
-      lucide.createIcons();
+      _createIcons();
       return dataRows;
     }
 
@@ -20337,7 +20437,7 @@
 
       html += '</tbody></table></div>';
       container.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     function renderGsheetsVentas(data) {
@@ -20667,7 +20767,7 @@
       }
 
       container.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     function toggleZonalGroup(id) {
@@ -20826,7 +20926,7 @@
       </div>`;
 
       document.body.appendChild(modal);
-      lucide.createIcons();
+      _createIcons();
     }
 
     function buildVendedorCard(v, isZonal) {
@@ -21174,7 +21274,7 @@
         btnVend.style.fontWeight = '500';
         btnVend.style.boxShadow = 'none';
       }
-      lucide.createIcons();
+      _createIcons();
     }
 
     // Direcciones — store Sheet data for import, render from DB
@@ -21463,7 +21563,7 @@
       html += '</tbody></table></div>';
       html += makePag('bottom');
       container.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
       _initDirColumnResizers(tableId);
     }
 
@@ -21732,7 +21832,7 @@
         showToast('error', 'Test Excel', 'No hay clientes para probar');
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="zap" style="width:13px;height:13px;"></i> Test Excel';
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -21760,7 +21860,7 @@
 
       btn.disabled = false;
       btn.innerHTML = '<i data-lucide="zap" style="width:13px;height:13px;"></i> Test Excel';
-      lucide.createIcons();
+      _createIcons();
     }
 
     function initDireccionesFromDB() {
@@ -21798,7 +21898,7 @@
               <i data-lucide="database" style="width:14px;height:14px;display:inline;vertical-align:-2px;"></i> Importar ${sheetCount.toLocaleString()} clientes
             </button>
           </div>`;
-        lucide.createIcons();
+        _createIcons();
       } else if (bannerEl) {
         bannerEl.style.display = 'none';
       }
@@ -21873,7 +21973,7 @@
       overlay.addEventListener('mousedown', (e) => { overlay._mdOnBg = e.target === overlay; });
       overlay.addEventListener('click', (e) => { if (overlay._mdOnBg && e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);
-      lucide.createIcons();
+      _createIcons();
       document.getElementById('cc-code').focus();
     }
 
@@ -22037,7 +22137,7 @@
       overlay.addEventListener('mousedown', (e) => { overlay._mdOnBg = e.target === overlay; });
       overlay.addEventListener('click', (e) => { if (overlay._mdOnBg && e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);
-      lucide.createIcons();
+      _createIcons();
     }
 
     async function saveEditClientFull() {
@@ -22428,7 +22528,7 @@
       html += makePagination('bottom');
 
       container.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
 
       // Initialize column resizers
       _initDirColumnResizers(tableId);
@@ -22704,7 +22804,7 @@
       overlay.addEventListener('mousedown', (e) => { overlay._mdOnBg = e.target === overlay; });
       overlay.addEventListener('click', (e) => { if (overlay._mdOnBg && e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);
-      lucide.createIcons();
+      _createIcons();
       document.getElementById('add-geo-link').focus();
     }
 
@@ -22736,7 +22836,7 @@
       const stopBtn = document.getElementById('btn-batch-geo-stop');
       if (stopBtn) {
         stopBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> Deteniendo...';
-        lucide.createIcons();
+        _createIcons();
       }
     }
 
@@ -22809,7 +22909,7 @@
         btn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> 0% (0/${toProcess.length})`;
       }
       if (stopBtn) { stopBtn.style.display = 'inline-flex'; }
-      lucide.createIcons();
+      _createIcons();
 
       // Batches of 20 — POST directo al Apps Script (sin Vercel timeout)
       const BATCH_SIZE = 20;
@@ -22846,7 +22946,7 @@
         const pct = Math.round((processed / toProcess.length) * 100);
         if (btn) {
           btn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> ${pct}% (${processed}/${toProcess.length})`;
-          lucide.createIcons();
+          _createIcons();
         }
 
         // Delay between batches
@@ -22859,7 +22959,7 @@
       _batchGeoRunning = false;
       if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="locate" style="width:13px;height:13px;"></i> Cargar Geo'; }
       if (stopBtn) { stopBtn.style.display = 'none'; stopBtn.innerHTML = '<i data-lucide="square" style="width:13px;height:13px;"></i> Detener'; }
-      lucide.createIcons();
+      _createIcons();
 
       // Update table from DB (geo links saved to Sheet, re-render DB view)
       filterDireccionesDB();
@@ -23172,7 +23272,7 @@
       } catch (error) {
         container.innerHTML = `<p style="text-align:center;color:var(--danger);padding:20px;">Error: ${error.message}</p>`;
       }
-      lucide.createIcons();
+      _createIcons();
     }
 
     function renderPerformanceTable(stats) {
@@ -23388,7 +23488,7 @@
         }
 
         vendorZonesLoaded = true;
-        lucide.createIcons();
+        _createIcons();
       } catch (error) {
         container.innerHTML = `<p style="text-align:center;color:var(--danger);padding:20px;">Error: ${error.message}</p>`;
       }
@@ -23563,7 +23663,7 @@
 
     async function syncSegmentation() {
       const btn = document.getElementById('btn-sync-seg');
-      if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width: 14px; height: 14px;"></i> Sincronizando...'; lucide.createIcons(); }
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width: 14px; height: 14px;"></i> Sincronizando...'; _createIcons(); }
 
       try {
         // Ensure Google Sheets data is loaded
@@ -23615,7 +23715,7 @@
         console.error('[Segmentación] Error:', err);
         showToast('error', 'Error', err.message);
       } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Sincronizar Segmentación'; lucide.createIcons(); }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Sincronizar Segmentación'; _createIcons(); }
       }
     }
 
@@ -23837,7 +23937,7 @@
         console.warn('Error loading checklist data:', err);
       }
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     function updateChecklistState() {
@@ -24005,7 +24105,7 @@
 
       const resultDiv = document.getElementById('schedule-result');
       resultDiv.innerHTML = '<div style="text-align: center; padding: 24px;"><i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px;"></i><p style="font-size: 12px; margin-top: 8px;">Generando plan semanal...</p></div>';
-      lucide.createIcons();
+      _createIcons();
 
       try {
         const res = await fetch(`${API}/api/routes/generate-schedule`, {
@@ -24081,7 +24181,7 @@
               <i data-lucide="calendar-plus" style="width: 15px; height: 15px;"></i> Generar Ruta para Vendedor
             </button>
           </div>`;
-        lucide.createIcons();
+        _createIcons();
         return;
       }
 
@@ -24228,7 +24328,7 @@
         </div>`}`;
 
       resultDiv.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     function toggleWeekDayClients(uid, date, el) {
@@ -24448,7 +24548,7 @@
             <p style="font-size: 14px; font-weight: 600; margin: 0 0 6px 0;">Selecciona un vendedor</p>
             <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Elige un vendedor del dropdown de arriba y haz click en <strong>"Generar Ruta"</strong> para crear su plan semanal</p>
           </div>`;
-        lucide.createIcons();
+        _createIcons();
       }
     }
 
@@ -24467,7 +24567,7 @@
 
       const resultDiv = document.getElementById('schedule-result');
       resultDiv.innerHTML = '<div style="text-align: center; padding: 24px;"><i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px;"></i><p style="font-size: 12px; margin-top: 8px;">Cargando plan...</p></div>';
-      lucide.createIcons();
+      _createIcons();
 
       try {
         const s = document.getElementById('schedule-start').value;
@@ -24481,7 +24581,7 @@
           const dates = Object.keys(data.data).sort();
           if (dates.length === 0) {
             resultDiv.innerHTML = '<div class="empty-state" style="padding: 24px;"><i data-lucide="calendar-x" style="width: 36px; height: 36px;"></i><p style="font-size: 13px;">No hay rutas planificadas para esta semana</p><p style="font-size: 11px; color: var(--text-muted);">Haz click en "Generar Ruta" para crear un plan</p></div>';
-            lucide.createIcons();
+            _createIcons();
             return;
           }
           // Get vendor's start point (home/office)
@@ -24657,7 +24757,7 @@
 
       html += '</div>';
       resultDiv.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     function expandDayDetail(date, userId) {
@@ -24802,7 +24902,7 @@
       `;
 
       document.body.insertAdjacentHTML('beforeend', html);
-      lucide.createIcons();
+      _createIcons();
 
       // Initialize mini-map for this day's route
       initDayDetailMap(dayData.clients);
@@ -25218,7 +25318,7 @@
         `;
       });
       list.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     async function markRouteAlertRead(alertId, el) {
@@ -25476,7 +25576,7 @@
 
       html += '</div>';
       container.innerHTML = html;
-      lucide.createIcons();
+      _createIcons();
     }
 
     function showMonthlyDayDetail(date, userId) {
@@ -25586,7 +25686,7 @@
         </div>`;
 
       document.body.insertAdjacentHTML('beforeend', html);
-      lucide.createIcons();
+      _createIcons();
     }
 
     function drillDownToExecWeek(userId, date) {
@@ -25627,7 +25727,7 @@
       panel.classList.toggle('open');
       if (panel.classList.contains('open')) {
         document.getElementById('ai-chat-input').focus();
-        lucide.createIcons();
+        _createIcons();
       }
     }
 
@@ -25646,7 +25746,7 @@
       const loadingId = 'ai-loading-' + Date.now();
       messagesDiv.innerHTML += `<div class="ai-msg assistant" id="${loadingId}" style="opacity: 0.6;"><i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i> Pensando...</div>`;
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      lucide.createIcons();
+      _createIcons();
 
       try {
         // Build context
@@ -25684,7 +25784,7 @@
       }
 
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      lucide.createIcons();
+      _createIcons();
     }
 
     function formatAiResponse(text) {
@@ -25714,7 +25814,7 @@
       const month = monthInput.value;
       const grid = document.getElementById('vendor-stats-grid');
       grid.innerHTML = '<div style="text-align: center; padding: 24px; grid-column: 1 / -1;"><i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px;"></i><p style="font-size: 12px; margin-top: 8px;">Cargando estadísticas...</p></div>';
-      lucide.createIcons();
+      _createIcons();
 
       try {
         const res = await fetch(`${API}/api/dashboard/vendor-stats?month=${month}`);
@@ -25809,7 +25909,7 @@
         grid.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--danger); grid-column: 1 / -1;">${err.message}</div>`;
       }
 
-      lucide.createIcons();
+      _createIcons();
     }
 
     async function loadVendorCalendar() {
@@ -25827,7 +25927,7 @@
       }
 
       grid.innerHTML = '<div style="text-align: center; padding: 24px;"><i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px;"></i></div>';
-      lucide.createIcons();
+      _createIcons();
 
       try {
         const res = await fetch(`${API}/api/dashboard/calendar/${userId}?month=${month}`);
@@ -26011,21 +26111,51 @@
               }, 100);
             }
             return;
-          } else {
-            // Token expired
+          } else if (res.status === 401 || res.status === 403) {
+            // Token expirado o inválido — limpiar
             localStorage.removeItem('leker_token');
             localStorage.removeItem('leker_user');
+          } else {
+            // Error de servidor (500, etc.) — conservar token, intentar entrar igual
+            currentUser = JSON.parse(savedUser);
+            document.getElementById('login-overlay').classList.add('hidden');
+            applyRolePermissions();
+            updateSidebarUser();
+            loadData();
+            updateGpsStatus();
+            loadDashboardComparativoSummary();
+            setInterval(updateGpsStatus, 30000);
+            const savedTab = localStorage.getItem('leker_active_tab');
+            const savedSubtab = localStorage.getItem('leker_active_subtab');
+            if (savedTab && savedTab !== 'dashboard') {
+              setTimeout(() => {
+                let tabItem = document.querySelector(`.nav-subitem[data-tab="${savedTab}"][data-subtab="${savedSubtab}"]`);
+                if (!tabItem) {
+                  tabItem = document.querySelector(`.nav-item[data-tab="${savedTab}"]`) ||
+                            document.querySelector(`.nav-subitem[data-tab="${savedTab}"]`);
+                }
+                if (tabItem) tabItem.click();
+              }, 100);
+            }
+            return;
           }
         } catch(e) {
-          localStorage.removeItem('leker_token');
-          localStorage.removeItem('leker_user');
+          // Error de red — conservar token, entrar con datos guardados
+          currentUser = JSON.parse(savedUser);
+          document.getElementById('login-overlay').classList.add('hidden');
+          applyRolePermissions();
+          updateSidebarUser();
+          loadData();
+          updateGpsStatus();
+          setInterval(updateGpsStatus, 30000);
+          return;
         }
       }
 
       // Show login screen
       document.getElementById('login-overlay').classList.remove('hidden');
       checkSetupNeeded();
-      lucide.createIcons();
+      _createIcons();
     });
   </script>
 
