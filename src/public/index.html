@@ -6761,9 +6761,6 @@
                   <button class="btn" onclick="importAllFromSheets()" style="background: #10b981; color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;" id="btn-import-sheets" title="Importar todos los clientes de Google Sheets a Supabase">
                     <i data-lucide="database" style="width: 13px; height: 13px;"></i> Importar Excel → DB
                   </button>
-                  <button class="btn" id="btn-test-sheet-sync" onclick="testSheetSync()" style="background: #f59e0b; color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;" title="Probar si el Apps Script está funcionando">
-                    <i data-lucide="zap" style="width: 13px; height: 13px;"></i> Test Excel
-                  </button>
                   <button class="btn" id="btn-batch-geo" onclick="batchGenerateGeoLinks()" style="background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;">
                     <i data-lucide="locate" style="width: 13px; height: 13px;"></i> Cargar Geo
                   </button>
@@ -19331,6 +19328,8 @@
 
     async function loadGoogleSheetsData(forceRefresh = false, initialLoad = false) {
       if (gsheetsLoaded && !forceRefresh) return;
+      // Al forzar actualización, resetear throttle para que el sync Sheet→DB sea inmediato
+      if (forceRefresh) _lastSheetsSync = 0;
 
       const loading = document.getElementById('gs-loading');
       const content = document.getElementById('gs-content');
@@ -20809,6 +20808,23 @@
         const safeComuna = commune.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const safeName = name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
+        // Badge NUEVO: cliente creado en los últimos 7 días
+        const createdAt = c.created_at ? new Date(c.created_at) : null;
+        const daysOld = createdAt ? (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24) : 999;
+        const isNew = daysOld < 7;
+        const newBadge = isNew
+          ? `<span style="display:inline-block;margin-left:4px;padding:0px 5px;font-size:9px;font-weight:700;border-radius:3px;vertical-align:middle;background:rgba(16,185,129,0.18);color:#059669;letter-spacing:0.3px;">NUEVO</span>`
+          : '';
+
+        // Audit info: quién creó/modificó
+        const auditUserId = c.address_updated_by;
+        const auditUser = auditUserId ? (vendorMap[auditUserId] || null) : null;
+        const auditAt = c.address_updated_at ? new Date(c.address_updated_at) : null;
+        const auditDays = auditAt ? Math.floor((Date.now() - auditAt.getTime()) / (1000 * 60 * 60 * 24)) : null;
+        const auditLabel = auditUser
+          ? `<div style="font-size:9px;color:var(--text-muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${auditUser} · ${auditAt ? auditAt.toLocaleString('es-CL') : ''}"><i data-lucide="user-check" style="width:9px;height:9px;display:inline;vertical-align:-1px;"></i> ${auditUser.split(' ')[0]}${auditDays !== null ? ` · hace ${auditDays === 0 ? 'hoy' : auditDays + 'd'}` : ''}</div>`
+          : '';
+
         // Geo cell
         let geoCell;
         if (hasGeo) {
@@ -20847,9 +20863,10 @@
         const syncBadge = c._syncTag && syncAge < 600000
           ? `<span style="display:inline-block;margin-left:4px;padding:0px 4px;font-size:9px;font-weight:700;border-radius:3px;vertical-align:middle;${c._syncTag === 'nuevo' ? 'background:rgba(16,185,129,0.2);color:#059669;' : 'background:rgba(245,158,11,0.2);color:#b45309;'}">${c._syncTag === 'nuevo' ? 'NUEVO' : 'SYNC'}</span>`
           : '';
-        html += `<tr style="${rowBg}">
+        const rowHighlight = isNew ? 'background:rgba(16,185,129,0.06);' : rowBg;
+        html += `<tr style="${rowHighlight}">
           <td style="padding:3px 5px;overflow:hidden;${br}"><code style="font-size:10px;background:var(--bg-hover);padding:1px 3px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">${code}</code></td>
-          <td style="padding:3px 5px;overflow:hidden;${br}"><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="${name}">${name}${syncBadge}</div>${sub}</td>
+          <td style="padding:3px 5px;overflow:hidden;${br}"><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="${name}">${name}${newBadge}${syncBadge}</div>${sub}${auditLabel}</td>
           <td style="padding:3px 5px;font-size:11px;overflow:hidden;${br}" title="${dir}"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir || '<span style="opacity:0.3">—</span>'}</div></td>
           <td style="padding:3px 5px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${br}">${commune}</td>
           <td style="padding:3px 5px;font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${br}">${city}</td>
@@ -20872,9 +20889,9 @@
     let _syncNotifItems = JSON.parse(localStorage.getItem('leker_sync_notifs') || '[]');
 
     function _saveSyncNotifs() {
-      // Mantener solo últimos 50 y últimas 24h
-      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-      _syncNotifItems = _syncNotifItems.filter(n => n.ts > cutoff).slice(-50);
+      // Mantener solo últimos 20 y últimas 4h
+      const cutoff = Date.now() - 4 * 60 * 60 * 1000;
+      _syncNotifItems = _syncNotifItems.filter(n => n.ts > cutoff).slice(-20);
       localStorage.setItem('leker_sync_notifs', JSON.stringify(_syncNotifItems));
     }
 
@@ -20945,9 +20962,9 @@
         if (panel) panel.style.display = 'none';
       }
     });
-    async function _silentSyncFromSheets() {
+    async function _silentSyncFromSheets(force = false) {
       const now = Date.now();
-      if (now - _lastSheetsSync < 60 * 1000) return; // 1 min throttle
+      if (!force && now - _lastSheetsSync < 60 * 1000) return; // 1 min throttle
       _lastSheetsSync = now;
 
       const badge = document.getElementById('gs-badge-direcciones');
@@ -21173,7 +21190,8 @@
       filterDireccionesDB();
 
       // Sync automático desde Google Sheets en background
-      _silentSyncFromSheets();
+      // force=true si el throttle fue reseteado por un refresh manual
+      _silentSyncFromSheets(_lastSheetsSync === 0);
 
       // Show import banner if Sheet has many more clients than DB
       const sheetCount = gsheetsAllDirecciones ? gsheetsAllDirecciones.length - 1 : 0;
@@ -21491,13 +21509,14 @@
 
           // Mostrar estado real del sync con Excel
           const ss = data.sheetSync;
+          const clientCode = body.external_id || '(sin código)';
           if (!data.scriptConfigured) {
-            showToast('warning', 'Cliente actualizado', `${body.external_id} — BD ✓. Excel: variable de entorno no configurada en servidor`);
+            showToast('warning', 'Cliente actualizado', `${clientCode} — BD ✓. Excel: servicio no configurado en servidor`);
           } else if (!ss || !ss.success) {
             const errMsg = ss ? ss.error : 'sin respuesta';
-            showToast('warning', 'Cliente actualizado', `${body.external_id} — BD ✓, Excel ✗: ${errMsg}`);
+            showToast('warning', 'Cliente actualizado', `${clientCode} — BD ✓, Excel ✗: ${errMsg}`);
           } else {
-            showToast('success', 'Cliente actualizado', `${body.external_id} — BD ✓ + Excel ✓`);
+            showToast('success', 'Cliente actualizado', `${clientCode} — BD ✓ + Excel ✓`);
           }
 
           document.getElementById('modal-edit-client-full').remove();

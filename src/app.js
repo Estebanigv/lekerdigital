@@ -274,7 +274,8 @@ app.get('/api/clients/count', async (req, res) => {
 
 app.post('/api/clients', async (req, res) => {
   try {
-    const client = await routesService.createClient(req.body);
+    const userId = req.user ? req.user.id : null;
+    const client = await routesService.createClient(req.body, userId);
     res.status(201).json({ success: true, message: 'Cliente creado', data: client });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message });
@@ -2058,7 +2059,8 @@ app.get('/api/gsheets/status', (req, res) => {
   res.json({
     success: true,
     configured: googleSheetsService.isConfigured(),
-    scriptUrl: googleSheetsService.isConfigured() ? googleSheetsService.scriptUrl : null
+    spreadsheetId: googleSheetsService.isConfigured() ? process.env.GOOGLE_SHEETS_SPREADSHEET_ID : null,
+    clientTab: process.env.GOOGLE_SHEETS_CLIENT_TAB || 'Direccion'
   });
 });
 

@@ -5,3 +5,10 @@ node_modules/
 dist/
 temp_ruta.json
 .claude/
+
+.vercel
+
+# Google Service Account credentials (NUNCA subir a git)
+*.json
+!package.json
+!package-lock.json

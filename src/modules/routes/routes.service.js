@@ -478,10 +478,18 @@ class RoutesService {
     return count;
   }
 
-  async createClient(clientData) {
+  async createClient(clientData, createdByUserId = null) {
+    const insertData = { ...clientData };
+
+    // Registrar quién creó el cliente usando los campos de auditoría existentes
+    if (createdByUserId) {
+      insertData.address_updated_by = createdByUserId;
+      insertData.address_updated_at = new Date().toISOString();
+    }
+
     const { data, error } = await supabase
       .from('clients')
-      .insert([clientData])
+      .insert([insertData])
       .select()
       .single();
 
@@ -503,6 +511,14 @@ class RoutesService {
   async updateClient(clientId, clientData, updatedByUserId = null) {
     // Remove id from update data if present
     const { id, created_at, ...updateData } = clientData;
+
+    // Capturar external_id anterior ANTES de actualizar (para detectar cambio de código)
+    const { data: oldClient } = await supabase
+      .from('clients')
+      .select('external_id')
+      .eq('id', clientId)
+      .single();
+    const oldExternalId = oldClient?.external_id || null;
 
     // If address or commune changed, add audit fields
     if (updatedByUserId && (updateData.address !== undefined || updateData.commune !== undefined)) {
@@ -527,16 +543,18 @@ class RoutesService {
     if (data && data.external_id) {
       try {
         sheetSync = await Promise.race([
-          this._syncClientToSheet(data, updatedByUserId),
-          new Promise(r => setTimeout(() => r({ success: false, error: 'timeout' }), 8000))
+          this._syncClientToSheet(data, updatedByUserId, oldExternalId),
+          new Promise(r => setTimeout(() => r({ success: false, error: 'timeout' }), 12000))
         ]);
       } catch (err) {
         sheetSync = { success: false, error: err.message };
         console.error('[Routes] Sheet sync error:', err.message);
       }
+    } else {
+      sheetSync = { success: false, error: 'cliente sin código — no se puede sincronizar al Sheet' };
     }
 
-    return { ...data, _sheetSync: sheetSync, _scriptConfigured: !!process.env.GOOGLE_SHEETS_SCRIPT_URL };
+    return { ...data, _sheetSync: sheetSync, _scriptConfigured: googleSheetsService.isConfigured() };
   }
 
   /**
@@ -658,7 +676,7 @@ class RoutesService {
   /**
    * Helper: sincroniza TODOS los campos de un cliente al Google Sheet
    */
-  async _syncClientToSheet(client, updatedByUserId) {
+  async _syncClientToSheet(client, updatedByUserId, oldExternalId = null) {
     if (!client.external_id) return;
 
     let updatedByName = 'sistema';
@@ -672,23 +690,33 @@ class RoutesService {
     }
 
     if (!googleSheetsService.isConfigured()) {
-      console.warn(`[Routes] GOOGLE_SHEETS_SCRIPT_URL no configurado — sync omitido`);
-      return { success: false, error: 'GOOGLE_SHEETS_SCRIPT_URL no configurado' };
+      console.warn(`[Routes] Google Sheets no configurado — sync omitido`);
+      return { success: false, error: 'Google Sheets no configurado' };
+    }
+
+    const codeChanged = oldExternalId && oldExternalId !== client.external_id;
+
+    if (codeChanged) {
+      // El código cambió: sincronizar usando el código anterior para encontrar la fila
+      console.log(`[Routes] external_id cambió ${oldExternalId} → ${client.external_id}, sincronizando por código anterior`);
+      const result = await googleSheetsService.syncClientToSheet(
+        { ...client, external_id: oldExternalId, _newExternalId: client.external_id },
+        updatedByName
+      );
+      console.log(`[Routes] syncClientToSheet (code change) →`, JSON.stringify(result));
+      return result;
     }
 
     const result = await googleSheetsService.syncClientToSheet(client, updatedByName);
     console.log(`[Routes] syncClientToSheet(${client.external_id}) →`, JSON.stringify(result));
 
-    if (!result.success) {
-      // Fallback: intentar updateAddress si updateClient no está soportado
-      if (result.error && (result.error.includes('no reconocida') || result.error.includes('acción'))) {
-        console.warn(`[Routes] Fallback a updateAddress para ${client.external_id}`);
-        const fallback = await googleSheetsService.syncAddressToSheet(
-          client.external_id, client.address, client.commune, updatedByName, client.geo_link
-        ).catch(err => ({ success: false, error: err.message }));
-        console.log(`[Routes] updateAddress fallback →`, JSON.stringify(fallback));
-        return fallback;
-      }
+    // Si no existe en el Sheet → crearlo
+    if (result.success && result.updated === 0 && result.notFound && result.notFound.length > 0) {
+      console.warn(`[Routes] Cliente ${client.external_id} no encontrado en Sheet → creando`);
+      const createResult = await googleSheetsService.createClientInSheet(client)
+        .catch(err => ({ success: false, error: err.message }));
+      console.log(`[Routes] createClientInSheet(${client.external_id}) →`, JSON.stringify(createResult));
+      return createResult;
     }
 
     return result;

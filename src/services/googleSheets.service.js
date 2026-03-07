@@ -1,281 +1,375 @@
 /**
  * Google Sheets Integration Service
- * Conecta con Google Apps Script para leer y escribir datos del Google Sheet de LEKER
+ * Conecta directamente con Google Sheets API v4 usando Service Account
+ * Reemplaza el Google Apps Script anterior — sync confiable en ambas direcciones
  */
-const https = require('https');
+const { google } = require('googleapis');
+const fs = require('fs');
+const path = require('path');
 
 class GoogleSheetsService {
-  constructor() {
-    // No cachear en constructor — leer siempre del env para que un redeploy lo actualice
+
+  get spreadsheetId() {
+    return process.env.GOOGLE_SHEETS_SPREADSHEET_ID || '';
   }
 
-  get scriptUrl() {
-    return process.env.GOOGLE_SHEETS_SCRIPT_URL || '';
+  get credentialsPath() {
+    const p = process.env.GOOGLE_SHEETS_CREDENTIALS_PATH || '';
+    if (!p) return '';
+    // Soporte path relativo desde raíz del proyecto
+    return path.isAbsolute(p) ? p : path.resolve(process.cwd(), p);
+  }
+
+  get clientSheetName() {
+    return process.env.GOOGLE_SHEETS_CLIENT_TAB || 'Direccion';
   }
 
   isConfigured() {
-    return !!this.scriptUrl;
+    if (!this.spreadsheetId || !this.credentialsPath) return false;
+    try {
+      return fs.existsSync(this.credentialsPath);
+    } catch (_) {
+      return false;
+    }
   }
 
-  /**
-   * Helper para hacer requests HTTPS con soporte de redirects 302
-   * @param {string} url
-   * @param {object} opts - { method, body, maxRedirects }
-   */
-  makeRequest(url, opts = {}) {
-    const maxRedirects = opts.maxRedirects !== undefined ? opts.maxRedirects : 5;
-    const method = opts.method || 'GET';
-    const body = opts.body || null;
-
-    return new Promise((resolve, reject) => {
-      if (maxRedirects <= 0) {
-        return reject(new Error('Demasiados redirects'));
-      }
-
-      const urlObj = new URL(url);
-      const postData = body ? JSON.stringify(body) : null;
-
-      const options = {
-        hostname: urlObj.hostname,
-        port: 443,
-        path: urlObj.pathname + urlObj.search,
-        method: method,
-        headers: {
-          'Accept': 'application/json'
-        },
-        timeout: 90000
-      };
-
-      if (postData) {
-        options.headers['Content-Type'] = 'application/json';
-        options.headers['Content-Length'] = Buffer.byteLength(postData);
-      }
-
-      const req = https.request(options, (res) => {
-        // Handle redirects (Apps Script always returns 302)
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          // On redirect after POST, Apps Script expects GET to the redirect URL
-          return this.makeRequest(res.headers.location, { maxRedirects: maxRedirects - 1 })
-            .then(resolve)
-            .catch(reject);
-        }
-
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => {
-          try {
-            resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, data: JSON.parse(data) });
-          } catch (e) {
-            resolve({ ok: false, status: res.statusCode, data: data });
-          }
-        });
-      });
-
-      req.on('timeout', () => {
-        req.destroy();
-        reject(new Error('Timeout: Google Apps Script tardó demasiado en responder'));
-      });
-
-      req.on('error', (e) => reject(e));
-
-      if (postData) {
-        req.write(postData);
-      }
-      req.end();
+  _getAuth() {
+    const credentials = JSON.parse(fs.readFileSync(this.credentialsPath, 'utf8'));
+    return new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
   }
 
-  /**
-   * Obtiene datos de todas las hojas
-   */
-  async getAllSheets() {
-    if (!this.isConfigured()) {
-      throw new Error('Google Sheets no está configurado. Agrega GOOGLE_SHEETS_SCRIPT_URL al .env');
-    }
-
-    const response = await this.makeRequest(`${this.scriptUrl}?sheet=all`);
-
-    if (!response.ok) {
-      throw new Error(`Error al obtener datos: ${response.status}`);
-    }
-
-    return response.data;
+  async _sheets() {
+    const auth = this._getAuth();
+    return google.sheets({ version: 'v4', auth });
   }
 
-  /**
-   * Obtiene datos de una hoja específica
-   */
-  async getSheet(sheetName) {
-    if (!this.isConfigured()) {
-      throw new Error('Google Sheets no está configurado. Agrega GOOGLE_SHEETS_SCRIPT_URL al .env');
-    }
-
-    const response = await this.makeRequest(`${this.scriptUrl}?sheet=${encodeURIComponent(sheetName)}`);
-
-    if (!response.ok) {
-      throw new Error(`Error al obtener hoja "${sheetName}": ${response.status}`);
-    }
-
-    return response.data;
-  }
-
-  /**
-   * Obtiene metadata (nombres de hojas, filas, columnas)
-   */
-  async getMetadata() {
-    if (!this.isConfigured()) {
-      throw new Error('Google Sheets no está configurado. Agrega GOOGLE_SHEETS_SCRIPT_URL al .env');
-    }
-
-    const response = await this.makeRequest(this.scriptUrl);
-
-    if (!response.ok) {
-      throw new Error(`Error al obtener metadata: ${response.status}`);
-    }
-
-    return response.data;
-  }
-
-  /**
-   * Escribe datos al Google Sheet via POST al Apps Script
-   * @param {object} payload - { action: "updateAddress", rows: [...] }
-   * @returns {object} - { success, updated, notFound, errors }
-   */
-  async postToSheet(payload) {
-    if (!this.isConfigured()) {
-      console.warn('[GSheets] No configurado — sync a Excel omitido');
-      return { success: false, error: 'Google Sheets no configurado' };
-    }
-
-    try {
-      const response = await this.makeRequest(this.scriptUrl, {
-        method: 'POST',
-        body: payload
-      });
-
-      if (!response.ok && !response.data?.success) {
-        console.error('[GSheets] Error en POST:', response.data);
-        return { success: false, error: response.data?.error || `HTTP ${response.status}` };
-      }
-
-      return response.data;
-    } catch (error) {
-      console.error('[GSheets] Error en postToSheet:', error.message);
-      return { success: false, error: error.message };
-    }
-  }
-
-  /**
-   * Genera URL de búsqueda en Google Maps para una dirección
-   */
   buildMapsSearchUrl(address, commune) {
     const parts = [address, commune, 'Chile'].filter(Boolean);
     const query = parts.join(', ').replace(/\s+/g, ' ').trim();
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
   }
 
-  /**
-   * Sincroniza dirección de un cliente al Google Sheet
-   * @param {string} externalId - Código del cliente
-   * @param {string} address - Nueva dirección
-   * @param {string} commune - Nueva comuna
-   * @param {string} updatedBy - Email o nombre del usuario que actualizó
-   * @param {string} [geoLink] - Link de georeferencia (se auto-genera si no se proporciona)
-   */
-  async syncAddressToSheet(externalId, address, commune, updatedBy, geoLink) {
-    if (!externalId) {
-      console.warn('[GSheets] syncAddressToSheet: sin external_id, omitiendo');
-      return { success: false, error: 'Sin código de cliente' };
+  // Convierte número de columna (1-based) a letra: 1→A, 27→AA
+  _colLetter(n) {
+    let result = '';
+    while (n > 0) {
+      n--;
+      result = String.fromCharCode(65 + (n % 26)) + result;
+      n = Math.floor(n / 26);
     }
+    return result;
+  }
 
-    // Auto-generate geo link if not provided and address exists
-    const autoGeoLink = geoLink || (address ? this.buildMapsSearchUrl(address, commune) : '');
+  // ─────────────────────────────────────────────
+  // LECTURA
+  // ─────────────────────────────────────────────
 
-    return this.postToSheet({
-      action: 'updateAddress',
-      rows: [{
-        code: externalId,
-        address: address || '',
-        commune: commune || '',
-        geoLink: autoGeoLink,
-        updatedBy: updatedBy || 'sistema',
-        updatedAt: new Date().toISOString()
-      }]
-    });
+  /**
+   * Obtiene metadata del spreadsheet (nombres de hojas, filas, columnas)
+   */
+  async getMetadata() {
+    if (!this.isConfigured()) throw new Error('Google Sheets no configurado');
+    const sheets = await this._sheets();
+    const res = await sheets.spreadsheets.get({ spreadsheetId: this.spreadsheetId });
+    return {
+      sheets: res.data.sheets.map(s => ({
+        name: s.properties.title,
+        rowCount: s.properties.gridProperties.rowCount,
+        colCount: s.properties.gridProperties.columnCount
+      }))
+    };
   }
 
   /**
-   * Sync completo de un cliente al Google Sheet (todos los campos)
+   * Obtiene datos de todas las hojas
+   * Retorna objeto { sheetName: [[rows]], ... }
+   */
+  async getAllSheets() {
+    if (!this.isConfigured()) throw new Error('Google Sheets no configurado');
+    const sheets = await this._sheets();
+
+    const meta = await sheets.spreadsheets.get({ spreadsheetId: this.spreadsheetId });
+    const sheetNames = meta.data.sheets.map(s => s.properties.title);
+
+    const result = {};
+    for (const name of sheetNames) {
+      try {
+        const r = await sheets.spreadsheets.values.get({
+          spreadsheetId: this.spreadsheetId,
+          range: name
+        });
+        result[name] = r.data.values || [];
+      } catch (_) {
+        result[name] = [];
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Obtiene datos de una hoja específica
+   * Retorna [[row1], [row2], ...]
+   */
+  async getSheet(sheetName) {
+    if (!this.isConfigured()) throw new Error('Google Sheets no configurado');
+    const sheets = await this._sheets();
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: this.spreadsheetId,
+      range: sheetName
+    });
+    return res.data.values || [];
+  }
+
+  // ─────────────────────────────────────────────
+  // HELPERS INTERNOS
+  // ─────────────────────────────────────────────
+
+  /**
+   * Encuentra la fila (1-based) de un cliente por su código
+   * Retorna { rowIndex, headers, codeCol }
+   * rowIndex = -1 si no se encuentra
+   */
+  async _findClientRow(sheets, sheetName, externalId) {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: this.spreadsheetId,
+      range: sheetName
+    });
+    const rows = res.data.values || [];
+    if (rows.length === 0) return { rowIndex: -1, headers: [], codeCol: -1 };
+
+    const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const headers = rows[0].map(h => String(h || '').trim().toLowerCase());
+    const codeCol = headers.findIndex(h => norm(h).includes('cod'));
+    if (codeCol === -1) return { rowIndex: -1, headers, codeCol: -1 };
+
+    const target = String(externalId || '').trim();
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][codeCol] || '').trim() === target) {
+        return { rowIndex: i + 1, headers, codeCol };  // rowIndex es 1-based
+      }
+    }
+    return { rowIndex: -1, headers, codeCol };
+  }
+
+  /**
+   * Determina el índice de columna para un campo dado los headers
+   * Soporta múltiples patrones por campo
+   */
+  _getColIndex(headers, patterns) {
+    // Normaliza acentos para comparar: 'región' == 'region'
+    const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return headers.findIndex(h => patterns.some(p => norm(h).includes(norm(p))));
+  }
+
+  // ─────────────────────────────────────────────
+  // ESCRITURA
+  // ─────────────────────────────────────────────
+
+  /**
+   * Sincroniza un cliente completo al Google Sheet.
+   * Si existe → actualiza solo los campos provistos (no sobreescribe con vacíos).
+   * Si no existe → retorna { notFound: [code] } para que el caller decida crear.
    */
   async syncClientToSheet(client, updatedBy) {
-    if (!client.external_id) {
-      return { success: false, error: 'Sin código de cliente' };
+    if (!client.external_id) return { success: false, error: 'Sin código de cliente' };
+    if (!this.isConfigured()) {
+      console.warn('[GSheets] No configurado — sync omitido');
+      return { success: false, error: 'Google Sheets no configurado' };
     }
 
-    let geoLink = client.geo_link || '';
-    if (!geoLink && client.lat && client.lng) {
-      geoLink = `https://www.google.com/maps?q=${client.lat},${client.lng}`;
-    } else if (!geoLink && client.address) {
-      geoLink = this.buildMapsSearchUrl(client.address, client.commune);
-    }
+    try {
+      const sheets = await this._sheets();
+      const sheetName = this.clientSheetName;
+      const { rowIndex, headers } = await this._findClientRow(sheets, sheetName, client.external_id);
 
-    return this.postToSheet({
-      action: 'updateClient',
-      rows: [{
-        code: client.external_id,
-        name: client.name || '',
-        fantasyName: client.fantasy_name || '',
-        address: client.address || '',
-        commune: client.commune || '',
-        city: client.city || '',
-        region: client.region || '',
-        geoLink,
-        updatedBy: updatedBy || 'sistema',
-        updatedAt: new Date().toISOString()
-      }]
-    });
+      if (rowIndex === -1) {
+        return { success: true, updated: 0, notFound: [client.external_id] };
+      }
+
+      // Construir geo link
+      let geoLink = client.geo_link || '';
+      if (!geoLink && client.lat && client.lng) {
+        geoLink = `https://www.google.com/maps?q=${client.lat},${client.lng}`;
+      } else if (!geoLink && client.address) {
+        geoLink = this.buildMapsSearchUrl(client.address, client.commune);
+      }
+
+      // Mapa de patrones de header → valor a escribir
+      // Solo se incluyen campos no-nulos/no-vacíos para no sobreescribir con blancos
+      // _newExternalId: si el código cambió, actualizar también la columna código
+      const fieldPatterns = [
+        { patterns: ['cod'],                          value: client._newExternalId || null },
+        { patterns: ['raz'],                          value: client.name },
+        { patterns: ['fan'],                          value: client.fantasy_name },
+        { patterns: ['direcc', 'address'],            value: client.address },
+        { patterns: ['comun'],                        value: client.commune },
+        { patterns: ['ciudad', 'city'],               value: client.city },
+        { patterns: ['region', 'región'],             value: client.region },
+        { patterns: ['link', 'geo'],                  value: geoLink || null },
+      ];
+
+      const updates = [];
+      const usedCols = new Set();
+
+      for (const { patterns, value } of fieldPatterns) {
+        if (value === null || value === undefined || value === '') continue;
+        const colIdx = this._getColIndex(headers, patterns);
+        if (colIdx === -1 || usedCols.has(colIdx)) continue;
+        usedCols.add(colIdx);
+        updates.push({
+          range: `${sheetName}!${this._colLetter(colIdx + 1)}${rowIndex}`,
+          values: [[value]]
+        });
+      }
+
+      if (updates.length > 0) {
+        await sheets.spreadsheets.values.batchUpdate({
+          spreadsheetId: this.spreadsheetId,
+          requestBody: { valueInputOption: 'RAW', data: updates }
+        });
+      }
+
+      console.log(`[GSheets] syncClientToSheet(${client.external_id}) → updated ${updates.length} cols en fila ${rowIndex}`);
+      return { success: true, updated: 1 };
+
+    } catch (error) {
+      console.error('[GSheets] syncClientToSheet error:', error.message);
+      return { success: false, error: error.message };
+    }
   }
 
   /**
-   * Elimina un cliente del Google Sheet
+   * Sincroniza solo la dirección de un cliente al Sheet
    */
-  async deleteClientFromSheet(externalId) {
-    if (!externalId) {
-      return { success: false, error: 'Sin código de cliente' };
-    }
-    return this.postToSheet({
-      action: 'deleteClient',
-      code: externalId
-    });
+  async syncAddressToSheet(externalId, address, commune, updatedBy, geoLink) {
+    if (!externalId) return { success: false, error: 'Sin código de cliente' };
+    const autoGeoLink = geoLink || (address ? this.buildMapsSearchUrl(address, commune) : '');
+    return this.syncClientToSheet({
+      external_id: externalId,
+      address: address || null,
+      commune: commune || null,
+      geo_link: autoGeoLink || null
+    }, updatedBy);
   }
 
   /**
-   * Crea un nuevo cliente en el Google Sheet
+   * Crea un nuevo cliente como nueva fila en el Sheet
    */
   async createClientInSheet(client) {
-    if (!client.external_id) {
-      return { success: false, error: 'Sin código de cliente' };
-    }
-    return this.postToSheet({
-      action: 'createClient',
-      row: {
-        code: client.external_id,
-        name: client.name || '',
-        fantasyName: client.fantasy_name || '',
-        address: client.address || '',
-        commune: client.commune || '',
-        city: client.city || '',
-        region: client.region || '',
-        geoLink: client.geo_link || ''
+    if (!client.external_id) return { success: false, error: 'Sin código de cliente' };
+    if (!this.isConfigured()) return { success: false, error: 'Google Sheets no configurado' };
+
+    try {
+      const sheets = await this._sheets();
+      const sheetName = this.clientSheetName;
+
+      // Leer headers para saber el orden de columnas
+      const headerRes = await sheets.spreadsheets.values.get({
+        spreadsheetId: this.spreadsheetId,
+        range: `${sheetName}!1:1`
+      });
+      const headers = (headerRes.data.values || [[]])[0].map(h => String(h || '').trim().toLowerCase());
+
+      let geoLink = client.geo_link || '';
+      if (!geoLink && client.lat && client.lng) {
+        geoLink = `https://www.google.com/maps?q=${client.lat},${client.lng}`;
       }
-    });
+
+      const fieldPatterns = [
+        { patterns: ['cod'],                          value: client.external_id },
+        { patterns: ['raz'],                          value: client.name || '' },
+        { patterns: ['fan'],                          value: client.fantasy_name || '' },
+        { patterns: ['direcc', 'address'],            value: client.address || '' },
+        { patterns: ['comun'],                        value: client.commune || '' },
+        { patterns: ['ciudad', 'city'],               value: client.city || '' },
+        { patterns: ['region', 'región'],             value: client.region || '' },
+        { patterns: ['link', 'geo'],                  value: geoLink },
+      ];
+
+      // Construir fila respetando el orden de columnas del sheet
+      const usedCols = new Set();
+      const newRow = headers.map((h, i) => {
+        if (usedCols.has(i)) return '';
+        const match = fieldPatterns.find(fp => fp.patterns.some(p => h.includes(p)));
+        if (match) { usedCols.add(i); return match.value || ''; }
+        return '';
+      });
+
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: this.spreadsheetId,
+        range: sheetName,
+        valueInputOption: 'RAW',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: { values: [newRow] }
+      });
+
+      console.log(`[GSheets] createClientInSheet(${client.external_id}) → fila creada`);
+      return { success: true, created: 1 };
+
+    } catch (error) {
+      console.error('[GSheets] createClientInSheet error:', error.message);
+      return { success: false, error: error.message };
+    }
   }
 
   /**
-   * Actualiza la URL en runtime
+   * Elimina la fila de un cliente del Sheet
    */
-  updateConfig(scriptUrl) {
-    if (scriptUrl) this.scriptUrl = scriptUrl;
+  async deleteClientFromSheet(externalId) {
+    if (!externalId) return { success: false, error: 'Sin código de cliente' };
+    if (!this.isConfigured()) return { success: false, error: 'Google Sheets no configurado' };
+
+    try {
+      const sheets = await this._sheets();
+      const sheetName = this.clientSheetName;
+      const { rowIndex } = await this._findClientRow(sheets, sheetName, externalId);
+
+      if (rowIndex === -1) {
+        console.warn(`[GSheets] deleteClientFromSheet(${externalId}) → no encontrado en Sheet`);
+        return { success: true, deleted: 0, notFound: [externalId] };
+      }
+
+      // Obtener sheetId numérico para la operación batchUpdate
+      const meta = await sheets.spreadsheets.get({ spreadsheetId: this.spreadsheetId });
+      const sheet = meta.data.sheets.find(s => s.properties.title === sheetName);
+      if (!sheet) return { success: false, error: `Hoja "${sheetName}" no encontrada` };
+
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: this.spreadsheetId,
+        requestBody: {
+          requests: [{
+            deleteDimension: {
+              range: {
+                sheetId: sheet.properties.sheetId,
+                dimension: 'ROWS',
+                startIndex: rowIndex - 1,  // 0-based (inclusive)
+                endIndex: rowIndex          // 0-based (exclusive)
+              }
+            }
+          }]
+        }
+      });
+
+      console.log(`[GSheets] deleteClientFromSheet(${externalId}) → fila ${rowIndex} eliminada`);
+      return { success: true, deleted: 1 };
+
+    } catch (error) {
+      console.error('[GSheets] deleteClientFromSheet error:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // COMPATIBILIDAD (ya no se usa Apps Script)
+  // ─────────────────────────────────────────────
+
+  updateConfig() { /* no-op */ }
+
+  async postToSheet() {
+    return { success: false, error: 'postToSheet deprecated — usando Service Account API directa' };
   }
 }
 
