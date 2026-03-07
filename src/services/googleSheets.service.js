@@ -16,7 +16,6 @@ class GoogleSheetsService {
   get credentialsPath() {
     const p = process.env.GOOGLE_SHEETS_CREDENTIALS_PATH || '';
     if (!p) return '';
-    // Soporte path relativo desde raíz del proyecto
     return path.isAbsolute(p) ? p : path.resolve(process.cwd(), p);
   }
 
@@ -25,18 +24,26 @@ class GoogleSheetsService {
   }
 
   isConfigured() {
-    if (!this.spreadsheetId || !this.credentialsPath) return false;
-    try {
-      return fs.existsSync(this.credentialsPath);
-    } catch (_) {
-      return false;
+    if (!this.spreadsheetId) return false;
+    // Prioridad 1: JSON directo en env var (Vercel / producción)
+    if (process.env.GOOGLE_SHEETS_CREDENTIALS_JSON) return true;
+    // Prioridad 2: archivo local (desarrollo)
+    if (!this.credentialsPath) return false;
+    try { return fs.existsSync(this.credentialsPath); } catch (_) { return false; }
+  }
+
+  _getCredentials() {
+    // Prioridad 1: env var con JSON (Vercel)
+    if (process.env.GOOGLE_SHEETS_CREDENTIALS_JSON) {
+      return JSON.parse(process.env.GOOGLE_SHEETS_CREDENTIALS_JSON);
     }
+    // Prioridad 2: archivo local
+    return JSON.parse(fs.readFileSync(this.credentialsPath, 'utf8'));
   }
 
   _getAuth() {
-    const credentials = JSON.parse(fs.readFileSync(this.credentialsPath, 'utf8'));
     return new google.auth.GoogleAuth({
-      credentials,
+      credentials: this._getCredentials(),
       scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
   }
