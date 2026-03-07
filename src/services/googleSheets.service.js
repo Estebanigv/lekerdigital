@@ -94,19 +94,22 @@ class GoogleSheetsService {
     const meta = await sheets.spreadsheets.get({ spreadsheetId: this.spreadsheetId });
     const sheetNames = meta.data.sheets.map(s => s.properties.title);
 
-    const result = {};
-    for (const name of sheetNames) {
-      try {
-        const r = await sheets.spreadsheets.values.get({
-          spreadsheetId: this.spreadsheetId,
-          range: name
-        });
-        result[name] = r.data.values || [];
-      } catch (_) {
-        result[name] = [];
-      }
-    }
-    return result;
+    // Fetch todas las hojas en PARALELO para máxima velocidad
+    const entries = await Promise.all(
+      sheetNames.map(async name => {
+        try {
+          const r = await sheets.spreadsheets.values.get({
+            spreadsheetId: this.spreadsheetId,
+            range: name
+          });
+          return [name, r.data.values || []];
+        } catch (_) {
+          return [name, []];
+        }
+      })
+    );
+
+    return Object.fromEntries(entries);
   }
 
   /**

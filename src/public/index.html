@@ -6416,13 +6416,19 @@
             </h2>
             <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Datos sincronizados desde Google Sheets</p>
           </div>
-          <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
-            <a href="https://docs.google.com/spreadsheets/d/1W8yim9i13YN3lUx0saEkVplT0MhJm8XYwZKhyK_nzvI/edit?usp=sharing" target="_blank" rel="noopener" class="btn btn-success" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-              <i data-lucide="file-spreadsheet" style="width:16px;height:16px;"></i>
+          <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:center;">
+            <a href="https://docs.google.com/spreadsheets/d/1W8yim9i13YN3lUx0saEkVplT0MhJm8XYwZKhyK_nzvI/edit?usp=sharing" target="_blank" rel="noopener"
+              style="text-decoration:none;display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.25);border-radius:10px;font-size:12px;font-weight:600;letter-spacing:0.2px;transition:all 0.2s;white-space:nowrap;"
+              onmouseenter="this.style.background='rgba(16,185,129,0.18)';this.style.boxShadow='0 2px 8px rgba(16,185,129,0.2)'"
+              onmouseleave="this.style.background='rgba(16,185,129,0.1)';this.style.boxShadow='none'">
+              <i data-lucide="file-spreadsheet" style="width:15px;height:15px;"></i>
               Abrir Excel
             </a>
-            <button class="btn btn-primary" onclick="loadGoogleSheetsData(true)" id="gs-refresh-btn">
-              <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
+            <button onclick="loadGoogleSheetsData(true)" id="gs-refresh-btn"
+              style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:10px;font-size:12px;font-weight:600;letter-spacing:0.2px;cursor:pointer;transition:all 0.2s;white-space:nowrap;box-shadow:0 2px 8px rgba(99,102,241,0.3);"
+              onmouseenter="this.style.boxShadow='0 4px 16px rgba(99,102,241,0.45)';this.style.transform='translateY(-1px)'"
+              onmouseleave="this.style.boxShadow='0 2px 8px rgba(99,102,241,0.3)';this.style.transform='none'">
+              <i data-lucide="refresh-cw" style="width:15px;height:15px;"></i>
               Actualizar Datos
             </button>
           </div>
@@ -6754,18 +6760,30 @@
             <div class="card" style="margin-bottom: 16px;">
               <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <h3><i data-lucide="map-pin" style="width: 18px; height: 18px;"></i> Direcciones <span id="dir-total-count" style="font-size:12px;font-weight:400;color:var(--text-muted);"></span></h3>
-                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                  <button class="btn" onclick="openCreateClientModal()" style="background: var(--accent); color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;" id="btn-create-client-dir" title="Crear nuevo cliente">
-                    <i data-lucide="plus" style="width: 13px; height: 13px;"></i> Nuevo
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                  <button onclick="openCreateClientModal()" id="btn-create-client-dir" title="Crear nuevo cliente"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 6px rgba(99,102,241,0.3);"
+                    onmouseenter="this.style.boxShadow='0 4px 12px rgba(99,102,241,0.45)';this.style.transform='translateY(-1px)'"
+                    onmouseleave="this.style.boxShadow='0 2px 6px rgba(99,102,241,0.3)';this.style.transform='none'">
+                    <i data-lucide="plus" style="width:13px;height:13px;"></i> Nuevo
                   </button>
-                  <button class="btn" onclick="importAllFromSheets()" style="background: #10b981; color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;" id="btn-import-sheets" title="Importar todos los clientes de Google Sheets a Supabase">
-                    <i data-lucide="database" style="width: 13px; height: 13px;"></i> Importar Excel → DB
+                  <button onclick="importAllFromSheets()" id="btn-import-sheets" title="Importar todos los clientes de Google Sheets a Supabase"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.25);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;"
+                    onmouseenter="this.style.background='rgba(16,185,129,0.18)';this.style.boxShadow='0 2px 8px rgba(16,185,129,0.2)'"
+                    onmouseleave="this.style.background='rgba(16,185,129,0.1)';this.style.boxShadow='none'">
+                    <i data-lucide="database" style="width:13px;height:13px;"></i> Importar Excel → DB
                   </button>
-                  <button class="btn" id="btn-batch-geo" onclick="batchGenerateGeoLinks()" style="background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                    <i data-lucide="locate" style="width: 13px; height: 13px;"></i> Cargar Geo
+                  <button onclick="batchGenerateGeoLinks()" id="btn-batch-geo" title="Generar geo links"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;"
+                    onmouseenter="this.style.background='var(--bg-hover)';this.style.color='var(--text-primary)';this.style.borderColor='rgba(99,102,241,0.4)'"
+                    onmouseleave="this.style.background='transparent';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)'">
+                    <i data-lucide="locate" style="width:13px;height:13px;"></i> Cargar Geo
                   </button>
-                  <button class="btn" id="btn-batch-geo-stop" onclick="stopBatchGeoLinks()" style="display:none; background: #ef4444; color: white; border: none; padding: 6px 12px; font-size: 11px; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                    <i data-lucide="square" style="width: 13px; height: 13px;"></i> Detener
+                  <button onclick="stopBatchGeoLinks()" id="btn-batch-geo-stop"
+                    style="display:none;align-items:center;gap:6px;padding:7px 14px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.25);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;"
+                    onmouseenter="this.style.background='rgba(239,68,68,0.18)'"
+                    onmouseleave="this.style.background='rgba(239,68,68,0.1)'">
+                    <i data-lucide="square" style="width:13px;height:13px;"></i> Detener
                   </button>
                 </div>
               </div>
@@ -19398,7 +19416,7 @@
       if (content) content.style.display = 'none';
       if (notConfigured) notConfigured.style.display = 'none';
       if (errorDiv) errorDiv.style.display = 'none';
-      if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:16px;height:16px;"></i> Cargando...'; }
+      if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.style.opacity='0.7'; refreshBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:15px;height:15px;"></i> Cargando...'; }
       lucide.createIcons();
 
       _gsLoadProgress(10, 'Conectando con Google Sheets...', 'Solicitando datos...');
@@ -19496,7 +19514,7 @@
           }
         }
       } finally {
-        if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.innerHTML = '<i data-lucide="refresh-cw" style="width:16px;height:16px;"></i> Actualizar Datos'; }
+        if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.style.opacity='1'; refreshBtn.innerHTML = '<i data-lucide="refresh-cw" style="width:15px;height:15px;"></i> Actualizar Datos'; }
         lucide.createIcons();
       }
     }
