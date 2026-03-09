@@ -2256,6 +2256,186 @@ async function askOpenAI(systemPrompt, userPrompt, maxTokens = 600) {
 }
 
 /**
+ * POST /api/ai/generate-route
+ * Genera una ruta semanal completa usando OpenAI GPT-4o-mini como motor de decisión.
+ * Devuelve el MISMO formato que GET /routes/optimize para ser drop-in replacement.
+ */
+app.post('/api/ai/generate-route', authenticate, async (req, res) => {
+  try {
+    const { userId, zone, commune, startLat, startLng, exclude = [] } = req.body;
+    if (!userId) return res.status(400).json({ success: false, error: 'userId requerido' });
+
+    // 1. Punto de inicio del vendedor
+    let startPoint = null;
+    if (startLat && startLng) {
+      startPoint = { lat: parseFloat(startLat), lng: parseFloat(startLng) };
+    } else {
+      const { data: ud } = await supabase.from('users').select('home_lat,home_lng').eq('id', userId).single();
+      if (ud?.home_lat && ud?.home_lng) startPoint = { lat: parseFloat(ud.home_lat), lng: parseFloat(ud.home_lng) };
+    }
+
+    // 2. Obtener clientes asignados con coords
+    let query = supabase.from('clients')
+      .select('id,name,fantasy_name,commune,lat,lng,segmentation,zone')
+      .eq('assigned_user_id', userId).not('lat','is',null).not('lng','is',null);
+    if (zone && zone.trim()) query = query.eq('zone', zone);
+    if (commune && commune.trim()) query = query.eq('commune', commune);
+    const { data: rawClients, error } = await query;
+    if (error) throw error;
+
+    // Agregar no-asignados en mismas zonas/comunas
+    let unassigned = [];
+    if (rawClients && rawClients.length > 0) {
+      const communes = [...new Set(rawClients.map(c => c.commune).filter(Boolean))];
+      const zones = [...new Set(rawClients.map(c => c.zone).filter(Boolean))];
+      let uq = supabase.from('clients').select('id,name,fantasy_name,commune,lat,lng,segmentation,zone')
+        .is('assigned_user_id',null).not('lat','is',null).not('lng','is',null);
+      if (commune && commune.trim()) uq = uq.eq('commune', commune);
+      else if (zones.length) uq = uq.in('zone', zones);
+      else if (communes.length) uq = uq.in('commune', communes);
+      const { data: udata } = await uq.limit(80);
+      unassigned = (udata || []).map(c => ({ ...c, segmentation: c.segmentation || 'N' }));
+    }
+
+    let clients = [...(rawClients || []), ...unassigned].filter(c => !exclude.includes(c.id));
+    if (clients.length === 0) {
+      return res.json({ success: true, data: { route: [], message: 'Sin clientes con GPS', aiGenerated: true } });
+    }
+
+    // 3. Weekdays próximos
+    const startDate = new Date();
+    do { startDate.setDate(startDate.getDate() + 1); } while ([0,6].includes(startDate.getDay()));
+    const neededDays = Math.ceil(clients.length / 8) + 2;
+    const weekdays = [];
+    const cursor = new Date(startDate);
+    while (weekdays.length < neededDays) {
+      if (cursor.getDay() >= 1 && cursor.getDay() <= 5) weekdays.push(cursor.toISOString().split('T')[0]);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    // 4. Resumen de comunas para contexto geográfico
+    const cg = {};
+    clients.forEach(c => {
+      const k = c.commune || 'Sin Comuna';
+      if (!cg[k]) cg[k] = { lat:0, lng:0, n:0, ids:[] };
+      cg[k].lat += parseFloat(c.lat); cg[k].lng += parseFloat(c.lng);
+      cg[k].n++; cg[k].ids.push(c.id);
+    });
+    const communeSummary = Object.entries(cg).map(([k,v]) =>
+      `${k}: ${v.n} clientes, centro (${(v.lat/v.n).toFixed(3)},${(v.lng/v.n).toFixed(3)})`).join('\n');
+
+    // 5. Lista compacta para IA (max 80)
+    const clientList = clients.slice(0,80).map(c => ({
+      id: c.id,
+      name: (c.fantasy_name||c.name||'').substring(0,28),
+      seg: c.segmentation||'L',
+      commune: c.commune||'Sin Comuna',
+      lat: parseFloat(c.lat).toFixed(4),
+      lng: parseFloat(c.lng).toFixed(4)
+    }));
+
+    // 6. GPT-4o-mini con JSON estructurado
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      response_format: { type: 'json_object' },
+      temperature: 0.2,
+      max_tokens: 1200,
+      messages: [
+        { role: 'system', content: `Eres un optimizador de rutas de ventas para Leker (Chile).
+REGLAS:
+- Jornada 09:00-17:00, velocidad 40 km/h, 35 min/visita
+- MÁXIMO 10 clientes por día (ideal 8)
+- PRIORIDAD: seg=80-20 > L > N
+- Misma comuna = mismo día (minimiza desplazamiento)
+- Si hay pocos 80-20, completar con L cercanos geográficamente
+Responde SOLO con JSON válido.` },
+        { role: 'user', content: `Días disponibles: ${weekdays.slice(0,7).join(', ')}
+Punto inicio: ${startPoint ? `(${startPoint.lat.toFixed(3)},${startPoint.lng.toFixed(3)})` : 'desconocido'}
+Comunas:\n${communeSummary}
+
+Clientes (${clientList.length}):
+${JSON.stringify(clientList)}
+
+Responde exactamente:
+{"days":{"YYYY-MM-DD":["id1","id2",...],...},"strategy":"explicación breve"}
+
+Solo usa fechas de los días disponibles. IDs exactos como los recibes. Max 10/día.` }
+      ]
+    });
+
+    const aiResp = JSON.parse(completion.choices[0].message.content);
+    const aiDays = aiResp.days || {};
+    const aiStrategy = aiResp.strategy || '';
+
+    // 7. Mapear IDs → objetos y calcular timeline por día
+    const byId = {};
+    clients.forEach(c => { byId[String(c.id)] = c; });
+
+    const daysResult = {};
+    let totalClients = 0, totalDistKm = 0, totalMin = 0;
+
+    for (const [date, ids] of Object.entries(aiDays)) {
+      if (!weekdays.includes(date) || !Array.isArray(ids) || ids.length === 0) continue;
+      const dayClients = ids.map(id => byId[String(id)]).filter(Boolean).slice(0, 10);
+      if (dayClients.length === 0) continue;
+
+      const tl = routesService.calculateDayTimeline(dayClients, '09:00', startPoint);
+      const liters = tl.totalDistanceKm / 10;
+      const fuelCLP = Math.round(liters * 1141);
+      const communes = [...new Set(dayClients.map(c => c.commune||'Sin Comuna'))];
+
+      daysResult[date] = {
+        route: tl.timeline.map((t,i) => ({ order:i+1, ...t.client, estimatedArrival:t.estimatedArrival, estimatedDeparture:t.estimatedDeparture, travelTimeMin:t.travelTimeMin, travelDistKm:t.travelDistKm })),
+        stats: {
+          totalClients: dayClients.length,
+          distanceKm: Math.round(tl.totalDistanceKm*10)/10,
+          estimatedTime: Math.round(tl.totalHours*60),
+          totalHours: tl.totalHours,
+          endTime: tl.endTime,
+          fuelLiters: Math.round(liters*10)/10,
+          fuelCostCLP: fuelCLP,
+          fuelCostFormatted: `$${fuelCLP.toLocaleString('es-CL')}`
+        },
+        communes
+      };
+      totalClients += dayClients.length;
+      totalDistKm += tl.totalDistanceKm;
+      totalMin += Math.round(tl.totalHours*60);
+    }
+
+    const sortedDates = Object.keys(daysResult).sort();
+    const allRoute = [];
+    sortedDates.forEach(d => allRoute.push(...daysResult[d].route));
+    allRoute.forEach((c,i) => { c.order = i+1; });
+
+    const totalFuelL = totalDistKm/10;
+    const totalFuelCLP = Math.round(totalFuelL*1141);
+
+    res.json({ success: true, data: {
+      route: allRoute,
+      days: daysResult,
+      totalStats: {
+        totalClients, totalDays: sortedDates.length,
+        distanceKm: Math.round(totalDistKm*10)/10,
+        estimatedTime: totalMin,
+        fuelLiters: Math.round(totalFuelL*10)/10,
+        fuelCostCLP: totalFuelCLP,
+        fuelCostFormatted: `$${totalFuelCLP.toLocaleString('es-CL')}`
+      },
+      stats: daysResult[sortedDates[0]]?.stats || null,
+      zone: zone || null,
+      aiGenerated: true,
+      aiStrategy,
+      tokensUsed: completion.usage?.total_tokens || 0
+    }});
+
+  } catch (error) {
+    console.error('[AI generate-route]', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * POST /api/ai/route-advisor
  * Recibe lista de clientes del vendedor y devuelve recomendación de prioridad de visitas.
  * Body: { userId, clients: [{name, segmentation, lastVisit, visitCount, address, commune}], weekdays }

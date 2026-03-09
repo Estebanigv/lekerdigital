@@ -5604,9 +5604,20 @@
 
                 <!-- Step 1 Navigation -->
                 <div style="margin-top: 14px;">
-                  <button onclick="generateOptimizedRoute();" class="btn" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 12px 28px; font-weight: 700; font-size: 15px; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.35); transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(16,185,129,0.45)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 4px 14px rgba(16,185,129,0.35)'">
+                  <!-- Toggle IA / Algoritmo -->
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding: 8px 12px; background: var(--bg-hover); border-radius: 8px; border: 1px solid var(--border);">
+                    <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Motor:</span>
+                    <button id="btn-route-engine-algo" onclick="setRouteEngine('algo')" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid #10b981; background: #10b981; color: white; cursor: pointer; transition: all 0.15s;">
+                      ⚙️ Algoritmo
+                    </button>
+                    <button id="btn-route-engine-ai" onclick="setRouteEngine('ai')" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.15s;">
+                      ✨ IA (GPT-4o)
+                    </button>
+                    <span id="route-engine-badge" style="font-size: 10px; color: var(--text-muted); margin-left: auto;">Optimización matemática</span>
+                  </div>
+                  <button onclick="generateOptimizedRoute();" id="btn-generar-ruta" class="btn" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 12px 28px; font-weight: 700; font-size: 15px; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.35); transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(16,185,129,0.45)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 4px 14px rgba(16,185,129,0.35)'">
                     <i data-lucide="route" style="width: 18px; height: 18px;"></i>
-                    <span>Generar Ruta Óptima</span>
+                    <span id="btn-generar-ruta-label">Generar Ruta Óptima</span>
                     <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
                   </button>
                 </div>
@@ -12397,8 +12408,29 @@
           }
         }
 
-        const res = await fetch(`${API}/routes/optimize/${selectedExecutiveId}?zone=${encodeURIComponent(zone)}${communeParam}${includeParam}${excludeParam}`);
-        const data = await res.json();
+        let data;
+        if (_routeEngine === 'ai') {
+          // Motor IA: POST /api/ai/generate-route
+          showToast('info', '✨ IA', 'Consultando GPT-4o para generar tu ruta...', 4000);
+          const body = { userId: selectedExecutiveId, zone, exclude: [...excludedClientIds] };
+          if (commune) body.commune = commune;
+          // Si hay sector geo-cluster con IDs específicos, pasarlos como includeIds
+          const zoneObj2 = _zonesData && _zonesData.find(z => z.zone === zone || zone === '');
+          const sectorObj2 = zoneObj2 && zoneObj2.sectors ? zoneObj2.sectors.find(s => s.name === commune) : null;
+          if (sectorObj2 && sectorObj2._clientIds && sectorObj2._clientIds.length) {
+            body.includeIds = sectorObj2._clientIds;
+          }
+          const aiRes = await fetch(`${API}/api/ai/generate-route`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          data = await aiRes.json();
+        } else {
+          // Motor algoritmo (original)
+          const res = await fetch(`${API}/routes/optimize/${selectedExecutiveId}?zone=${encodeURIComponent(zone)}${communeParam}${includeParam}${excludeParam}`);
+          data = await res.json();
+        }
 
         if (!data.success) {
           showToast('error', 'Error', data.error || 'Error al calcular ruta');
@@ -12413,6 +12445,11 @@
         optimizedRouteData = data.data;
         displayOptimizedRoute(vendorName, zone);
         goToRouteStep(2);
+
+        // Si fue generado por IA, mostrar la estrategia
+        if (data.data.aiGenerated && data.data.aiStrategy) {
+          setTimeout(() => showToast('info', '🤖 Estrategia IA', data.data.aiStrategy, 8000), 500);
+        }
 
         // Draw first day if multi-day, or all if single
         const firstDay = optimizedRouteData.days ? Object.keys(optimizedRouteData.days).sort()[0] : null;
@@ -12440,7 +12477,8 @@
       const isMultiDay = optimizedRouteData.days && Object.keys(optimizedRouteData.days).length > 0;
       const stats = isMultiDay ? optimizedRouteData.totalStats : optimizedRouteData.stats;
 
-      document.getElementById('opt-vendor-name').textContent = zone ? `${vendorName} - ${zone}` : vendorName;
+      const aiLabel = optimizedRouteData.aiGenerated ? ' ✨ IA' : '';
+      document.getElementById('opt-vendor-name').textContent = (zone ? `${vendorName} - ${zone}` : vendorName) + aiLabel;
 
       // Day tabs
       const tabsContainer = document.getElementById('opt-day-tabs');
@@ -17581,6 +17619,33 @@
       }
 
       _createIcons();
+    }
+
+    // =============================================
+    // ROUTE ENGINE TOGGLE (Algoritmo vs IA)
+    // =============================================
+    let _routeEngine = 'algo'; // 'algo' | 'ai'
+
+    function setRouteEngine(engine) {
+      _routeEngine = engine;
+      const btnAlgo = document.getElementById('btn-route-engine-algo');
+      const btnAI = document.getElementById('btn-route-engine-ai');
+      const badge = document.getElementById('route-engine-badge');
+      const label = document.getElementById('btn-generar-ruta-label');
+      const btn = document.getElementById('btn-generar-ruta');
+      if (engine === 'ai') {
+        if (btnAlgo) { btnAlgo.style.background='transparent'; btnAlgo.style.color='var(--text-muted)'; btnAlgo.style.borderColor='var(--border)'; }
+        if (btnAI) { btnAI.style.background='#6366f1'; btnAI.style.color='white'; btnAI.style.borderColor='#6366f1'; }
+        if (badge) badge.textContent = 'GPT-4o · Prioriza 80-20 + agrupa por zona';
+        if (label) label.textContent = 'Generar Ruta con IA ✨';
+        if (btn) { btn.style.background='linear-gradient(135deg, #6366f1, #8b5cf6)'; btn.style.boxShadow='0 4px 14px rgba(99,102,241,0.4)'; }
+      } else {
+        if (btnAlgo) { btnAlgo.style.background='#10b981'; btnAlgo.style.color='white'; btnAlgo.style.borderColor='#10b981'; }
+        if (btnAI) { btnAI.style.background='transparent'; btnAI.style.color='var(--text-muted)'; btnAI.style.borderColor='var(--border)'; }
+        if (badge) badge.textContent = 'Optimización matemática TSP + Clustering';
+        if (label) label.textContent = 'Generar Ruta Óptima';
+        if (btn) { btn.style.background='linear-gradient(135deg, #10b981, #059669)'; btn.style.boxShadow='0 4px 14px rgba(16,185,129,0.35)'; }
+      }
     }
 
     // =============================================
