@@ -12408,25 +12408,83 @@
       const vendorName = exec ? exec.full_name : 'Vendedor';
       const label = commune ? commune : (zone || 'Todas las zonas');
 
-      // Loader IA
+      // Loader IA — diseño inteligente con progreso y pasos
+      const _modelLabels = {'gpt-4o-mini':'GPT-4o mini','gpt-4o':'GPT-4o','o3-mini':'o3-mini'};
       const _showAiLoader = () => {
         const wrap = document.getElementById('wizard-step-1');
         if (!wrap || document.getElementById('ai-route-loader')) return;
         wrap.style.position = 'relative';
+        const modelName = _modelLabels[_aiModel] || _aiModel;
+        const steps = [
+          { icon:'database',    label:'Obteniendo clientes con GPS',        pct: 12 },
+          { icon:'map-pin',     label:'Agrupando por zonas geográficas',    pct: 28 },
+          { icon:'star',        label:'Priorizando clientes 80-20',         pct: 45 },
+          { icon:'brain',       label:`${modelName} analizando la ruta óptima`, pct: 65 },
+          { icon:'route',       label:'Calculando tiempos y distancias',    pct: 82 },
+          { icon:'check-circle',label:'Finalizando plan semanal',           pct: 95 },
+        ];
         const div = document.createElement('div');
         div.id = 'ai-route-loader';
-        div.style.cssText = 'position:absolute;inset:0;background:var(--bg-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;border-radius:12px;gap:14px;';
+        div.style.cssText = 'position:absolute;inset:0;background:var(--bg-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;border-radius:12px;padding:32px 24px;';
         div.innerHTML = `
-          <div style="width:56px;height:56px;border-radius:50%;border:4px solid var(--border);border-top-color:#6366f1;animation:spin 0.9s linear infinite;"></div>
-          <div style="text-align:center;">
-            <div style="font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">✨ IA generando ruta...</div>
-            <div id="ai-loader-msg" style="font-size:12px;color:var(--text-muted);">Analizando clientes y zonas</div>
+          <div style="width:100%;max-width:360px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+              <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(99,102,241,0.35);">
+                <i data-lucide="sparkles" style="width:22px;height:22px;color:white;"></i>
+              </div>
+              <div>
+                <div style="font-size:16px;font-weight:700;color:var(--text-primary);line-height:1.2;">Generando Ruta Inteligente</div>
+                <div style="font-size:11px;color:#6366f1;font-weight:600;margin-top:2px;">${modelName} · Leker AI</div>
+              </div>
+            </div>
+            <div style="margin-bottom:20px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span id="ai-loader-step-label" style="font-size:12px;color:var(--text-secondary);">Iniciando análisis...</span>
+                <span id="ai-loader-pct" style="font-size:12px;font-weight:700;color:#6366f1;">0%</span>
+              </div>
+              <div style="width:100%;height:6px;border-radius:3px;background:var(--border);overflow:hidden;">
+                <div id="ai-loader-bar" style="width:0%;height:100%;border-radius:3px;background:linear-gradient(90deg,#6366f1,#8b5cf6);transition:width 0.6s ease;"></div>
+              </div>
+            </div>
+            <div id="ai-loader-steps" style="display:flex;flex-direction:column;gap:7px;">
+              ${steps.map((s,i) => `
+                <div id="ai-step-${i}" style="display:flex;align-items:center;gap:8px;opacity:0.35;transition:opacity 0.4s;">
+                  <div style="width:20px;height:20px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i data-lucide="${s.icon}" style="width:11px;height:11px;color:var(--text-muted);"></i>
+                  </div>
+                  <span style="font-size:12px;color:var(--text-secondary);">${s.label}</span>
+                </div>`).join('')}
+            </div>
           </div>`;
         wrap.appendChild(div);
-        // Mensajes animados
-        const msgs = ['Agrupando por proximidad geográfica...','Priorizando clientes 80-20...','Optimizando orden de visitas...','Calculando tiempos de ruta...'];
-        let mi = 0;
-        div._interval = setInterval(() => { mi = (mi+1)%msgs.length; const el=document.getElementById('ai-loader-msg'); if(el) el.textContent=msgs[mi]; }, 2500);
+        _createIcons(div);
+        // Animar pasos secuencialmente
+        let si = 0;
+        const advance = () => {
+          if (si >= steps.length) return;
+          const s = steps[si];
+          // Marcar paso anterior como completado
+          if (si > 0) {
+            const prev = document.getElementById(`ai-step-${si-1}`);
+            if (prev) { prev.style.opacity='0.6'; prev.querySelector('div').style.background='rgba(99,102,241,0.15)'; }
+          }
+          // Activar paso actual
+          const cur = document.getElementById(`ai-step-${si}`);
+          if (cur) {
+            cur.style.opacity='1';
+            cur.querySelector('div').style.background='rgba(99,102,241,0.25)';
+            cur.querySelector('i').style.color='#6366f1';
+          }
+          const lbl = document.getElementById('ai-loader-step-label');
+          const pct = document.getElementById('ai-loader-pct');
+          const bar = document.getElementById('ai-loader-bar');
+          if (lbl) lbl.textContent = s.label;
+          if (pct) pct.textContent = s.pct + '%';
+          if (bar) bar.style.width = s.pct + '%';
+          si++;
+        };
+        advance();
+        div._interval = setInterval(advance, 2800);
       };
       const _hideAiLoader = () => {
         const div = document.getElementById('ai-route-loader');
