@@ -17,6 +17,10 @@ const cneService = require('./services/cne.service');
 const authRouter = require('./modules/auth/auth.controller');
 const { authenticate, authorize } = require('./middlewares/auth');
 
+// OpenAI
+const OpenAI = require('openai');
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+
 const app = express();
 
 // Configure multer for file uploads
@@ -2237,8 +2241,6 @@ setInterval(async () => {
 // =============================================
 // AI — OpenAI GPT-4o-mini
 // =============================================
-const OpenAI = require('openai');
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 // Helper: llama a GPT-4o-mini con system + user prompt
 async function askOpenAI(systemPrompt, userPrompt, maxTokens = 600) {
@@ -2264,6 +2266,7 @@ app.post('/api/ai/generate-route', authenticate, async (req, res) => {
   try {
     const { userId, zone, commune, startLat, startLng, exclude = [], model } = req.body;
     if (!userId) return res.status(400).json({ success: false, error: 'userId requerido' });
+    if (!openai) return res.status(400).json({ success: false, error: 'OpenAI no configurado. Agrega OPENAI_API_KEY en las variables de entorno.' });
     // Modelos permitidos; default gpt-4o-mini
     const ALLOWED_MODELS = ['gpt-4o-mini', 'gpt-4o', 'o3-mini'];
     const selectedModel = ALLOWED_MODELS.includes(model) ? model : 'gpt-4o-mini';
