@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "toolbar": false,
   "builds": [
     {
       "src": "api/index.js",
