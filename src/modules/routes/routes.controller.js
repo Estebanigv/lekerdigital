@@ -113,17 +113,16 @@ class RoutesController {
   async getOptimizedRoute(req, res) {
     try {
       const { userId } = req.params;
-      const { zone, startLat, startLng } = req.query;
+      const { zone, commune, startLat, startLng, exclude, include } = req.query;
 
       let startPoint = null;
       if (startLat && startLng) {
-        startPoint = {
-          lat: parseFloat(startLat),
-          lng: parseFloat(startLng)
-        };
+        startPoint = { lat: parseFloat(startLat), lng: parseFloat(startLng) };
       }
 
-      const result = await routesService.getOptimizedRoute(userId, zone, startPoint);
+      const excludeIds = exclude ? exclude.split(',').filter(Boolean) : [];
+      const includeIds = include ? include.split(',').filter(Boolean) : [];
+      const result = await routesService.getOptimizedRoute(userId, zone, startPoint, excludeIds, commune, includeIds);
 
       res.json({
         success: true,

@@ -1434,38 +1434,125 @@ class RoutesService {
 
   // Obtiene ruta optimizada para un vendedor
   // Obtiene las zonas disponibles para un vendedor (con estado GPS)
+  // Distancia Haversine en km entre dos coordenadas
+  _haversineKm(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  // Clustering geográfico greedy: agrupa puntos cercanos (threshold en km)
+  _geoCluster(clientsWithGps, thresholdKm = 30) {
+    const assigned = new Set();
+    const clusters = [];
+
+    for (const client of clientsWithGps) {
+      if (assigned.has(client._idx)) continue;
+      const cluster = [client];
+      assigned.add(client._idx);
+
+      for (const other of clientsWithGps) {
+        if (assigned.has(other._idx)) continue;
+        const d = this._haversineKm(
+          parseFloat(client.lat), parseFloat(client.lng),
+          parseFloat(other.lat),  parseFloat(other.lng)
+        );
+        if (d <= thresholdKm) {
+          cluster.push(other);
+          assigned.add(other._idx);
+        }
+      }
+      clusters.push(cluster);
+    }
+
+    return clusters.map(cls => {
+      // Nombre: commune más frecuente, luego city, luego coordenada aproximada
+      const freq = {};
+      cls.forEach(c => {
+        const label = c.commune || c.city;
+        if (label) freq[label] = (freq[label] || 0) + 1;
+      });
+      const topLabel = Object.entries(freq).sort((a, b) => b[1] - a[1])[0];
+      const name = topLabel
+        ? topLabel[0]
+        : `Sector ${clusters.indexOf(cls) + 1}`;
+      return {
+        name,
+        clientCount: cls.length,
+        withGps: cls.length,
+        // guarda IDs para filtrado posterior
+        _clientIds: cls.map(c => c.id)
+      };
+    }).filter(c => c.withGps >= 1)
+      .sort((a, b) => b.clientCount - a.clientCount);
+  }
+
   async getVendorZones(userId) {
     const { data: clients, error } = await supabase
       .from('clients')
-      .select('zone, lat, lng')
+      .select('id, zone, commune, city, lat, lng')
       .eq('assigned_user_id', userId)
       .not('zone', 'is', null);
 
     if (error) throw error;
 
-    // Obtener zonas únicas con conteo y estado GPS
     const zoneStats = {};
-    clients.forEach(c => {
-      if (c.zone) {
-        if (!zoneStats[c.zone]) {
-          zoneStats[c.zone] = { total: 0, withGps: 0 };
+    clients.forEach((c, idx) => {
+      if (!c.zone) return;
+      if (!zoneStats[c.zone]) zoneStats[c.zone] = { total: 0, withGps: 0, communeSectors: {}, rawClients: [] };
+
+      zoneStats[c.zone].total++;
+      if (c.lat && c.lng) {
+        zoneStats[c.zone].withGps++;
+        zoneStats[c.zone].rawClients.push({ ...c, _idx: idx });
+      }
+
+      const sector = c.commune || c.city || null;
+      if (sector) {
+        if (!zoneStats[c.zone].communeSectors[sector]) {
+          zoneStats[c.zone].communeSectors[sector] = { total: 0, withGps: 0 };
         }
-        zoneStats[c.zone].total++;
-        if (c.lat && c.lng) {
-          zoneStats[c.zone].withGps++;
-        }
+        zoneStats[c.zone].communeSectors[sector].total++;
+        if (c.lat && c.lng) zoneStats[c.zone].communeSectors[sector].withGps++;
       }
     });
 
-    return Object.entries(zoneStats).map(([zone, stats]) => ({
-      zone,
-      clientCount: stats.total,
-      withGps: stats.withGps,
-      withoutGps: stats.total - stats.withGps
-    })).sort((a, b) => b.withGps - a.withGps); // Ordenar por los que tienen más GPS
+    return Object.entries(zoneStats).map(([zone, stats]) => {
+      // Sectores por commune
+      const communeSectors = Object.entries(stats.communeSectors)
+        .map(([name, s]) => ({ name, clientCount: s.total, withGps: s.withGps }))
+        .filter(s => s.withGps >= 1)
+        .sort((a, b) => b.withGps - a.withGps);
+
+      // Si hay menos de 2 sectores por commune y hay suficientes clientes GPS → clustering geográfico
+      let sectors = communeSectors;
+      if (communeSectors.length < 2 && stats.rawClients.length >= 4) {
+        const geoClusters = this._geoCluster(stats.rawClients, 30);
+        if (geoClusters.length >= 2) {
+          sectors = geoClusters.map(gc => ({
+            name: gc.name,
+            clientCount: gc.clientCount,
+            withGps: gc.withGps,
+            geo: true,
+            _clientIds: gc._clientIds
+          }));
+        }
+      }
+
+      return {
+        zone,
+        clientCount: stats.total,
+        withGps: stats.withGps,
+        withoutGps: stats.total - stats.withGps,
+        sectors
+      };
+    }).sort((a, b) => b.withGps - a.withGps);
   }
 
-  async getOptimizedRoute(userId, zone = null, startPoint = null, excludeIds = []) {
+  async getOptimizedRoute(userId, zone = null, startPoint = null, excludeIds = [], commune = null, includeIds = []) {
     // Auto-fetch home address as startPoint if not provided
     if (!startPoint) {
       const { data: userData } = await supabase
@@ -1491,11 +1578,18 @@ class RoutesService {
     if (zone && zone.trim() !== '') {
       query = query.eq('zone', zone);
     }
+    // Filtrar por sector/comuna si se especifica
+    if (commune && commune.trim() !== '') {
+      query = query.eq('commune', commune);
+    }
 
     const { data: allClients, error } = await query;
 
-    // Filter out excluded clients
-    const clients = (allClients || []).filter(c => !excludeIds.includes(c.id));
+    // Filtrar: excluir IDs excluidos, incluir solo IDs si se especifica whitelist
+    let clients = (allClients || []).filter(c => !excludeIds.includes(c.id));
+    if (includeIds.length > 0) {
+      clients = clients.filter(c => includeIds.includes(c.id));
+    }
 
     if (error) throw error;
 
