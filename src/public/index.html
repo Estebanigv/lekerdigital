@@ -9944,6 +9944,8 @@
         setInterval(() => _silentSyncFromSheets(true), 2 * 60 * 1000);
 
         // Chequeo liviano cada 10s: si el backend recibió push de Apps Script → sync inmediato
+        // skipDeletions=true porque el caché de GSheets tarda 2-5min en actualizarse
+        // y sync-deletions borraría el cliente recién agregado por el push
         let _lastKnownPush = 0;
         setInterval(async () => {
           try {
@@ -9951,7 +9953,7 @@
             const d = await r.json();
             if (d.lastPushAt && d.lastPushAt > _lastKnownPush) {
               _lastKnownPush = d.lastPushAt;
-              if (_lastKnownPush > 0) _silentSyncFromSheets(true);
+              if (_lastKnownPush > 0) _silentSyncFromSheets(true, true); // skipDeletions=true
             }
           } catch(_e) {}
         }, 10 * 1000);
@@ -22009,7 +22011,7 @@
         if (panel) panel.style.display = 'none';
       }
     });
-    async function _silentSyncFromSheets(force = false) {
+    async function _silentSyncFromSheets(force = false, skipDeletions = false) {
       const now = Date.now();
       if (!force && now - _lastSheetsSync < 60 * 1000) return; // 1 min throttle
       _lastSheetsSync = now;
@@ -22086,7 +22088,7 @@
           let _ped0 = {};
           try { _ped0 = JSON.parse(localStorage.getItem('leker_platform_edits') || '{}'); } catch(_e) {}
           const dbWithExtId = allClients.filter(c => c.external_id && !sheetIds0.has(c.external_id) && !_ped0[c.external_id]);
-          if (dbWithExtId.length > 0) {
+          if (!skipDeletions && dbWithExtId.length > 0) {
             try {
               const delRes = await fetch(`${API}/api/clients/sync-deletions`, {
                 method: 'POST',
@@ -22125,17 +22127,20 @@
         }
 
         // Sync eliminaciones: clientes en DB que ya no existen en GSheets
+        // Omitir si fue triggereado por push inmediato (caché GSheets aún no actualizado)
         let totalDeleted = 0;
-        const sheetExternalIds = importRows.map(r => r.external_id);
-        try {
-          const delRes = await fetch(`${API}/api/clients/sync-deletions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ externalIds: sheetExternalIds })
-          });
-          const delData = await delRes.json();
-          if (delData.success && delData.data) totalDeleted = delData.data.deleted || 0;
-        } catch (_e) { /* silencioso */ }
+        if (!skipDeletions) {
+          const sheetExternalIds = importRows.map(r => r.external_id);
+          try {
+            const delRes = await fetch(`${API}/api/clients/sync-deletions`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ externalIds: sheetExternalIds })
+            });
+            const delData = await delRes.json();
+            if (delData.success && delData.data) totalDeleted = delData.data.deleted || 0;
+          } catch (_e) { /* silencioso */ }
+        }
 
         // Recargar allClients y refrescar tabla
         const clientsRes = await fetch(`${API}/api/clients`);
