@@ -4988,17 +4988,17 @@
                   <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">⭐ 80/20 Clave</div>
                   <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Alta venta por vendedor</div>
                 </div>
-                <!-- L: compraron en Leker 2025 -->
-                <div style="text-align: center; padding: 14px 8px; background: rgba(59,130,246,0.08); border-radius: 10px; border: 1px solid rgba(59,130,246,0.2); cursor: pointer;" onclick="goToClientsBySegmentation('L')" title="Clientes que compraron en Leker durante 2025">
+                <!-- L: base de clientes Leker (no necesariamente con ventas activas) -->
+                <div style="text-align: center; padding: 14px 8px; background: rgba(59,130,246,0.08); border-radius: 10px; border: 1px solid rgba(59,130,246,0.2); cursor: pointer;" onclick="goToClientsBySegmentation('L')" title="Clientes en la base de datos Leker">
                   <div style="font-size: 26px; font-weight: 700; color: #3b82f6;" id="seg-L-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">🔵 L — Leker 2025</div>
-                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Compraron en 2025</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">🔵 L — Base Leker</div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Clientes registrados</div>
                 </div>
                 <!-- N: clientes nuevos a verificar -->
-                <div style="text-align: center; padding: 14px 8px; background: rgba(16,185,129,0.08); border-radius: 10px; border: 1px solid rgba(16,185,129,0.2); cursor: pointer;" onclick="goToClientsBySegmentation('N')" title="Base de datos de clientes nuevos con dirección, pendientes de verificar">
+                <div style="text-align: center; padding: 14px 8px; background: rgba(16,185,129,0.08); border-radius: 10px; border: 1px solid rgba(16,185,129,0.2); cursor: pointer;" onclick="goToClientsBySegmentation('N')" title="Base de datos de clientes nuevos, pendientes de verificar">
                   <div style="font-size: 26px; font-weight: 700; color: #10b981;" id="seg-N-count">-</div>
                   <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">🟢 N — Nuevos</div>
-                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">A verificar con GPS</div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">A verificar y asignar</div>
                 </div>
                 <!-- Con GPS: pueden rutearse -->
                 <div style="text-align: center; padding: 14px 8px; background: rgba(99,102,241,0.08); border-radius: 10px; border: 1px solid rgba(99,102,241,0.2); cursor: pointer;" onclick="filterCrmAndGo('has_gps')">
@@ -5097,7 +5097,7 @@
                   </div>
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('L')" data-segment="L" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
                     <div class="legend-dot seg-l"></div>
-                    <span style="flex: 1; font-size: 11px;">L — Con ventas</span>
+                    <span style="flex: 1; font-size: 11px;">L — Base Leker</span>
                     <span id="count-seg-l" style="font-size: 10px; background: rgba(59,130,246,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
                     <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
@@ -6309,7 +6309,7 @@
                         <label style="font-size: 11px; color: var(--text-muted);">Segmentación</label>
                         <select id="chk-segmentation" class="form-control" style="font-size: 12px; padding: 6px 10px;">
                           <option value="N">N (Nuevo)</option>
-                          <option value="L">L (Con ventas)</option>
+                          <option value="L">L (Base Leker)</option>
                           <option value="80-20">80-20 (Clave)</option>
                         </select>
                       </div>
@@ -6414,7 +6414,7 @@
               <select id="crm-seg-filter" class="form-control" style="max-width: 150px; font-size: 13px;" onchange="filterCrmClients()">
                 <option value="">Toda segmentación</option>
                 <option value="80-20">⭐ 80/20 Clave</option>
-                <option value="L">L Con ventas</option>
+                <option value="L">L Base Leker</option>
                 <option value="N">N Nuevos</option>
               </select>
               <select id="crm-gps-filter" class="form-control" style="max-width: 130px; font-size: 13px;" onchange="filterCrmClients()">
@@ -6994,7 +6994,7 @@
                 <select id="filter-segmentation" class="form-control" onchange="filterClients()" style="max-width: 130px; width:100%;">
                   <option value="">Segmentación</option>
                   <option value="80-20">80-20 (Clave)</option>
-                  <option value="L">L (Con ventas)</option>
+                  <option value="L">L (Base Leker)</option>
                   <option value="N">N (Nuevos)</option>
                 </select>
                 <select id="filter-priority" class="form-control" onchange="filterClients()" style="width: 100px;">
@@ -9359,7 +9359,7 @@
         marker.segment = client.segment || 'E';
         marker.segmentation = seg;
 
-        const segLabel = { '80-20': '80/20 Clave', 'L': 'L · Con ventas', 'N': 'N · Nuevo', 'none': '' };
+        const segLabel = { '80-20': '80/20 Clave', 'L': 'L · Base Leker', 'N': 'N · Nuevo', 'none': '' };
         const infoContent = `
           <div style="min-width: 250px; padding: 10px; font-family: system-ui, sans-serif;">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
@@ -10118,7 +10118,7 @@
           </div>
           <div style="text-align: center; padding: 12px; background: rgba(59,130,246,0.08); border-radius: 8px; border: 1px solid rgba(59,130,246,0.2);">
             <div style="font-size: 22px; font-weight: 700; color: #2563eb;">${segL}</div>
-            <div style="font-size: 11px; color: var(--text-muted);">L Con ventas</div>
+            <div style="font-size: 11px; color: var(--text-muted);">L Base Leker</div>
           </div>
           <div style="text-align: center; padding: 12px; background: rgba(107,114,128,0.08); border-radius: 8px; border: 1px solid rgba(107,114,128,0.2);">
             <div style="font-size: 22px; font-weight: 700; color: #6b7280;">${segN}</div>
@@ -16315,14 +16315,16 @@
     function goToClientsBySegmentation(seg) {
       const subtab = document.querySelector('.nav-subitem[data-tab="data"][data-subtab="clientes"]');
       if (subtab) subtab.click();
-      setTimeout(() => {
-        document.getElementById('filter-segmentation').value = seg;
-        document.getElementById('search-clients').value = '';
-        document.getElementById('filter-zone').value = '';
-        document.getElementById('filter-segment').value = '';
-        document.getElementById('filter-priority').value = '';
+      // Defer filter hasta que el panel esté visible (evita bloquear la navegación)
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const el = document.getElementById('filter-segmentation');
+        if (el) el.value = seg;
+        const s = document.getElementById('search-clients'); if (s) s.value = '';
+        const z = document.getElementById('filter-zone');   if (z) z.value = '';
+        const sg = document.getElementById('filter-segment'); if (sg) sg.value = '';
+        const p = document.getElementById('filter-priority'); if (p) p.value = '';
         filterClients();
-      }, 150);
+      }));
     }
 
     function filterClients() {
@@ -18501,7 +18503,7 @@
         const cur = segSel.value;
         const segDefs = [
           { val: '80-20', label: '⭐ 80/20 Clave' },
-          { val: 'L',     label: 'L Con ventas' },
+          { val: 'L',     label: 'L Base Leker' },
           { val: 'N',     label: 'N Nuevos' }
         ].filter(o => segsAvail.has(o.val));
         segSel.innerHTML = '<option value="">Toda segmentación</option>' +
