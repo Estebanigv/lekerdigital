@@ -2219,49 +2219,57 @@ class RoutesService {
    * @returns {Object} { schedule: {date: {clients, totalDistance, totalHours, ...}}, sortedDates }
    */
   _splitIntoDays(clientsToVisit, weekdays, startPoint = null) {
-    const MAX_PER_DAY = 15;
-    const MIN_PER_DAY = 5;
+    const MAX_MINUTES_PER_DAY = 540; // 09:00–18:00
+    const SPEED_KMH = 40;
+    const VISIT_MIN = 35;
+
+    // Estimate total time for a set of clients (travel + visits)
+    function estimateDayTime(clients) {
+      if (!clients || clients.length === 0) return 0;
+      const withCoords = clients.filter(c => c.lat && c.lng);
+      if (withCoords.length < 2) return clients.length * VISIT_MIN;
+      const { totalDistance } = nearestNeighborTSP(withCoords);
+      return (totalDistance / SPEED_KMH) * 60 + clients.length * VISIT_MIN;
+    }
 
     // Step 1: Cluster clients by geographic proximity
     const clusters = clusterClientsByProximity(clientsToVisit);
 
-    // Sort clusters: largest first (they get the earliest days)
-    clusters.sort((a, b) => b.length - a.length);
+    // Sort clusters: smallest first (easier to fit)
+    clusters.sort((a, b) => a.length - b.length);
 
-    // Step 2: Assign clusters to days (bin-packing by time budget)
+    // Step 2: Assign clusters to days respecting TIME budget
     const schedule = {};
     weekdays.forEach(d => { schedule[d] = []; });
 
     for (const cluster of clusters) {
-      // Find day with most remaining capacity
-      let bestDay = null;
-      let bestRemaining = -1;
+      let assigned = false;
       for (const d of weekdays) {
-        const remaining = MAX_PER_DAY - schedule[d].length;
-        if (remaining >= cluster.length && remaining > bestRemaining) {
-          bestDay = d;
-          bestRemaining = remaining;
+        const combined = [...schedule[d], ...cluster];
+        if (estimateDayTime(combined) <= MAX_MINUTES_PER_DAY) {
+          schedule[d].push(...cluster);
+          assigned = true;
+          break;
         }
       }
-
-      // If cluster fits entirely in a day, assign it
-      if (bestDay) {
-        schedule[bestDay].push(...cluster);
-      } else {
-        // Cluster too big or no day has enough room — split across days
-        let remaining = [...cluster];
-        for (const d of weekdays) {
-          if (remaining.length === 0) break;
-          const capacity = MAX_PER_DAY - schedule[d].length;
-          if (capacity <= 0) continue;
-          const batch = remaining.splice(0, capacity);
-          schedule[d].push(...batch);
-        }
-        // If still leftover, create overflow on least-loaded day
-        if (remaining.length > 0) {
-          const leastLoaded = weekdays.reduce((best, d) =>
-            schedule[d].length < schedule[best].length ? d : best, weekdays[0]);
-          schedule[leastLoaded].push(...remaining);
+      if (!assigned) {
+        // Split cluster across days one by one
+        for (const client of cluster) {
+          let placed = false;
+          for (const d of weekdays) {
+            const combined = [...schedule[d], client];
+            if (estimateDayTime(combined) <= MAX_MINUTES_PER_DAY) {
+              schedule[d].push(client);
+              placed = true;
+              break;
+            }
+          }
+          if (!placed) {
+            // Overflow: add to least loaded day
+            const leastLoaded = weekdays.reduce((best, d) =>
+              schedule[d].length < schedule[best].length ? d : best, weekdays[0]);
+            schedule[leastLoaded].push(client);
+          }
         }
       }
     }
