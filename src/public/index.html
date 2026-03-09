@@ -5667,9 +5667,6 @@
                       <button onclick="generateOptimizedRoute()" class="btn" style="background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border); padding: 7px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Recalcular ruta">
                         <i data-lucide="refresh-cw" style="width: 13px; height: 13px;"></i> Recalcular
                       </button>
-                      <button onclick="openRouteChat()" id="btn-route-chat" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;padding:7px 12px;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;box-shadow:0 2px 8px rgba(99,102,241,0.35);" title="Asistente IA de ruta">
-                        <i data-lucide="sparkles" style="width:13px;height:13px;"></i> IA Asistente
-                      </button>
                     </div>
                   </div>
 
@@ -5732,9 +5729,6 @@
                 <div style="display: flex; justify-content: space-between; gap: 8px; margin-top: 12px;">
                   <button onclick="goToRouteStep(1)" class="btn btn-secondary" style="padding: 10px 20px; font-size: 13px; border-radius: 8px; font-weight: 600;">
                     <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Volver
-                  </button>
-                  <button onclick="openRouteChat()" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;padding:10px 16px;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(99,102,241,0.35);">
-                    <i data-lucide="sparkles" style="width:13px;height:13px;"></i> LEKER AI
                   </button>
                   <button onclick="goToRouteStep(3)" class="btn" style="background: var(--accent); color: white; padding: 10px 24px; font-weight: 700; font-size: 13px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 8px rgba(99,102,241,0.3);">
                     Revisar Clientes <i data-lucide="arrow-right" style="width: 14px; height: 14px; margin-left: 4px;"></i>
@@ -5910,38 +5904,6 @@
                 </button>
               </div>
               <input type="hidden" id="end-route-id">
-            </div>
-          </div>
-
-          <!-- Modal: LEKER AI — Asistente de Ruta -->
-          <div id="route-chat-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999;align-items:flex-end;justify-content:flex-start;padding:0 0 16px 220px;">
-            <div style="background:var(--bg-card);border-radius:16px;width:380px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,0.4);border:1px solid var(--border);overflow:hidden;">
-              <!-- Header -->
-              <div style="padding:14px 16px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                  <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;">
-                    <i data-lucide="sparkles" style="width:18px;height:18px;color:white;"></i>
-                  </div>
-                  <div>
-                    <div style="font-weight:700;font-size:14px;color:white;">LEKER AI</div>
-                    <div style="font-size:11px;color:rgba(255,255,255,0.75);">Asistente de Rutas · GPT-4o mini</div>
-                  </div>
-                </div>
-                <button onclick="closeRouteChat()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:28px;height:28px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-                  <i data-lucide="x" style="width:14px;height:14px;"></i>
-                </button>
-              </div>
-              <!-- Messages -->
-              <div id="route-chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;"></div>
-              <!-- Input -->
-              <div style="padding:12px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;">
-                <input id="route-chat-input" type="text" placeholder="Pregunta sobre tu ruta..." maxlength="400"
-                  style="flex:1;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text-primary);outline:none;"
-                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRouteChat();}">
-                <button onclick="sendRouteChat()" style="background:#6366f1;color:white;border:none;width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                  <i data-lucide="send" style="width:15px;height:15px;"></i>
-                </button>
-              </div>
             </div>
           </div>
 
@@ -12591,13 +12553,16 @@
         displayOptimizedRoute(vendorName, zone);
         goToRouteStep(2);
 
-        // Si fue generado por IA, mostrar modelo y estrategia
-        if (data.data.aiGenerated) {
+        // Si fue generado por IA, poner la estrategia como primer mensaje del chat (no toast)
+        if (data.data.aiGenerated && data.data.aiStrategy) {
           const modelLabel = { 'gpt-4o-mini':'GPT-4o mini','gpt-4o':'GPT-4o','o3-mini':'o3-mini' }[data.data.aiModel] || data.data.aiModel;
-          const tokensInfo = data.data.tokensUsed ? ` · ${data.data.tokensUsed} tokens` : '';
-          if (data.data.aiStrategy) {
-            setTimeout(() => showToast('info', `🤖 ${modelLabel}${tokensInfo}`, data.data.aiStrategy, 9000), 400);
-          }
+          const days = data.data.totalStats?.totalDays || 0;
+          const clients = data.data.totalStats?.totalClients || 0;
+          const km = data.data.totalStats?.distanceKm || 0;
+          // Pre-cargar el mensaje de estrategia en el historial del chat
+          const stratMsg = `✅ Ruta generada con **${modelLabel}**: **${clients} clientes** · **${days} días** · ${km} km.\n\n**Estrategia:** ${data.data.aiStrategy}\n\n¿Quieres ajustar algo?`;
+          _routeChatHistory.push({ role: 'assistant', content: stratMsg });
+          _appendChatMsg('assistant', stratMsg);
         }
 
         // Draw first day if multi-day, or all if single
@@ -12631,18 +12596,30 @@
       const modal = document.getElementById('route-chat-modal');
       if (!modal) return;
       modal.style.display = 'flex';
+      // Ocultar burbuja mientras el chat está abierto
+      const bubble = document.getElementById('leker-ai-bubble');
+      if (bubble) bubble.style.display = 'none';
       _createIcons(modal);
-      // Mensaje inicial contextual si es la primera vez
+
+      // Detectar contexto del panel activo
+      const activePanel = document.querySelector('.panel.active');
+      const panelId = activePanel?.id || '';
+      const panelNames = { 'panel-dashboard':'Dashboard','panel-clients':'CRM Clientes','panel-routes':'Gestionar Rutas','panel-visits':'Visitas','panel-intelligence':'Inteligencia de Mercado','panel-data':'Google Sheets' };
+      const panelName = panelNames[panelId] || 'la plataforma';
+      const ctxLabel = document.getElementById('leker-ai-context-label');
+      if (ctxLabel) ctxLabel.textContent = `${panelName} · GPT-4o mini`;
+
+      // Mensaje inicial si es la primera vez
       if (_routeChatHistory.length === 0) {
         const exec = executives.find(e => e.id === selectedExecutiveId);
         const vName = exec ? exec.full_name : null;
-        if (optimizedRouteData?.days || optimizedRouteData?.route?.length) {
+        if ((panelId === 'panel-routes') && (optimizedRouteData?.days || optimizedRouteData?.route?.length)) {
           const days = optimizedRouteData?.days ? Object.keys(optimizedRouteData.days).length : 0;
           const clients = optimizedRouteData?.totalStats?.totalClients || optimizedRouteData?.route?.length || 0;
           const km = optimizedRouteData?.totalStats?.distanceKm || optimizedRouteData?.stats?.distanceKm || 0;
-          _appendChatMsg('assistant', `Hola, soy **LEKER AI** 👋\n\nTengo cargada la ruta de **${vName||'el vendedor'}**: **${clients} clientes** en **${days} día${days!==1?'s':''}** · ${km} km.\n\nPuedo ayudarte a:\n• Explicar por qué un cliente está en X día\n• Sugerir mover clientes entre días\n• Detectar jornadas muy largas\n• Analizar rutas poco eficientes\n\n¿En qué te ayudo?`);
+          _appendChatMsg('assistant', `Hola 👋 Soy **LEKER AI**.\n\nRuta de **${vName||'el vendedor'}**: **${clients} clientes** · **${days} días** · ${km} km.\n\nPuedo:\n• Explicar por qué un cliente está en X día\n• Sugerir mover clientes o reordenar\n• Detectar jornadas muy largas\n• Analizar eficiencia de la ruta\n\n¿En qué te ayudo?`);
         } else {
-          _appendChatMsg('assistant', `Hola, soy **LEKER AI** 👋\n\nSoy tu asistente de rutas. Puedo ayudarte a planificar, analizar y optimizar las rutas de los vendedores.\n\nGenera una ruta con el modo IA o pregúntame lo que necesites.`);
+          _appendChatMsg('assistant', `Hola 👋 Soy **LEKER AI**, tu asistente de la plataforma Leker.\n\nEstás en **${panelName}**. Puedo ayudarte con:\n• Rutas y planificación de vendedores\n• Análisis de clientes 80-20\n• Sugerencias para mejorar la plataforma\n• Cualquier duda sobre el sistema\n\n¿Qué necesitas?`);
         }
       }
       setTimeout(() => document.getElementById('route-chat-input')?.focus(), 100);
@@ -12651,6 +12628,8 @@
     function closeRouteChat() {
       const modal = document.getElementById('route-chat-modal');
       if (modal) modal.style.display = 'none';
+      const bubble = document.getElementById('leker-ai-bubble');
+      if (bubble) bubble.style.display = 'flex';
     }
 
     function _appendChatMsg(role, text) {
@@ -27316,5 +27295,48 @@ function installPWA() {
   document.body.appendChild(overlay);
 }
 </script>
+
+<!-- ============================================================ -->
+<!-- LEKER AI — Asistente Global (visible en toda la plataforma) -->
+<!-- ============================================================ -->
+
+<!-- Burbuja flotante -->
+<button id="leker-ai-bubble" onclick="openRouteChat()" title="LEKER AI"
+  style="position:fixed;bottom:24px;right:24px;z-index:8999;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(99,102,241,0.5);transition:transform 0.15s,box-shadow 0.15s;"
+  onmouseenter="this.style.transform='scale(1.1)';this.style.boxShadow='0 6px 28px rgba(99,102,241,0.65)'"
+  onmouseleave="this.style.transform='scale(1)';this.style.boxShadow='0 4px 20px rgba(99,102,241,0.5)'">
+  <i data-lucide="sparkles" style="width:22px;height:22px;"></i>
+</button>
+
+<!-- Panel de chat (floating, no overlay) -->
+<div id="route-chat-modal" style="display:none;position:fixed;bottom:86px;right:24px;z-index:9000;width:360px;max-width:calc(100vw - 32px);height:500px;max-height:calc(100vh - 120px);background:var(--bg-card);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.35);border:1px solid var(--border);display:none;flex-direction:column;overflow:hidden;">
+  <!-- Header -->
+  <div style="padding:13px 14px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-radius:16px 16px 0 0;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;">
+        <i data-lucide="sparkles" style="width:17px;height:17px;color:white;"></i>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:14px;color:white;line-height:1.2;">LEKER AI</div>
+        <div id="leker-ai-context-label" style="font-size:10px;color:rgba(255,255,255,0.75);">Asistente de Plataforma · GPT-4o mini</div>
+      </div>
+    </div>
+    <button onclick="closeRouteChat()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:26px;height:26px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+      <i data-lucide="x" style="width:13px;height:13px;"></i>
+    </button>
+  </div>
+  <!-- Messages -->
+  <div id="route-chat-messages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px;"></div>
+  <!-- Input -->
+  <div style="padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:7px;flex-shrink:0;background:var(--bg-card);">
+    <input id="route-chat-input" type="text" placeholder="Pregunta lo que necesites..." maxlength="400"
+      style="flex:1;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:13px;color:var(--text-primary);outline:none;"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRouteChat();}">
+    <button onclick="sendRouteChat()" style="background:#6366f1;color:white;border:none;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <i data-lucide="send" style="width:14px;height:14px;"></i>
+    </button>
+  </div>
+</div>
+
 </body>
 </html>

@@ -2657,11 +2657,11 @@ app.post('/api/ai/route-chat', authenticate, async (req, res) => {
       }
     }
 
-    const systemPrompt = `Eres LEKER AI, el asistente inteligente de rutas de ventas de la plataforma Leker (distribuidora de productos de limpieza y hogar en Chile).
-Tienes acceso al contexto completo de la ruta actual del vendedor.
-Tu rol es: responder preguntas sobre la ruta, explicar decisiones, sugerir mejoras, alertar sobre problemas (clientes muy alejados, jornadas largas, falta de 80-20).
-Cuando el usuario pida mover un cliente o cambiar algo, responde con la sugerencia en formato claro y pregunta si quiere aplicarla.
-Responde SIEMPRE en español. Sé conciso, profesional y útil. Máximo 4-5 líneas salvo que te pidan más detalle.
+    const systemPrompt = `Eres LEKER AI, el asistente inteligente de la plataforma Leker (distribuidora de productos de limpieza y hogar en Chile).
+La plataforma gestiona: vendedores, clientes (segmentación 80-20/L/N), rutas de visita optimizadas, visitas, Google Sheets sync, inteligencia de mercado y competencia.
+Tu rol es: responder preguntas sobre rutas, clientes, rendimiento, sugerir mejoras a la plataforma, alertar sobre oportunidades (clientes sin visitar, zonas ineficientes, jornadas largas).
+Cuando el usuario pida cambiar algo en la ruta, sugiere el cambio en formato claro. Puedes recomendar nuevas funcionalidades o mejoras que tendría sentido implementar.
+Responde SIEMPRE en español. Sé conciso, profesional y directo. Máximo 5 líneas salvo que pidan detalle.
 
 ${routeSummary}`;
 
