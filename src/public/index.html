@@ -12613,14 +12613,17 @@
       if (_routeChatHistory.length === 0) {
         const exec = executives.find(e => e.id === selectedExecutiveId);
         const vName = exec ? exec.full_name : null;
+        let greeting;
         if ((panelId === 'panel-routes') && (optimizedRouteData?.days || optimizedRouteData?.route?.length)) {
           const days = optimizedRouteData?.days ? Object.keys(optimizedRouteData.days).length : 0;
           const clients = optimizedRouteData?.totalStats?.totalClients || optimizedRouteData?.route?.length || 0;
           const km = optimizedRouteData?.totalStats?.distanceKm || optimizedRouteData?.stats?.distanceKm || 0;
-          _appendChatMsg('assistant', `Hola 👋 Soy **LEKER AI**.\n\nRuta de **${vName||'el vendedor'}**: **${clients} clientes** · **${days} días** · ${km} km.\n\nPuedo:\n• Explicar por qué un cliente está en X día\n• Sugerir mover clientes o reordenar\n• Detectar jornadas muy largas\n• Analizar eficiencia de la ruta\n\n¿En qué te ayudo?`);
+          greeting = `Hola 👋 Soy **LEKER AI**.\n\nRuta de **${vName||'el vendedor'}**: **${clients} clientes** · **${days} días** · ${km} km.\n\nPuedo:\n• Explicar por qué un cliente está en X día\n• Sugerir mover clientes o reordenar\n• Detectar jornadas muy largas\n• Analizar eficiencia de la ruta\n\n¿En qué te ayudo?`;
         } else {
-          _appendChatMsg('assistant', `Hola 👋 Soy **LEKER AI**, tu asistente de la plataforma Leker.\n\nEstás en **${panelName}**. Puedo ayudarte con:\n• Rutas y planificación de vendedores\n• Análisis de clientes 80-20\n• Sugerencias para mejorar la plataforma\n• Cualquier duda sobre el sistema\n\n¿Qué necesitas?`);
+          greeting = `Hola 👋 Soy **LEKER AI**, tu asistente de la plataforma Leker.\n\nEstás en **${panelName}**. Puedo ayudarte con:\n• Rutas y planificación de vendedores\n• Análisis de clientes 80-20\n• Sugerencias para mejorar la plataforma\n• Cualquier duda sobre el sistema\n\n¿Qué necesitas?`;
         }
+        _routeChatHistory.push({ role: 'assistant', content: greeting });
+        _appendChatMsg('assistant', greeting);
       }
       setTimeout(() => document.getElementById('route-chat-input')?.focus(), 100);
     }
