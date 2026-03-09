@@ -454,8 +454,8 @@
       border-color: rgba(59,130,246,0.2) !important;
     }
     [data-theme="dark"] #segmentation-stats > div:nth-child(3) {
-      background: rgba(16,185,129,0.06) !important;
-      border-color: rgba(16,185,129,0.2) !important;
+      background: rgba(148,163,184,0.06) !important;
+      border-color: rgba(148,163,184,0.18) !important;
     }
     [data-theme="dark"] #segmentation-stats > div:nth-child(4) {
       background: rgba(99,102,241,0.06) !important;
@@ -4988,17 +4988,17 @@
                   <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">⭐ 80/20 Clave</div>
                   <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Alta venta por vendedor</div>
                 </div>
-                <!-- L: base de clientes Leker (no necesariamente con ventas activas) -->
-                <div style="text-align: center; padding: 14px 8px; background: rgba(59,130,246,0.08); border-radius: 10px; border: 1px solid rgba(59,130,246,0.2); cursor: pointer;" onclick="goToClientsBySegmentation('L')" title="Clientes en la base de datos Leker">
-                  <div style="font-size: 26px; font-weight: 700; color: #3b82f6;" id="seg-L-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">🔵 L — Base Leker</div>
-                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Clientes registrados</div>
+                <!-- L Con venta: segmentation=L AND segment=C -->
+                <div style="text-align: center; padding: 14px 8px; background: rgba(59,130,246,0.12); border-radius: 10px; border: 1px solid rgba(59,130,246,0.35); cursor: pointer;" onclick="goToClientsBySegAndSegment('L', 'C')" title="Clientes L que compraron en Leker (segment=C)">
+                  <div style="font-size: 26px; font-weight: 700; color: #3b82f6;" id="seg-L-active-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">🔵 L Con venta</div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Compraron en Leker</div>
                 </div>
-                <!-- N: clientes nuevos a verificar -->
-                <div style="text-align: center; padding: 14px 8px; background: rgba(16,185,129,0.08); border-radius: 10px; border: 1px solid rgba(16,185,129,0.2); cursor: pointer;" onclick="goToClientsBySegmentation('N')" title="Base de datos de clientes nuevos, pendientes de verificar">
-                  <div style="font-size: 26px; font-weight: 700; color: #10b981;" id="seg-N-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">🟢 N — Nuevos</div>
-                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">A verificar y asignar</div>
+                <!-- L Sin venta: segmentation=L AND segment≠C -->
+                <div style="text-align: center; padding: 14px 8px; background: rgba(148,163,184,0.08); border-radius: 10px; border: 1px solid rgba(148,163,184,0.2); cursor: pointer;" onclick="goToClientsBySegAndSegment('L', 'B')" title="Clientes L sin ventas activas (segment=B)">
+                  <div style="font-size: 26px; font-weight: 700; color: #94a3b8;" id="seg-L-base-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">⬜ L Sin venta</div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Base sin compras</div>
                 </div>
                 <!-- Con GPS: pueden rutearse -->
                 <div style="text-align: center; padding: 14px 8px; background: rgba(99,102,241,0.08); border-radius: 10px; border: 1px solid rgba(99,102,241,0.2); cursor: pointer;" onclick="filterCrmAndGo('has_gps')">
@@ -16312,6 +16312,20 @@
     }
 
     // Filter functions
+    function goToClientsBySegAndSegment(segmentation, segmentVal) {
+      const subtab = document.querySelector('.nav-subitem[data-tab="data"][data-subtab="clientes"]');
+      if (subtab) subtab.click();
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const el = document.getElementById('filter-segmentation');
+        if (el) el.value = segmentation;
+        const sg = document.getElementById('filter-segment'); if (sg) sg.value = segmentVal || '';
+        const s = document.getElementById('search-clients'); if (s) s.value = '';
+        const z = document.getElementById('filter-zone');   if (z) z.value = '';
+        const p = document.getElementById('filter-priority'); if (p) p.value = '';
+        filterClients();
+      }));
+    }
+
     function goToClientsBySegmentation(seg) {
       const subtab = document.querySelector('.nav-subitem[data-tab="data"][data-subtab="clientes"]');
       if (subtab) subtab.click();
@@ -24689,20 +24703,20 @@
       const fmt = n => n.toLocaleString('es-CL');
       const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = fmt(v); };
 
-      const seg8020   = allClients.filter(c => c.segmentation === '80-20').length;
-      const segL      = allClients.filter(c => c.segmentation === 'L').length;       // Compraron en Leker 2025
-      const segN      = allClients.filter(c => c.segmentation === 'N').length;       // Clientes nuevos a verificar
-      const conGPS    = allClients.filter(c => c.lat && c.lng).length;               // Coordenadas exactas en DB
-      const sinGeo    = allClients.filter(c => !c.geo_link).length;                  // Sin link geo
-      const total     = allClients.length;
+      const seg8020    = allClients.filter(c => c.segmentation === '80-20').length;
+      const segLActive = allClients.filter(c => c.segmentation === 'L' && c.segment === 'C').length;  // L con venta
+      const segLBase   = allClients.filter(c => c.segmentation === 'L' && c.segment !== 'C').length;  // L sin venta
+      const conGPS     = allClients.filter(c => c.lat && c.lng).length;               // Coordenadas exactas en DB
+      const sinGeo     = allClients.filter(c => !c.geo_link).length;                  // Sin link geo
+      const total      = allClients.length;
 
       // Tarjetas KPI
-      set('seg-A-count', seg8020);   // 80/20 Clave
-      set('seg-L-count', segL);      // L — Compraron Leker 2025
-      set('seg-N-count', segN);      // N — Clientes nuevos
-      set('seg-C-count', conGPS);    // Con GPS (lat/lng)
-      set('seg-E-count', sinGeo);    // Sin geo
-      set('seg-total-count', total);
+      set('seg-A-count',       seg8020);    // 80/20 Clave
+      set('seg-L-active-count', segLActive); // L Con venta (segment=C)
+      set('seg-L-base-count',   segLBase);   // L Sin venta (segment≠C)
+      set('seg-C-count',       conGPS);     // Con GPS (lat/lng)
+      set('seg-E-count',       sinGeo);     // Sin geo
+      set('seg-total-count',   total);
 
       // Stat card en header
       const sub8020 = document.getElementById('stat-clients-8020');
