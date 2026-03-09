@@ -5604,16 +5604,34 @@
 
                 <!-- Step 1 Navigation -->
                 <div style="margin-top: 14px;">
-                  <!-- Toggle IA / Algoritmo -->
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding: 8px 12px; background: var(--bg-hover); border-radius: 8px; border: 1px solid var(--border);">
-                    <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Motor:</span>
-                    <button id="btn-route-engine-algo" onclick="setRouteEngine('algo')" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid #10b981; background: #10b981; color: white; cursor: pointer; transition: all 0.15s;">
-                      ⚙️ Algoritmo
-                    </button>
-                    <button id="btn-route-engine-ai" onclick="setRouteEngine('ai')" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.15s;">
-                      ✨ IA (GPT-4o)
-                    </button>
-                    <span id="route-engine-badge" style="font-size: 10px; color: var(--text-muted); margin-left: auto;">Optimización matemática</span>
+                  <!-- Toggle IA / Algoritmo + Selector de modelo -->
+                  <div style="margin-bottom: 10px; padding: 10px 12px; background: var(--bg-hover); border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                      <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Motor:</span>
+                      <button id="btn-route-engine-algo" onclick="setRouteEngine('algo')" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid #10b981; background: #10b981; color: white; cursor: pointer; transition: all 0.15s;">
+                        ⚙️ Algoritmo
+                      </button>
+                      <button id="btn-route-engine-ai" onclick="setRouteEngine('ai')" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.15s;">
+                        ✨ IA
+                      </button>
+                      <span id="route-engine-badge" style="font-size: 10px; color: var(--text-muted); margin-left: auto;">Optimización matemática</span>
+                    </div>
+                    <!-- Selector de modelo (visible solo en modo IA) -->
+                    <div id="ai-model-selector" style="display: none; margin-top: 6px; border-top: 1px solid var(--border); padding-top: 8px;">
+                      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; white-space: nowrap;">Modelo:</span>
+                        <label id="model-opt-4omini" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;border:1px solid #6366f1;background:#6366f1;color:white;font-size:11px;font-weight:600;cursor:pointer;">
+                          <input type="radio" name="ai-model" value="gpt-4o-mini" checked onchange="setAIModel(this.value)" style="display:none;"> ⚡ GPT-4o mini
+                        </label>
+                        <label id="model-opt-4o" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:11px;font-weight:600;cursor:pointer;">
+                          <input type="radio" name="ai-model" value="gpt-4o" onchange="setAIModel(this.value)" style="display:none;"> 🧠 GPT-4o
+                        </label>
+                        <label id="model-opt-o3mini" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:11px;font-weight:600;cursor:pointer;">
+                          <input type="radio" name="ai-model" value="o3-mini" onchange="setAIModel(this.value)" style="display:none;"> 🔬 o3-mini
+                        </label>
+                        <span id="ai-model-desc" style="font-size:10px;color:var(--text-muted);margin-left:auto;">Rápido · bajo costo</span>
+                      </div>
+                    </div>
                   </div>
                   <button onclick="generateOptimizedRoute();" id="btn-generar-ruta" class="btn" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 12px 28px; font-weight: 700; font-size: 15px; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(16,185,129,0.35); transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(16,185,129,0.45)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 4px 14px rgba(16,185,129,0.35)'">
                     <i data-lucide="route" style="width: 18px; height: 18px;"></i>
@@ -12412,7 +12430,7 @@
         if (_routeEngine === 'ai') {
           // Motor IA: POST /api/ai/generate-route
           showToast('info', '✨ IA', 'Consultando GPT-4o para generar tu ruta...', 4000);
-          const body = { userId: selectedExecutiveId, zone, exclude: [...excludedClientIds] };
+          const body = { userId: selectedExecutiveId, zone, exclude: [...excludedClientIds], model: _aiModel };
           if (commune) body.commune = commune;
           // Si hay sector geo-cluster con IDs específicos, pasarlos como includeIds
           const zoneObj2 = _zonesData && _zonesData.find(z => z.zone === zone || zone === '');
@@ -12446,9 +12464,13 @@
         displayOptimizedRoute(vendorName, zone);
         goToRouteStep(2);
 
-        // Si fue generado por IA, mostrar la estrategia
-        if (data.data.aiGenerated && data.data.aiStrategy) {
-          setTimeout(() => showToast('info', '🤖 Estrategia IA', data.data.aiStrategy, 8000), 500);
+        // Si fue generado por IA, mostrar modelo y estrategia
+        if (data.data.aiGenerated) {
+          const modelLabel = { 'gpt-4o-mini':'GPT-4o mini','gpt-4o':'GPT-4o','o3-mini':'o3-mini' }[data.data.aiModel] || data.data.aiModel;
+          const tokensInfo = data.data.tokensUsed ? ` · ${data.data.tokensUsed} tokens` : '';
+          if (data.data.aiStrategy) {
+            setTimeout(() => showToast('info', `🤖 ${modelLabel}${tokensInfo}`, data.data.aiStrategy, 9000), 400);
+          }
         }
 
         // Draw first day if multi-day, or all if single
@@ -17625,6 +17647,29 @@
     // ROUTE ENGINE TOGGLE (Algoritmo vs IA)
     // =============================================
     let _routeEngine = 'algo'; // 'algo' | 'ai'
+    let _aiModel = 'gpt-4o-mini'; // modelo OpenAI activo
+
+    const _modelInfo = {
+      'gpt-4o-mini': { label: '⚡ GPT-4o mini', desc: 'Rápido · muy bajo costo (~$0.0001/ruta)', badge: 'GPT-4o mini · Rápido y eficiente' },
+      'gpt-4o':      { label: '🧠 GPT-4o',      desc: 'Mayor precisión · costo moderado',       badge: 'GPT-4o · Mayor razonamiento espacial' },
+      'o3-mini':     { label: '🔬 o3-mini',      desc: 'Razonamiento profundo · costo alto',     badge: 'o3-mini · Razonamiento profundo (más lento)' }
+    };
+
+    function setAIModel(model) {
+      _aiModel = model;
+      const info = _modelInfo[model] || _modelInfo['gpt-4o-mini'];
+      const desc = document.getElementById('ai-model-desc');
+      if (desc) desc.textContent = info.desc;
+      const badge = document.getElementById('route-engine-badge');
+      if (badge && _routeEngine === 'ai') badge.textContent = info.badge;
+      // Actualizar estilos de labels
+      ['gpt-4o-mini','gpt-4o','o3-mini'].forEach(m => {
+        const el = document.getElementById(`model-opt-${m.replace(/[^a-z0-9]/g,'')}`);
+        if (!el) return;
+        if (m === model) { el.style.background='#6366f1'; el.style.color='white'; el.style.borderColor='#6366f1'; }
+        else { el.style.background='transparent'; el.style.color='var(--text-muted)'; el.style.borderColor='var(--border)'; }
+      });
+    }
 
     function setRouteEngine(engine) {
       _routeEngine = engine;
@@ -17633,18 +17678,21 @@
       const badge = document.getElementById('route-engine-badge');
       const label = document.getElementById('btn-generar-ruta-label');
       const btn = document.getElementById('btn-generar-ruta');
+      const modelSel = document.getElementById('ai-model-selector');
       if (engine === 'ai') {
         if (btnAlgo) { btnAlgo.style.background='transparent'; btnAlgo.style.color='var(--text-muted)'; btnAlgo.style.borderColor='var(--border)'; }
         if (btnAI) { btnAI.style.background='#6366f1'; btnAI.style.color='white'; btnAI.style.borderColor='#6366f1'; }
-        if (badge) badge.textContent = 'GPT-4o · Prioriza 80-20 + agrupa por zona';
-        if (label) label.textContent = 'Generar Ruta con IA ✨';
+        if (badge) badge.textContent = _modelInfo[_aiModel]?.badge || 'IA · Prioriza 80-20 + agrupa por zona';
+        if (label) label.textContent = `Generar Ruta con IA ✨`;
         if (btn) { btn.style.background='linear-gradient(135deg, #6366f1, #8b5cf6)'; btn.style.boxShadow='0 4px 14px rgba(99,102,241,0.4)'; }
+        if (modelSel) modelSel.style.display = 'block';
       } else {
         if (btnAlgo) { btnAlgo.style.background='#10b981'; btnAlgo.style.color='white'; btnAlgo.style.borderColor='#10b981'; }
         if (btnAI) { btnAI.style.background='transparent'; btnAI.style.color='var(--text-muted)'; btnAI.style.borderColor='var(--border)'; }
         if (badge) badge.textContent = 'Optimización matemática TSP + Clustering';
         if (label) label.textContent = 'Generar Ruta Óptima';
         if (btn) { btn.style.background='linear-gradient(135deg, #10b981, #059669)'; btn.style.boxShadow='0 4px 14px rgba(16,185,129,0.35)'; }
+        if (modelSel) modelSel.style.display = 'none';
       }
     }
 

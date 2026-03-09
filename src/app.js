@@ -2262,8 +2262,11 @@ async function askOpenAI(systemPrompt, userPrompt, maxTokens = 600) {
  */
 app.post('/api/ai/generate-route', authenticate, async (req, res) => {
   try {
-    const { userId, zone, commune, startLat, startLng, exclude = [] } = req.body;
+    const { userId, zone, commune, startLat, startLng, exclude = [], model } = req.body;
     if (!userId) return res.status(400).json({ success: false, error: 'userId requerido' });
+    // Modelos permitidos; default gpt-4o-mini
+    const ALLOWED_MODELS = ['gpt-4o-mini', 'gpt-4o', 'o3-mini'];
+    const selectedModel = ALLOWED_MODELS.includes(model) ? model : 'gpt-4o-mini';
 
     // 1. Punto de inicio del vendedor
     let startPoint = null;
@@ -2334,13 +2337,35 @@ app.post('/api/ai/generate-route', authenticate, async (req, res) => {
       lng: parseFloat(c.lng).toFixed(4)
     }));
 
-    // 6. GPT-4o-mini con JSON estructurado
+    // 6. Llamar al modelo seleccionado con JSON estructurado
+    // o3-mini usa parámetros distintos (no soporta temperature ni response_format directo)
+    const isO3 = selectedModel === 'o3-mini';
+    const completionParams = {
+      model: selectedModel,
+      max_tokens: isO3 ? 2000 : 1200,
+      messages: null // se llena abajo
+    };
+    if (!isO3) {
+      completionParams.response_format = { type: 'json_object' };
+      completionParams.temperature = 0.2;
+    }
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      response_format: { type: 'json_object' },
-      temperature: 0.2,
-      max_tokens: 1200,
-      messages: [
+      ...completionParams,
+      messages: isO3 ? [
+        // o3-mini no soporta system role, combinar en user
+        { role: 'user', content: `Eres optimizador de rutas de ventas para Leker (Chile).
+REGLAS: jornada 09:00-17:00, 40 km/h, 35 min/visita, MAX 10 clientes/día (ideal 8).
+PRIORIDAD: seg=80-20 > L > N. Misma comuna = mismo día. Si pocos 80-20, completar con L cercanos.
+RESPONDE SOLO JSON VÁLIDO sin texto extra.
+
+Días disponibles: ${weekdays.slice(0,7).join(', ')}
+Punto inicio: ${startPoint ? `(${startPoint.lat.toFixed(3)},${startPoint.lng.toFixed(3)})` : 'desconocido'}
+Comunas:\n${communeSummary}
+Clientes (${clientList.length}): ${JSON.stringify(clientList)}
+
+Formato exacto requerido:
+{"days":{"YYYY-MM-DD":["id1","id2",...],...},"strategy":"explicación"}` }
+      ] : [
         { role: 'system', content: `Eres un optimizador de rutas de ventas para Leker (Chile).
 REGLAS:
 - Jornada 09:00-17:00, velocidad 40 km/h, 35 min/visita
@@ -2363,7 +2388,13 @@ Solo usa fechas de los días disponibles. IDs exactos como los recibes. Max 10/d
       ]
     });
 
-    const aiResp = JSON.parse(completion.choices[0].message.content);
+    // o3-mini puede devolver JSON dentro de texto — extraer con regex si es necesario
+    let rawContent = completion.choices[0].message.content;
+    if (isO3) {
+      const match = rawContent.match(/\{[\s\S]*\}/);
+      if (match) rawContent = match[0];
+    }
+    const aiResp = JSON.parse(rawContent);
     const aiDays = aiResp.days || {};
     const aiStrategy = aiResp.strategy || '';
 
@@ -2425,6 +2456,7 @@ Solo usa fechas de los días disponibles. IDs exactos como los recibes. Max 10/d
       stats: daysResult[sortedDates[0]]?.stats || null,
       zone: zone || null,
       aiGenerated: true,
+      aiModel: selectedModel,
       aiStrategy,
       tokensUsed: completion.usage?.total_tokens || 0
     }});
