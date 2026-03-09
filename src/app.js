@@ -2090,6 +2090,61 @@ app.get('/api/gsheets/:sheet', async (req, res) => {
   }
 });
 
+// =============================================
+// WEBHOOK: Google Apps Script → Backend (push instantáneo)
+// =============================================
+let _lastSheetPushAt = 0; // timestamp del último push recibido
+
+// Apps Script llama a este endpoint cuando edita la hoja Direcciones
+app.post('/api/gsheets/push', async (req, res) => {
+  try {
+    const { rows, secret } = req.body;
+    // Verificar token simple
+    if (secret !== (process.env.SHEETS_WEBHOOK_SECRET || 'leker-sheets-2026')) {
+      return res.status(403).json({ success: false, error: 'Forbidden' });
+    }
+    if (!rows || !Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ success: false, error: 'No rows' });
+    }
+
+    // Importar las filas recibidas directamente a la DB
+    const { createClient } = require('@supabase/supabase-js');
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    let created = 0, updated = 0;
+    for (const row of rows) {
+      if (!row.external_id) continue;
+      const { data: existing } = await supabase.from('clients').select('id').eq('external_id', row.external_id).single();
+      const payload = {};
+      if (row.name)         payload.name         = row.name;
+      if (row.fantasy_name) payload.fantasy_name = row.fantasy_name;
+      if (row.address)      payload.address      = row.address;
+      if (row.commune)      payload.commune      = row.commune;
+      if (row.city)         payload.city         = row.city;
+      if (row.region)       payload.region       = row.region;
+      if (row.geo_link)     payload.geo_link     = row.geo_link;
+      if (existing) {
+        await supabase.from('clients').update(payload).eq('external_id', row.external_id);
+        updated++;
+      } else {
+        payload.external_id = row.external_id;
+        await supabase.from('clients').insert(payload);
+        created++;
+      }
+    }
+    _lastSheetPushAt = Date.now();
+    console.log(`[GSheets Push] +${created} nuevos, ~${updated} actualizados`);
+    res.json({ success: true, created, updated });
+  } catch (error) {
+    console.error('[GSheets Push] Error:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Frontend consulta esto cada 10s para saber si hubo un push nuevo
+app.get('/api/gsheets/last-push', (req, res) => {
+  res.json({ success: true, lastPushAt: _lastSheetPushAt });
+});
+
 // Sync address(es) to Google Sheet (admin only)
 app.post('/api/clients/sync-to-sheet', authorize('admin'), async (req, res) => {
   try {

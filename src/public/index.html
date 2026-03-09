@@ -9940,8 +9940,21 @@
         // Sync silencioso desde GSheets en background — detecta nuevos/cambiados
         setTimeout(() => _silentSyncFromSheets(), 2000);
 
-        // Polling cada 2 min para detectar cambios en Excel aunque el usuario esté en otra pantalla
+        // Polling cada 2 min como fallback
         setInterval(() => _silentSyncFromSheets(true), 2 * 60 * 1000);
+
+        // Chequeo liviano cada 10s: si el backend recibió push de Apps Script → sync inmediato
+        let _lastKnownPush = 0;
+        setInterval(async () => {
+          try {
+            const r = await fetch(`${API}/api/gsheets/last-push`);
+            const d = await r.json();
+            if (d.lastPushAt && d.lastPushAt > _lastKnownPush) {
+              _lastKnownPush = d.lastPushAt;
+              if (_lastKnownPush > 0) _silentSyncFromSheets(true);
+            }
+          } catch(_e) {}
+        }, 10 * 1000);
 
       } catch (error) {
         console.error('Error loading data:', error);
