@@ -9940,6 +9940,9 @@
         // Sync silencioso desde GSheets en background — detecta nuevos/cambiados
         setTimeout(() => _silentSyncFromSheets(), 2000);
 
+        // Polling cada 5 min para detectar cambios en Excel aunque el usuario esté en otra pantalla
+        setInterval(() => _silentSyncFromSheets(true), 5 * 60 * 1000);
+
       } catch (error) {
         console.error('Error loading data:', error);
         updateDashLoadingProgress(100, 'Error al cargar datos');
