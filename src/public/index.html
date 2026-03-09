@@ -12408,9 +12408,32 @@
       const vendorName = exec ? exec.full_name : 'Vendedor';
       const label = commune ? commune : (zone || 'Todas las zonas');
 
-      try {
-        showToast('info', 'Calculando', `Generando ruta — ${label}...`);
+      // Loader IA
+      const _showAiLoader = () => {
+        const wrap = document.getElementById('wizard-step-1');
+        if (!wrap || document.getElementById('ai-route-loader')) return;
+        wrap.style.position = 'relative';
+        const div = document.createElement('div');
+        div.id = 'ai-route-loader';
+        div.style.cssText = 'position:absolute;inset:0;background:var(--bg-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;border-radius:12px;gap:14px;';
+        div.innerHTML = `
+          <div style="width:56px;height:56px;border-radius:50%;border:4px solid var(--border);border-top-color:#6366f1;animation:spin 0.9s linear infinite;"></div>
+          <div style="text-align:center;">
+            <div style="font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">✨ IA generando ruta...</div>
+            <div id="ai-loader-msg" style="font-size:12px;color:var(--text-muted);">Analizando clientes y zonas</div>
+          </div>`;
+        wrap.appendChild(div);
+        // Mensajes animados
+        const msgs = ['Agrupando por proximidad geográfica...','Priorizando clientes 80-20...','Optimizando orden de visitas...','Calculando tiempos de ruta...'];
+        let mi = 0;
+        div._interval = setInterval(() => { mi = (mi+1)%msgs.length; const el=document.getElementById('ai-loader-msg'); if(el) el.textContent=msgs[mi]; }, 2500);
+      };
+      const _hideAiLoader = () => {
+        const div = document.getElementById('ai-route-loader');
+        if (div) { clearInterval(div._interval); div.remove(); }
+      };
 
+      try {
         const excludeParam = excludedClientIds.size > 0 ? `&exclude=${[...excludedClientIds].join(',')}` : '';
 
         // Si el sector es geo-cluster, pasar IDs en vez de commune
@@ -12429,10 +12452,9 @@
         let data;
         if (_routeEngine === 'ai') {
           // Motor IA: POST /api/ai/generate-route
-          showToast('info', '✨ IA', 'Consultando GPT-4o para generar tu ruta...', 4000);
+          _showAiLoader();
           const body = { userId: selectedExecutiveId, zone, exclude: [...excludedClientIds], model: _aiModel };
           if (commune) body.commune = commune;
-          // Si hay sector geo-cluster con IDs específicos, pasarlos como includeIds
           const zoneObj2 = _zonesData && _zonesData.find(z => z.zone === zone || zone === '');
           const sectorObj2 = zoneObj2 && zoneObj2.sectors ? zoneObj2.sectors.find(s => s.name === commune) : null;
           if (sectorObj2 && sectorObj2._clientIds && sectorObj2._clientIds.length) {
@@ -12443,14 +12465,17 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
           });
+          _hideAiLoader();
           data = await aiRes.json();
         } else {
+          showToast('info', 'Calculando', `Generando ruta — ${label}...`);
           // Motor algoritmo (original)
           const res = await fetch(`${API}/routes/optimize/${selectedExecutiveId}?zone=${encodeURIComponent(zone)}${communeParam}${includeParam}${excludeParam}`);
           data = await res.json();
         }
 
         if (!data.success) {
+          _hideAiLoader();
           showToast('error', 'Error', data.error || 'Error al calcular ruta');
           return;
         }
@@ -12489,6 +12514,7 @@
         }
 
       } catch (error) {
+        _hideAiLoader();
         console.error('Error generating optimized route:', error);
         showToast('error', 'Error', 'No se pudo generar la ruta optimizada');
       }

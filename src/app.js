@@ -2319,81 +2319,68 @@ app.post('/api/ai/generate-route', authenticate, async (req, res) => {
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    // 4. Resumen de comunas para contexto geográfico
-    const cg = {};
+    // 4. Construir clusters geográficos por comuna (agrupación FORZADA)
+    // Esto evita que la IA mezcle clientes de distintas zonas en el mismo día
+    const cgMap = {};
     clients.forEach(c => {
       const k = c.commune || 'Sin Comuna';
-      if (!cg[k]) cg[k] = { lat:0, lng:0, n:0, ids:[] };
-      cg[k].lat += parseFloat(c.lat); cg[k].lng += parseFloat(c.lng);
-      cg[k].n++; cg[k].ids.push(c.id);
+      if (!cgMap[k]) cgMap[k] = { lat:0, lng:0, n:0, c8020:[], cL:[], cN:[] };
+      cgMap[k].lat += parseFloat(c.lat); cgMap[k].lng += parseFloat(c.lng); cgMap[k].n++;
+      const seg = c.segmentation || 'L';
+      if (seg === '80-20') cgMap[k].c8020.push(c.id);
+      else if (seg === 'N') cgMap[k].cN.push(c.id);
+      else cgMap[k].cL.push(c.id);
     });
-    const communeSummary = Object.entries(cg).map(([k,v]) =>
-      `${k}: ${v.n} clientes, centro (${(v.lat/v.n).toFixed(3)},${(v.lng/v.n).toFixed(3)})`).join('\n');
+    // Clusters como lista estructurada para el prompt
+    const clusters = Object.entries(cgMap).map(([comm, v]) => ({
+      commune: comm,
+      total: v.n,
+      center: `(${(v.lat/v.n).toFixed(3)},${(v.lng/v.n).toFixed(3)})`,
+      ids_8020: v.c8020,
+      ids_L: v.cL.slice(0, 15), // max 15 L por comuna para no explotar tokens
+      ids_N: v.cN.slice(0, 5)
+    })).sort((a,b) => b.ids_8020.length - a.ids_8020.length); // primero las comunas con más 80-20
 
-    // 5. Lista compacta para IA (max 60 — UUIDs son largos, cuidar tokens)
-    // Priorizar 80-20 primero, luego L, luego N
-    const sorted = [...clients].sort((a,b) => {
-      const p = {'80-20':0,'L':1,'N':2};
-      return (p[a.segmentation]??1) - (p[b.segmentation]??1);
-    });
-    const clientList = sorted.slice(0,60).map(c => ({
-      id: c.id,
-      name: (c.fantasy_name||c.name||'').substring(0,20),
-      seg: c.segmentation||'L',
-      com: (c.commune||'?').substring(0,15),
-      lat: parseFloat(c.lat).toFixed(3),
-      lng: parseFloat(c.lng).toFixed(3)
-    }));
-
-    // 6. Llamar al modelo seleccionado con JSON estructurado
-    // o3-mini usa parámetros distintos (no soporta temperature ni response_format directo)
+    // 5. Llamar al modelo seleccionado
     const isO3 = selectedModel === 'o3-mini';
     const completionParams = {
       model: selectedModel,
-      max_tokens: isO3 ? 4000 : 4000,
-      messages: null // se llena abajo
+      max_tokens: 4000,
+      messages: null
     };
     if (!isO3) {
       completionParams.response_format = { type: 'json_object' };
       completionParams.temperature = 0.2;
     }
+
+    const systemPrompt = `Eres un optimizador de rutas de ventas para Leker (Chile).
+REGLAS ESTRICTAS:
+- Jornada 09:00-17:00 (480 min), velocidad 40 km/h, 35 min/visita
+- MÁXIMO 10 clientes por día (ideal 7-8). Si una comuna tiene más de 10, distribuye en días consecutivos.
+- CRÍTICO: NO mezcles clientes de comunas geográficamente lejanas en el mismo día. Cada día debe ser UNA zona geográfica compacta.
+- PRIORIDAD por día: incluir TODOS los 80-20 de la comuna, luego completar con L del mismo lugar hasta llegar a 8.
+- Si una comuna tiene <4 clientes, combínala con la comuna más CERCANA geográficamente (misma lat/lng aproximada).
+- Ignora los clientes N salvo que no haya más 80-20 ni L disponibles.
+Responde SOLO con JSON válido.`;
+
+    const userPrompt = `Días disponibles: ${weekdays.slice(0,10).join(', ')}
+Punto de inicio vendedor: ${startPoint ? `(${startPoint.lat.toFixed(3)},${startPoint.lng.toFixed(3)})` : 'desconocido'}
+
+CLUSTERS GEOGRÁFICOS (agrupa por commune, no mezcles):
+${JSON.stringify(clusters)}
+
+REGLA: Asigna IDs de ids_8020 primero, luego ids_L para completar el día. Máx 10/día. No uses IDs de communes distintas el mismo día salvo que sean geográficamente contiguas.
+
+Responde exactamente con este JSON:
+{"days":{"YYYY-MM-DD":["uuid1","uuid2",...],...},"strategy":"breve descripción de la estrategia"}
+
+Solo usa fechas de los días disponibles. UUIDs exactos de las listas ids_8020/ids_L/ids_N. Max 10/día.`;
+
     const completion = await openai.chat.completions.create({
       ...completionParams,
-      messages: isO3 ? [
-        // o3-mini no soporta system role, combinar en user
-        { role: 'user', content: `Eres optimizador de rutas de ventas para Leker (Chile).
-REGLAS: jornada 09:00-17:00, 40 km/h, 35 min/visita, MAX 10 clientes/día (ideal 8).
-PRIORIDAD: seg=80-20 > L > N. Misma comuna = mismo día. Si pocos 80-20, completar con L cercanos.
-RESPONDE SOLO JSON VÁLIDO sin texto extra.
-
-Días disponibles: ${weekdays.slice(0,7).join(', ')}
-Punto inicio: ${startPoint ? `(${startPoint.lat.toFixed(3)},${startPoint.lng.toFixed(3)})` : 'desconocido'}
-Comunas:\n${communeSummary}
-Clientes (${clientList.length}): ${JSON.stringify(clientList)}
-
-Formato exacto requerido:
-{"days":{"YYYY-MM-DD":["id1","id2",...],...},"strategy":"explicación"}` }
-      ] : [
-        { role: 'system', content: `Eres un optimizador de rutas de ventas para Leker (Chile).
-REGLAS:
-- Jornada 09:00-17:00, velocidad 40 km/h, 35 min/visita
-- MÁXIMO 10 clientes por día (ideal 8)
-- PRIORIDAD: seg=80-20 > L > N
-- Misma comuna = mismo día (minimiza desplazamiento)
-- Si hay pocos 80-20, completar con L cercanos geográficamente
-Responde SOLO con JSON válido.` },
-        { role: 'user', content: `Días disponibles: ${weekdays.slice(0,7).join(', ')}
-Punto inicio: ${startPoint ? `(${startPoint.lat.toFixed(3)},${startPoint.lng.toFixed(3)})` : 'desconocido'}
-Comunas:\n${communeSummary}
-
-Clientes (${clientList.length}):
-${JSON.stringify(clientList)}
-
-Responde exactamente:
-{"days":{"YYYY-MM-DD":["id1","id2",...],...},"strategy":"explicación breve"}
-
-Solo usa fechas de los días disponibles. IDs exactos como los recibes. Max 10/día.` }
-      ]
+      messages: isO3
+        ? [{ role: 'user', content: systemPrompt + '\n\n' + userPrompt }]
+        : [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }]
     });
 
     // o3-mini puede devolver JSON dentro de texto — extraer con regex si es necesario
