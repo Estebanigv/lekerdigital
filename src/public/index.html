@@ -4982,29 +4982,41 @@
             <div class="card-body">
               <!-- KPIs reales calculados desde allClients -->
               <div id="segmentation-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                <div style="text-align: center; padding: 14px 8px; background: rgba(212,175,55,0.08); border-radius: 10px; border: 1px solid rgba(212,175,55,0.3); cursor: pointer;" onclick="goToClientsBySegmentation('80-20')">
+                <!-- 80-20: clientes de alta venta por vendedor -->
+                <div style="text-align: center; padding: 14px 8px; background: rgba(212,175,55,0.08); border-radius: 10px; border: 1px solid rgba(212,175,55,0.3); cursor: pointer;" onclick="goToClientsBySegmentation('80-20')" title="Clientes que generan el 80% de las ventas por vendedor">
                   <div style="font-size: 26px; font-weight: 700; color: #b8860b;" id="seg-A-count">-</div>
                   <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">⭐ 80/20 Clave</div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Alta venta por vendedor</div>
                 </div>
-                <div style="text-align: center; padding: 14px 8px; background: rgba(59,130,246,0.08); border-radius: 10px; border: 1px solid rgba(59,130,246,0.2); cursor: pointer;" onclick="filterCrmAndGo('has_geo')">
-                  <div style="font-size: 26px; font-weight: 700; color: #3b82f6;" id="seg-B-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Con geo</div>
+                <!-- L: compraron en Leker 2025 -->
+                <div style="text-align: center; padding: 14px 8px; background: rgba(59,130,246,0.08); border-radius: 10px; border: 1px solid rgba(59,130,246,0.2); cursor: pointer;" onclick="goToClientsBySegmentation('L')" title="Clientes que compraron en Leker durante 2025">
+                  <div style="font-size: 26px; font-weight: 700; color: #3b82f6;" id="seg-L-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">🔵 L — Leker 2025</div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Compraron en 2025</div>
                 </div>
-                <div style="text-align: center; padding: 14px 8px; background: rgba(16,185,129,0.08); border-radius: 10px; border: 1px solid rgba(16,185,129,0.2); cursor: pointer;" onclick="filterCrmAndGo('has_gps')">
-                  <div style="font-size: 26px; font-weight: 700; color: #10b981;" id="seg-C-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Con lat/lng</div>
+                <!-- N: clientes nuevos a verificar -->
+                <div style="text-align: center; padding: 14px 8px; background: rgba(16,185,129,0.08); border-radius: 10px; border: 1px solid rgba(16,185,129,0.2); cursor: pointer;" onclick="goToClientsBySegmentation('N')" title="Base de datos de clientes nuevos con dirección, pendientes de verificar">
+                  <div style="font-size: 26px; font-weight: 700; color: #10b981;" id="seg-N-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">🟢 N — Nuevos</div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">A verificar con GPS</div>
                 </div>
-                <div style="text-align: center; padding: 14px 8px; background: rgba(99,102,241,0.08); border-radius: 10px; border: 1px solid rgba(99,102,241,0.2); cursor: pointer;" onclick="filterCrmAndGo('has_vendor')">
-                  <div style="font-size: 26px; font-weight: 700; color: #6366f1;" id="seg-D-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Con vendedor</div>
+                <!-- Con GPS: pueden rutearse -->
+                <div style="text-align: center; padding: 14px 8px; background: rgba(99,102,241,0.08); border-radius: 10px; border: 1px solid rgba(99,102,241,0.2); cursor: pointer;" onclick="filterCrmAndGo('has_gps')">
+                  <div style="font-size: 26px; font-weight: 700; color: #6366f1;" id="seg-C-count">-</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">📍 Con GPS</div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Listos para rutear</div>
                 </div>
+                <!-- Sin geo: pendientes de geolocalizar -->
                 <div style="text-align: center; padding: 14px 8px; background: rgba(239,68,68,0.06); border-radius: 10px; border: 1px solid rgba(239,68,68,0.2); cursor: pointer;" onclick="filterCrmAndGo('no_geo')">
                   <div style="font-size: 26px; font-weight: 700; color: #ef4444;" id="seg-E-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Sin geo</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">⚠️ Sin geo</div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Pendientes GPS</div>
                 </div>
+                <!-- Total -->
                 <div style="text-align: center; padding: 14px 8px; background: var(--bg-hover); border-radius: 10px; border: 1px solid var(--border); cursor: pointer;" onclick="document.querySelector('[data-tab=crm]')?.click()">
                   <div style="font-size: 26px; font-weight: 700; color: var(--text-primary);" id="seg-total-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Total</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">📊 Total</div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Base completa</div>
                 </div>
               </div>
             </div>
@@ -24089,17 +24101,17 @@
       const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = fmt(v); };
 
       const seg8020   = allClients.filter(c => c.segmentation === '80-20').length;
-      const conGeo    = allClients.filter(c => c.geo_link).length;          // URL de Maps (= "con geo" en Datos Comerciales)
-      const conGPS    = allClients.filter(c => c.lat && c.lng).length;      // Coordenadas exactas en DB
-      const conVend   = allClients.filter(c => c.assigned_user_id).length;
-      const sinGeo    = allClients.filter(c => !c.geo_link).length;         // Sin link (= "sin geo" en Datos Comerciales)
+      const segL      = allClients.filter(c => c.segmentation === 'L').length;       // Compraron en Leker 2025
+      const segN      = allClients.filter(c => c.segmentation === 'N').length;       // Clientes nuevos a verificar
+      const conGPS    = allClients.filter(c => c.lat && c.lng).length;               // Coordenadas exactas en DB
+      const sinGeo    = allClients.filter(c => !c.geo_link).length;                  // Sin link geo
       const total     = allClients.length;
 
       // Tarjetas KPI
       set('seg-A-count', seg8020);   // 80/20 Clave
-      set('seg-B-count', conGeo);    // Con geo (= geo_link, coincide con Datos Comerciales)
-      set('seg-C-count', conGPS);    // Con lat/lng (coordenadas exactas)
-      set('seg-D-count', conVend);   // Con vendedor
+      set('seg-L-count', segL);      // L — Compraron Leker 2025
+      set('seg-N-count', segN);      // N — Clientes nuevos
+      set('seg-C-count', conGPS);    // Con GPS (lat/lng)
       set('seg-E-count', sinGeo);    // Sin geo
       set('seg-total-count', total);
 

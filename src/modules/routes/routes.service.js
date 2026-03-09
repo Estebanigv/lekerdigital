@@ -141,10 +141,10 @@ function optimizeRouteOrder(clients, startPoint = null) {
  * al centroide, y para cuando se agota el presupuesto de tiempo (480 min).
  */
 function clusterClientsByProximity(clients) {
-  const TIME_BUDGET_MIN = 540; // 9 horas (09:00 a 18:00)
+  const TIME_BUDGET_MIN = 480; // 8 horas (09:00 a 17:00)
   const SPEED_KMH = 40;
   const VISIT_DURATION_MIN = 35; // 35 min por visita
-  const MAX_PER_CLUSTER = 13;   // máx clientes por día (con 35min/visita en 540min)
+  const MAX_PER_CLUSTER = 10;   // máx clientes por día (8-10 por jornada)
 
   if (!clients || clients.length === 0) return [];
 
@@ -1566,7 +1566,7 @@ class RoutesService {
       }
     }
 
-    // Construir query base
+    // Query 1: clientes asignados al vendedor con coords
     let query = supabase
       .from('clients')
       .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, priority, zone')
@@ -1574,24 +1574,47 @@ class RoutesService {
       .not('lat', 'is', null)
       .not('lng', 'is', null);
 
-    // Filtrar por zona si se especifica (zona vacía = todas las zonas)
-    if (zone && zone.trim() !== '') {
-      query = query.eq('zone', zone);
-    }
-    // Filtrar por sector/comuna si se especifica
-    if (commune && commune.trim() !== '') {
-      query = query.eq('commune', commune);
+    if (zone && zone.trim() !== '') query = query.eq('zone', zone);
+    if (commune && commune.trim() !== '') query = query.eq('commune', commune);
+
+    const { data: assignedClients, error } = await query;
+    if (error) throw error;
+
+    // Query 2: clientes SIN vendedor asignado con coords en las mismas comunas/zonas
+    // Solo se agregan si hay al menos 1 cliente asignado (para tener referencia de zona)
+    let unassignedClients = [];
+    if (assignedClients && assignedClients.length > 0) {
+      const communes = [...new Set(assignedClients.map(c => c.commune).filter(Boolean))];
+      const zones = [...new Set(assignedClients.map(c => c.zone).filter(Boolean))];
+
+      let uQuery = supabase
+        .from('clients')
+        .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, priority, zone')
+        .is('assigned_user_id', null)
+        .not('lat', 'is', null)
+        .not('lng', 'is', null);
+
+      // Filtrar por comunas o zonas del vendedor
+      if (commune && commune.trim() !== '') {
+        uQuery = uQuery.eq('commune', commune);
+      } else if (zones.length > 0) {
+        uQuery = uQuery.in('zone', zones);
+      } else if (communes.length > 0) {
+        uQuery = uQuery.in('commune', communes);
+      }
+
+      const { data: uData } = await uQuery.limit(200);
+      // Marcar como no asignados para distinguirlos en UI; prioridad más baja que N
+      unassignedClients = (uData || []).map(c => ({ ...c, _unassigned: true, segmentation: c.segmentation || 'N' }));
     }
 
-    const { data: allClients, error } = await query;
+    const allClients = [...(assignedClients || []), ...unassignedClients];
 
     // Filtrar: excluir IDs excluidos, incluir solo IDs si se especifica whitelist
-    let clients = (allClients || []).filter(c => !excludeIds.includes(c.id));
+    let clients = allClients.filter(c => !excludeIds.includes(c.id));
     if (includeIds.length > 0) {
       clients = clients.filter(c => includeIds.includes(c.id));
     }
-
-    if (error) throw error;
 
     if (!clients || clients.length === 0) {
       return {
@@ -2143,11 +2166,11 @@ class RoutesService {
   calculateDayTimeline(orderedClients, startTime = '09:00', startPoint = null) {
     const SPEED_KMH = 40;
     const VISIT_DURATION_MIN = 35;
-    const END_OF_DAY = '18:00';
+    const END_OF_DAY = '17:00';
 
     const [startH, startM] = startTime.split(':').map(Number);
     let currentMinutes = startH * 60 + startM;
-    const endMinutes = 18 * 60; // 18:00
+    const endMinutes = 17 * 60; // 17:00
 
     const timeline = [];
     let totalDistanceKm = 0;
@@ -2219,7 +2242,7 @@ class RoutesService {
    * @returns {Object} { schedule: {date: {clients, totalDistance, totalHours, ...}}, sortedDates }
    */
   _splitIntoDays(clientsToVisit, weekdays, startPoint = null) {
-    const MAX_MINUTES_PER_DAY = 540; // 09:00–18:00
+    const MAX_MINUTES_PER_DAY = 480; // 09:00–17:00
     const SPEED_KMH = 40;
     const VISIT_MIN = 35;
 
@@ -2311,7 +2334,7 @@ class RoutesService {
 
     // Step 4: Move overloaded clients (arriving after 17:00) to next available day
     const MIN_PER_DAY = 3;
-    const MAX_PER_DAY = 13;
+    const MAX_PER_DAY = 10;
     const sortedDates = Object.keys(optimizedSchedule).sort();
     for (let i = 0; i < sortedDates.length; i++) {
       const dayData = optimizedSchedule[sortedDates[i]];
