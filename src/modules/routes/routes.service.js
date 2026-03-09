@@ -2310,6 +2310,8 @@ class RoutesService {
     }
 
     // Step 4: Move overloaded clients (arriving after 17:00) to next available day
+    const MIN_PER_DAY = 3;
+    const MAX_PER_DAY = 13;
     const sortedDates = Object.keys(optimizedSchedule).sort();
     for (let i = 0; i < sortedDates.length; i++) {
       const dayData = optimizedSchedule[sortedDates[i]];
