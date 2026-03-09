@@ -12501,14 +12501,17 @@
           // Marcar paso anterior como completado
           if (si > 0) {
             const prev = document.getElementById(`ai-step-${si-1}`);
-            if (prev) { prev.style.opacity='0.6'; prev.querySelector('div').style.background='rgba(99,102,241,0.15)'; }
+            if (prev) {
+              prev.style.opacity='0.6';
+              const pd = prev.querySelector('div'); if (pd) pd.style.background='rgba(99,102,241,0.15)';
+            }
           }
           // Activar paso actual
           const cur = document.getElementById(`ai-step-${si}`);
           if (cur) {
             cur.style.opacity='1';
-            cur.querySelector('div').style.background='rgba(99,102,241,0.25)';
-            cur.querySelector('i').style.color='#6366f1';
+            const cd = cur.querySelector('div'); if (cd) cd.style.background='rgba(99,102,241,0.25)';
+            const ci = cur.querySelector('i,svg'); if (ci) ci.style.color='#6366f1';
           }
           const lbl = document.getElementById('ai-loader-step-label');
           const pct = document.getElementById('ai-loader-pct');
