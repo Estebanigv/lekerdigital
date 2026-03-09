@@ -2083,6 +2083,11 @@ app.get('/api/gsheets/all', async (req, res) => {
   }
 });
 
+// Rutas específicas ANTES de /:sheet para evitar conflictos
+app.get('/api/gsheets/last-push', (req, res) => {
+  res.json({ success: true, lastPushAt: global._lastSheetPushAt || 0 });
+});
+
 app.get('/api/gsheets/:sheet', async (req, res) => {
   try {
     const data = await googleSheetsService.getSheet(req.params.sheet);
@@ -2095,7 +2100,7 @@ app.get('/api/gsheets/:sheet', async (req, res) => {
 // =============================================
 // WEBHOOK: Google Apps Script → Backend (push instantáneo)
 // =============================================
-let _lastSheetPushAt = 0; // timestamp del último push recibido
+global._lastSheetPushAt = global._lastSheetPushAt || 0; // timestamp del último push recibido (global para Vercel serverless)
 
 // Apps Script llama a este endpoint cuando edita la hoja Direcciones
 app.post('/api/gsheets/push', async (req, res) => {
@@ -2133,18 +2138,13 @@ app.post('/api/gsheets/push', async (req, res) => {
         created++;
       }
     }
-    _lastSheetPushAt = Date.now();
+    global._lastSheetPushAt = Date.now();
     console.log(`[GSheets Push] +${created} nuevos, ~${updated} actualizados`);
     res.json({ success: true, created, updated });
   } catch (error) {
     console.error('[GSheets Push] Error:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
-});
-
-// Frontend consulta esto cada 10s para saber si hubo un push nuevo
-app.get('/api/gsheets/last-push', (req, res) => {
-  res.json({ success: true, lastPushAt: _lastSheetPushAt });
 });
 
 // Sync address(es) to Google Sheet (admin only)
