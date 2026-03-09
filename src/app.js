@@ -2423,9 +2423,9 @@ Solo usa fechas de los días disponibles. IDs exactos como los recibes. Max 10/d
           estimatedTime: Math.round(tl.totalHours*60),
           totalHours: tl.totalHours,
           endTime: tl.endTime,
-          fuelLiters: Math.round(liters*10)/10,
-          fuelCostCLP: fuelCLP,
-          fuelCostFormatted: `$${fuelCLP.toLocaleString('es-CL')}`
+          litersUsed: Math.round(liters*100)/100,
+          costCLP: fuelCLP,
+          costFormatted: `$${fuelCLP.toLocaleString('es-CL')}`
         },
         communes
       };
@@ -2449,9 +2449,9 @@ Solo usa fechas de los días disponibles. IDs exactos como los recibes. Max 10/d
         totalClients, totalDays: sortedDates.length,
         distanceKm: Math.round(totalDistKm*10)/10,
         estimatedTime: totalMin,
-        fuelLiters: Math.round(totalFuelL*10)/10,
-        fuelCostCLP: totalFuelCLP,
-        fuelCostFormatted: `$${totalFuelCLP.toLocaleString('es-CL')}`
+        litersUsed: Math.round(totalFuelL*100)/100,
+        costCLP: totalFuelCLP,
+        costFormatted: `$${totalFuelCLP.toLocaleString('es-CL')}`
       },
       stats: daysResult[sortedDates[0]]?.stats || null,
       zone: zone || null,
