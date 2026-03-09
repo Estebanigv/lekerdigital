@@ -2289,18 +2289,18 @@ app.post('/api/ai/generate-route', authenticate, async (req, res) => {
     const { data: rawClients, error } = await query;
     if (error) throw error;
 
-    // Agregar no-asignados en mismas zonas/comunas
+    // Agregar no-asignados SOLO en las mismas comunas exactas (nunca por zona — evita traer clientes de regiones lejanas)
     let unassigned = [];
     if (rawClients && rawClients.length > 0) {
       const communes = [...new Set(rawClients.map(c => c.commune).filter(Boolean))];
-      const zones = [...new Set(rawClients.map(c => c.zone).filter(Boolean))];
-      let uq = supabase.from('clients').select('id,name,fantasy_name,commune,lat,lng,segmentation,zone')
-        .is('assigned_user_id',null).not('lat','is',null).not('lng','is',null);
-      if (commune && commune.trim()) uq = uq.eq('commune', commune);
-      else if (zones.length) uq = uq.in('zone', zones);
-      else if (communes.length) uq = uq.in('commune', communes);
-      const { data: udata } = await uq.limit(80);
-      unassigned = (udata || []).map(c => ({ ...c, segmentation: c.segmentation || 'N' }));
+      if (communes.length > 0) {
+        let uq = supabase.from('clients').select('id,name,fantasy_name,commune,lat,lng,segmentation,zone')
+          .is('assigned_user_id',null).not('lat','is',null).not('lng','is',null)
+          .in('commune', communes);
+        if (commune && commune.trim()) uq = uq.eq('commune', commune);
+        const { data: udata } = await uq.limit(40);
+        unassigned = (udata || []).map(c => ({ ...c, segmentation: c.segmentation || 'N' }));
+      }
     }
 
     let clients = [...(rawClients || []), ...unassigned].filter(c => !exclude.includes(c.id));
@@ -2621,6 +2621,68 @@ Para cada uno recomienda: mantener frecuencia actual, reducir a cada 45 días, o
     res.json({ success: true, analysis, clientsAnalyzed: lowConversion.length });
   } catch (error) {
     console.error('[AI frequency-analysis]', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/ai/route-chat
+ * Asistente conversacional con contexto de la ruta actual.
+ * Puede responder preguntas, sugerir cambios, explicar decisiones.
+ * Body: { message, routeContext: { vendorName, days, totalStats }, history: [{role,content}] }
+ */
+app.post('/api/ai/route-chat', authenticate, async (req, res) => {
+  try {
+    if (!openai) return res.status(400).json({ success: false, error: 'OpenAI no configurado' });
+    const { message, routeContext, history = [] } = req.body;
+    if (!message) return res.status(400).json({ success: false, error: 'Mensaje requerido' });
+
+    // Construir resumen compacto de la ruta para el contexto
+    let routeSummary = '';
+    if (routeContext) {
+      const { vendorName, days, totalStats } = routeContext;
+      routeSummary = `RUTA ACTUAL — ${vendorName || 'Vendedor'}:\n`;
+      if (totalStats) {
+        routeSummary += `Total: ${totalStats.totalClients} clientes, ${totalStats.totalDays} días, ${totalStats.distanceKm} km, costo bencina $${(totalStats.costCLP||0).toLocaleString('es-CL')}\n`;
+      }
+      if (days) {
+        Object.entries(days).forEach(([date, dayData]) => {
+          const clients = dayData.route || [];
+          const communes = [...new Set(clients.map(c => c.commune).filter(Boolean))];
+          routeSummary += `\n${date}: ${clients.length} clientes en ${communes.join(', ')} — ${dayData.stats?.distanceKm||0}km, ${dayData.stats?.estimatedTime||0}min, termina ${dayData.stats?.endTime||'?'}`;
+          clients.forEach((c,i) => {
+            routeSummary += `\n  ${i+1}. ${c.fantasy_name||c.name} [${c.segmentation||'L'}] ${c.commune||''}`;
+          });
+        });
+      }
+    }
+
+    const systemPrompt = `Eres LEKER AI, el asistente inteligente de rutas de ventas de la plataforma Leker (distribuidora de productos de limpieza y hogar en Chile).
+Tienes acceso al contexto completo de la ruta actual del vendedor.
+Tu rol es: responder preguntas sobre la ruta, explicar decisiones, sugerir mejoras, alertar sobre problemas (clientes muy alejados, jornadas largas, falta de 80-20).
+Cuando el usuario pida mover un cliente o cambiar algo, responde con la sugerencia en formato claro y pregunta si quiere aplicarla.
+Responde SIEMPRE en español. Sé conciso, profesional y útil. Máximo 4-5 líneas salvo que te pidan más detalle.
+
+${routeSummary}`;
+
+    // Historial de conversación (máx últimos 6 mensajes)
+    const recentHistory = history.slice(-6).map(m => ({ role: m.role, content: m.content }));
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      temperature: 0.5,
+      max_tokens: 500,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...recentHistory,
+        { role: 'user', content: message }
+      ]
+    });
+
+    const reply = completion.choices[0].message.content.trim();
+    res.json({ success: true, reply, tokensUsed: completion.usage?.total_tokens || 0 });
+  } catch (error) {
+    console.error('[AI route-chat]', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
