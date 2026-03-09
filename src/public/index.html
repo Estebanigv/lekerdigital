@@ -5392,16 +5392,7 @@
         </div>
 
         <!-- ============ SUBTAB 2: GESTIONAR RUTAS ============ -->
-        <div class="route-subpanel" id="route-subpanel-gestionar" style="position:relative;">
-
-          <!-- Botón flotante LEKER AI — siempre visible en Gestionar Rutas -->
-          <button id="btn-route-chat-float" onclick="openRouteChat()" title="LEKER AI Asistente de Rutas"
-            style="position:absolute;bottom:16px;right:16px;z-index:50;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;border-radius:50px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 4px 20px rgba(99,102,241,0.45);transition:transform 0.15s,box-shadow 0.15s;"
-            onmouseenter="this.style.transform='scale(1.05)';this.style.boxShadow='0 6px 24px rgba(99,102,241,0.55)'"
-            onmouseleave="this.style.transform='scale(1)';this.style.boxShadow='0 4px 20px rgba(99,102,241,0.45)'">
-            <i data-lucide="sparkles" style="width:15px;height:15px;"></i>
-            <span>LEKER AI</span>
-          </button>
+        <div class="route-subpanel" id="route-subpanel-gestionar">
 
           <!-- Wizard Stepper -->
           <div class="route-stepper">
@@ -5742,6 +5733,9 @@
                   <button onclick="goToRouteStep(1)" class="btn btn-secondary" style="padding: 10px 20px; font-size: 13px; border-radius: 8px; font-weight: 600;">
                     <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Volver
                   </button>
+                  <button onclick="openRouteChat()" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;border:none;padding:10px 16px;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(99,102,241,0.35);">
+                    <i data-lucide="sparkles" style="width:13px;height:13px;"></i> LEKER AI
+                  </button>
                   <button onclick="goToRouteStep(3)" class="btn" style="background: var(--accent); color: white; padding: 10px 24px; font-weight: 700; font-size: 13px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 8px rgba(99,102,241,0.3);">
                     Revisar Clientes <i data-lucide="arrow-right" style="width: 14px; height: 14px; margin-left: 4px;"></i>
                   </button>
@@ -5920,7 +5914,7 @@
           </div>
 
           <!-- Modal: LEKER AI — Asistente de Ruta -->
-          <div id="route-chat-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:flex-end;justify-content:flex-end;padding:16px;">
+          <div id="route-chat-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999;align-items:flex-end;justify-content:flex-start;padding:0 0 16px 220px;">
             <div style="background:var(--bg-card);border-radius:16px;width:380px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,0.4);border:1px solid var(--border);overflow:hidden;">
               <!-- Header -->
               <div style="padding:14px 16px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
