@@ -41,6 +41,8 @@ app.use('/api/auth', authRouter);
 app.use('/api', (req, res, next) => {
   // Skip auth for /api/auth/* routes (login, setup, check-setup)
   if (req.path.startsWith('/auth')) return next();
+  // Skip auth for webhook push desde Apps Script (tiene su propio secret)
+  if (req.path === '/gsheets/push' || req.path === '/gsheets/last-push') return next();
   authenticate(req, res, next);
 });
 app.use('/routes', authenticate);
