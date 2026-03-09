@@ -141,10 +141,10 @@ function optimizeRouteOrder(clients, startPoint = null) {
  * al centroide, y para cuando se agota el presupuesto de tiempo (480 min).
  */
 function clusterClientsByProximity(clients) {
-  const TIME_BUDGET_MIN = 480; // 8 horas (09:00 a 17:00)
+  const TIME_BUDGET_MIN = 540; // 9 horas (09:00 a 18:00)
   const SPEED_KMH = 40;
-  const VISIT_DURATION_MIN = 60;
-  const MAX_PER_CLUSTER = 8;
+  const VISIT_DURATION_MIN = 35; // 35 min por visita
+  const MAX_PER_CLUSTER = 13;   // máx clientes por día (con 35min/visita en 540min)
 
   if (!clients || clients.length === 0) return [];
 
@@ -2142,12 +2142,12 @@ class RoutesService {
    */
   calculateDayTimeline(orderedClients, startTime = '09:00', startPoint = null) {
     const SPEED_KMH = 40;
-    const VISIT_DURATION_MIN = 60;
-    const END_OF_DAY = '17:00';
+    const VISIT_DURATION_MIN = 35;
+    const END_OF_DAY = '18:00';
 
     const [startH, startM] = startTime.split(':').map(Number);
     let currentMinutes = startH * 60 + startM;
-    const endMinutes = 17 * 60; // 17:00
+    const endMinutes = 18 * 60; // 18:00
 
     const timeline = [];
     let totalDistanceKm = 0;
