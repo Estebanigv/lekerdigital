@@ -12591,6 +12591,7 @@
     // LEKER AI — Asistente conversacional de ruta
     // =============================================
     let _routeChatHistory = [];
+    let _chatLastPanelId = '';
 
     function openRouteChat() {
       const modal = document.getElementById('route-chat-modal');
@@ -12609,21 +12610,37 @@
       const ctxLabel = document.getElementById('leker-ai-context-label');
       if (ctxLabel) ctxLabel.textContent = `${panelName} · GPT-4o mini`;
 
-      // Mensaje inicial si es la primera vez
+      const panelChanged = _chatLastPanelId && _chatLastPanelId !== panelId;
+      _chatLastPanelId = panelId;
+
+      // Primera vez: saludo completo. Cambio de panel: mensaje contextual breve
       if (_routeChatHistory.length === 0) {
         const exec = executives.find(e => e.id === selectedExecutiveId);
         const vName = exec ? exec.full_name : null;
         let greeting;
-        if ((panelId === 'panel-routes') && (optimizedRouteData?.days || optimizedRouteData?.route?.length)) {
+        if (panelId === 'panel-routes' && (optimizedRouteData?.days || optimizedRouteData?.route?.length)) {
           const days = optimizedRouteData?.days ? Object.keys(optimizedRouteData.days).length : 0;
           const clients = optimizedRouteData?.totalStats?.totalClients || optimizedRouteData?.route?.length || 0;
           const km = optimizedRouteData?.totalStats?.distanceKm || optimizedRouteData?.stats?.distanceKm || 0;
-          greeting = `Hola 👋 Soy **LEKER AI**.\n\nRuta de **${vName||'el vendedor'}**: **${clients} clientes** · **${days} días** · ${km} km.\n\nPuedo:\n• Explicar por qué un cliente está en X día\n• Sugerir mover clientes o reordenar\n• Detectar jornadas muy largas\n• Analizar eficiencia de la ruta\n\n¿En qué te ayudo?`;
+          greeting = `Hola 👋 Soy **LEKER AI**.\n\nRuta de **${vName||'el vendedor'}**: **${clients} clientes** · **${days} días** · ${km} km.\n\nPuedo explicar decisiones, sugerir ajustes o detectar ineficiencias. ¿En qué te ayudo?`;
         } else {
-          greeting = `Hola 👋 Soy **LEKER AI**, tu asistente de la plataforma Leker.\n\nEstás en **${panelName}**. Puedo ayudarte con:\n• Rutas y planificación de vendedores\n• Análisis de clientes 80-20\n• Sugerencias para mejorar la plataforma\n• Cualquier duda sobre el sistema\n\n¿Qué necesitas?`;
+          greeting = `Hola 👋 Soy **LEKER AI**, tu asistente de Leker.\n\nEstás en **${panelName}**. ¿En qué puedo ayudarte aquí?`;
         }
         _routeChatHistory.push({ role: 'assistant', content: greeting });
         _appendChatMsg('assistant', greeting);
+      } else if (panelChanged) {
+        // Cambió de sección — notificar brevemente sin borrar historial
+        const contextMsgs = {
+          'panel-dashboard': 'Ahora estás en **Dashboard**. Puedo analizar métricas, rutas activas o rendimiento del equipo. ¿Qué quieres revisar?',
+          'panel-clients': 'Ahora estás en **CRM Clientes**. Puedo ayudarte a analizar segmentación 80-20, clientes sin visitar o sin GPS. ¿Qué necesitas?',
+          'panel-routes': 'Ahora estás en **Gestionar Rutas**. Puedo ayudarte a generar, optimizar o analizar rutas. ¿Empezamos?',
+          'panel-visits': 'Ahora estás en **Visitas**. Puedo analizar efectividad, alertar sobre clientes sin visitar o resumir el historial. ¿Qué ves aquí?',
+          'panel-intelligence': 'Ahora estás en **Inteligencia de Mercado**. Puedo ayudarte a interpretar datos de competencia o sugerir estrategias. ¿Qué necesitas?',
+          'panel-data': 'Ahora estás en **Google Sheets**. Puedo ayudarte con la sincronización de datos o detectar inconsistencias. ¿En qué te ayudo?',
+        };
+        const ctxMsg = contextMsgs[panelId] || `Ahora estás en **${panelName}**. ¿En qué puedo ayudarte aquí?`;
+        _routeChatHistory.push({ role: 'assistant', content: ctxMsg });
+        _appendChatMsg('assistant', ctxMsg);
       }
       setTimeout(() => document.getElementById('route-chat-input')?.focus(), 100);
     }
