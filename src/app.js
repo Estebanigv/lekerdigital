@@ -2234,4 +2234,188 @@ setInterval(async () => {
   }
 }, 30 * 60 * 1000); // every 30 minutes
 
+// =============================================
+// AI — OpenAI GPT-4o-mini
+// =============================================
+const OpenAI = require('openai');
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+
+// Helper: llama a GPT-4o-mini con system + user prompt
+async function askOpenAI(systemPrompt, userPrompt, maxTokens = 600) {
+  if (!openai) throw new Error('OPENAI_API_KEY no configurada');
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    max_tokens: maxTokens,
+    temperature: 0.4
+  });
+  return completion.choices[0].message.content.trim();
+}
+
+/**
+ * POST /api/ai/route-advisor
+ * Recibe lista de clientes del vendedor y devuelve recomendación de prioridad de visitas.
+ * Body: { userId, clients: [{name, segmentation, lastVisit, visitCount, address, commune}], weekdays }
+ */
+app.post('/api/ai/route-advisor', authenticate, async (req, res) => {
+  try {
+    const { clients, weekdays, vendorName } = req.body;
+    if (!clients || clients.length === 0) {
+      return res.status(400).json({ success: false, error: 'Se requieren clientes' });
+    }
+
+    const systemPrompt = `Eres un asesor de rutas de ventas para la empresa Leker (distribuidora de productos de limpieza y hogar en Chile).
+Tu trabajo es analizar la lista de clientes de un vendedor y sugerir el plan de visitas óptimo para la semana.
+Responde SIEMPRE en español. Sé conciso y práctico. Usa formato claro con bullets.
+Considera:
+- Clientes 80-20: visitar PRIMERO, máxima prioridad (generan el 80% de ventas)
+- Clientes L: visitaron en 2025, mantener relación
+- Clientes N: nuevos, verificar y presentar propuesta
+- Jornada 09:00-17:00, máximo 10 clientes por día
+- Optimizar por cercanía geográfica (misma comuna = mismo día)`;
+
+    const clientList = clients.slice(0, 50).map((c, i) =>
+      `${i+1}. ${c.name || c.fantasy_name} [${c.segmentation || 'sin seg'}] - ${c.commune || 'sin comuna'} - última visita: ${c.lastVisit || 'nunca'} - visitas totales: ${c.visitCount || 0}`
+    ).join('\n');
+
+    const userPrompt = `Vendedor: ${vendorName || 'Sin nombre'}
+Semana disponible: ${(weekdays || []).join(', ') || 'próximos 5 días hábiles'}
+Total clientes a visitar: ${clients.length}
+
+Lista de clientes:
+${clientList}
+
+Por favor:
+1. Indica los 3-5 clientes TOP a visitar ESTA semana con justificación breve
+2. Sugiere cómo agrupar por día/zona para minimizar desplazamiento
+3. Alerta si hay clientes 80-20 que llevan más de 15 días sin visita`;
+
+    const advice = await askOpenAI(systemPrompt, userPrompt, 700);
+    res.json({ success: true, advice });
+  } catch (error) {
+    console.error('[AI route-advisor]', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/ai/visit-summary
+ * Resume las visitas recientes de un vendedor y sugiere acciones.
+ * Body: { visits: [{clientName, outcome, date, notes}], vendorName }
+ */
+app.post('/api/ai/visit-summary', authenticate, async (req, res) => {
+  try {
+    const { visits, vendorName } = req.body;
+    if (!visits || visits.length === 0) {
+      return res.status(400).json({ success: false, error: 'Se requieren visitas' });
+    }
+
+    const systemPrompt = `Eres un coach de ventas para Leker (distribuidora en Chile). Analiza el historial de visitas de un vendedor y entrega un resumen ejecutivo con acciones concretas. Responde en español, máximo 5 bullets cortos.`;
+
+    const visitList = visits.slice(0, 30).map(v =>
+      `- ${v.date}: ${v.clientName} → ${v.outcome || 'sin resultado'} ${v.notes ? '('+v.notes+')' : ''}`
+    ).join('\n');
+
+    const userPrompt = `Vendedor: ${vendorName}
+Últimas visitas:
+${visitList}
+
+Resume: tasa de éxito, clientes que necesitan seguimiento urgente, y 3 acciones concretas para mejorar esta semana.`;
+
+    const summary = await askOpenAI(systemPrompt, userPrompt, 500);
+    res.json({ success: true, summary });
+  } catch (error) {
+    console.error('[AI visit-summary]', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/ai/client-insight
+ * Analiza un cliente específico y da recomendación de acción.
+ * Body: { client: {...}, visitHistory: [...] }
+ */
+app.post('/api/ai/client-insight', authenticate, async (req, res) => {
+  try {
+    const { client, visitHistory } = req.body;
+    if (!client) return res.status(400).json({ success: false, error: 'Se requiere cliente' });
+
+    const systemPrompt = `Eres un asesor CRM para Leker. Analiza un cliente y su historial de visitas. Responde en español con máximo 3 bullets: 1) diagnóstico rápido, 2) acción recomendada, 3) frecuencia sugerida de visita.`;
+
+    const visits = (visitHistory || []).slice(0, 10).map(v =>
+      `${v.date}: ${v.outcome || 'sin resultado'}`
+    ).join(', ');
+
+    const userPrompt = `Cliente: ${client.name || client.fantasy_name}
+Segmento: ${client.segmentation || 'sin segmento'}
+Comuna: ${client.commune || 'desconocida'}
+Visitas: ${visits || 'ninguna registrada'}
+Última visita: ${visitHistory?.[0]?.date || 'nunca'}
+
+¿Qué acción recomiendas con este cliente?`;
+
+    const insight = await askOpenAI(systemPrompt, userPrompt, 300);
+    res.json({ success: true, insight });
+  } catch (error) {
+    console.error('[AI client-insight]', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/ai/frequency-analysis
+ * Analiza clientes con baja conversión y recomienda ajustar frecuencia.
+ * Body: { userId }
+ */
+app.post('/api/ai/frequency-analysis', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    // Obtener clientes con historial de visitas fallidas
+    const { data: visits } = await supabase
+      .from('visits')
+      .select('client_id, outcome, visited_at, clients(name, segmentation, commune)')
+      .eq('route_id', supabase.from('daily_routes').select('id').eq('user_id', userId))
+      .order('visited_at', { ascending: false })
+      .limit(200);
+
+    if (!visits || visits.length === 0) {
+      return res.json({ success: true, analysis: 'No hay suficiente historial de visitas para analizar.' });
+    }
+
+    // Agrupar por cliente
+    const byClient = {};
+    for (const v of visits) {
+      const cid = v.client_id;
+      if (!byClient[cid]) byClient[cid] = { name: v.clients?.name, seg: v.clients?.segmentation, commune: v.clients?.commune, visits: [] };
+      byClient[cid].visits.push({ outcome: v.outcome, date: v.visited_at?.split('T')[0] });
+    }
+
+    // Clientes con 3+ visitas sin éxito
+    const lowConversion = Object.values(byClient)
+      .filter(c => c.visits.length >= 3 && c.visits.filter(v => v.outcome === 'no_sale' || v.outcome === 'not_home').length >= 3)
+      .slice(0, 15)
+      .map(c => `${c.name} [${c.seg}] ${c.commune}: ${c.visits.length} visitas, ${c.visits.filter(v=>v.outcome==='no_sale'||v.outcome==='not_home').length} sin éxito`);
+
+    if (lowConversion.length === 0) {
+      return res.json({ success: true, analysis: 'No se detectaron clientes con baja conversión repetida. ¡Buen trabajo!' });
+    }
+
+    const systemPrompt = `Eres un analista de eficiencia de rutas para Leker. Analiza clientes con baja tasa de conversión y recomienda ajustes de frecuencia o estrategia. Responde en español, formato tabla simple o bullets.`;
+    const userPrompt = `Clientes con 3+ visitas sin éxito de venta:
+${lowConversion.join('\n')}
+
+Para cada uno recomienda: mantener frecuencia actual, reducir a cada 45 días, o considerar cliente inactivo. Justifica brevemente.`;
+
+    const analysis = await askOpenAI(systemPrompt, userPrompt, 600);
+    res.json({ success: true, analysis, clientsAnalyzed: lowConversion.length });
+  } catch (error) {
+    console.error('[AI frequency-analysis]', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = app;

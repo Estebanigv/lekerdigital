@@ -5315,6 +5315,10 @@
             <i data-lucide="calendar" style="width: 15px; height: 15px;"></i>
             Calendario Mensual
           </button>
+          <button class="route-tab" data-routetab="ai" onclick="switchRouteTab('ai')">
+            <i data-lucide="sparkles" style="width: 15px; height: 15px;"></i>
+            IA Asistente
+          </button>
         </div>
 
         <!-- ============ SUBTAB 1: DASHBOARD ============ -->
@@ -6024,6 +6028,89 @@
             </div>
           </div>
         </div><!-- /route-subpanel-monthly -->
+
+        <!-- ============ SUBTAB: IA ASISTENTE ============ -->
+        <div class="route-subpanel" id="route-subpanel-ai" style="padding: 20px;">
+
+          <!-- Header -->
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <i data-lucide="sparkles" style="width: 20px; height: 20px; color: white;"></i>
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 16px; font-weight: 700;">Asistente IA de Rutas</h3>
+              <p style="margin: 0; font-size: 12px; color: var(--text-muted);">Análisis inteligente basado en tus clientes y visitas · GPT-4o mini</p>
+            </div>
+          </div>
+
+          <!-- Selector de vendedor -->
+          <div style="margin-bottom: 16px;">
+            <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Vendedor a analizar</label>
+            <select id="ai-vendor-select" style="width: 100%; max-width: 320px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-size: 13px;">
+              <option value="">— Seleccionar vendedor —</option>
+            </select>
+          </div>
+
+          <!-- Cards de herramientas IA -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
+
+            <!-- Asesor de Rutas -->
+            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <i data-lucide="route" style="width: 18px; height: 18px; color: #3b82f6;"></i>
+                <strong style="font-size: 14px;">Asesor de Rutas Semanal</strong>
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 12px;">Analiza los clientes del vendedor y sugiere a quién visitar esta semana, en qué orden y cómo agrupar por zona.</p>
+              <button onclick="aiRouteAdvisor()" style="width: 100%; padding: 9px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> Analizar rutas
+              </button>
+            </div>
+
+            <!-- Resumen de visitas -->
+            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <i data-lucide="bar-chart-2" style="width: 18px; height: 18px; color: #10b981;"></i>
+                <strong style="font-size: 14px;">Resumen de Desempeño</strong>
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 12px;">Analiza las últimas visitas del vendedor: tasa de éxito, clientes que necesitan seguimiento y acciones concretas para esta semana.</p>
+              <button onclick="aiVisitSummary()" style="width: 100%; padding: 9px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> Analizar visitas
+              </button>
+            </div>
+
+            <!-- Frecuencia adaptativa -->
+            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <i data-lucide="timer" style="width: 18px; height: 18px; color: #f59e0b;"></i>
+                <strong style="font-size: 14px;">Frecuencia Adaptativa</strong>
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 12px;">Detecta clientes con 3+ visitas sin éxito y recomienda si reducir frecuencia, mantener o dar de baja del circuito activo.</p>
+              <button onclick="aiFrequencyAnalysis()" style="width: 100%; padding: 9px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> Analizar frecuencias
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Área de respuesta -->
+          <div id="ai-response-area" style="display: none; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="sparkles" style="width: 16px; height: 16px; color: #6366f1;"></i>
+                <strong id="ai-response-title" style="font-size: 14px;">Análisis IA</strong>
+              </div>
+              <button onclick="document.getElementById('ai-response-area').style.display='none'" style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 18px; line-height: 1;">×</button>
+            </div>
+            <div id="ai-response-content" style="font-size: 13px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap;"></div>
+          </div>
+
+          <!-- Loading state -->
+          <div id="ai-loading" style="display: none; text-align: center; padding: 30px; color: var(--text-muted);">
+            <div style="width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px;"></div>
+            <div style="font-size: 13px;" id="ai-loading-text">Consultando IA...</div>
+          </div>
+
+        </div><!-- /route-subpanel-ai -->
 
       </div><!-- /panel-routes -->
 
@@ -17478,9 +17565,154 @@
         if (!monthlyCalendarData) {
           loadMonthlyCalendar();
         }
+      } else if (tabName === 'ai') {
+        // Poblar selector de vendedores en panel IA
+        const sel = document.getElementById('ai-vendor-select');
+        if (sel && allUsers && allUsers.length > 0) {
+          const execs = allUsers.filter(u => u.role === 'executive' || u.role === 'zonal');
+          if (currentUser && currentUser.role === 'executive') {
+            sel.innerHTML = `<option value="${currentUser.id}">${currentUser.full_name}</option>`;
+          } else {
+            const current = sel.value;
+            sel.innerHTML = '<option value="">— Seleccionar vendedor —</option>' +
+              execs.map(u => `<option value="${u.id}"${u.id==current?' selected':''}>${u.full_name}</option>`).join('');
+          }
+        }
       }
 
       _createIcons();
+    }
+
+    // =============================================
+    // AI ASSISTANT FUNCTIONS
+    // =============================================
+    function _aiGetVendorInfo() {
+      const sel = document.getElementById('ai-vendor-select');
+      const vendorId = sel ? sel.value : null;
+      if (!vendorId) { showToast('warning', 'Selecciona un vendedor primero'); return null; }
+      const vendor = allUsers ? allUsers.find(u => String(u.id) === String(vendorId)) : null;
+      return { vendorId, vendorName: vendor ? vendor.full_name : `Vendedor ${vendorId}` };
+    }
+
+    function _aiShowLoading(text) {
+      document.getElementById('ai-response-area').style.display = 'none';
+      const loader = document.getElementById('ai-loading');
+      loader.style.display = 'block';
+      document.getElementById('ai-loading-text').textContent = text || 'Consultando IA...';
+    }
+
+    function _aiShowResult(title, content) {
+      document.getElementById('ai-loading').style.display = 'none';
+      document.getElementById('ai-response-title').textContent = title;
+      document.getElementById('ai-response-content').textContent = content;
+      document.getElementById('ai-response-area').style.display = 'block';
+    }
+
+    async function aiRouteAdvisor() {
+      const info = _aiGetVendorInfo();
+      if (!info) return;
+      _aiShowLoading('Analizando clientes y armando recomendación...');
+
+      try {
+        // Obtener clientes del vendedor con info de visitas
+        const vendorClients = allClients ? allClients.filter(c => String(c.assigned_user_id) === String(info.vendorId)) : [];
+        // Obtener visitas recientes para saber última visita por cliente
+        const visitsRes = await fetch(`${API}/api/daily-routes?userId=${info.vendorId}`).catch(()=>({ok:false}));
+        // Construir lista de clientes con metadatos
+        const clients = vendorClients.slice(0, 60).map(c => ({
+          name: c.fantasy_name || c.name,
+          segmentation: c.segmentation,
+          commune: c.commune,
+          lastVisit: null,
+          visitCount: 0
+        }));
+
+        const res = await fetch(`${API}/api/ai/route-advisor`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clients, vendorName: info.vendorName })
+        });
+        const data = await res.json();
+        if (data.success) {
+          _aiShowResult(`🗺️ Asesor de Rutas — ${info.vendorName}`, data.advice);
+        } else {
+          _aiShowResult('Error', data.error);
+        }
+      } catch(e) {
+        document.getElementById('ai-loading').style.display = 'none';
+        showToast('error', 'Error al consultar IA: ' + e.message);
+      }
+    }
+
+    async function aiVisitSummary() {
+      const info = _aiGetVendorInfo();
+      if (!info) return;
+      _aiShowLoading('Analizando historial de visitas...');
+
+      try {
+        // Obtener últimas visitas del vendedor via daily-routes
+        const routesRes = await fetch(`${API}/api/users/${info.vendorId}/routes`);
+        const routesData = await routesRes.json();
+        const routes = routesData.success ? (routesData.data || []).slice(0, 10) : [];
+
+        // Aplanar visitas
+        const visits = [];
+        for (const route of routes) {
+          const rRes = await fetch(`${API}/api/daily-routes/${route.id}`);
+          const rData = await rRes.json();
+          if (rData.success && rData.data && rData.data.visits) {
+            for (const v of rData.data.visits) {
+              visits.push({
+                clientName: v.clients?.fantasy_name || v.clients?.name || 'Cliente',
+                outcome: v.outcome,
+                date: route.route_date,
+                notes: v.notes
+              });
+            }
+          }
+          if (visits.length >= 25) break;
+        }
+
+        const res = await fetch(`${API}/api/ai/visit-summary`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visits, vendorName: info.vendorName })
+        });
+        const data = await res.json();
+        if (data.success) {
+          _aiShowResult(`📊 Desempeño — ${info.vendorName}`, data.summary);
+        } else {
+          _aiShowResult('Error', data.error);
+        }
+      } catch(e) {
+        document.getElementById('ai-loading').style.display = 'none';
+        showToast('error', 'Error al consultar IA: ' + e.message);
+      }
+    }
+
+    async function aiFrequencyAnalysis() {
+      const info = _aiGetVendorInfo();
+      if (!info) return;
+      _aiShowLoading('Detectando clientes con baja conversión...');
+
+      try {
+        const res = await fetch(`${API}/api/ai/frequency-analysis`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: info.vendorId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const title = `⏱️ Frecuencia Adaptativa — ${info.vendorName}` +
+            (data.clientsAnalyzed ? ` (${data.clientsAnalyzed} clientes analizados)` : '');
+          _aiShowResult(title, data.analysis);
+        } else {
+          _aiShowResult('Error', data.error);
+        }
+      } catch(e) {
+        document.getElementById('ai-loading').style.display = 'none';
+        showToast('error', 'Error al consultar IA: ' + e.message);
+      }
     }
 
     function goToRouteStep(step) {
