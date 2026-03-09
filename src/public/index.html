@@ -22018,11 +22018,6 @@
       if (badge) { badge.textContent = '⟳'; badge.style.color = '#6366f1'; }
 
       try {
-        // Refrescar allClients desde DB antes de comparar (para detectar cambios de otros users)
-        const dbRes = await fetch(`${API}/api/clients`);
-        const dbData = await dbRes.json();
-        if (dbData.success && dbData.data) allClients = dbData.data;
-
         const res = await fetch(`${API}/api/gsheets/Direcciones`);
         const result = await res.json();
         if (!result.success || !result.data || result.data.length < 2) {
