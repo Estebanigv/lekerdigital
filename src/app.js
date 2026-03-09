@@ -2330,14 +2330,19 @@ app.post('/api/ai/generate-route', authenticate, async (req, res) => {
     const communeSummary = Object.entries(cg).map(([k,v]) =>
       `${k}: ${v.n} clientes, centro (${(v.lat/v.n).toFixed(3)},${(v.lng/v.n).toFixed(3)})`).join('\n');
 
-    // 5. Lista compacta para IA (max 80)
-    const clientList = clients.slice(0,80).map(c => ({
+    // 5. Lista compacta para IA (max 60 — UUIDs son largos, cuidar tokens)
+    // Priorizar 80-20 primero, luego L, luego N
+    const sorted = [...clients].sort((a,b) => {
+      const p = {'80-20':0,'L':1,'N':2};
+      return (p[a.segmentation]??1) - (p[b.segmentation]??1);
+    });
+    const clientList = sorted.slice(0,60).map(c => ({
       id: c.id,
-      name: (c.fantasy_name||c.name||'').substring(0,28),
+      name: (c.fantasy_name||c.name||'').substring(0,20),
       seg: c.segmentation||'L',
-      commune: c.commune||'Sin Comuna',
-      lat: parseFloat(c.lat).toFixed(4),
-      lng: parseFloat(c.lng).toFixed(4)
+      com: (c.commune||'?').substring(0,15),
+      lat: parseFloat(c.lat).toFixed(3),
+      lng: parseFloat(c.lng).toFixed(3)
     }));
 
     // 6. Llamar al modelo seleccionado con JSON estructurado
@@ -2345,7 +2350,7 @@ app.post('/api/ai/generate-route', authenticate, async (req, res) => {
     const isO3 = selectedModel === 'o3-mini';
     const completionParams = {
       model: selectedModel,
-      max_tokens: isO3 ? 2000 : 1200,
+      max_tokens: isO3 ? 4000 : 4000,
       messages: null // se llena abajo
     };
     if (!isO3) {
