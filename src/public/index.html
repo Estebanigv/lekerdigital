@@ -4961,42 +4961,30 @@
             </div>
             <div class="card-body">
               <!-- KPIs reales calculados desde allClients -->
-              <div id="segmentation-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                <!-- 80-20: clientes de alta venta por vendedor -->
-                <div style="text-align: center; padding: 14px 8px; background: rgba(212,175,55,0.08); border-radius: 10px; border: 1px solid rgba(212,175,55,0.3); cursor: pointer;" onclick="goToClientsBySegmentation('80-20');showOnlyMapSegment('80-20')" title="Clientes que generan el 80% de las ventas por vendedor">
-                  <div style="font-size: 26px; font-weight: 700; color: #b8860b;" id="seg-A-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:4px;"><i data-lucide="star" style="width:12px;height:12px;fill:#b8860b;stroke:#b8860b;"></i> 80/20 Clave</div>
-                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Alta venta por vendedor</div>
+              <div id="segmentation-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(212,175,55,0.08);border-radius:10px;border:1px solid rgba(212,175,55,0.3);cursor:pointer;" onclick="goToClientsBySegmentation('80-20');showOnlyMapSegment('80-20')" title="Clientes que generan el 80% de las ventas">
+                  <div style="width:34px;height:34px;border-radius:8px;background:rgba(212,175,55,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="star" style="width:16px;height:16px;fill:#b8860b;stroke:#b8860b;"></i></div>
+                  <div><div style="font-size:22px;font-weight:800;color:#b8860b;line-height:1;" id="seg-A-count">-</div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">80/20 Clave</div></div>
                 </div>
-                <!-- L Con venta: segmentation=L AND segment=C -->
-                <div style="text-align: center; padding: 14px 8px; background: rgba(59,130,246,0.12); border-radius: 10px; border: 1px solid rgba(59,130,246,0.35); cursor: pointer;" onclick="goToClientsBySegAndSegment('L', 'C');showOnlyMapSegment('L-C')" title="Clientes L que compraron en Leker (segment=C)">
-                  <div style="font-size: 26px; font-weight: 700; color: #3b82f6;" id="seg-L-active-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:4px;"><i data-lucide="circle-check-big" style="width:12px;height:12px;color:#3b82f6;"></i> L Con venta</div>
-                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Compraron en Leker</div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(59,130,246,0.1);border-radius:10px;border:1px solid rgba(59,130,246,0.3);cursor:pointer;" onclick="goToClientsBySegAndSegment('L','C');showOnlyMapSegment('L-C')" title="Clientes L con ventas activas">
+                  <div style="width:34px;height:34px;border-radius:8px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="circle-check-big" style="width:16px;height:16px;color:#3b82f6;"></i></div>
+                  <div><div style="font-size:22px;font-weight:800;color:#3b82f6;line-height:1;" id="seg-L-active-count">-</div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">L Con venta</div></div>
                 </div>
-                <!-- L Sin venta: segmentation=L AND segment≠C -->
-                <div style="text-align: center; padding: 14px 8px; background: rgba(148,163,184,0.08); border-radius: 10px; border: 1px solid rgba(148,163,184,0.2); cursor: pointer;" onclick="goToClientsBySegAndSegment('L', 'B');showOnlyMapSegment('L-B')" title="Clientes L sin ventas activas (segment=B)">
-                  <div style="font-size: 26px; font-weight: 700; color: #94a3b8;" id="seg-L-base-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:4px;"><i data-lucide="circle-minus" style="width:12px;height:12px;color:#94a3b8;"></i> L Sin venta</div>
-                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Base sin compras</div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(148,163,184,0.07);border-radius:10px;border:1px solid rgba(148,163,184,0.2);cursor:pointer;" onclick="goToClientsBySegAndSegment('L','B');showOnlyMapSegment('L-B')" title="Clientes L sin ventas activas">
+                  <div style="width:34px;height:34px;border-radius:8px;background:rgba(148,163,184,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="circle-minus" style="width:16px;height:16px;color:#94a3b8;"></i></div>
+                  <div><div style="font-size:22px;font-weight:800;color:#94a3b8;line-height:1;" id="seg-L-base-count">-</div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">L Sin venta</div></div>
                 </div>
-                <!-- Con GPS: pueden rutearse -->
-                <div style="text-align: center; padding: 14px 8px; background: rgba(99,102,241,0.08); border-radius: 10px; border: 1px solid rgba(99,102,241,0.2); cursor: pointer;" onclick="filterCrmAndGo('has_gps')">
-                  <div style="font-size: 26px; font-weight: 700; color: #6366f1;" id="seg-C-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:4px;"><i data-lucide="map-pin" style="width:12px;height:12px;color:#6366f1;"></i> Con GPS</div>
-                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Listos para rutear</div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(99,102,241,0.07);border-radius:10px;border:1px solid rgba(99,102,241,0.2);cursor:pointer;" onclick="filterCrmAndGo('has_gps')">
+                  <div style="width:34px;height:34px;border-radius:8px;background:rgba(99,102,241,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="map-pin" style="width:16px;height:16px;color:#6366f1;"></i></div>
+                  <div><div style="font-size:22px;font-weight:800;color:#6366f1;line-height:1;" id="seg-C-count">-</div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">Con GPS</div></div>
                 </div>
-                <!-- Sin geo: pendientes de geolocalizar -->
-                <div style="text-align: center; padding: 14px 8px; background: rgba(239,68,68,0.06); border-radius: 10px; border: 1px solid rgba(239,68,68,0.2); cursor: pointer;" onclick="filterCrmAndGo('no_geo')">
-                  <div style="font-size: 26px; font-weight: 700; color: #ef4444;" id="seg-E-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:4px;"><i data-lucide="map-pin-off" style="width:12px;height:12px;color:#ef4444;"></i> Sin geo</div>
-                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Pendientes GPS</div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(239,68,68,0.06);border-radius:10px;border:1px solid rgba(239,68,68,0.2);cursor:pointer;" onclick="filterCrmAndGo('no_geo')">
+                  <div style="width:34px;height:34px;border-radius:8px;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="map-pin-off" style="width:16px;height:16px;color:#ef4444;"></i></div>
+                  <div><div style="font-size:22px;font-weight:800;color:#ef4444;line-height:1;" id="seg-E-count">-</div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">Sin GPS</div></div>
                 </div>
-                <!-- Total -->
-                <div style="text-align: center; padding: 14px 8px; background: var(--bg-hover); border-radius: 10px; border: 1px solid var(--border); cursor: pointer;" onclick="document.querySelector('[data-tab=crm]')?.click()">
-                  <div style="font-size: 26px; font-weight: 700; color: var(--text-primary);" id="seg-total-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:4px;"><i data-lucide="database" style="width:12px;height:12px;color:var(--text-secondary);"></i> Total</div>
-                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Base completa</div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-hover);border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="document.querySelector('[data-tab=crm]')?.click()">
+                  <div style="width:34px;height:34px;border-radius:8px;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="database" style="width:16px;height:16px;color:var(--text-secondary);"></i></div>
+                  <div><div style="font-size:22px;font-weight:800;color:var(--text-primary);line-height:1;" id="seg-total-count">-</div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">Total</div></div>
                 </div>
               </div>
             </div>
@@ -5061,10 +5049,10 @@
                   </div>
                 </div>
                 <!-- Segment Filters -->
-                <div class="map-overlay-box" style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 10px;">
+                <div class="map-overlay-box" style="background: var(--bg-card); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); padding: 10px; border: 1px solid var(--border);">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
                     <div>
-                      <span style="font-weight: 600; font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Segmentación</span>
+                      <span style="font-weight: 600; font-size: 11px; text-transform: uppercase; color: var(--text-primary);">Segmentación</span>
                       <div style="font-size: 9px; color: var(--text-muted); margin-top: 1px;">total · puntos en mapa = con lat/lng</div>
                     </div>
                     <button onclick="filterMapBySegment('ALL')" style="font-size: 9px; padding: 2px 7px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Ver todos</button>
@@ -5110,7 +5098,7 @@
                   </button>
                 </div>
                 <!-- Location Stats -->
-                <div class="map-overlay-box" style="background: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); padding: 8px 10px; margin-top: 8px;">
+                <div class="map-overlay-box" style="background: var(--bg-card); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); padding: 8px 10px; margin-top: 8px; border: 1px solid var(--border);">
                   <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px;">Cobertura GPS</div>
                   <!-- Asignados con GPS (el dato relevante) -->
                   <div style="margin-bottom: 5px;">
@@ -13135,23 +13123,36 @@
       const otherDays = allDayKeys.filter(d => d !== date);
       const dayNamesShort = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
+      // Contador de clientes opcionales
+      const optCount = clients.filter(c => c._unassigned).length;
+      if (optCount > 0) {
+        clientsHtml += `<div style="padding:6px 14px;background:rgba(245,158,11,0.07);border-bottom:1px solid rgba(245,158,11,0.2);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:11px;color:#f59e0b;font-weight:600;"><i data-lucide="info" style="width:12px;height:12px;display:inline;vertical-align:-1px;margin-right:4px;"></i>${optCount} cliente${optCount>1?'s':''} opcional${optCount>1?'es':''} — sin vendedor asignado</span>
+          <button onclick="_removeAllUnassignedFromRoute('${date}')" style="font-size:10px;color:#f59e0b;background:none;border:1px solid rgba(245,158,11,0.3);border-radius:5px;padding:2px 8px;cursor:pointer;">Quitar opcionales</button>
+        </div>`;
+      }
+
       clientsHtml += clients.map((c, i) => {
         const hasGps = c.lat && c.lng;
         const is8020 = c.segmentation === '80-20';
+        const isOptional = !!c._unassigned;
         // Move-to options
         const moveOpts = otherDays.map(d => {
           const dd = new Date(d + 'T12:00:00');
           return `<option value="${d}">${dayNamesShort[dd.getDay()]} ${dd.getDate()}</option>`;
         }).join('');
-        const _cardStyle = is8020
-          ? 'border-left: 3px solid #d4a017; background: rgba(212,160,23,0.05);'
-          : (isAI ? 'border-left: 2px solid rgba(99,102,241,0.25); background: rgba(99,102,241,0.02);' : '');
+        const _cardStyle = isOptional
+          ? 'border-left: 3px dashed rgba(245,158,11,0.5); background: rgba(245,158,11,0.04); opacity:0.85;'
+          : (is8020 ? 'border-left: 3px solid #d4a017; background: rgba(212,160,23,0.05);'
+          : (isAI ? 'border-left: 2px solid rgba(99,102,241,0.25); background: rgba(99,102,241,0.02);' : ''));
+        const numBg = isOptional ? '#f59e0b' : (i === 0 ? '#10b981' : is8020 ? '#d4a017' : (isAI ? '#6366f1' : '#3b82f6'));
         return `<div style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 13px; ${_cardStyle}">
-          <span style="width: 24px; height: 24px; border-radius: 50%; background: ${i === 0 ? '#10b981' : is8020 ? '#d4a017' : (isAI ? '#6366f1' : '#3b82f6')}; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">${i + 1}</span>
+          <span style="width: 24px; height: 24px; border-radius: 50%; background: ${numBg}; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">${i + 1}</span>
           <div style="flex: 1; min-width: 0;">
             <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
               <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width:100%;">${c.fantasy_name || c.name}</span>
               ${is8020 ? '<span style="background:rgba(212,160,23,0.18);color:#b8860b;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;white-space:nowrap;flex-shrink:0;">⭐ 80/20</span>' : ''}
+              ${isOptional ? '<span style="background:rgba(245,158,11,0.15);color:#d97706;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;white-space:nowrap;flex-shrink:0;border:1px dashed rgba(245,158,11,0.4);">Opcional</span>' : ''}
             </div>
             <div style="font-size: 11px; color: var(--text-muted); display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:2px;">
               ${c.external_id ? `<button onclick="event.stopPropagation();openClientModal('${c.id}')" title="Editar cliente" style="font-family:monospace;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--text-secondary);font-size:11px;cursor:pointer;line-height:1.4;transition:background 0.15s;" onmouseenter="this.style.background='var(--bg-hover)';this.style.borderColor='#3b82f6';this.style.color='#3b82f6'" onmouseleave="this.style.background='var(--bg-secondary)';this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">${c.external_id} <i data-lucide="pencil" style="width:9px;height:9px;vertical-align:middle;"></i></button>` : ''}
@@ -13160,6 +13161,7 @@
           </div>
           <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
             <span><i data-lucide="${hasGps ? 'map-pin' : 'alert-triangle'}" style="width:13px;height:13px;color:${hasGps ? '#10b981' : '#f59e0b'};"></i></span>
+            ${isOptional && selectedExecutiveId ? `<button onclick="_assignClientToExec('${c.id}','${c.name || c.fantasy_name}')" title="Asignar a este vendedor" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.35);border-radius:5px;cursor:pointer;padding:3px 7px;font-size:10px;font-weight:600;color:#d97706;white-space:nowrap;">+ Asignar</button>` : ''}
             ${hasGps ? `<button onclick="openWazeToClient(${c.lat},${c.lng})" style="background: #33ccff15; border: 1px solid #33ccff40; border-radius: 5px; cursor: pointer; padding: 4px 6px; display:flex; align-items:center;" title="Waze"><i data-lucide="navigation" style="width:13px;height:13px;color:#33ccff;"></i></button>` : ''}
             ${otherDays.length > 0 ? `<select onchange="moveClientToDay('${c.id}','${date}',this.value); this.selectedIndex=0;" style="background:var(--bg-hover);border:1px solid var(--border);border-radius:5px;padding:3px 4px;font-size:10px;cursor:pointer;color:var(--text-muted);width:56px;" title="Mover a otro día">
               <option value="">Mover</option>${moveOpts}
@@ -14610,6 +14612,45 @@
         listDiv.innerHTML += `<div style="padding: 8px; text-align: center; color: var(--text-muted); font-size: 12px;">... y ${sortedClients.length - 50} más</div>`;
       }
       _createIcons();
+    }
+
+    function _removeAllUnassignedFromRoute(date) {
+      if (!optimizedRouteData?.days?.[date]) return;
+      const before = optimizedRouteData.days[date].route.length;
+      optimizedRouteData.days[date].route = optimizedRouteData.days[date].route.filter(c => !c._unassigned);
+      const removed = before - optimizedRouteData.days[date].route.length;
+      renderOptDayDetail(date);
+      if (removed > 0) showToast('info', `${removed} cliente${removed>1?'s':''} opcionales quitados`, '');
+    }
+
+    async function _assignClientToExec(clientId, clientName) {
+      if (!selectedExecutiveId) return;
+      const exec = allUsers.find(u => u.id === selectedExecutiveId);
+      if (!confirm(`¿Asignar "${clientName}" a ${exec?.full_name || 'este vendedor'}?`)) return;
+      try {
+        const res = await fetch(`${API}/api/clients/${clientId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assigned_user_id: selectedExecutiveId })
+        });
+        const d = await res.json();
+        if (d.success) {
+          // Actualizar allClients
+          const idx = allClients.findIndex(c => c.id === clientId);
+          if (idx >= 0) allClients[idx].assigned_user_id = selectedExecutiveId;
+          // Quitar flag _unassigned en la ruta
+          Object.values(optimizedRouteData?.days || {}).forEach(day => {
+            const c = day.route?.find(c => c.id === clientId);
+            if (c) delete c._unassigned;
+          });
+          showToast('success', 'Cliente asignado', `${clientName} → ${exec?.full_name}`);
+          renderOptDayDetail(selectedOptDay);
+        } else {
+          showToast('error', 'Error', d.error || 'No se pudo asignar');
+        }
+      } catch(e) {
+        showToast('error', 'Error', e.message);
+      }
     }
 
     function removeClientFromRoute(clientId, date) {
