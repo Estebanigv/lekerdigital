@@ -458,6 +458,45 @@
     [data-theme="dark"] #seg-A-count { color: #f5d060 !important; }
     [data-theme="dark"] #seg-L-active-count { color: #93c5fd !important; }
 
+    /* dash-row-seg: ambas cards se estiran al mismo alto */
+    .dash-row-seg {
+      align-items: stretch;
+    }
+    .dash-row-seg .card {
+      display: flex;
+      flex-direction: column;
+    }
+    .dash-row-seg .card .card-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    /* Segmentación: grid se estira para llenar el alto disponible */
+    #segmentation-stats {
+      flex: 1;
+      align-content: stretch;
+      align-items: stretch;
+    }
+    #segmentation-stats > div {
+      align-items: center;
+    }
+    /* Regiones: chart llena el espacio disponible, scroll sin cortes */
+    #regions-chart {
+      flex: 1;
+      overflow-y: auto;
+      max-height: none !important;
+      padding-right: 4px;
+      /* gradiente suave al fondo para indicar scroll sin cortar barras */
+      -webkit-mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
+      mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
+    }
+    /* cuando se expande, quitar el gradiente */
+    #regions-chart.expanded {
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+
     /* Vendor stat cards dark */
     [data-theme="dark"] .vendor-stat-card {
       background: #202020;
@@ -5014,7 +5053,7 @@
               </button>
             </div>
             <div class="card-body">
-              <div id="regions-chart" style="max-height: 210px; overflow-y: auto; padding-right: 4px; transition: max-height 0.35s ease;"></div>
+              <div id="regions-chart"></div>
             </div>
           </div>
         </div>
@@ -25390,12 +25429,10 @@
     function toggleRegionsExpand() {
       _regionsExpanded = !_regionsExpanded;
       const chart = document.getElementById('regions-chart');
-      const ico = document.getElementById('ico-regions-expand');
       const btn = document.getElementById('btn-regions-expand');
       if (!chart) return;
-      chart.style.maxHeight = _regionsExpanded ? '600px' : '210px';
-      if (ico) ico.style.transform = _regionsExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
-      if (btn) btn.innerHTML = `<i data-lucide="${_regionsExpanded ? 'chevron-up' : 'chevron-down'}" id="ico-regions-expand" style="width:13px;height:13px;transition:transform 0.25s;transform:rotate(${_regionsExpanded?'180':'0'}deg);"></i> ${_regionsExpanded ? 'Colapsar' : 'Ver todo'}`;
+      chart.classList.toggle('expanded', _regionsExpanded);
+      if (btn) btn.innerHTML = `<i data-lucide="${_regionsExpanded ? 'chevron-up' : 'chevron-down'}" id="ico-regions-expand" style="width:13px;height:13px;"></i> ${_regionsExpanded ? 'Colapsar' : 'Ver todo'}`;
       _createIcons();
     }
 
