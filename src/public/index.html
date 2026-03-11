@@ -461,6 +461,51 @@
     @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
     @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
 
+    /* Command Palette */
+    #cmd-palette-overlay {
+      position: fixed; inset: 0; z-index: 999999;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+      display: flex; align-items: flex-start; justify-content: center;
+      padding-top: 12vh; animation: fadeIn 0.15s ease;
+    }
+    #cmd-palette-box {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 14px; width: min(580px, 94vw);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5); animation: slideUp 0.18s ease;
+      overflow: hidden;
+    }
+    #cmd-palette-input {
+      width: 100%; padding: 16px 18px; font-size: 15px;
+      background: transparent; border: none; border-bottom: 1px solid var(--border);
+      color: var(--text-primary); outline: none; font-family: inherit;
+    }
+    #cmd-palette-input::placeholder { color: var(--text-muted); }
+    #cmd-palette-results { max-height: 360px; overflow-y: auto; }
+    .cmd-result-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; cursor: pointer; transition: background 0.1s;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .cmd-result-item:hover, .cmd-result-item.active { background: var(--bg-hover); }
+    .cmd-result-item .cmd-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .cmd-result-item .cmd-main { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .cmd-result-item .cmd-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .cmd-result-item .cmd-badge {
+      margin-left: auto; font-size: 10px; padding: 2px 7px;
+      border-radius: 10px; font-weight: 600; flex-shrink: 0;
+    }
+    #cmd-palette-footer {
+      padding: 8px 16px; border-top: 1px solid var(--border);
+      display: flex; gap: 16px; font-size: 11px; color: var(--text-muted);
+    }
+    #cmd-palette-footer kbd {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 4px; padding: 1px 5px; font-size: 10px; font-family: monospace;
+    }
+
     /* dash-row-seg: segmentación manda en alto, regiones se ajusta */
     .dash-row-seg {
       align-items: start;
@@ -7706,6 +7751,9 @@
                 <button id="dir-marcar-vistos-btn" onclick="_markAllNewAsSeen()" title="Marcar todos como vistos" style="display:none;align-items:center;gap:4px;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(16,185,129,0.25);background:transparent;color:var(--text-muted);cursor:pointer;transition:all 0.15s;">
                   ✓ Todos vistos
                 </button>
+                <button onclick="exportDirCsv()" title="Exportar clientes filtrados a CSV" style="display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;transition:all 0.15s;white-space:nowrap;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-secondary)'">
+                  <i data-lucide="download" style="width:12px;height:12px;"></i> Exportar
+                </button>
               </div>
               <div class="card-body" style="padding: 0;">
                 <div id="gs-direcciones-body" style="overflow-x: auto;">
@@ -9166,13 +9214,10 @@
           toggleCollapseSidebar();
         }
       }
-      // Ctrl+K or Cmd+K to focus sidebar search
+      // Ctrl+K or Cmd+K → command palette
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar.classList.contains('collapsed')) expandSidebar();
-        const searchInput = document.getElementById('sidebar-search');
-        searchInput.focus();
+        openCommandPalette();
       }
       // Escape to clear search and blur
       if (e.key === 'Escape') {
@@ -16700,6 +16745,31 @@
       renderClientsTablePaginated();
     }
 
+    function exportDirCsv() {
+      const data = _dirDBFiltered || [];
+      if (data.length === 0) { showToast('warning', 'Sin datos', 'No hay clientes con los filtros actuales'); return; }
+      const headers = ['Código','Razón Social','Nombre Fantasía','Dirección','Comuna','Ciudad','Región','Vendedor','Segmentación','Con GPS','Teléfono','Notas'];
+      const rows = data.map(c => {
+        const vendor = (allUsers || []).find(u => u.id === c.assigned_user_id);
+        const esc = v => '"' + (v || '').toString().replace(/"/g, '""') + '"';
+        return [
+          esc(c.external_id), esc(c.name), esc(c.fantasy_name),
+          esc(c.address), esc(c.commune), esc(c.city), esc(c.region),
+          esc(vendor ? vendor.full_name : ''),
+          esc(c.segmentation), esc(c.lat && c.lng ? 'Sí' : 'No'),
+          esc(c.phone), esc(c.notes)
+        ].join(',');
+      });
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url;
+      a.download = `direcciones_leker_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+      showToast('success', 'Exportado', `${data.length} clientes exportados`);
+    }
+
     function exportClientsCsv() {
       if (!filteredClients || filteredClients.length === 0) {
         showToast('warning', 'Sin datos', 'No hay clientes con los filtros actuales');
@@ -23715,6 +23785,10 @@
                 <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Geo Link</label>
                 <input type="text" id="ec-geolink" class="form-control" value="${client.geo_link || ''}" style="font-size:13px;" ${isAdmin ? '' : 'disabled'} placeholder="URL de Google Maps">
               </div>
+              <div class="form-group" style="grid-column:span 2;">
+                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;display:flex;align-items:center;gap:6px;"><i data-lucide="sticky-note" style="width:12px;height:12px;color:var(--text-muted);"></i> Notas internas</label>
+                <textarea id="ec-notes" class="form-control" rows="3" style="font-size:13px;resize:vertical;" ${isAdmin ? '' : 'disabled'} placeholder="Observaciones, recordatorios, info de contacto...">${client.notes || ''}</textarea>
+              </div>
             </div>
             ${client.address_updated_at ? `<div style="margin-top:12px;padding:8px 12px;background:var(--bg-hover);border-radius:8px;font-size:11px;color:var(--text-muted);">Última modificación: ${new Date(client.address_updated_at).toLocaleString('es-CL')}</div>` : ''}
           </div>
@@ -23744,7 +23818,8 @@
         zone: document.getElementById('ec-zone').value.trim() || null,
         segment: document.getElementById('ec-segment').value || null,
         assigned_user_id: document.getElementById('ec-vendor').value || null,
-        geo_link: document.getElementById('ec-geolink').value.trim() || null
+        geo_link: document.getElementById('ec-geolink').value.trim() || null,
+        notes: document.getElementById('ec-notes')?.value.trim() || null
       };
 
       if (!body.name && !body.fantasy_name) {
@@ -25499,6 +25574,138 @@
       const el = document.getElementById('regions-modal-overlay');
       if (el) el.remove();
     }
+
+    // ── Command Palette ─────────────────────────────────────────────
+    let _cmdActiveIdx = -1;
+
+    function openCommandPalette() {
+      if (document.getElementById('cmd-palette-overlay')) return;
+      const overlay = document.createElement('div');
+      overlay.id = 'cmd-palette-overlay';
+      overlay.innerHTML = `
+        <div id="cmd-palette-box" onclick="event.stopPropagation()">
+          <input id="cmd-palette-input" placeholder="Buscar cliente, sección..." autocomplete="off" oninput="_cmdSearch(this.value)" />
+          <div id="cmd-palette-results"></div>
+          <div id="cmd-palette-footer">
+            <span><kbd>↑↓</kbd> navegar</span>
+            <span><kbd>Enter</kbd> abrir</span>
+            <span><kbd>Esc</kbd> cerrar</span>
+          </div>
+        </div>`;
+      overlay.addEventListener('click', e => { if (e.target === overlay) closeCommandPalette(); });
+      overlay.addEventListener('keydown', _cmdKeydown);
+      document.body.appendChild(overlay);
+      setTimeout(() => document.getElementById('cmd-palette-input')?.focus(), 30);
+      _cmdSearch('');
+    }
+
+    function closeCommandPalette() {
+      document.getElementById('cmd-palette-overlay')?.remove();
+      _cmdActiveIdx = -1;
+    }
+
+    const _CMD_SECTIONS = [
+      { icon: 'layout-dashboard', color: '#3b82f6', label: 'Dashboard', sub: 'Ir al Dashboard', tab: 'dashboard' },
+      { icon: 'users', color: '#10b981', label: 'Vendedores', sub: 'Gestionar vendedores', tab: 'users' },
+      { icon: 'map-pin', color: '#f59e0b', label: 'Direcciones', sub: 'CRM de clientes', tab: 'crm' },
+      { icon: 'route', color: '#8b5cf6', label: 'Rutas', sub: 'Gestionar rutas', tab: 'routes' },
+      { icon: 'bar-chart-2', color: '#06b6d4', label: 'Reportes', sub: 'Reportes y estadísticas', tab: 'reports' },
+      { icon: 'file-spreadsheet', color: '#22c55e', label: 'Excel Sync', sub: 'Google Sheets', tab: 'gsheets' },
+    ];
+
+    function _cmdSearch(q) {
+      _cmdActiveIdx = -1;
+      const container = document.getElementById('cmd-palette-results');
+      if (!container) return;
+      const query = q.toLowerCase().trim();
+      let html = '';
+
+      // Sections first (when query is empty or matches)
+      const sections = _CMD_SECTIONS.filter(s =>
+        !query || s.label.toLowerCase().includes(query) || s.sub.toLowerCase().includes(query)
+      );
+
+      if (!query) {
+        html += `<div style="padding:6px 16px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Secciones</div>`;
+      }
+      sections.forEach((s, i) => {
+        html += `<div class="cmd-result-item" onclick="_cmdGoSection('${s.tab}')" data-idx="${i}">
+          <div class="cmd-icon" style="background:${s.color}22;"><i data-lucide="${s.icon}" style="width:15px;height:15px;color:${s.color};"></i></div>
+          <div><div class="cmd-main">${s.label}</div><div class="cmd-sub">${s.sub}</div></div>
+          <span class="cmd-badge" style="background:${s.color}22;color:${s.color};">Sección</span>
+        </div>`;
+      });
+
+      // Clients
+      if (query && query.length >= 2) {
+        const clients = (allClients || []).filter(c =>
+          (c.external_id || '').toLowerCase().includes(query) ||
+          (c.name || '').toLowerCase().includes(query) ||
+          (c.fantasy_name || '').toLowerCase().includes(query) ||
+          (c.phone || '').toLowerCase().includes(query)
+        ).slice(0, 8);
+
+        if (clients.length > 0) {
+          html += `<div style="padding:6px 16px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);">Clientes</div>`;
+          const offset = sections.length;
+          clients.forEach((c, i) => {
+            const vendor = (allUsers || []).find(u => u.id === c.assigned_user_id);
+            const is8020 = c.segmentation === '80-20';
+            const displayName = c.fantasy_name || c.name || '—';
+            html += `<div class="cmd-result-item" onclick="_cmdOpenClient('${c.id}')" data-idx="${offset + i}">
+              <div class="cmd-icon" style="background:${is8020 ? 'rgba(245,158,11,0.15)' : 'var(--bg-secondary)'};">
+                <i data-lucide="${is8020 ? 'star' : 'building-2'}" style="width:15px;height:15px;color:${is8020 ? '#f59e0b' : 'var(--text-muted)'};"></i>
+              </div>
+              <div>
+                <div class="cmd-main">${displayName}</div>
+                <div class="cmd-sub">${c.external_id || ''} ${vendor ? '· ' + vendor.full_name : ''} ${c.commune ? '· ' + c.commune : ''}</div>
+              </div>
+              ${is8020 ? '<span class="cmd-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;">⭐ 80/20</span>' : ''}
+            </div>`;
+          });
+        }
+      }
+
+      if (!html) {
+        html = `<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">Sin resultados para "${q}"</div>`;
+      }
+
+      container.innerHTML = html;
+      _createIcons();
+    }
+
+    function _cmdGoSection(tab) {
+      closeCommandPalette();
+      const navItem = document.querySelector(`[data-tab="${tab}"]`);
+      if (navItem) navItem.click();
+    }
+
+    function _cmdOpenClient(clientId) {
+      closeCommandPalette();
+      openEditClientFullModal(clientId);
+    }
+
+    function _cmdKeydown(e) {
+      const items = document.querySelectorAll('.cmd-result-item');
+      if (!items.length) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        _cmdActiveIdx = Math.min(_cmdActiveIdx + 1, items.length - 1);
+        items.forEach((el, i) => el.classList.toggle('active', i === _cmdActiveIdx));
+        items[_cmdActiveIdx]?.scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        _cmdActiveIdx = Math.max(_cmdActiveIdx - 1, 0);
+        items.forEach((el, i) => el.classList.toggle('active', i === _cmdActiveIdx));
+        items[_cmdActiveIdx]?.scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter' && _cmdActiveIdx >= 0) {
+        e.preventDefault();
+        items[_cmdActiveIdx]?.click();
+      } else if (e.key === 'Escape') {
+        closeCommandPalette();
+      }
+    }
+    // ── End Command Palette ─────────────────────────────────────────
 
     function renderRegionsChart(regions, total) {
       const container = document.getElementById('regions-chart');
