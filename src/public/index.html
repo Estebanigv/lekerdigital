@@ -7673,6 +7673,9 @@
                 <button id="dir-filter-nuevo-btn" onclick="_toggleDirNuevo()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid rgba(16,185,129,0.35);background:transparent;color:#059669;cursor:pointer;transition:all 0.15s;">
                   <span id="dir-nuevo-count-label">● Nuevos</span>
                 </button>
+                <button id="dir-marcar-vistos-btn" onclick="_markAllNewAsSeen()" title="Marcar todos los nuevos como vistos" style="display:none;align-items:center;gap:4px;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(16,185,129,0.25);background:transparent;color:var(--text-muted);cursor:pointer;transition:all 0.15s;">
+                  ✓ Todos vistos
+                </button>
               </div>
               <div class="card-body" style="padding: 0;">
                 <div id="gs-direcciones-body" style="overflow-x: auto;">
@@ -22609,7 +22612,32 @@
         btn.style.background = _dirFilterNuevo ? 'rgba(16,185,129,0.15)' : 'transparent';
         btn.style.borderColor = _dirFilterNuevo ? '#10b981' : 'rgba(16,185,129,0.35)';
       }
+      const vistosBtn = document.getElementById('dir-marcar-vistos-btn');
+      if (vistosBtn) vistosBtn.style.display = _dirFilterNuevo ? 'inline-flex' : 'none';
       filterDireccionesDB();
+    }
+
+    function _markAllNewAsSeen() {
+      const seen = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
+      const now = Date.now();
+      let added = 0;
+      allClients.forEach(c => {
+        const createdAt = c.created_at ? new Date(c.created_at) : null;
+        const daysOld = createdAt ? Math.floor((now - createdAt.getTime()) / (1000 * 60 * 60 * 24)) : 999;
+        if (daysOld < 7 && !seen.includes(c.id)) {
+          seen.push(c.id);
+          added++;
+        }
+      });
+      localStorage.setItem('leker_seen_new', JSON.stringify(seen));
+      // Apagar filtro y refrescar
+      _dirFilterNuevo = false;
+      const btn = document.getElementById('dir-filter-nuevo-btn');
+      if (btn) { btn.style.background = 'transparent'; btn.style.borderColor = 'rgba(16,185,129,0.35)'; }
+      const vistosBtn = document.getElementById('dir-marcar-vistos-btn');
+      if (vistosBtn) vistosBtn.style.display = 'none';
+      filterDireccionesDB();
+      if (added > 0) showToast('success', `${added} cliente${added > 1 ? 's' : ''} marcado${added > 1 ? 's' : ''} como visto${added > 1 ? 's' : ''}`, '');
     }
 
     function filterDireccionesDB() {
