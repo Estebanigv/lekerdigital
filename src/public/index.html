@@ -7642,18 +7642,8 @@
                     onmouseleave="this.style.background='rgba(16,185,129,0.1)';this.style.boxShadow='none'">
                     <i data-lucide="database" style="width:13px;height:13px;"></i> Importar Excel → DB
                   </button>
-                  <button onclick="batchGenerateGeoLinks()" id="btn-batch-geo" title="Generar geo links"
-                    style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;"
-                    onmouseenter="this.style.background='var(--bg-hover)';this.style.color='var(--text-primary)';this.style.borderColor='rgba(99,102,241,0.4)'"
-                    onmouseleave="this.style.background='transparent';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)'">
-                    <i data-lucide="locate" style="width:13px;height:13px;"></i> Cargar Geo
-                  </button>
-                  <button onclick="stopBatchGeoLinks()" id="btn-batch-geo-stop"
-                    style="display:none;align-items:center;gap:6px;padding:7px 14px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.25);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;"
-                    onmouseenter="this.style.background='rgba(239,68,68,0.18)'"
-                    onmouseleave="this.style.background='rgba(239,68,68,0.1)'">
-                    <i data-lucide="square" style="width:13px;height:13px;"></i> Detener
-                  </button>
+                  <button id="btn-batch-geo" style="display:none;"></button>
+                  <button id="btn-batch-geo-stop" style="display:none;"></button>
                   <button onclick="batchGeocodeGPS()" id="btn-geocode-gps" title="Geocodificar lat/lng para clientes sin GPS que tienen dirección"
                     style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:transparent;color:#f59e0b;border:1px solid rgba(245,158,11,0.35);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;"
                     onmouseenter="this.style.background='rgba(245,158,11,0.1)'"
@@ -7677,12 +7667,14 @@
                 </select>
                 <div id="dir-db-geo-filters" style="display:flex;gap:4px;"></div>
                 <select id="dir-filter-date" onchange="filterDireccionesDB()" style="padding:5px 8px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;">
-                  <option value="">📅 Todos</option>
+                  <option value="">Todos</option>
                   <option value="today">Hoy</option>
                   <option value="week">Esta semana</option>
                   <option value="month">Este mes</option>
-                  <option value="unseen">🆕 No vistos</option>
                 </select>
+                <button id="dir-btn-nuevos" onclick="_toggleDirNuevosBtn()" title="Ver clientes nuevos no vistos" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid rgba(99,102,241,0.4);background:rgba(99,102,241,0.07);color:#6366f1;cursor:pointer;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;transition:all 0.15s;">
+                  🆕 <span id="dir-nuevos-label">Nuevos</span>
+                </button>
                 <button id="dir-marcar-vistos-btn" onclick="_markAllNewAsSeen()" title="Marcar todos como vistos" style="display:none;align-items:center;gap:4px;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(16,185,129,0.25);background:transparent;color:var(--text-muted);cursor:pointer;transition:all 0.15s;">
                   ✓ Todos vistos
                 </button>
@@ -22610,7 +22602,20 @@
 
     let _dirFilterNuevo = false;
 
-    function _toggleDirNuevo() { /* legacy — replaced by date select */ }
+    function _toggleDirNuevo() { /* legacy */ }
+
+    let _dirFilterNuevos = false;
+    function _toggleDirNuevosBtn() {
+      _dirFilterNuevos = !_dirFilterNuevos;
+      const btn = document.getElementById('dir-btn-nuevos');
+      if (btn) {
+        btn.style.background = _dirFilterNuevos ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.07)';
+        btn.style.borderColor = _dirFilterNuevos ? '#6366f1' : 'rgba(99,102,241,0.4)';
+      }
+      // Reset date filter when activating nuevos
+      if (_dirFilterNuevos) { const sel = document.getElementById('dir-filter-date'); if (sel) sel.value = ''; }
+      filterDireccionesDB();
+    }
 
     // Abre modal desde la lista Direcciones → marca como visto
     function _openDirClientModal(clientId) {
@@ -22677,16 +22682,36 @@
           if (dateFilter === 'today')  return d >= todayStart;
           if (dateFilter === 'week')   return d >= weekStart;
           if (dateFilter === 'month')  return d >= monthStart;
-          if (dateFilter === 'unseen') return !seen.includes(c.id) && (now - d.getTime()) < 30 * 24 * 60 * 60 * 1000;
           return true;
         });
-        // Mostrar botón "Todos vistos" solo en modo unseen
         const vistosBtn = document.getElementById('dir-marcar-vistos-btn');
-        if (vistosBtn) vistosBtn.style.display = dateFilter === 'unseen' ? 'inline-flex' : 'none';
+        if (vistosBtn) vistosBtn.style.display = 'none';
+      }
+
+      // Filtro Nuevos (no vistos en últimos 30d)
+      if (_dirFilterNuevos) {
+        const seen = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
+        const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        filtered = filtered.filter(c => {
+          const d = c.created_at ? new Date(c.created_at).getTime() : 0;
+          return d > cutoff && !seen.includes(c.id);
+        });
+        const vistosBtn = document.getElementById('dir-marcar-vistos-btn');
+        if (vistosBtn) vistosBtn.style.display = 'inline-flex';
       } else {
         const vistosBtn = document.getElementById('dir-marcar-vistos-btn');
         if (vistosBtn) vistosBtn.style.display = 'none';
       }
+
+      // Actualizar contador del botón Nuevos
+      const seenN = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
+      const cutoffN = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const nuevosCount = (allClients || []).filter(c => {
+        const d = c.created_at ? new Date(c.created_at).getTime() : 0;
+        return d > cutoffN && !seenN.includes(c.id);
+      }).length;
+      const nuevosLbl = document.getElementById('dir-nuevos-label');
+      if (nuevosLbl) nuevosLbl.textContent = nuevosCount > 0 ? `Nuevos (${nuevosCount})` : 'Nuevos';
 
       _dirDBFiltered = filtered;
       _dirDBPage = 0;
@@ -22716,8 +22741,8 @@
       const geoFiltersEl = document.getElementById('dir-db-geo-filters');
       if (geoFiltersEl) {
         geoFiltersEl.innerHTML = `
-          <button onclick="_dirFilterGeo=_dirFilterGeo==='has'?false:'has';filterDireccionesDB()" style="padding:3px 8px;border:1px solid ${_dirFilterGeo === 'has' ? '#10b981' : 'var(--border)'};border-radius:5px;background:${_dirFilterGeo === 'has' ? 'rgba(16,185,129,0.1)' : 'transparent'};color:${_dirFilterGeo === 'has' ? '#10b981' : 'var(--text-muted)'};font-size:11px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;"><i data-lucide="map-pin" style="width:11px;height:11px;"></i>${geoCount.toLocaleString()} con geo</button>
-          <button onclick="_dirFilterGeo=_dirFilterGeo==='none'?false:'none';filterDireccionesDB()" style="padding:3px 8px;border:1px solid ${_dirFilterGeo === 'none' ? '#f59e0b' : 'var(--border)'};border-radius:5px;background:${_dirFilterGeo === 'none' ? 'rgba(245,158,11,0.1)' : 'transparent'};color:${_dirFilterGeo === 'none' ? '#f59e0b' : 'var(--text-muted)'};font-size:11px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;"><i data-lucide="map-pin-off" style="width:11px;height:11px;"></i>${noGeoCount.toLocaleString()} sin geo</button>`;
+          <button onclick="_dirFilterGeo=_dirFilterGeo==='has'?false:'has';filterDireccionesDB()" title="Filtrar: solo con GPS" style="padding:4px 10px;border:1px solid ${_dirFilterGeo === 'has' ? '#10b981' : 'rgba(16,185,129,0.4)'};border-radius:20px;background:${_dirFilterGeo === 'has' ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.07)'};color:${_dirFilterGeo === 'has' ? '#059669' : '#10b981'};font-size:11px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;transition:all 0.15s;"><i data-lucide="map-pin" style="width:11px;height:11px;"></i>${geoCount.toLocaleString()} con geo</button>
+          <button onclick="_dirFilterGeo=_dirFilterGeo==='none'?false:'none';filterDireccionesDB()" title="Filtrar: solo sin GPS" style="padding:4px 10px;border:1px solid ${_dirFilterGeo === 'none' ? '#f59e0b' : 'rgba(245,158,11,0.4)'};border-radius:20px;background:${_dirFilterGeo === 'none' ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.07)'};color:${_dirFilterGeo === 'none' ? '#b45309' : '#f59e0b'};font-size:11px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;transition:all 0.15s;"><i data-lucide="map-pin-off" style="width:11px;height:11px;"></i>${noGeoCount.toLocaleString()} sin geo</button>`;
       }
 
       const pageSize = 100;
