@@ -461,6 +461,10 @@
     @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
     @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
 
+    /* AI Cursor blink */
+    @keyframes aiCursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .ai-cursor { animation: aiCursorBlink 0.8s infinite; }
+
     /* Command Palette */
     #cmd-palette-overlay {
       position: fixed; inset: 0; z-index: 999999;
@@ -5038,6 +5042,36 @@
               <h3 id="stat-efectividad-hoy" style="color:#10b981;">-</h3>
               <p>Efectividad Hoy</p>
             </div>
+          </div>
+        </div>
+
+        <!-- AI Pulse Card -->
+        <div class="card" id="ai-pulse-card" style="margin-bottom:20px;background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.04));border:1px solid rgba(99,102,241,0.2);">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(99,102,241,0.15);">
+            <h3 style="display:flex;align-items:center;gap:8px;">
+              <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i data-lucide="bot" style="width:14px;height:14px;color:white;"></i>
+              </div>
+              LEKER AI — Pulso del día
+            </h3>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span id="ai-pulse-time" style="font-size:10px;color:var(--text-muted);"></span>
+              <button onclick="loadAIPulse()" id="btn-ai-pulse-refresh" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);color:#818cf8;border-radius:6px;cursor:pointer;font-weight:600;" title="Actualizar análisis IA">
+                <i data-lucide="refresh-cw" style="width:12px;height:12px;" id="ico-pulse-refresh"></i> Actualizar
+              </button>
+              <button onclick="toggleLekerAIPanel()" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);color:#818cf8;border-radius:6px;cursor:pointer;font-weight:600;">
+                <i data-lucide="message-square" style="width:12px;height:12px;"></i> Preguntar
+              </button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:14px 16px;">
+            <div id="ai-pulse-content" style="font-size:13px;color:var(--text-primary);line-height:1.7;white-space:pre-wrap;">
+              <div style="display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;">
+                <div style="width:16px;height:16px;border:2px solid #6366f1;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                Cargando análisis IA...
+              </div>
+            </div>
+            <div id="ai-pulse-meta" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(99,102,241,0.15);display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--text-muted);"></div>
           </div>
         </div>
 
@@ -10034,6 +10068,9 @@
         allRoutes = routes.data;
         filteredClients = [...allClients];
         currentClientsPage = 1;
+
+        // Show LEKER AI FAB now that user is authenticated and data is loaded
+        _showLekerAIFab();
 
         // Update admin info in sidebar
         updateCurrentAdminInfo();
@@ -23792,15 +23829,31 @@
             </div>
             ${client.address_updated_at ? `<div style="margin-top:12px;padding:8px 12px;background:var(--bg-hover);border-radius:8px;font-size:11px;color:var(--text-muted);">Última modificación: ${new Date(client.address_updated_at).toLocaleString('es-CL')}</div>` : ''}
           </div>
-          <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
-            <button onclick="document.getElementById('modal-edit-client-full').remove()" class="btn btn-secondary" style="font-size:12px;padding:7px 16px;">Cerrar</button>
-            ${isAdmin ? `<button onclick="saveEditClientFull()" class="btn btn-primary" id="btn-save-edit-client" style="font-size:12px;padding:7px 16px;">Guardar</button>` : ''}
+          <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button onclick="_aiClientInsight('${client.id}')" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:7px 14px;border:1px solid rgba(99,102,241,0.4);background:rgba(99,102,241,0.08);color:#818cf8;border-radius:8px;cursor:pointer;font-weight:600;transition:all 0.15s;" onmouseover="this.style.background='rgba(99,102,241,0.18)'" onmouseout="this.style.background='rgba(99,102,241,0.08)'">
+              <i data-lucide="bot" style="width:13px;height:13px;"></i> Análisis IA
+            </button>
+            <div style="display:flex;gap:8px;">
+              <button onclick="document.getElementById('modal-edit-client-full').remove()" class="btn btn-secondary" style="font-size:12px;padding:7px 16px;">Cerrar</button>
+              ${isAdmin ? `<button onclick="saveEditClientFull()" class="btn btn-primary" id="btn-save-edit-client" style="font-size:12px;padding:7px 16px;">Guardar</button>` : ''}
+            </div>
           </div>
         </div>`;
       overlay.addEventListener('mousedown', (e) => { overlay._mdOnBg = e.target === overlay; });
       overlay.addEventListener('click', (e) => { if (overlay._mdOnBg && e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);
       _createIcons();
+    }
+
+    async function _aiClientInsight(clientId) {
+      const client = allClients.find(c => c.id === clientId);
+      if (!client) return;
+      // Open AI panel
+      if (!_aiPanelOpen) toggleLekerAIPanel();
+      // Build query
+      const name = client.fantasy_name || client.name;
+      const question = `Necesito un análisis del cliente "${name}" (${client.external_id || ''}) de ${client.commune || 'sin comuna'}, segmento ${client.segmentation || 'L'}. ¿Cuál es tu recomendación?`;
+      setTimeout(() => _aiQuickAsk(question), 400);
     }
 
     async function saveEditClientFull() {
@@ -25574,6 +25627,158 @@
       const el = document.getElementById('regions-modal-overlay');
       if (el) el.remove();
     }
+
+    // ══ LEKER AI FLOATING PANEL ══════════════════════════════════════
+    let _aiPanelOpen = false;
+    let _aiChatHistory = [];
+    let _aiStreaming = false;
+
+    function toggleLekerAIPanel() {
+      _aiPanelOpen = !_aiPanelOpen;
+      const panel = document.getElementById('leker-ai-panel');
+      const backdrop = document.getElementById('leker-ai-backdrop');
+      const fab = document.getElementById('leker-ai-fab');
+      if (!panel) return;
+      panel.style.right = _aiPanelOpen ? '0' : '-440px';
+      if (backdrop) backdrop.style.display = _aiPanelOpen ? 'block' : 'none';
+      if (fab) { fab.style.transform = _aiPanelOpen ? 'rotate(90deg)' : 'rotate(0)'; }
+      if (_aiPanelOpen) {
+        setTimeout(() => document.getElementById('ai-chat-input')?.focus(), 350);
+        _createIcons();
+      }
+    }
+
+    function _aiQuickAsk(text) {
+      const input = document.getElementById('ai-chat-input');
+      if (input) input.value = text;
+      sendAIMessage();
+    }
+
+    function _buildAIPlatformContext() {
+      const stats = {
+        fecha: new Date().toLocaleDateString('es-CL'),
+        totalClientes: (allClients || []).length,
+        clientes8020: (allClients || []).filter(c => c.segmentation === '80-20').length,
+        clientesL: (allClients || []).filter(c => c.segmentation === 'L').length,
+        clientesConGPS: (allClients || []).filter(c => c.lat && c.lng).length,
+        clientesSinGPS: (allClients || []).filter(c => !c.lat || !c.lng).length,
+        rutasHoy: 0,
+        totalVendedores: (allUsers || []).filter(u => u.role === 'executive').length
+      };
+      const vendedores = (allUsers || []).filter(u => u.role === 'executive').map(u => {
+        const myClients = (allClients || []).filter(c => c.assigned_user_id === u.id);
+        return {
+          nombre: u.full_name,
+          zona: u.zone || 'sin zona',
+          totalClientes: myClients.length,
+          seg8020: myClients.filter(c => c.segmentation === '80-20').length,
+          conGPS: myClients.filter(c => c.lat && c.lng).length,
+          sinGPS: myClients.filter(c => !c.lat || !c.lng).length,
+          rutaHoy: null
+        };
+      });
+      return { stats, vendedores };
+    }
+
+    async function sendAIMessage() {
+      if (_aiStreaming) return;
+      const input = document.getElementById('ai-chat-input');
+      const msg = (input?.value || '').trim();
+      if (!msg) return;
+      input.value = '';
+
+      // Add user bubble
+      _aiAddBubble('user', msg);
+      _aiChatHistory.push({ role: 'user', content: msg });
+
+      // Keep last 8 messages
+      if (_aiChatHistory.length > 16) _aiChatHistory = _aiChatHistory.slice(-16);
+
+      // Add AI bubble (streaming)
+      const bubbleId = 'ai-bubble-' + Date.now();
+      _aiAddBubble('assistant', '', bubbleId);
+      _aiStreaming = true;
+      const statusEl = document.getElementById('ai-panel-status');
+      if (statusEl) statusEl.textContent = 'Pensando...';
+
+      try {
+        const ctx = _buildAIPlatformContext();
+        const response = await fetch(`${API}/api/ai/route-chat/stream`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: msg,
+            platformContext: ctx,
+            history: _aiChatHistory.slice(-8),
+            routeContext: null
+          })
+        });
+
+        if (!response.ok) throw new Error('Error ' + response.status);
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        const bubble = document.getElementById(bubbleId);
+        let full = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const raw = line.slice(6).trim();
+            if (!raw) continue;
+            try {
+              const parsed = JSON.parse(raw);
+              if (parsed.done) break;
+              if (parsed.delta) {
+                full += parsed.delta;
+                if (bubble) bubble.innerHTML = _aiFormatText(full) + '<span class="ai-cursor">▌</span>';
+                // scroll to bottom
+                const msgs = document.getElementById('ai-chat-messages');
+                if (msgs) msgs.scrollTop = msgs.scrollHeight;
+              }
+            } catch {}
+          }
+        }
+
+        if (bubble) bubble.innerHTML = _aiFormatText(full);
+        _aiChatHistory.push({ role: 'assistant', content: full });
+
+      } catch (err) {
+        const bubble = document.getElementById(bubbleId);
+        if (bubble) bubble.innerHTML = `<span style="color:#ef4444;">Error al contactar LEKER AI. Intenta de nuevo.</span>`;
+      } finally {
+        _aiStreaming = false;
+        if (statusEl) statusEl.textContent = 'Asistente inteligente · GPT-4o mini';
+      }
+    }
+
+    function _aiAddBubble(role, text, id) {
+      const container = document.getElementById('ai-chat-messages');
+      if (!container) return;
+      const isUser = role === 'user';
+      const div = document.createElement('div');
+      if (id) div.id = id;
+      div.style.cssText = `display:flex;justify-content:${isUser ? 'flex-end' : 'flex-start'};`;
+      div.innerHTML = `<div style="max-width:88%;padding:9px 13px;border-radius:${isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};background:${isUser ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'var(--bg-secondary)'};color:${isUser ? 'white' : 'var(--text-primary)'};font-size:13px;line-height:1.5;border:${isUser ? 'none' : '1px solid var(--border)'};">${isUser ? text : (text || '<span style="opacity:0.5">▌</span>')}</div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function _aiFormatText(text) {
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+    }
+
+    function _showLekerAIFab() {
+      const fab = document.getElementById('leker-ai-fab');
+      if (fab) fab.style.display = 'flex';
+      _createIcons();
+    }
+    // ══ END LEKER AI FLOATING PANEL ══════════════════════════════════
 
     // ── Command Palette ─────────────────────────────────────────────
     let _cmdActiveIdx = -1;
@@ -27810,6 +28015,46 @@
     }
 
     // =============================================
+    // LEKER AI — COMPANY PULSE
+    // =============================================
+
+    async function loadAIPulse() {
+      const content = document.getElementById('ai-pulse-content');
+      const meta = document.getElementById('ai-pulse-meta');
+      const timeEl = document.getElementById('ai-pulse-time');
+      const ico = document.getElementById('ico-pulse-refresh');
+      if (!content) return;
+
+      content.innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;"><div style="width:16px;height:16px;border:2px solid #6366f1;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>Analizando datos en tiempo real...</div>`;
+      if (meta) meta.style.display = 'none';
+      if (ico) ico.style.animation = 'spin 0.8s linear infinite';
+
+      try {
+        const res = await fetch(`${API}/api/ai/company-pulse`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const data = await res.json();
+        if (data.success) {
+          content.innerHTML = data.pulse.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+          if (timeEl) timeEl.textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+          if (meta && data.meta) {
+            meta.style.display = 'flex';
+            meta.innerHTML = [
+              `<span>👥 ${data.meta.vendorsActive}/${data.meta.vendorsTotal} vendedores activos</span>`,
+              `<span>📋 ${data.meta.visitsToday} visitas · ${data.meta.salesToday} ventas</span>`,
+              `<span>⭐ ${data.meta.neglected8020} 80/20 sin visitar</span>`,
+              `<span>📍 ${data.meta.clientsWithoutGPS} sin GPS</span>`
+            ].join('');
+          }
+        } else {
+          content.innerHTML = `<span style="color:var(--text-muted);font-size:12px;">No se pudo cargar el análisis. <button onclick="loadAIPulse()" style="color:#6366f1;background:none;border:none;cursor:pointer;font-size:12px;text-decoration:underline;">Reintentar</button></span>`;
+        }
+      } catch (err) {
+        content.innerHTML = `<span style="color:var(--text-muted);font-size:12px;">Error al contactar LEKER AI.</span>`;
+      } finally {
+        if (ico) ico.style.animation = '';
+      }
+    }
+
+    // =============================================
     // DASHBOARD VENDEDOR + CALENDARIO
     // =============================================
 
@@ -28072,6 +28317,9 @@
 
       // Auto-load vendor dashboard
       loadVendorDashboard();
+
+      // Auto-load AI Pulse
+      loadAIPulse();
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -28409,6 +28657,56 @@ function installPWA() {
     </button>
   </div>
 </div>
+
+  <!-- LEKER AI — Floating Button + Chat Panel -->
+  <div id="leker-ai-fab" onclick="toggleLekerAIPanel()" title="LEKER AI" style="position:fixed;bottom:24px;right:24px;z-index:99990;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 20px rgba(99,102,241,0.5);cursor:pointer;display:none;align-items:center;justify-content:center;transition:transform 0.2s,box-shadow 0.2s;" onmouseenter="this.style.transform='scale(1.1)';this.style.boxShadow='0 6px 28px rgba(99,102,241,0.7)'" onmouseleave="this.style.transform='scale(1)';this.style.boxShadow='0 4px 20px rgba(99,102,241,0.5)'">
+    <i data-lucide="bot" style="width:24px;height:24px;color:white;"></i>
+    <div id="ai-fab-badge" style="position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:#10b981;border:2px solid white;display:none;"></div>
+  </div>
+
+  <!-- AI Chat Slide Panel -->
+  <div id="leker-ai-panel" style="position:fixed;top:0;right:-440px;width:420px;height:100vh;background:var(--bg-card);border-left:1px solid var(--border);box-shadow:-8px 0 40px rgba(0,0,0,0.3);z-index:99989;display:flex;flex-direction:column;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);">
+    <!-- Header -->
+    <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08));">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="bot" style="width:18px;height:18px;color:white;"></i>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;color:var(--text-primary);">LEKER AI</div>
+        <div style="font-size:11px;color:var(--text-muted);" id="ai-panel-status">Asistente inteligente · GPT-4o mini</div>
+      </div>
+      <button onclick="toggleLekerAIPanel()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;" title="Cerrar">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+    </div>
+    <!-- Quick actions -->
+    <div id="ai-quick-actions" style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;">
+      <button onclick="_aiQuickAsk('¿Cómo está el equipo hoy?')" style="font-size:10px;padding:4px 9px;border-radius:14px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;">📊 Estado hoy</button>
+      <button onclick="_aiQuickAsk('¿Qué clientes 80/20 llevan más de 15 días sin visita?')" style="font-size:10px;padding:4px 9px;border-radius:14px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;">⭐ 80/20 olvidados</button>
+      <button onclick="_aiQuickAsk('¿Qué vendedor tiene más clientes sin GPS?')" style="font-size:10px;padding:4px 9px;border-radius:14px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;">📍 Sin GPS</button>
+      <button onclick="_aiQuickAsk('Dame un resumen de rutas activas y visitas de hoy')" style="font-size:10px;padding:4px 9px;border-radius:14px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;">🗺️ Rutas activas</button>
+    </div>
+    <!-- Messages -->
+    <div id="ai-chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
+      <div style="text-align:center;padding:20px 0;">
+        <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;"><i data-lucide="bot" style="width:24px;height:24px;color:white;"></i></div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Hola, soy LEKER AI</div>
+        <div style="font-size:12px;color:var(--text-muted);">Tengo acceso a todos los datos de la plataforma.<br>Pregúntame lo que necesites.</div>
+      </div>
+    </div>
+    <!-- Input -->
+    <div style="padding:12px 14px;border-top:1px solid var(--border);flex-shrink:0;">
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <textarea id="ai-chat-input" placeholder="Escribe tu pregunta..." rows="2" style="flex:1;padding:9px 12px;font-size:13px;border-radius:10px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);resize:none;font-family:inherit;line-height:1.4;outline:none;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage();}"></textarea>
+        <button onclick="sendAIMessage()" style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Enviar">
+          <i data-lucide="send" style="width:16px;height:16px;color:white;"></i>
+        </button>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:5px;text-align:center;">Enter para enviar · Shift+Enter para nueva línea</div>
+    </div>
+  </div>
+  <!-- AI Panel backdrop -->
+  <div id="leker-ai-backdrop" onclick="toggleLekerAIPanel()" style="position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:99988;display:none;backdrop-filter:blur(2px);"></div>
 
 </body>
 </html>

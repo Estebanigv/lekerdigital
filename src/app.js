@@ -2659,6 +2659,118 @@ Para cada uno recomienda: mantener frecuencia actual, reducir a cada 45 días, o
   }
 });
 
+// ─── AI Company Pulse ────────────────────────────────────────────────────────
+// Returns proactive platform-wide analysis: alerts, opportunities, team status
+app.post('/api/ai/company-pulse', authorize('admin', 'supervisor', 'zonal'), async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    // 1. Today's routes
+    const { data: todayRoutes } = await supabase
+      .from('daily_routes')
+      .select('id, user_id, status, visits_count')
+      .eq('route_date', today);
+
+    // 2. All vendors
+    const { data: vendors } = await supabase
+      .from('users')
+      .select('id, full_name, zone')
+      .in('role', ['executive', 'zonal', 'supervisor'])
+      .eq('status', 'active');
+
+    // 3. Clients without recent visit (80-20 priority, >15 days)
+    const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: neglected8020 } = await supabase
+      .from('clients')
+      .select('id, name, fantasy_name, commune, segmentation, assigned_user_id, last_visit_at')
+      .eq('segmentation', '80-20')
+      .not('assigned_user_id', 'is', null)
+      .or(`last_visit_at.is.null,last_visit_at.lt.${fifteenDaysAgo}`)
+      .limit(30);
+
+    // 4. GPS coverage
+    const { count: totalClients } = await supabase.from('clients').select('*', { count: 'exact', head: true });
+    const { count: clientsWithGPS } = await supabase.from('clients').select('*', { count: 'exact', head: true }).not('lat', 'is', null).not('lng', 'is', null);
+    const clientsWithoutGPS = (totalClients || 0) - (clientsWithGPS || 0);
+
+    // 5. Today's visits
+    const routeIds = (todayRoutes || []).map(r => r.id);
+    let todayVisits = [];
+    if (routeIds.length > 0) {
+      const { data: visits } = await supabase
+        .from('visits')
+        .select('id, outcome, client_id')
+        .in('route_id', routeIds);
+      todayVisits = visits || [];
+    }
+
+    // Build context for GPT
+    const vendorMap = {};
+    (vendors || []).forEach(v => { vendorMap[v.id] = v; });
+
+    const routesByVendor = {};
+    (todayRoutes || []).forEach(r => {
+      routesByVendor[r.user_id] = r;
+    });
+
+    const vendorStatus = (vendors || []).map(v => {
+      const route = routesByVendor[v.id];
+      return `${v.full_name} [${v.zone || 'sin zona'}]: ${route ? `ruta ${route.status} (${route.visits_count || 0} visitas hoy)` : 'SIN ruta hoy'}`;
+    }).join('\n');
+
+    const neglectedList = (neglected8020 || []).slice(0, 15).map(c => {
+      const vendor = vendorMap[c.assigned_user_id];
+      const days = c.last_visit_at ? Math.floor((Date.now() - new Date(c.last_visit_at)) / 86400000) : 999;
+      return `  - ${c.fantasy_name || c.name} (${c.commune}) → ${vendor ? vendor.full_name : 'sin vendedor'} — ${days === 999 ? 'nunca visitado' : `${days} días sin visita`}`;
+    }).join('\n');
+
+    const salesCount = todayVisits.filter(v => v.outcome === 'sale').length;
+    const totalVisits = todayVisits.length;
+
+    const userPrompt = `
+Fecha: ${today}
+Clientes totales: ${totalClients} | Con GPS: ${clientsWithGPS} | Sin GPS: ${clientsWithoutGPS}
+Visitas hoy: ${totalVisits} (${salesCount} ventas, ${totalVisits - salesCount} sin venta)
+
+ESTADO DEL EQUIPO HOY:
+${vendorStatus || 'Sin datos'}
+
+CLIENTES 80-20 SIN VISITA (>15 días o nunca):
+${neglectedList || '  Ninguno — ¡Excelente cobertura!'}
+
+Genera un análisis ejecutivo conciso con:
+1. Estado general del equipo hoy (1 línea)
+2. Máximo 3 alertas críticas (🔴 o 🟡 según urgencia)
+3. Máximo 2 oportunidades detectadas (🟢)
+4. Una acción prioritaria recomendada para hoy
+
+Responde en español. Usa emojis. Máximo 10 líneas total. Sé directo y accionable.`;
+
+    const systemPrompt = `Eres LEKER AI, el asistente inteligente de una empresa distribuidora en Chile. Analizas datos reales de la plataforma y entregas insights ejecutivos breves y accionables para que los supervisores tomen decisiones rápidas.`;
+
+    const reply = await askOpenAI(systemPrompt, userPrompt, 500);
+
+    res.json({
+      success: true,
+      pulse: reply,
+      meta: {
+        date: today,
+        totalClients,
+        clientsWithGPS,
+        clientsWithoutGPS,
+        vendorsActive: (todayRoutes || []).filter(r => r.status === 'active').length,
+        vendorsTotal: (vendors || []).length,
+        visitsToday: totalVisits,
+        salesToday: salesCount,
+        neglected8020: (neglected8020 || []).length
+      }
+    });
+  } catch (error) {
+    console.error('[AI Pulse] Error:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 /**
  * POST /api/ai/route-chat
  * Asistente conversacional con contexto de la ruta actual.
