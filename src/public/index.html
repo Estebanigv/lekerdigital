@@ -25636,12 +25636,14 @@
     function toggleLekerAIPanel() {
       _aiPanelOpen = !_aiPanelOpen;
       const panel = document.getElementById('leker-ai-panel');
-      const backdrop = document.getElementById('leker-ai-backdrop');
       const fab = document.getElementById('leker-ai-fab');
       if (!panel) return;
       panel.style.right = _aiPanelOpen ? '0' : '-440px';
-      if (backdrop) backdrop.style.display = _aiPanelOpen ? 'block' : 'none';
-      if (fab) { fab.style.transform = _aiPanelOpen ? 'rotate(90deg)' : 'rotate(0)'; }
+      // FAB: se mueve a la izquierda del panel cuando está abierto, vuelve a su lugar al cerrar
+      if (fab) {
+        fab.style.right = _aiPanelOpen ? '436px' : '24px';
+        fab.style.bottom = _aiPanelOpen ? '24px' : '24px';
+      }
       if (_aiPanelOpen) {
         setTimeout(() => document.getElementById('ai-chat-input')?.focus(), 350);
         _createIcons();
@@ -28659,7 +28661,7 @@ function installPWA() {
 </div>
 
   <!-- LEKER AI — Floating Button + Chat Panel -->
-  <div id="leker-ai-fab" onclick="toggleLekerAIPanel()" title="LEKER AI" style="position:fixed;bottom:24px;right:24px;z-index:99990;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 20px rgba(99,102,241,0.5);cursor:pointer;display:none;align-items:center;justify-content:center;transition:transform 0.2s,box-shadow 0.2s;" onmouseenter="this.style.transform='scale(1.1)';this.style.boxShadow='0 6px 28px rgba(99,102,241,0.7)'" onmouseleave="this.style.transform='scale(1)';this.style.boxShadow='0 4px 20px rgba(99,102,241,0.5)'">
+  <div id="leker-ai-fab" onclick="toggleLekerAIPanel()" title="LEKER AI" style="position:fixed;bottom:24px;right:24px;z-index:99991;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 20px rgba(99,102,241,0.5);cursor:pointer;display:none;align-items:center;justify-content:center;transition:right 0.3s cubic-bezier(0.4,0,0.2,1),box-shadow 0.2s;" onmouseenter="this.style.boxShadow='0 6px 28px rgba(99,102,241,0.7)'" onmouseleave="this.style.boxShadow='0 4px 20px rgba(99,102,241,0.5)'">
     <i data-lucide="bot" style="width:24px;height:24px;color:white;"></i>
     <div id="ai-fab-badge" style="position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:#10b981;border:2px solid white;display:none;"></div>
   </div>
@@ -28705,8 +28707,7 @@ function installPWA() {
       <div style="font-size:10px;color:var(--text-muted);margin-top:5px;text-align:center;">Enter para enviar · Shift+Enter para nueva línea</div>
     </div>
   </div>
-  <!-- AI Panel backdrop -->
-  <div id="leker-ai-backdrop" onclick="toggleLekerAIPanel()" style="position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:99988;display:none;backdrop-filter:blur(2px);"></div>
+  <!-- AI Panel backdrop removed — panel no bloquea la app -->
 
 </body>
 </html>
