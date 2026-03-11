@@ -430,18 +430,33 @@
       background: rgba(148,163,184,0.06) !important;
       border-color: rgba(148,163,184,0.18) !important;
     }
+    [data-theme="dark"] #segmentation-stats > div:nth-child(3) #seg-L-base-count {
+      color: #c8d3e0 !important;
+    }
     [data-theme="dark"] #segmentation-stats > div:nth-child(4) {
       background: rgba(99,102,241,0.06) !important;
       border-color: rgba(99,102,241,0.2) !important;
+    }
+    [data-theme="dark"] #segmentation-stats > div:nth-child(4) #seg-C-count {
+      color: #a5b4fc !important;
     }
     [data-theme="dark"] #segmentation-stats > div:nth-child(5) {
       background: rgba(239,68,68,0.05) !important;
       border-color: rgba(239,68,68,0.2) !important;
     }
+    [data-theme="dark"] #segmentation-stats > div:nth-child(5) #seg-E-count {
+      color: #fca5a5 !important;
+    }
     [data-theme="dark"] #segmentation-stats > div:nth-child(6) {
       background: #1e1e1e !important;
       border-color: #333 !important;
     }
+    [data-theme="dark"] #segmentation-stats > div:nth-child(6) #seg-total-count {
+      color: #e8e8e8 !important;
+    }
+    /* dark — números 80/20 y L con venta más brillantes */
+    [data-theme="dark"] #seg-A-count { color: #f5d060 !important; }
+    [data-theme="dark"] #seg-L-active-count { color: #93c5fd !important; }
 
     /* Vendor stat cards dark */
     [data-theme="dark"] .vendor-stat-card {
@@ -4961,30 +4976,30 @@
             </div>
             <div class="card-body">
               <!-- KPIs reales calculados desde allClients -->
-              <div id="segmentation-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(212,175,55,0.08);border-radius:10px;border:1px solid rgba(212,175,55,0.3);cursor:pointer;" onclick="goToClientsBySegmentation('80-20');showOnlyMapSegment('80-20')" title="Clientes que generan el 80% de las ventas">
-                  <div style="width:34px;height:34px;border-radius:8px;background:rgba(212,175,55,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="star" style="width:16px;height:16px;fill:#b8860b;stroke:#b8860b;"></i></div>
-                  <div><div style="font-size:22px;font-weight:800;color:#b8860b;line-height:1;" id="seg-A-count">-</div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">80/20 Clave</div></div>
+              <div id="segmentation-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:rgba(212,175,55,0.08);border-radius:8px;border:1px solid rgba(212,175,55,0.3);cursor:pointer;" onclick="goToClientsBySegmentation('80-20');showOnlyMapSegment('80-20')" title="Clientes que generan el 80% de las ventas">
+                  <div style="width:28px;height:28px;border-radius:7px;background:rgba(212,175,55,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="star" style="width:13px;height:13px;fill:#b8860b;stroke:#b8860b;"></i></div>
+                  <div><div style="font-size:18px;font-weight:800;color:#b8860b;line-height:1;" id="seg-A-count">-</div><div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-top:1px;">80/20 Clave</div></div>
                 </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(59,130,246,0.1);border-radius:10px;border:1px solid rgba(59,130,246,0.3);cursor:pointer;" onclick="goToClientsBySegAndSegment('L','C');showOnlyMapSegment('L-C')" title="Clientes L con ventas activas">
-                  <div style="width:34px;height:34px;border-radius:8px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="circle-check-big" style="width:16px;height:16px;color:#3b82f6;"></i></div>
-                  <div><div style="font-size:22px;font-weight:800;color:#3b82f6;line-height:1;" id="seg-L-active-count">-</div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">L Con venta</div></div>
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:rgba(59,130,246,0.1);border-radius:8px;border:1px solid rgba(59,130,246,0.3);cursor:pointer;" onclick="goToClientsBySegAndSegment('L','C');showOnlyMapSegment('L-C')" title="Clientes L con ventas activas">
+                  <div style="width:28px;height:28px;border-radius:7px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="circle-check-big" style="width:13px;height:13px;color:#3b82f6;"></i></div>
+                  <div><div style="font-size:18px;font-weight:800;color:#3b82f6;line-height:1;" id="seg-L-active-count">-</div><div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-top:1px;">L Con venta</div></div>
                 </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(148,163,184,0.07);border-radius:10px;border:1px solid rgba(148,163,184,0.2);cursor:pointer;" onclick="goToClientsBySegAndSegment('L','B');showOnlyMapSegment('L-B')" title="Clientes L sin ventas activas">
-                  <div style="width:34px;height:34px;border-radius:8px;background:rgba(148,163,184,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="circle-minus" style="width:16px;height:16px;color:#94a3b8;"></i></div>
-                  <div><div style="font-size:22px;font-weight:800;color:#94a3b8;line-height:1;" id="seg-L-base-count">-</div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">L Sin venta</div></div>
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:rgba(148,163,184,0.07);border-radius:8px;border:1px solid rgba(148,163,184,0.2);cursor:pointer;" onclick="goToClientsBySegAndSegment('L','B');showOnlyMapSegment('L-B')" title="Clientes L sin ventas activas">
+                  <div style="width:28px;height:28px;border-radius:7px;background:rgba(148,163,184,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="circle-minus" style="width:13px;height:13px;color:#94a3b8;"></i></div>
+                  <div><div style="font-size:18px;font-weight:800;color:#94a3b8;line-height:1;" id="seg-L-base-count">-</div><div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-top:1px;">L Sin venta</div></div>
                 </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(99,102,241,0.07);border-radius:10px;border:1px solid rgba(99,102,241,0.2);cursor:pointer;" onclick="filterCrmAndGo('has_gps')">
-                  <div style="width:34px;height:34px;border-radius:8px;background:rgba(99,102,241,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="map-pin" style="width:16px;height:16px;color:#6366f1;"></i></div>
-                  <div><div style="font-size:22px;font-weight:800;color:#6366f1;line-height:1;" id="seg-C-count">-</div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">Con GPS</div></div>
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:rgba(99,102,241,0.07);border-radius:8px;border:1px solid rgba(99,102,241,0.2);cursor:pointer;" onclick="filterCrmAndGo('has_gps')">
+                  <div style="width:28px;height:28px;border-radius:7px;background:rgba(99,102,241,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="map-pin" style="width:13px;height:13px;color:#6366f1;"></i></div>
+                  <div><div style="font-size:18px;font-weight:800;color:#6366f1;line-height:1;" id="seg-C-count">-</div><div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-top:1px;">Con GPS</div></div>
                 </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(239,68,68,0.06);border-radius:10px;border:1px solid rgba(239,68,68,0.2);cursor:pointer;" onclick="filterCrmAndGo('no_geo')">
-                  <div style="width:34px;height:34px;border-radius:8px;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="map-pin-off" style="width:16px;height:16px;color:#ef4444;"></i></div>
-                  <div><div style="font-size:22px;font-weight:800;color:#ef4444;line-height:1;" id="seg-E-count">-</div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">Sin GPS</div></div>
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:rgba(239,68,68,0.06);border-radius:8px;border:1px solid rgba(239,68,68,0.2);cursor:pointer;" onclick="filterCrmAndGo('no_geo')">
+                  <div style="width:28px;height:28px;border-radius:7px;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="map-pin-off" style="width:13px;height:13px;color:#ef4444;"></i></div>
+                  <div><div style="font-size:18px;font-weight:800;color:#ef4444;line-height:1;" id="seg-E-count">-</div><div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-top:1px;">Sin GPS</div></div>
                 </div>
-                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-hover);border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="document.querySelector('[data-tab=crm]')?.click()">
-                  <div style="width:34px;height:34px;border-radius:8px;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="database" style="width:16px;height:16px;color:var(--text-secondary);"></i></div>
-                  <div><div style="font-size:22px;font-weight:800;color:var(--text-primary);line-height:1;" id="seg-total-count">-</div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-top:1px;">Total</div></div>
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--bg-hover);border-radius:8px;border:1px solid var(--border);cursor:pointer;" onclick="document.querySelector('[data-tab=crm]')?.click()">
+                  <div style="width:28px;height:28px;border-radius:7px;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="database" style="width:13px;height:13px;color:var(--text-secondary);"></i></div>
+                  <div><div style="font-size:18px;font-weight:800;color:var(--text-primary);line-height:1;" id="seg-total-count">-</div><div style="font-size:10px;font-weight:600;color:var(--text-secondary);margin-top:1px;">Total</div></div>
                 </div>
               </div>
             </div>
@@ -4992,11 +5007,14 @@
 
           <!-- Clientes por Región -->
           <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
               <h3><i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i> Clientes por Región</h3>
+              <button id="btn-regions-expand" onclick="toggleRegionsExpand()" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);border-radius:6px;cursor:pointer;transition:all 0.2s;">
+                <i data-lucide="chevron-down" id="ico-regions-expand" style="width:13px;height:13px;transition:transform 0.25s;"></i> Ver todo
+              </button>
             </div>
             <div class="card-body">
-              <div id="regions-chart" style="max-height: 400px; overflow-y: auto; padding-right: 18px;"></div>
+              <div id="regions-chart" style="max-height: 210px; overflow-y: auto; padding-right: 4px; transition: max-height 0.35s ease;"></div>
             </div>
           </div>
         </div>
@@ -25366,6 +25384,19 @@
       if (n.includes('duodécima') || n.includes('duodecima') || n.includes('magallanes') || n === 'xii') return 'Duodécima (Magallanes)';
       if ((n.includes('décima') || n.includes('decima') || n.includes('lagos') || n === 'x') && !n.includes('cuarta') && !n.includes('quinta')) return 'Décima (Los Lagos)';
       return name;
+    }
+
+    let _regionsExpanded = false;
+    function toggleRegionsExpand() {
+      _regionsExpanded = !_regionsExpanded;
+      const chart = document.getElementById('regions-chart');
+      const ico = document.getElementById('ico-regions-expand');
+      const btn = document.getElementById('btn-regions-expand');
+      if (!chart) return;
+      chart.style.maxHeight = _regionsExpanded ? '600px' : '210px';
+      if (ico) ico.style.transform = _regionsExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+      if (btn) btn.innerHTML = `<i data-lucide="${_regionsExpanded ? 'chevron-up' : 'chevron-down'}" id="ico-regions-expand" style="width:13px;height:13px;transition:transform 0.25s;transform:rotate(${_regionsExpanded?'180':'0'}deg);"></i> ${_regionsExpanded ? 'Colapsar' : 'Ver todo'}`;
+      _createIcons();
     }
 
     function renderRegionsChart(regions, total) {
