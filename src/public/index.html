@@ -8266,9 +8266,14 @@
           <div id="client-visit-history-body" style="font-size:12px;"></div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeClientModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="saveClient()">Guardar</button>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button class="btn" onclick="_deleteEditingClient()" style="background:none;border:1px solid rgba(239,68,68,0.35);color:#ef4444;font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;" title="Eliminar este cliente de la base de datos">
+          <i data-lucide="trash-2" style="width:13px;height:13px;display:inline;vertical-align:-2px;margin-right:4px;"></i>Eliminar
+        </button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary" onclick="closeClientModal()">Cancelar</button>
+          <button class="btn btn-primary" onclick="saveClient()">Guardar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -16750,6 +16755,15 @@
       document.getElementById('modal-client').style.display = 'none';
     }
 
+    function _deleteEditingClient() {
+      const id = document.getElementById('client-id').value;
+      const code = document.getElementById('client-code').value.trim();
+      const name = document.getElementById('client-name').value.trim();
+      if (!id) return;
+      closeClientModal();
+      deleteClientFromDirecciones(id, code, name);
+    }
+
     async function saveClient() {
       const id = document.getElementById('client-id').value;
       const code = document.getElementById('client-code').value.trim();
@@ -22913,10 +22927,7 @@
             </div>
             <div style="font-size:10px;color:var(--text-muted);margin-top:3px;display:flex;justify-content:space-between;align-items:center;">
               <span>${date}</span>
-              <div style="display:flex;gap:8px;align-items:center;">
-                ${hasLink ? `<span style="color:#6366f1;font-weight:600;font-size:10px;">Ver →</span>` : ''}
-                <span onclick="event.stopPropagation();_removeSyncNotif('${n.code}')" style="color:#ef4444;font-weight:600;font-size:10px;cursor:pointer;" title="Eliminar notificación">✕</span>
-              </div>
+              ${hasLink ? `<span style="color:#6366f1;font-weight:600;font-size:10px;">Ver →</span>` : ''}
             </div>
           </div>
         </div>`;
