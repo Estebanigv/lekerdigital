@@ -7670,10 +7670,14 @@
                   <option value="__none__">Sin asignar</option>
                 </select>
                 <div id="dir-db-geo-filters" style="display:flex;gap:4px;"></div>
-                <button id="dir-filter-nuevo-btn" onclick="_toggleDirNuevo()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid rgba(16,185,129,0.35);background:transparent;color:#059669;cursor:pointer;transition:all 0.15s;">
-                  <span id="dir-nuevo-count-label">● Nuevos</span>
-                </button>
-                <button id="dir-marcar-vistos-btn" onclick="_markAllNewAsSeen()" title="Marcar todos los nuevos como vistos" style="display:none;align-items:center;gap:4px;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(16,185,129,0.25);background:transparent;color:var(--text-muted);cursor:pointer;transition:all 0.15s;">
+                <select id="dir-filter-date" onchange="filterDireccionesDB()" style="padding:5px 8px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;">
+                  <option value="">📅 Todos</option>
+                  <option value="today">Hoy</option>
+                  <option value="week">Esta semana</option>
+                  <option value="month">Este mes</option>
+                  <option value="unseen">🆕 No vistos</option>
+                </select>
+                <button id="dir-marcar-vistos-btn" onclick="_markAllNewAsSeen()" title="Marcar todos como vistos" style="display:none;align-items:center;gap:4px;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(16,185,129,0.25);background:transparent;color:var(--text-muted);cursor:pointer;transition:all 0.15s;">
                   ✓ Todos vistos
                 </button>
               </div>
@@ -16632,11 +16636,6 @@
 
     // Client Modal Functions
     function openClientModal(clientId = null) {
-      // Marcar cliente como visto → quitar badge NUEVO
-      if (clientId) {
-        const seen = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
-        if (!seen.includes(clientId)) { seen.push(clientId); localStorage.setItem('leker_seen_new', JSON.stringify(seen)); }
-      }
       const modal = document.getElementById('modal-client');
       const title = document.getElementById('modal-client-title');
       const vendorSelect = document.getElementById('client-vendor');
@@ -22605,35 +22604,26 @@
 
     let _dirFilterNuevo = false;
 
-    function _toggleDirNuevo() {
-      _dirFilterNuevo = !_dirFilterNuevo;
-      const btn = document.getElementById('dir-filter-nuevo-btn');
-      if (btn) {
-        btn.style.background = _dirFilterNuevo ? 'rgba(16,185,129,0.15)' : 'transparent';
-        btn.style.borderColor = _dirFilterNuevo ? '#10b981' : 'rgba(16,185,129,0.35)';
-      }
-      const vistosBtn = document.getElementById('dir-marcar-vistos-btn');
-      if (vistosBtn) vistosBtn.style.display = _dirFilterNuevo ? 'inline-flex' : 'none';
-      filterDireccionesDB();
+    function _toggleDirNuevo() { /* legacy — replaced by date select */ }
+
+    // Abre modal desde la lista Direcciones → marca como visto
+    function _openDirClientModal(clientId) {
+      const seen = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
+      if (!seen.includes(clientId)) { seen.push(clientId); localStorage.setItem('leker_seen_new', JSON.stringify(seen)); }
+      openEditClientFullModal(clientId);
     }
 
     function _markAllNewAsSeen() {
       const seen = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
-      const now = Date.now();
+      const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
       let added = 0;
       allClients.forEach(c => {
-        const createdAt = c.created_at ? new Date(c.created_at) : null;
-        const daysOld = createdAt ? Math.floor((now - createdAt.getTime()) / (1000 * 60 * 60 * 24)) : 999;
-        if (daysOld < 7 && !seen.includes(c.id)) {
-          seen.push(c.id);
-          added++;
-        }
+        const d = c.created_at ? new Date(c.created_at).getTime() : 0;
+        if (d > cutoff && !seen.includes(c.id)) { seen.push(c.id); added++; }
       });
       localStorage.setItem('leker_seen_new', JSON.stringify(seen));
-      // Apagar filtro y refrescar
-      _dirFilterNuevo = false;
-      const btn = document.getElementById('dir-filter-nuevo-btn');
-      if (btn) { btn.style.background = 'transparent'; btn.style.borderColor = 'rgba(16,185,129,0.35)'; }
+      const sel = document.getElementById('dir-filter-date');
+      if (sel) sel.value = '';
       const vistosBtn = document.getElementById('dir-marcar-vistos-btn');
       if (vistosBtn) vistosBtn.style.display = 'none';
       filterDireccionesDB();
@@ -22668,23 +22658,29 @@
       } else if (_dirFilterGeo === 'none') {
         filtered = filtered.filter(c => !c.geo_link);
       }
-      if (_dirFilterNuevo) {
+      const dateFilter = document.getElementById('dir-filter-date')?.value || '';
+      if (dateFilter) {
+        const now = Date.now();
+        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+        const weekStart = new Date(todayStart); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        const monthStart = new Date(todayStart.getFullYear(), todayStart.getMonth(), 1);
         const seen = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
         filtered = filtered.filter(c => {
-          const createdAt = c.created_at ? new Date(c.created_at) : null;
-          const daysOld = createdAt ? (Date.now() - createdAt.getTime()) / (1000*60*60*24) : 999;
-          return daysOld < 7 && !seen.includes(c.id);
+          const d = c.created_at ? new Date(c.created_at) : null;
+          if (!d) return false;
+          if (dateFilter === 'today')  return d >= todayStart;
+          if (dateFilter === 'week')   return d >= weekStart;
+          if (dateFilter === 'month')  return d >= monthStart;
+          if (dateFilter === 'unseen') return !seen.includes(c.id) && (now - d.getTime()) < 30 * 24 * 60 * 60 * 1000;
+          return true;
         });
+        // Mostrar botón "Todos vistos" solo en modo unseen
+        const vistosBtn = document.getElementById('dir-marcar-vistos-btn');
+        if (vistosBtn) vistosBtn.style.display = dateFilter === 'unseen' ? 'inline-flex' : 'none';
+      } else {
+        const vistosBtn = document.getElementById('dir-marcar-vistos-btn');
+        if (vistosBtn) vistosBtn.style.display = 'none';
       }
-
-      // Actualizar contador del botón Nuevos
-      const seen = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
-      const nuevosCount = (allClients || []).filter(c => {
-        const d = c.created_at ? (Date.now() - new Date(c.created_at).getTime()) / (1000*60*60*24) : 999;
-        return d < 7 && !seen.includes(c.id);
-      }).length;
-      const lbl = document.getElementById('dir-nuevo-count-label');
-      if (lbl) lbl.textContent = nuevosCount > 0 ? `● Nuevos (${nuevosCount})` : '● Nuevos';
 
       _dirDBFiltered = filtered;
       _dirDBPage = 0;
@@ -22840,12 +22836,12 @@
         let actionsHtml = '';
         if (isAdmin) {
           actionsHtml = `<td style="padding:3px 2px;text-align:center;">
-            <button onclick="openEditClientFullModal('${c.id}')" class="btn-icon" title="Editar" style="padding:2px;"><i data-lucide="pencil" style="width:12px;height:12px;"></i></button>
+            <button onclick="_openDirClientModal('${c.id}')" class="btn-icon" title="Editar" style="padding:2px;"><i data-lucide="pencil" style="width:12px;height:12px;"></i></button>
             <button onclick="deleteClientFromDirecciones('${c.id}','${code}','${safeName}')" class="btn-icon" title="Eliminar" style="padding:2px;color:#ef4444;"><i data-lucide="trash-2" style="width:12px;height:12px;"></i></button>
           </td>`;
         } else {
           actionsHtml = `<td style="padding:3px 2px;text-align:center;">
-            <button onclick="openEditClientFullModal('${c.id}')" class="btn-icon" title="Ver" style="padding:2px;"><i data-lucide="eye" style="width:12px;height:12px;"></i></button>
+            <button onclick="_openDirClientModal('${c.id}')" class="btn-icon" title="Ver" style="padding:2px;"><i data-lucide="eye" style="width:12px;height:12px;"></i></button>
           </td>`;
         }
 
@@ -23499,11 +23495,6 @@
 
     // ====== EDIT CLIENT FULL MODAL ======
     function openEditClientFullModal(clientId) {
-      // Marcar cliente como visto → quitar badge NUEVO
-      if (clientId) {
-        const seen = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
-        if (!seen.includes(clientId)) { seen.push(clientId); localStorage.setItem('leker_seen_new', JSON.stringify(seen)); }
-      }
       const client = allClients.find(c => c.id === clientId);
       if (!client) { showToast('error', 'Error', 'Cliente no encontrado'); return; }
 
