@@ -345,6 +345,40 @@ app.post('/api/clients/:id/geocode', authorize('admin', 'supervisor'), async (re
   }
 });
 
+// Geocodificación masiva — procesa todos los clientes sin GPS que tienen dirección
+app.post('/api/clients/geocode-batch', authorize('admin'), async (req, res) => {
+  try {
+    const { createClient } = require('@supabase/supabase-js');
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+
+    // Obtener clientes sin GPS pero con dirección
+    const { data: clients, error } = await supabase
+      .from('clients')
+      .select('id, address, commune, city, region')
+      .is('lat', null)
+      .not('address', 'is', null)
+      .neq('address', '');
+
+    if (error) throw error;
+
+    let ok = 0, failed = 0;
+    for (const c of clients) {
+      try {
+        await routesService.geocodeClient(c.id);
+        ok++;
+        // Pausa 120ms entre llamadas para no superar límite Google Maps API (10 req/s)
+        await new Promise(r => setTimeout(r, 120));
+      } catch (_e) {
+        failed++;
+      }
+    }
+
+    res.json({ success: true, total: clients.length, ok, failed });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/api/clients/import-from-sheets', authorize('admin'), async (req, res) => {
   try {
     const { rows } = req.body;

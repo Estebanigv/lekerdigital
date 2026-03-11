@@ -7654,6 +7654,12 @@
                     onmouseleave="this.style.background='rgba(239,68,68,0.1)'">
                     <i data-lucide="square" style="width:13px;height:13px;"></i> Detener
                   </button>
+                  <button onclick="batchGeocodeGPS()" id="btn-geocode-gps" title="Geocodificar lat/lng para clientes sin GPS que tienen dirección"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:transparent;color:#f59e0b;border:1px solid rgba(245,158,11,0.35);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;"
+                    onmouseenter="this.style.background='rgba(245,158,11,0.1)'"
+                    onmouseleave="this.style.background='transparent'">
+                    <i data-lucide="crosshair" style="width:13px;height:13px;"></i> Geocodificar GPS
+                  </button>
                 </div>
               </div>
               <!-- Filters bar -->
@@ -24310,6 +24316,40 @@
      * También se puede llamar manualmente con el botón.
      * @param {boolean} manual - true si fue llamado por el usuario (muestra confirm)
      */
+    async function batchGeocodeGPS() {
+      const btn = document.getElementById('btn-geocode-gps');
+      if (btn.disabled) return;
+
+      // Contar cuántos sin GPS tienen dirección
+      const sinGPS = allClients.filter(c => !c.lat && c.address).length;
+      if (sinGPS === 0) { showToast('info', 'Todo listo', 'Todos los clientes con dirección ya tienen GPS'); return; }
+
+      if (!confirm(`Se geocodificarán ${sinGPS} clientes sin GPS usando Google Maps.\n\nEsto puede tardar ~${Math.ceil(sinGPS * 0.12 / 60)} min. ¿Continuar?`)) return;
+
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> Procesando...`;
+      _createIcons();
+
+      try {
+        const res = await fetch(`${API}/api/clients/geocode-batch`, { method: 'POST' });
+        const d = await res.json();
+        if (d.success) {
+          showToast('success', `GPS actualizado`, `✓ ${d.ok} geocodificados — ${d.failed} fallaron`, 8000);
+          // Recargar clientes
+          const r2 = await fetch(`${API}/api/clients`).then(r => r.json()).catch(() => null);
+          if (r2?.data) { allClients = r2.data; filterDireccionesDB(); }
+        } else {
+          showToast('error', 'Error', d.error || 'Error al geocodificar');
+        }
+      } catch(e) {
+        showToast('error', 'Error', e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="crosshair" style="width:13px;height:13px;"></i> Geocodificar GPS`;
+        _createIcons();
+      }
+    }
+
     async function batchGenerateGeoLinks(manual = true) {
       if (_batchGeoRunning) return;
       if (!gsheetsAllDirecciones || gsheetsAllDirecciones.length < 2) {
