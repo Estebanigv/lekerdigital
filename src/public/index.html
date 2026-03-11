@@ -22929,7 +22929,7 @@
               const delData = await delRes.json();
               const n = delData.success && delData.data ? delData.data.deleted || 0 : 0;
               if (n > 0) {
-                const reloaded = await getAllClients();
+                const reloaded = await fetch(`${API}/api/clients`).then(r => r.json()).then(d => d.data).catch(() => null);
                 if (reloaded && reloaded.length > 0) { allClients = reloaded; filterDireccionesDB(); populateDirFilters(); }
                 _showSyncBar('info', `${n} registros eliminados (ya no están en Excel)`);
               }
@@ -22984,8 +22984,8 @@
           } catch (_e) { /* silencioso */ }
         }
 
-        // Recargar allClients completo (usa paginación para >1000 clientes)
-        const reloadedClients = await getAllClients();
+        // Recargar allClients completo desde el backend (ya maneja paginación internamente)
+        const reloadedClients = await fetch(`${API}/api/clients`).then(r => r.json()).then(d => d.data).catch(() => null);
         if (reloadedClients && reloadedClients.length > 0) {
           allClients = reloadedClients;
           // Marcar clientes recién sincronizados para mostrar badge en tabla
