@@ -5099,48 +5099,54 @@
                   </div>
                 </div>
                 <!-- Segment Filters -->
-                <div class="map-overlay-box" style="background: var(--bg-card); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); padding: 10px; border: 1px solid var(--border);">
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-                    <span style="font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-primary);">Segmentación</span>
-                    <button id="btn-map-toggle-all" onclick="toggleAllMapSegments()" style="font-size: 10px; padding: 3px 9px; background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); border-radius: 5px; cursor: pointer; font-weight: 600; display:inline-flex; align-items:center; gap:4px; transition: all 0.15s;">
-                      <i data-lucide="eye-off" id="ico-map-toggle-all" style="width:11px;height:11px;"></i> <span id="lbl-map-toggle-all">Apagar todos</span>
+                <div class="map-overlay-box" style="background:rgba(18,18,22,0.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.5);padding:12px;border:1px solid rgba(255,255,255,0.1);">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <span style="font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.8px;color:#ffffff;">Segmentación</span>
+                    <button id="btn-map-toggle-all" onclick="toggleAllMapSegments()" style="font-size:10px;padding:3px 9px;background:rgba(255,255,255,0.08);color:#a0aec0;border:1px solid rgba(255,255,255,0.12);border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+                      <i data-lucide="eye-off" id="ico-map-toggle-all" style="width:11px;height:11px;"></i><span id="lbl-map-toggle-all">Apagar todos</span>
                     </button>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('80-20')" data-segment="80-20" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
-                    <div class="legend-dot seg-8020"></div>
-                    <span style="flex: 1; font-size: 11px; font-weight: 600;">80/20 — Clave</span>
-                    <span id="count-seg-8020" style="font-size: 11px; background: rgba(245,158,11,0.25); color: #f59e0b; padding: 2px 7px; border-radius: 10px; font-weight: 700; min-width: 28px; text-align: center;">0</span>
-                    <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
+                  <!-- 80/20 -->
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('80-20')" data-segment="80-20" style="cursor:pointer;padding:7px 10px;border-radius:8px;margin:3px 0;display:flex;align-items:center;gap:10px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.2);">
+                    <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,0.8);flex-shrink:0;"></div>
+                    <span style="flex:1;font-size:12px;font-weight:600;color:#fcd34d;">80/20 Clave</span>
+                    <span id="count-seg-8020" style="font-size:13px;font-weight:800;color:#fbbf24;min-width:32px;text-align:right;">0</span>
+                    <i data-lucide="eye" class="toggle-eye" style="width:13px;height:13px;flex-shrink:0;color:#f59e0b;opacity:0.8;"></i>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('L-C')" data-segment="L-C" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
-                    <div class="legend-dot seg-lc"></div>
-                    <span style="flex: 1; font-size: 11px;">L Con venta</span>
-                    <span id="count-seg-lc" style="font-size: 11px; background: rgba(59,130,246,0.2); color: #60a5fa; padding: 2px 7px; border-radius: 10px; font-weight: 700; min-width: 28px; text-align: center;">0</span>
-                    <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
+                  <!-- L Con venta -->
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('L-C')" data-segment="L-C" style="cursor:pointer;padding:7px 10px;border-radius:8px;margin:3px 0;display:flex;align-items:center;gap:10px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.2);">
+                    <div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;box-shadow:0 0 6px rgba(59,130,246,0.8);flex-shrink:0;"></div>
+                    <span style="flex:1;font-size:12px;font-weight:600;color:#93c5fd;">L Con venta</span>
+                    <span id="count-seg-lc" style="font-size:13px;font-weight:800;color:#60a5fa;min-width:32px;text-align:right;">0</span>
+                    <i data-lucide="eye" class="toggle-eye" style="width:13px;height:13px;flex-shrink:0;color:#3b82f6;opacity:0.8;"></i>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('L-B')" data-segment="L-B" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
-                    <div class="legend-dot seg-lb"></div>
-                    <span style="flex: 1; font-size: 11px;">L Sin venta</span>
-                    <span id="count-seg-lb" style="font-size: 11px; background: rgba(148,163,184,0.18); color: #cbd5e1; padding: 2px 7px; border-radius: 10px; font-weight: 700; min-width: 28px; text-align: center;">0</span>
-                    <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
+                  <!-- L Sin venta -->
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('L-B')" data-segment="L-B" style="cursor:pointer;padding:7px 10px;border-radius:8px;margin:3px 0;display:flex;align-items:center;gap:10px;background:rgba(100,116,139,0.12);border:1px solid rgba(100,116,139,0.2);">
+                    <div style="width:8px;height:8px;border-radius:50%;background:#64748b;box-shadow:0 0 6px rgba(100,116,139,0.6);flex-shrink:0;"></div>
+                    <span style="flex:1;font-size:12px;font-weight:600;color:#cbd5e1;">L Sin venta</span>
+                    <span id="count-seg-lb" style="font-size:13px;font-weight:800;color:#e2e8f0;min-width:32px;text-align:right;">0</span>
+                    <i data-lucide="eye" class="toggle-eye" style="width:13px;height:13px;flex-shrink:0;color:#94a3b8;opacity:0.8;"></i>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('N')" data-segment="N" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
-                    <div class="legend-dot seg-n"></div>
-                    <span style="flex: 1; font-size: 11px;">N — Nuevos</span>
-                    <span id="count-seg-n" style="font-size: 11px; background: rgba(148,163,184,0.18); color: #cbd5e1; padding: 2px 7px; border-radius: 10px; font-weight: 700; min-width: 28px; text-align: center;">0</span>
-                    <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
+                  <!-- Nuevos -->
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('N')" data-segment="N" style="cursor:pointer;padding:7px 10px;border-radius:8px;margin:3px 0;display:flex;align-items:center;gap:10px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.18);">
+                    <div style="width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 6px rgba(16,185,129,0.8);flex-shrink:0;"></div>
+                    <span style="flex:1;font-size:12px;font-weight:600;color:#6ee7b7;">Nuevos</span>
+                    <span id="count-seg-n" style="font-size:13px;font-weight:800;color:#34d399;min-width:32px;text-align:right;">0</span>
+                    <i data-lucide="eye" class="toggle-eye" style="width:13px;height:13px;flex-shrink:0;color:#10b981;opacity:0.8;"></i>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('none')" data-segment="none" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
-                    <div class="legend-dot seg-none"></div>
-                    <span style="flex: 1; font-size: 11px;">Sin clasificar</span>
-                    <span id="count-seg-none" style="font-size: 11px; background: rgba(148,163,184,0.13); color: #cbd5e1; padding: 2px 7px; border-radius: 10px; font-weight: 700; min-width: 28px; text-align: center;">0</span>
-                    <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
+                  <!-- Sin clasificar -->
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('none')" data-segment="none" style="cursor:pointer;padding:7px 10px;border-radius:8px;margin:3px 0;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);">
+                    <div style="width:8px;height:8px;border-radius:50%;background:#6b7280;box-shadow:0 0 4px rgba(107,114,128,0.5);flex-shrink:0;"></div>
+                    <span style="flex:1;font-size:12px;font-weight:600;color:#9ca3af;">Sin clasificar</span>
+                    <span id="count-seg-none" style="font-size:13px;font-weight:800;color:#d1d5db;min-width:32px;text-align:right;">0</span>
+                    <i data-lucide="eye" class="toggle-eye" style="width:13px;height:13px;flex-shrink:0;color:#6b7280;opacity:0.8;"></i>
                   </div>
-                  <div class="legend-item" data-segment="SIN_GEO" style="padding: 5px 8px; border-radius: 6px; margin: 2px 0; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; align-items: center; opacity: 0.7;" title="Clientes sin coordenadas GPS — no visibles en el mapa">
-                    <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.4); margin-right: 8px; flex-shrink:0;"></div>
-                    <span style="flex: 1; font-size: 11px;">Sin GEO</span>
-                    <span id="count-seg-singeo" style="font-size: 11px; background: rgba(239,68,68,0.18); color: #fca5a5; padding: 2px 7px; border-radius: 10px; font-weight: 700; min-width: 28px; text-align: center;">0</span>
-                    <i data-lucide="map-pin-off" style="width:12px;height:12px;flex-shrink:0;color:#ef4444;"></i>
+                  <!-- Sin GEO — separador -->
+                  <div class="legend-item" data-segment="SIN_GEO" style="padding:6px 10px;border-radius:8px;margin:6px 0 0;display:flex;align-items:center;gap:10px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);" title="Sin coordenadas GPS — no aparecen en el mapa">
+                    <div style="width:8px;height:8px;border-radius:50%;background:#ef4444;box-shadow:0 0 5px rgba(239,68,68,0.7);flex-shrink:0;"></div>
+                    <span style="flex:1;font-size:12px;font-weight:600;color:#fca5a5;">Sin GPS</span>
+                    <span id="count-seg-singeo" style="font-size:13px;font-weight:800;color:#f87171;min-width:32px;text-align:right;">0</span>
+                    <i data-lucide="map-pin-off" style="width:13px;height:13px;flex-shrink:0;color:#ef4444;opacity:0.8;"></i>
                   </div>
                 </div>
                 <!-- hidden elements kept for JS compatibility -->
