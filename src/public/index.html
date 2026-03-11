@@ -14435,7 +14435,10 @@
             <span style="width: 22px; height: 22px; border-radius: 50%; background: ${isStart ? '#10b981' : '#3b82f6'}; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0;">${i + 1}</span>
             <div style="flex: 1; min-width: 0;">
               <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.fantasy_name || c.name}</div>
-              <div style="font-size: 10px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.commune || ''} ${c.address ? '· ' + c.address : ''}</div>
+              <div style="font-size: 10px; color: var(--text-muted); display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:1px;">
+                ${c.external_id ? `<button onclick="event.stopPropagation();openClientModal('${c.id}')" title="Editar cliente" style="font-family:monospace;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:0px 5px;color:var(--text-secondary);font-size:10px;cursor:pointer;line-height:1.4;" onmouseenter="this.style.borderColor='#3b82f6';this.style.color='#3b82f6'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">${c.external_id} <i data-lucide="pencil" style="width:8px;height:8px;vertical-align:middle;"></i></button>` : ''}
+                <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.commune || ''}${c.address ? ' · ' + c.address : ''}</span>
+              </div>
             </div>
             <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
               ${hasGps ? `<button onclick="event.stopPropagation(); openWazeToClient(${c.lat},${c.lng})" style="background: none; border: none; cursor: pointer; padding: 2px; display:flex;" title="Waze"><i data-lucide="navigation" style="width:12px;height:12px;color:#33ccff;"></i></button>` : ''}

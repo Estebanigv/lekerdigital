@@ -2282,7 +2282,7 @@ app.post('/api/ai/generate-route', authenticate, async (req, res) => {
 
     // 2. Obtener clientes asignados con coords
     let query = supabase.from('clients')
-      .select('id,name,fantasy_name,commune,lat,lng,segmentation,zone')
+      .select('id,external_id,name,fantasy_name,address,commune,lat,lng,segmentation,zone')
       .eq('assigned_user_id', userId).not('lat','is',null).not('lng','is',null);
     if (zone && zone.trim()) query = query.eq('zone', zone);
     if (commune && commune.trim()) query = query.eq('commune', commune);
@@ -2294,7 +2294,7 @@ app.post('/api/ai/generate-route', authenticate, async (req, res) => {
     if (rawClients && rawClients.length > 0) {
       const communes = [...new Set(rawClients.map(c => c.commune).filter(Boolean))];
       if (communes.length > 0) {
-        let uq = supabase.from('clients').select('id,name,fantasy_name,commune,lat,lng,segmentation,zone')
+        let uq = supabase.from('clients').select('id,external_id,name,fantasy_name,address,commune,lat,lng,segmentation,zone')
           .is('assigned_user_id',null).not('lat','is',null).not('lng','is',null)
           .in('commune', communes);
         if (commune && commune.trim()) uq = uq.eq('commune', commune);
