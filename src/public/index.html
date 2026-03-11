@@ -458,40 +458,30 @@
     [data-theme="dark"] #seg-A-count { color: #f5d060 !important; }
     [data-theme="dark"] #seg-L-active-count { color: #93c5fd !important; }
 
-    /* dash-row-seg: ambas cards se estiran al mismo alto */
+    /* dash-row-seg: segmentación manda en alto, regiones se ajusta */
     .dash-row-seg {
-      align-items: stretch;
+      align-items: start;
     }
-    .dash-row-seg .card {
-      display: flex;
-      flex-direction: column;
-    }
-    .dash-row-seg .card .card-body {
-      flex: 1;
+    .dash-row-seg .card:last-child {
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
-    /* Segmentación: grid se estira para llenar el alto disponible */
-    #segmentation-stats {
+    .dash-row-seg .card:last-child .card-body {
       flex: 1;
-      align-content: stretch;
-      align-items: stretch;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding-bottom: 0;
     }
-    #segmentation-stats > div {
-      align-items: center;
-    }
-    /* Regiones: chart llena el espacio disponible, scroll sin cortes */
+    /* Regiones: scroll interno con fade suave al fondo (no corta barras) */
     #regions-chart {
       flex: 1;
       overflow-y: auto;
-      max-height: none !important;
       padding-right: 4px;
-      /* gradiente suave al fondo para indicar scroll sin cortar barras */
-      -webkit-mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
-      mask-image: linear-gradient(to bottom, black 88%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
+      mask-image: linear-gradient(to bottom, black 82%, transparent 100%);
     }
-    /* cuando se expande, quitar el gradiente */
     #regions-chart.expanded {
       -webkit-mask-image: none;
       mask-image: none;
@@ -25358,6 +25348,8 @@
       // Stat card en header
       const sub8020 = document.getElementById('stat-clients-8020');
       if (sub8020) sub8020.textContent = fmt(seg8020);
+
+      setTimeout(_syncRegionCardHeight, 80);
     }
 
     // Navega al CRM con filtro predefinido
@@ -25396,6 +25388,7 @@
           // Regions chart
           if (data.data.regions) {
             renderRegionsChart(data.data.regions, data.data.total);
+            setTimeout(_syncRegionCardHeight, 50);
           }
         }
       } catch (err) {
@@ -25423,6 +25416,14 @@
       if (n.includes('duodécima') || n.includes('duodecima') || n.includes('magallanes') || n === 'xii') return 'Duodécima (Magallanes)';
       if ((n.includes('décima') || n.includes('decima') || n.includes('lagos') || n === 'x') && !n.includes('cuarta') && !n.includes('quinta')) return 'Décima (Los Lagos)';
       return name;
+    }
+
+    function _syncRegionCardHeight() {
+      const segCard = document.querySelector('.dash-row-seg .card:first-child');
+      const regCard = document.querySelector('.dash-row-seg .card:last-child');
+      if (!segCard || !regCard) return;
+      const h = segCard.offsetHeight;
+      if (h > 80) regCard.style.height = h + 'px';
     }
 
     let _regionsExpanded = false;
