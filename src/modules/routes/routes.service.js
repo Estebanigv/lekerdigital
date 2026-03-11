@@ -1580,32 +1580,34 @@ class RoutesService {
     const { data: assignedClients, error } = await query;
     if (error) throw error;
 
-    // Query 2: clientes SIN vendedor asignado con coords en las mismas comunas/zonas
-    // Solo se agregan si hay al menos 1 cliente asignado (para tener referencia de zona)
+    // Query 2: clientes SIN vendedor asignado con coords en las mismas comunas del vendedor
+    // IMPORTANTE: usar comunas (no zona) — las etiquetas de zona como "Zona Centro" abarcan
+    // múltiples regiones y pueden traer clientes de Santiago a un vendedor de V Región.
     let unassignedClients = [];
     if (assignedClients && assignedClients.length > 0) {
       const communes = [...new Set(assignedClients.map(c => c.commune).filter(Boolean))];
-      const zones = [...new Set(assignedClients.map(c => c.zone).filter(Boolean))];
 
-      let uQuery = supabase
-        .from('clients')
-        .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, priority, zone')
-        .is('assigned_user_id', null)
-        .not('lat', 'is', null)
-        .not('lng', 'is', null);
+      if (communes.length > 0) {
+        let uQuery = supabase
+          .from('clients')
+          .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, priority, zone')
+          .is('assigned_user_id', null)
+          .not('lat', 'is', null)
+          .not('lng', 'is', null);
 
-      // Filtrar por comunas o zonas del vendedor
-      if (commune && commune.trim() !== '') {
-        uQuery = uQuery.eq('commune', commune);
-      } else if (zones.length > 0) {
-        uQuery = uQuery.in('zone', zones);
-      } else if (communes.length > 0) {
-        uQuery = uQuery.in('commune', communes);
+        if (commune && commune.trim() !== '') {
+          uQuery = uQuery.eq('commune', commune);
+        } else {
+          uQuery = uQuery.in('commune', communes);
+        }
+
+        const { data: uData } = await uQuery.limit(200);
+        // Filtro geográfico adicional: solo clientes dentro de 80 km del centroide del vendedor
+        const avgLat = assignedClients.reduce((s, c) => s + parseFloat(c.lat), 0) / assignedClients.length;
+        const avgLng = assignedClients.reduce((s, c) => s + parseFloat(c.lng), 0) / assignedClients.length;
+        const nearby = (uData || []).filter(c => haversineDistance(avgLat, avgLng, parseFloat(c.lat), parseFloat(c.lng)) <= 80);
+        unassignedClients = nearby.map(c => ({ ...c, _unassigned: true, segmentation: c.segmentation || 'N' }));
       }
-
-      const { data: uData } = await uQuery.limit(200);
-      // Marcar como no asignados para distinguirlos en UI; prioridad más baja que N
-      unassignedClients = (uData || []).map(c => ({ ...c, _unassigned: true, segmentation: c.segmentation || 'N' }));
     }
 
     const allClients = [...(assignedClients || []), ...unassignedClients];
@@ -3152,7 +3154,7 @@ class RoutesService {
   }
 
   /**
-   * Elimina todas las rutas pendientes de un vendedor para una fecha específica.
+   * Elimina todas las rutas no-completadas de un vendedor para una fecha específica.
    */
   async deleteScheduledDay(userId, date) {
     const { data, error } = await supabase
@@ -3160,7 +3162,7 @@ class RoutesService {
       .delete()
       .eq('user_id', userId)
       .eq('scheduled_date', date)
-      .eq('status', 'pending')
+      .in('status', ['pending', 'rescheduled'])
       .select('id');
 
     if (error) throw new Error(`Error eliminando rutas: ${error.message}`);
@@ -3202,11 +3204,11 @@ class RoutesService {
       .from('scheduled_routes')
       .delete()
       .eq('id', routeId)
-      .eq('status', 'pending')
+      .in('status', ['pending', 'rescheduled'])
       .select('id');
 
     if (error) throw new Error(`Error eliminando ruta: ${error.message}`);
-    if (!data || data.length === 0) throw new Error('Ruta no encontrada o ya no está pendiente');
+    if (!data || data.length === 0) throw new Error('Ruta no encontrada o ya completada');
     return { deleted: 1, routeId };
   }
 

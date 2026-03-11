@@ -2634,44 +2634,108 @@ Para cada uno recomienda: mantener frecuencia actual, reducir a cada 45 días, o
 app.post('/api/ai/route-chat', authenticate, async (req, res) => {
   try {
     if (!openai) return res.status(400).json({ success: false, error: 'OpenAI no configurado' });
-    const { message, routeContext, history = [] } = req.body;
+    const { message, platformContext, routeContext, history = [] } = req.body;
     if (!message) return res.status(400).json({ success: false, error: 'Mensaje requerido' });
 
-    // Construir resumen compacto de la ruta para el contexto
-    let routeSummary = '';
-    if (routeContext) {
-      const { vendorName, days, totalStats } = routeContext;
-      routeSummary = `RUTA ACTUAL — ${vendorName || 'Vendedor'}:\n`;
-      if (totalStats) {
-        routeSummary += `Total: ${totalStats.totalClients} clientes, ${totalStats.totalDays} días, ${totalStats.distanceKm} km, costo bencina $${(totalStats.costCLP||0).toLocaleString('es-CL')}\n`;
+    // Construir contexto de plataforma para el prompt
+    let contextBlock = '';
+
+    if (platformContext) {
+      const { stats, vendedores, vendedorActual, rutaOptimizada, visitasHoy } = platformContext;
+
+      // Stats globales
+      if (stats) {
+        contextBlock += `\n=== PLATAFORMA LEKER — ${stats.fecha} ===\n`;
+        contextBlock += `Clientes totales: ${stats.totalClientes} | 80/20: ${stats.clientes8020} | L: ${stats.clientesL}\n`;
+        contextBlock += `Con GPS: ${stats.clientesConGPS} | Sin GPS: ${stats.clientesSinGPS}\n`;
+        contextBlock += `Rutas activas hoy: ${stats.rutasHoy} | Vendedores: ${stats.totalVendedores}\n`;
       }
-      if (days) {
-        Object.entries(days).forEach(([date, dayData]) => {
-          const clients = dayData.route || [];
-          const communes = [...new Set(clients.map(c => c.commune).filter(Boolean))];
-          routeSummary += `\n${date}: ${clients.length} clientes en ${communes.join(', ')} — ${dayData.stats?.distanceKm||0}km, ${dayData.stats?.estimatedTime||0}min, termina ${dayData.stats?.endTime||'?'}`;
-          clients.forEach((c,i) => {
-            routeSummary += `\n  ${i+1}. ${c.fantasy_name||c.name} [${c.segmentation||'L'}] ${c.commune||''}`;
-          });
+
+      // Equipo de vendedores
+      if (vendedores && vendedores.length > 0) {
+        contextBlock += `\n=== VENDEDORES ===\n`;
+        vendedores.forEach(v => {
+          const rutaStr = v.rutaHoy ? ` | Hoy: ruta ${v.rutaHoy.estado || '?'} (${v.rutaHoy.clientesTotal || 0} clientes)` : ' | Hoy: sin ruta';
+          const zonaStr = v.zona ? ` [${v.zona}]` : '';
+          contextBlock += `• ${v.nombre}${zonaStr}: ${v.totalClientes} clientes (80/20: ${v.seg8020}, GPS: ${v.conGPS}, sin GPS: ${v.sinGPS})${rutaStr}\n`;
         });
       }
+
+      // Clientes del vendedor seleccionado
+      if (vendedorActual && vendedorActual.clientes && vendedorActual.clientes.length > 0) {
+        contextBlock += `\n=== CLIENTES DE ${vendedorActual.nombre.toUpperCase()}${vendedorActual.zona ? ` (${vendedorActual.zona})` : ''} ===\n`;
+        contextBlock += `Total: ${vendedorActual.clientes.length} clientes\n`;
+        // Agrupar por comuna para compacidad
+        const byComuna = {};
+        vendedorActual.clientes.forEach(c => {
+          const com = c.comuna || 'Sin comuna';
+          if (!byComuna[com]) byComuna[com] = [];
+          byComuna[com].push(c);
+        });
+        Object.entries(byComuna).sort((a,b) => b[1].length - a[1].length).forEach(([com, cls]) => {
+          const gpsOk = cls.filter(c => c.gps).length;
+          const seg8020 = cls.filter(c => c.seg === '80-20').length;
+          contextBlock += `  ${com}: ${cls.length} clientes (GPS: ${gpsOk}${seg8020 ? `, 80/20: ${seg8020}` : ''})\n`;
+        });
+        // Lista detallada de los primeros 80 clientes
+        contextBlock += `\nLista clientes (máx 80):\n`;
+        vendedorActual.clientes.slice(0, 80).forEach(c => {
+          contextBlock += `  - [${c.cod}] ${c.nombre} | ${c.comuna || '?'} | seg:${c.seg || 'L'} | GPS:${c.gps ? 'sí' : 'NO'}\n`;
+        });
+        if (vendedorActual.clientes.length > 80) {
+          contextBlock += `  ... y ${vendedorActual.clientes.length - 80} clientes más\n`;
+        }
+      }
+
+      // Ruta optimizada activa
+      if (rutaOptimizada) {
+        contextBlock += `\n=== RUTA OPTIMIZADA ACTUAL ===\n`;
+        if (rutaOptimizada.totalStats) {
+          const ts = rutaOptimizada.totalStats;
+          contextBlock += `${ts.totalClients} clientes, ${ts.totalDays} días, ${ts.distanceKm} km, $${(ts.costCLP||0).toLocaleString('es-CL')} combustible\n`;
+        }
+        if (rutaOptimizada.dias) {
+          Object.entries(rutaOptimizada.dias).forEach(([fecha, dd]) => {
+            const comunas = [...new Set((dd.clientes||[]).map(c=>c.comuna).filter(Boolean))];
+            contextBlock += `  ${fecha}: ${dd.stats?.totalClients||0} clientes — ${comunas.join(', ')} — ${dd.stats?.distanceKm||0}km, termina ${dd.stats?.endTime||'?'}\n`;
+          });
+        }
+      }
+
+      // Visitas hoy
+      if (visitasHoy && visitasHoy.length > 0) {
+        contextBlock += `\n=== VISITAS HOY ===\n`;
+        visitasHoy.forEach(v => {
+          contextBlock += `  ${v.vendedor}: ${v.completadas} completadas, ${v.pendientes} pendientes (${v.estado || '?'})\n`;
+        });
+      }
+    } else if (routeContext) {
+      // Fallback: contexto legacy (solo ruta)
+      const { vendorName, days, totalStats } = routeContext;
+      contextBlock = `RUTA ACTUAL — ${vendorName || 'Vendedor'}:\n`;
+      if (totalStats) contextBlock += `${totalStats.totalClients} clientes, ${totalStats.totalDays} días, ${totalStats.distanceKm} km\n`;
     }
 
     const systemPrompt = `Eres LEKER AI, el asistente inteligente de la plataforma Leker (distribuidora de productos de limpieza y hogar en Chile).
-La plataforma gestiona: vendedores, clientes (segmentación 80-20/L/N), rutas de visita optimizadas, visitas, Google Sheets sync, inteligencia de mercado y competencia.
-Tu rol es: responder preguntas sobre rutas, clientes, rendimiento, sugerir mejoras a la plataforma, alertar sobre oportunidades (clientes sin visitar, zonas ineficientes, jornadas largas).
-Cuando el usuario pida cambiar algo en la ruta, sugiere el cambio en formato claro. Puedes recomendar nuevas funcionalidades o mejoras que tendría sentido implementar.
-Responde SIEMPRE en español. Sé conciso, profesional y directo. Máximo 5 líneas salvo que pidan detalle.
 
-${routeSummary}`;
+DATOS REALES DE LA PLATAFORMA EN ESTE MOMENTO:
+${contextBlock}
 
-    // Historial de conversación (máx últimos 6 mensajes)
-    const recentHistory = history.slice(-6).map(m => ({ role: m.role, content: m.content }));
+TU ROL:
+- Responde preguntas usando los datos reales de arriba (clientes, vendedores, rutas, GPS, segmentación)
+- Si preguntan por un vendedor, usa SUS datos específicos de la lista
+- Para rutas: menciona comunas, cantidad de clientes, clientes sin GPS
+- Detecta oportunidades: clientes sin GPS que bloquean ruteo, clientes 80/20 no visitados, zonas ineficientes
+- Sé proactivo: si ves algo importante en los datos, mencíonalo
+- Responde SIEMPRE en español, de forma concisa y directa (máx 6 líneas salvo que pidan detalle)
+- NO pidas información que ya tienes en el contexto`;
+
+    const recentHistory = history.slice(-8).map(m => ({ role: m.role, content: m.content }));
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
-      temperature: 0.5,
-      max_tokens: 500,
+      temperature: 0.4,
+      max_tokens: 600,
       messages: [
         { role: 'system', content: systemPrompt },
         ...recentHistory,
@@ -2684,6 +2748,103 @@ ${routeSummary}`;
   } catch (error) {
     console.error('[AI route-chat]', error.message);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/ai/route-chat/stream
+ * Versión streaming del chat — texto aparece en tiempo real (SSE)
+ */
+app.post('/api/ai/route-chat/stream', authenticate, async (req, res) => {
+  try {
+    if (!openai) return res.status(400).json({ success: false, error: 'OpenAI no configurado' });
+    const { message, platformContext, history = [] } = req.body;
+    if (!message) return res.status(400).json({ success: false, error: 'Mensaje requerido' });
+
+    // Reusar la misma lógica de construcción de contexto del endpoint base
+    let contextBlock = '';
+    if (platformContext) {
+      const { stats, vendedores, vendedorActual, rutaOptimizada, visitasHoy } = platformContext;
+      if (stats) {
+        contextBlock += `\n=== PLATAFORMA LEKER — ${stats.fecha} ===\n`;
+        contextBlock += `Clientes: ${stats.totalClientes} | 80/20: ${stats.clientes8020} | L: ${stats.clientesL}\n`;
+        contextBlock += `Con GPS: ${stats.clientesConGPS} | Sin GPS: ${stats.clientesSinGPS} | Rutas hoy: ${stats.rutasHoy}\n`;
+      }
+      if (vendedores && vendedores.length > 0) {
+        contextBlock += `\n=== VENDEDORES ===\n`;
+        vendedores.forEach(v => {
+          const r = v.rutaHoy ? ` | Hoy: ruta ${v.rutaHoy.estado||'?'} (${v.rutaHoy.clientesTotal||0} clientes)` : ' | sin ruta hoy';
+          contextBlock += `• ${v.nombre}${v.zona?` [${v.zona}]`:''}: ${v.totalClientes} clientes (80/20:${v.seg8020}, GPS:${v.conGPS}, sinGPS:${v.sinGPS})${r}\n`;
+        });
+      }
+      if (vendedorActual && vendedorActual.clientes && vendedorActual.clientes.length > 0) {
+        contextBlock += `\n=== CLIENTES DE ${vendedorActual.nombre.toUpperCase()} ===\nTotal: ${vendedorActual.clientes.length}\n`;
+        const byComuna = {};
+        vendedorActual.clientes.forEach(c => { const k = c.comuna||'Sin comuna'; if(!byComuna[k]) byComuna[k]=[]; byComuna[k].push(c); });
+        Object.entries(byComuna).sort((a,b)=>b[1].length-a[1].length).forEach(([com,cls]) => {
+          contextBlock += `  ${com}: ${cls.length} (GPS:${cls.filter(c=>c.gps).length})\n`;
+        });
+        contextBlock += `Lista (máx 80):\n`;
+        vendedorActual.clientes.slice(0,80).forEach(c => {
+          contextBlock += `  - [${c.cod}] ${c.nombre} | ${c.comuna||'?'} | seg:${c.seg||'L'} | GPS:${c.gps?'sí':'NO'}\n`;
+        });
+      }
+      if (rutaOptimizada) {
+        contextBlock += `\n=== RUTA OPTIMIZADA ===\n`;
+        if (rutaOptimizada.totalStats) {
+          const ts = rutaOptimizada.totalStats;
+          contextBlock += `${ts.totalClients} clientes, ${ts.totalDays} días, ${ts.distanceKm}km\n`;
+        }
+        if (rutaOptimizada.dias) {
+          Object.entries(rutaOptimizada.dias).forEach(([f,dd]) => {
+            contextBlock += `  ${f}: ${dd.stats?.totalClients||0} clientes, ${dd.stats?.distanceKm||0}km\n`;
+          });
+        }
+      }
+      if (visitasHoy && visitasHoy.length > 0) {
+        contextBlock += `\n=== VISITAS HOY ===\n`;
+        visitasHoy.forEach(v => { contextBlock += `  ${v.vendedor}: ${v.completadas} ok, ${v.pendientes} pendientes\n`; });
+      }
+    }
+
+    const systemPrompt = `Eres LEKER AI, asistente de la plataforma Leker (distribuidora Chile).
+DATOS REALES:
+${contextBlock}
+ROL: Responde usando los datos reales. NO pidas info que ya tienes. Sé conciso y directo. Español siempre. Máx 6 líneas salvo que pidan detalle.`;
+
+    // SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    const recentHistory = history.slice(-8).map(m => ({ role: m.role, content: m.content }));
+    const stream = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      temperature: 0.4,
+      max_tokens: 600,
+      stream: true,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...recentHistory,
+        { role: 'user', content: message }
+      ]
+    });
+
+    let totalTokens = 0;
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content || '';
+      if (delta) {
+        res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+      }
+      if (chunk.usage) totalTokens = chunk.usage.total_tokens;
+    }
+    res.write(`data: ${JSON.stringify({ done: true, tokensUsed: totalTokens })}\n\n`);
+    res.end();
+  } catch (error) {
+    console.error('[AI stream]', error.message);
+    try { res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`); res.end(); } catch(_) {}
   }
 });
 

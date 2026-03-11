@@ -18,34 +18,7 @@
        TRACKING SCRIPTS - CONFIGURAR IDs
        ============================================= -->
 
-  <!-- Google Analytics 4 -->
-  <!-- CONFIGURAR: Reemplazar GA_MEASUREMENT_ID con tu ID (ej: G-XXXXXXXXXX) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'GA_MEASUREMENT_ID'); // <- Reemplazar con tu ID
-    // Google Ads - CONFIGURAR: Reemplazar AW_CONVERSION_ID (ej: AW-XXXXXXXXXX)
-    // gtag('config', 'AW_CONVERSION_ID');
-  </script>
-
-  <!-- Meta Pixel (Facebook) -->
-  <!-- CONFIGURAR: Reemplazar META_PIXEL_ID con tu ID (ej: 1234567890123456) -->
-  <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', 'META_PIXEL_ID'); // <- Reemplazar con tu ID
-    fbq('track', 'PageView');
-  </script>
-  <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.net/tr?id=META_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
+  <!-- Analytics: configurar GA_MEASUREMENT_ID y META_PIXEL_ID antes de activar -->
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1323,6 +1296,8 @@
 
     .legend-dot.seg-8020 { background: #f59e0b; }
     .legend-dot.seg-l    { background: #3b82f6; }
+    .legend-dot.seg-lc   { background: #3b82f6; }
+    .legend-dot.seg-lb   { background: #94a3b8; }
     .legend-dot.seg-n    { background: #94a3b8; }
     .legend-dot.seg-none { background: #cbd5e1; }
     .legend-dot.route { background: var(--accent); }
@@ -4460,7 +4435,7 @@
         <p>Sistema de Gestión Logística</p>
         <div style="margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
           <div style="height:1px; width:40px; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15));"></div>
-          <span style="font-size:10px; color:rgba(255,255,255,0.35); letter-spacing:1.5px; font-weight:600;">v2.5.9</span>
+          <span style="font-size:10px; color:rgba(255,255,255,0.35); letter-spacing:1.5px; font-weight:600;">v2.6.3</span>
           <div style="height:1px; width:40px; background:linear-gradient(90deg,rgba(255,255,255,0.15),transparent);"></div>
         </div>
       </div>
@@ -4539,7 +4514,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.5.9</div>
+        <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.6.3</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -4743,6 +4718,11 @@
       </div>
       <div class="topbar-actions">
         <!-- Botón novedades GSheets -->
+        <!-- Sync GSheets manual -->
+        <button id="btn-sync-gsheets-now" onclick="forceSyncFromSheets()" title="Sincronizar desde Google Sheets ahora" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--text-secondary);display:flex;align-items:center;gap:5px;transition:background 0.15s;font-size:11px;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
+          <i data-lucide="refresh-cw" style="width:16px;height:16px;" id="icon-sync-gs"></i>
+          <span id="lbl-last-sync-gs" style="display:none;color:var(--text-muted);">—</span>
+        </button>
         <div style="position:relative;" id="sync-notif-wrap" title="Novedades desde Excel">
           <button onclick="toggleSyncPanel()" style="position:relative;background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;transition:background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
             <i data-lucide="bell" style="width:20px;height:20px;"></i>
@@ -4937,7 +4917,7 @@
             <div class="stat-info">
               <h3 id="stat-clients">0</h3>
               <p>Clientes Totales</p>
-              <span id="stat-clients-sub" style="font-size:11px;font-weight:600;color:#b8860b;background:rgba(212,175,55,0.12);padding:1px 7px;border-radius:8px;margin-top:2px;display:inline-block;">⭐ <span id="stat-clients-8020">-</span> 80/20</span>
+              <span id="stat-clients-sub" style="font-size:11px;font-weight:600;color:#b8860b;background:rgba(212,175,55,0.12);padding:1px 7px;border-radius:8px;margin-top:2px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="star" style="width:10px;height:10px;fill:#b8860b;stroke:#b8860b;"></i> <span id="stat-clients-8020">-</span> 80/20</span>
             </div>
           </div>
           <div class="stat-card" style="cursor: pointer;" onclick="document.querySelector('[data-tab=routes]').click()">
@@ -4983,39 +4963,39 @@
               <!-- KPIs reales calculados desde allClients -->
               <div id="segmentation-stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
                 <!-- 80-20: clientes de alta venta por vendedor -->
-                <div style="text-align: center; padding: 14px 8px; background: rgba(212,175,55,0.08); border-radius: 10px; border: 1px solid rgba(212,175,55,0.3); cursor: pointer;" onclick="goToClientsBySegmentation('80-20')" title="Clientes que generan el 80% de las ventas por vendedor">
+                <div style="text-align: center; padding: 14px 8px; background: rgba(212,175,55,0.08); border-radius: 10px; border: 1px solid rgba(212,175,55,0.3); cursor: pointer;" onclick="goToClientsBySegmentation('80-20');showOnlyMapSegment('80-20')" title="Clientes que generan el 80% de las ventas por vendedor">
                   <div style="font-size: 26px; font-weight: 700; color: #b8860b;" id="seg-A-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">⭐ 80/20 Clave</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:4px;"><i data-lucide="star" style="width:12px;height:12px;fill:#b8860b;stroke:#b8860b;"></i> 80/20 Clave</div>
                   <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Alta venta por vendedor</div>
                 </div>
                 <!-- L Con venta: segmentation=L AND segment=C -->
-                <div style="text-align: center; padding: 14px 8px; background: rgba(59,130,246,0.12); border-radius: 10px; border: 1px solid rgba(59,130,246,0.35); cursor: pointer;" onclick="goToClientsBySegAndSegment('L', 'C')" title="Clientes L que compraron en Leker (segment=C)">
+                <div style="text-align: center; padding: 14px 8px; background: rgba(59,130,246,0.12); border-radius: 10px; border: 1px solid rgba(59,130,246,0.35); cursor: pointer;" onclick="goToClientsBySegAndSegment('L', 'C');showOnlyMapSegment('L-C')" title="Clientes L que compraron en Leker (segment=C)">
                   <div style="font-size: 26px; font-weight: 700; color: #3b82f6;" id="seg-L-active-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">🔵 L Con venta</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:4px;"><i data-lucide="circle-check-big" style="width:12px;height:12px;color:#3b82f6;"></i> L Con venta</div>
                   <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Compraron en Leker</div>
                 </div>
                 <!-- L Sin venta: segmentation=L AND segment≠C -->
-                <div style="text-align: center; padding: 14px 8px; background: rgba(148,163,184,0.08); border-radius: 10px; border: 1px solid rgba(148,163,184,0.2); cursor: pointer;" onclick="goToClientsBySegAndSegment('L', 'B')" title="Clientes L sin ventas activas (segment=B)">
+                <div style="text-align: center; padding: 14px 8px; background: rgba(148,163,184,0.08); border-radius: 10px; border: 1px solid rgba(148,163,184,0.2); cursor: pointer;" onclick="goToClientsBySegAndSegment('L', 'B');showOnlyMapSegment('L-B')" title="Clientes L sin ventas activas (segment=B)">
                   <div style="font-size: 26px; font-weight: 700; color: #94a3b8;" id="seg-L-base-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">⬜ L Sin venta</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:4px;"><i data-lucide="circle-minus" style="width:12px;height:12px;color:#94a3b8;"></i> L Sin venta</div>
                   <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Base sin compras</div>
                 </div>
                 <!-- Con GPS: pueden rutearse -->
                 <div style="text-align: center; padding: 14px 8px; background: rgba(99,102,241,0.08); border-radius: 10px; border: 1px solid rgba(99,102,241,0.2); cursor: pointer;" onclick="filterCrmAndGo('has_gps')">
                   <div style="font-size: 26px; font-weight: 700; color: #6366f1;" id="seg-C-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">📍 Con GPS</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:4px;"><i data-lucide="map-pin" style="width:12px;height:12px;color:#6366f1;"></i> Con GPS</div>
                   <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Listos para rutear</div>
                 </div>
                 <!-- Sin geo: pendientes de geolocalizar -->
                 <div style="text-align: center; padding: 14px 8px; background: rgba(239,68,68,0.06); border-radius: 10px; border: 1px solid rgba(239,68,68,0.2); cursor: pointer;" onclick="filterCrmAndGo('no_geo')">
                   <div style="font-size: 26px; font-weight: 700; color: #ef4444;" id="seg-E-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">⚠️ Sin geo</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:4px;"><i data-lucide="map-pin-off" style="width:12px;height:12px;color:#ef4444;"></i> Sin geo</div>
                   <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Pendientes GPS</div>
                 </div>
                 <!-- Total -->
                 <div style="text-align: center; padding: 14px 8px; background: var(--bg-hover); border-radius: 10px; border: 1px solid var(--border); cursor: pointer;" onclick="document.querySelector('[data-tab=crm]')?.click()">
                   <div style="font-size: 26px; font-weight: 700; color: var(--text-primary);" id="seg-total-count">-</div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">📊 Total</div>
+                  <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; display:flex; align-items:center; justify-content:center; gap:4px;"><i data-lucide="database" style="width:12px;height:12px;color:var(--text-secondary);"></i> Total</div>
                   <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Base completa</div>
                 </div>
               </div>
@@ -5092,31 +5072,37 @@
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('80-20')" data-segment="80-20" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
                     <div class="legend-dot seg-8020"></div>
                     <span style="flex: 1; font-size: 11px; font-weight: 600;">80/20 — Clave</span>
-                    <span id="count-seg-8020" style="font-size: 10px; background: rgba(245,158,11,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
+                    <span id="count-seg-8020" style="font-size: 10px; background: rgba(245,158,11,0.25); color: #d97706; padding: 2px 6px; border-radius: 10px; font-weight: 700; margin-right: 4px; min-width: 24px; text-align: center;">0</span>
                     <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
-                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('L')" data-segment="L" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
-                    <div class="legend-dot seg-l"></div>
-                    <span style="flex: 1; font-size: 11px;">L — Base Leker</span>
-                    <span id="count-seg-l" style="font-size: 10px; background: rgba(59,130,246,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('L-C')" data-segment="L-C" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
+                    <div class="legend-dot seg-lc"></div>
+                    <span style="flex: 1; font-size: 11px;">L Con venta</span>
+                    <span id="count-seg-lc" style="font-size: 10px; background: rgba(59,130,246,0.25); color: #60a5fa; padding: 2px 6px; border-radius: 10px; font-weight: 700; margin-right: 4px; min-width: 24px; text-align: center;">0</span>
+                    <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
+                  </div>
+                  <div class="legend-item legend-filter active" onclick="filterMapBySegment('L-B')" data-segment="L-B" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
+                    <div class="legend-dot seg-lb"></div>
+                    <span style="flex: 1; font-size: 11px;">L Sin venta</span>
+                    <span id="count-seg-lb" style="font-size: 10px; background: rgba(148,163,184,0.2); color: #94a3b8; padding: 2px 6px; border-radius: 10px; font-weight: 700; margin-right: 4px; min-width: 24px; text-align: center;">0</span>
                     <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('N')" data-segment="N" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
                     <div class="legend-dot seg-n"></div>
                     <span style="flex: 1; font-size: 11px;">N — Nuevos</span>
-                    <span id="count-seg-n" style="font-size: 10px; background: rgba(148,163,184,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
+                    <span id="count-seg-n" style="font-size: 10px; background: rgba(148,163,184,0.2); color: #94a3b8; padding: 2px 6px; border-radius: 10px; font-weight: 700; margin-right: 4px; min-width: 24px; text-align: center;">0</span>
                     <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
                   <div class="legend-item legend-filter active" onclick="filterMapBySegment('none')" data-segment="none" style="cursor: pointer; padding: 5px 8px; border-radius: 6px; margin: 2px 0; display: flex; align-items: center; gap: 8px;">
                     <div class="legend-dot seg-none"></div>
                     <span style="flex: 1; font-size: 11px;">Sin clasificar</span>
-                    <span id="count-seg-none" style="font-size: 10px; background: rgba(203,213,225,0.4); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
+                    <span id="count-seg-none" style="font-size: 10px; background: rgba(148,163,184,0.15); color: #94a3b8; padding: 2px 6px; border-radius: 10px; font-weight: 700; margin-right: 4px; min-width: 24px; text-align: center;">0</span>
                     <i data-lucide="eye" class="toggle-eye" style="width:12px;height:12px;flex-shrink:0;"></i>
                   </div>
                   <div class="legend-item" data-segment="SIN_GEO" style="padding: 5px 8px; border-radius: 6px; margin: 2px 0; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; align-items: center; opacity: 0.7;" title="Clientes sin coordenadas GPS — no visibles en el mapa">
                     <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.4); margin-right: 8px; flex-shrink:0;"></div>
                     <span style="flex: 1; font-size: 11px;">Sin GEO</span>
-                    <span id="count-seg-singeo" style="font-size: 10px; background: rgba(239,68,68,0.2); padding: 2px 6px; border-radius: 10px; font-weight: 600; margin-right: 4px;">0</span>
+                    <span id="count-seg-singeo" style="font-size: 10px; background: rgba(239,68,68,0.2); color: #f87171; padding: 2px 6px; border-radius: 10px; font-weight: 700; margin-right: 4px; min-width: 24px; text-align: center;">0</span>
                     <i data-lucide="map-pin-off" style="width:12px;height:12px;flex-shrink:0;color:#ef4444;"></i>
                   </div>
                   <button onclick="filterMapBySegment('ALL')" style="width: 100%; margin-top: 8px; padding: 5px 8px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
@@ -5532,7 +5518,7 @@
                       <div class="form-group">
                         <label style="font-size: 13px;">Kilometraje Inicial</label>
                         <p style="font-size: 11px; color: var(--text-muted); margin: 0 0 6px 0;">Lectura actual del odómetro</p>
-                        <input type="number" id="start-km" class="form-control" value="" placeholder="Ingresa KM del odómetro" required style="font-size: 14px; padding: 10px 12px;">
+                        <input type="number" id="start-km" class="form-control" value="" placeholder="Ingresa KM del odómetro" required min="0" step="1" style="font-size: 14px; padding: 10px 12px;">
                         <small id="start-km-hint" style="font-size: 11px; color: var(--text-muted); display: none;"></small>
                       </div>
                       <div style="display: flex; justify-content: flex-end;">
@@ -5548,7 +5534,7 @@
                     <div id="stale-route-warning" style="display: none; margin-top: 12px; padding: 12px 16px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
                       <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                         <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-                          <span style="font-size: 18px; flex-shrink: 0;">&#9888;&#65039;</span>
+                          <i data-lucide="alert-triangle" style="width:18px;height:18px;color:#f59e0b;flex-shrink:0;"></i>
                           <span id="stale-route-text" style="font-size: 12px; color: #92400e; font-weight: 500;"></span>
                         </div>
                         <button type="button" class="btn" onclick="endStaleRoute()" style="background: #f59e0b; color: white; padding: 4px 12px; font-size: 11px; white-space: nowrap; border: none; border-radius: 4px; cursor: pointer;">
@@ -7307,7 +7293,7 @@
               <i data-lucide="file-spreadsheet" style="width:15px;height:15px;"></i>
               Abrir Excel
             </a>
-            <button onclick="loadGoogleSheetsData(true)" id="gs-refresh-btn"
+            <button onclick="loadGoogleSheetsData(true).then(()=>forceSyncFromSheets())" id="gs-refresh-btn"
               style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:#2563eb;color:white;border:none;border-radius:10px;font-size:12px;font-weight:600;letter-spacing:0.2px;cursor:pointer;transition:all 0.2s;white-space:nowrap;box-shadow:0 2px 8px rgba(37,99,235,0.25);"
               onmouseenter="this.style.background='#1d4ed8';this.style.boxShadow='0 4px 14px rgba(37,99,235,0.4)';this.style.transform='translateY(-1px)'"
               onmouseleave="this.style.background='#2563eb';this.style.boxShadow='0 2px 8px rgba(37,99,235,0.25)';this.style.transform='none'">
@@ -9279,24 +9265,29 @@
     // Add client markers to map using lat/lng from client data
     // Store markers with metadata for filtering
     let markersBySegment = { '80-20': [], 'L': [], 'N': [], 'none': [] };
-    let activeSegmentFilters = { '80-20': true, 'L': true, 'N': true, 'none': true };
+    let activeSegmentFilters = { '80-20': true, 'L-C': true, 'L-B': true, 'N': true, 'none': true };
 
     function addClientMarkers(clients) {
       // Clear existing markers
       mainMapMarkers.forEach(m => m.setMap(null));
       mainMapMarkers = [];
       clientMarkers = [];
-      markersBySegment = { '80-20': [], 'L': [], 'N': [], 'none': [] };
+      markersBySegment = { '80-20': [], 'L-C': [], 'L-B': [], 'N': [], 'none': [] };
 
       const bounds = new google.maps.LatLngBounds();
       let markersWithCoords = 0;
       let markersWithoutCoords = 0;
-      let segmentCounts = { '80-20': 0, 'L': 0, 'N': 0, 'none': 0, 'SIN_GEO': 0 };
+      let segmentCounts = { '80-20': 0, 'L-C': 0, 'L-B': 0, 'N': 0, 'none': 0, 'SIN_GEO': 0 };
 
       // Count ALL clients by segmentation (total, not just GPS)
       clients.forEach(c => {
         const s = c.segmentation || 'none';
-        segmentCounts[s] = (segmentCounts[s] || 0) + 1;
+        if (s === 'L') {
+          if (c.segment === 'C') segmentCounts['L-C']++;
+          else segmentCounts['L-B']++;
+        } else {
+          segmentCounts[s] = (segmentCounts[s] || 0) + 1;
+        }
         if (!c.lat || !c.lng) segmentCounts.SIN_GEO++;
       });
 
@@ -9335,10 +9326,15 @@
         const position = { lat, lng };
         bounds.extend(position);
 
-        // Marker colors by segmentation (80-20=gold, L=blue, N=gray, none=light gray)
-        const segColors = { '80-20': '#f59e0b', 'L': '#3b82f6', 'N': '#94a3b8', 'none': '#cbd5e1' };
+        // Determine segKey (fine-grained key for filtering)
         const seg = client.segmentation || 'none';
-        const color = segColors[seg] || '#cbd5e1';
+        const segKey = seg === 'L'
+          ? (client.segment === 'C' ? 'L-C' : 'L-B')
+          : seg;
+
+        // Marker colors by segKey (80-20=gold, L-C=blue, L-B=slate, N=gray, none=light gray)
+        const segColors = { '80-20': '#f59e0b', 'L-C': '#3b82f6', 'L-B': '#94a3b8', 'N': '#94a3b8', 'none': '#cbd5e1' };
+        const color = segColors[segKey] || '#cbd5e1';
 
         const marker = new google.maps.Marker({
           position: position,
@@ -9349,7 +9345,7 @@
             fillOpacity: seg === 'none' ? 0.5 : 1,
             strokeColor: '#fff',
             strokeWeight: seg === '80-20' ? 2 : 1.5,
-            scale: seg === '80-20' ? 10 : 7
+            scale: seg === '80-20' ? 10 : (segKey === 'L-C' ? 8 : 6)
           },
           title: client.name
         });
@@ -9358,8 +9354,9 @@
         marker.clientData = client;
         marker.segment = client.segment || 'E';
         marker.segmentation = seg;
+        marker.segKey = segKey;
 
-        const segLabel = { '80-20': '80/20 Clave', 'L': 'L · Base Leker', 'N': 'N · Nuevo', 'none': '' };
+        const segLabel = { '80-20': '80/20 Clave', 'L-C': 'L Con venta', 'L-B': 'L Sin venta', 'N': 'N · Nuevo', 'none': '' };
         const infoContent = `
           <div style="min-width: 250px; padding: 10px; font-family: system-ui, sans-serif;">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
@@ -9372,7 +9369,7 @@
             </div>
             <div style="font-size: 12px; color: #6b7280;">${client.commune || ''}</div>
             <div style="margin-top: 10px; display: flex; gap: 4px; flex-wrap: wrap;">
-              ${seg !== 'none' ? `<span style="background: ${color}; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">${segLabel[seg] || seg}</span>` : ''}
+              ${seg !== 'none' ? `<span style="background: ${color}; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">${segLabel[segKey] || segKey}</span>` : ''}
               ${client.segment ? `<span style="background: #e5e7eb; color: #374151; padding: 3px 10px; border-radius: 4px; font-size: 11px;">Seg ${client.segment}</span>` : ''}
             </div>
             ${client.zone ? `<div style="margin-top: 6px; font-size: 11px; color: #9ca3af;">Zona: ${client.zone}</div>` : ''}
@@ -9387,16 +9384,16 @@
         mainMapMarkers.push(marker);
         clientMarkers.push(marker);
 
-        // Store by segmentation for filtering
-        if (!markersBySegment[seg]) markersBySegment[seg] = [];
-        markersBySegment[seg].push(marker);
+        // Store by segKey for filtering
+        if (!markersBySegment[segKey]) markersBySegment[segKey] = [];
+        markersBySegment[segKey].push(marker);
       });
 
       // Update map stats
       updateMapStats(markersWithCoords, markersWithoutCoords);
 
       // Update segmentation counts in legend
-      const _countMap = { '80-20': 'count-seg-8020', 'L': 'count-seg-l', 'N': 'count-seg-n', 'none': 'count-seg-none', 'SIN_GEO': 'count-seg-singeo' };
+      const _countMap = { '80-20': 'count-seg-8020', 'L-C': 'count-seg-lc', 'L-B': 'count-seg-lb', 'N': 'count-seg-n', 'none': 'count-seg-none', 'SIN_GEO': 'count-seg-singeo' };
       Object.entries(_countMap).forEach(([key, id]) => {
         const el = document.getElementById(id);
         if (el) el.textContent = segmentCounts[key] || 0;
@@ -9419,12 +9416,16 @@
     }
 
     // Filter map markers by segmentation
-    const _segKeys = ['80-20', 'L', 'N', 'none'];
+    const _segKeys = ['80-20', 'L-C', 'L-B', 'N', 'none'];
     function filterMapBySegment(segment) {
       if (segment === 'ALL') {
-        activeSegmentFilters = { '80-20': true, 'L': true, 'N': true, 'none': true };
+        activeSegmentFilters = { '80-20': true, 'L-C': true, 'L-B': true, 'N': true, 'none': true };
         mainMapMarkers.forEach(m => m.setMap(mainMap));
-        document.querySelectorAll('.legend-filter').forEach(el => el.classList.add('active'));
+        document.querySelectorAll('.legend-filter').forEach(el => {
+          el.classList.add('active');
+          const eyeIcon = el.querySelector('.toggle-eye');
+          if (eyeIcon) { eyeIcon.setAttribute('data-lucide', 'eye'); lucide.createIcons({ nodes: [eyeIcon] }); }
+        });
         return;
       }
 
@@ -9443,11 +9444,32 @@
         }
       }
 
-      // Show/hide markers
+      // Show/hide markers using segKey
       mainMapMarkers.forEach(marker => {
-        const markerSeg = marker.segmentation;
-        marker.setMap(activeSegmentFilters[markerSeg] ? mainMap : null);
+        const key = marker.segKey || marker.segmentation;
+        marker.setMap(activeSegmentFilters[key] ? mainMap : null);
       });
+    }
+
+    // Show only one segment on map (from dashboard card click)
+    function showOnlyMapSegment(segKey) {
+      _segKeys.forEach(k => activeSegmentFilters[k] = (k === segKey));
+      mainMapMarkers.forEach(m => {
+        const key = m.segKey || m.segmentation;
+        m.setMap(activeSegmentFilters[key] ? mainMap : null);
+      });
+      document.querySelectorAll('.legend-filter').forEach(el => {
+        const elSeg = el.dataset.segment;
+        el.classList.toggle('active', elSeg === segKey);
+        const eyeIcon = el.querySelector('.toggle-eye');
+        if (eyeIcon) {
+          eyeIcon.setAttribute('data-lucide', elSeg === segKey ? 'eye' : 'eye-off');
+          lucide.createIcons({ nodes: [eyeIcon] });
+        }
+      });
+      // Scroll to map
+      const mapEl = document.getElementById('main-map-container');
+      if (mapEl) setTimeout(() => mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     }
 
     // Toggle map size (expand/collapse)
@@ -10066,10 +10088,11 @@
         }
 
         // Sync silencioso desde GSheets en background — detecta nuevos/cambiados
-        setTimeout(() => _silentSyncFromSheets(), 2000);
+        // skipDeletions=true: eliminaciones solo ocurren cuando el usuario presiona sync manualmente
+        setTimeout(() => _silentSyncFromSheets(false, true), 2000);
 
         // Polling cada 2 min como fallback
-        setInterval(() => _silentSyncFromSheets(true), 2 * 60 * 1000);
+        setInterval(() => _silentSyncFromSheets(true, true), 2 * 60 * 1000);
 
         // Chequeo liviano cada 10s: si el backend recibió push de Apps Script → sync inmediato
         // skipDeletions=true porque el caché de GSheets tarda 2-5min en actualizarse
@@ -10808,7 +10831,12 @@
         startKm: parseFloat(document.getElementById('start-km').value)
       };
 
-      // Hide any previous response
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalHTML = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:15px;height:15px;"></i> Iniciando...';
+      _createIcons();
+
       document.getElementById('response-start').style.display = 'none';
 
       try {
@@ -10820,16 +10848,9 @@
         const data = await res.json();
 
         if (data.success) {
-          // Show success toast
           showToast('success', 'Día Iniciado', `Ruta creada para ${data.data.user.name}`);
-
-          // Reload data
           await loadData();
-
-          // Check and display the active route
           await checkActiveRoute(userId);
-
-          // Load route on map
           if (data.data.route) {
             const assignedClients = allClients.filter(c => c.assigned_user_id === userId);
             const mockRoute = {
@@ -10841,11 +10862,14 @@
             await displayRouteOnMap(mockRoute);
           }
         } else {
-          // Show error toast
           showToast('error', 'Error', data.error || 'No se pudo iniciar el día');
         }
       } catch (error) {
         showToast('error', 'Error', error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalHTML;
+        _createIcons();
       }
     });
 
@@ -11757,11 +11781,25 @@
       const search = searchTerm.toLowerCase().trim();
       const schedData = window._dashboardScheduleData || {};
 
-      let filtered = executives;
+      // Fallback: si executives está vacío, usar allUsers filtrado por rol ejecutivo
+      const execSource = (executives && executives.length > 0)
+        ? executives
+        : (allUsers || []).filter(u => u.role === 'executive' || u.role === 'zonal' || u.role === 'supervisor');
+
+      if (execSource.length === 0) {
+        dropdown.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-muted);">
+          <i data-lucide="loader-2" class="spin" style="width:14px;height:14px;vertical-align:middle;"></i> Cargando vendedores...</div>`;
+        _createIcons();
+        // Reintentar en 800ms
+        setTimeout(() => filterExecutiveDropdown(searchTerm), 800);
+        return;
+      }
+
+      let filtered = execSource;
       if (search) {
-        filtered = executives.filter(e =>
-          e.full_name.toLowerCase().includes(search) ||
-          e.email.toLowerCase().includes(search)
+        filtered = execSource.filter(e =>
+          (e.full_name || '').toLowerCase().includes(search) ||
+          (e.email || '').toLowerCase().includes(search)
         );
       }
 
@@ -12652,18 +12690,39 @@
       if (bubble) bubble.style.display = 'flex';
     }
 
+    function _renderChatMarkdown(text) {
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code style="background:rgba(99,102,241,0.12);padding:1px 5px;border-radius:4px;font-size:12px;">$1</code>')
+        .replace(/\n/g, '<br>');
+    }
+
     function _appendChatMsg(role, text) {
       const container = document.getElementById('route-chat-messages');
       if (!container) return;
       const isUser = role === 'user';
       const div = document.createElement('div');
       div.style.cssText = `display:flex;flex-direction:column;align-items:${isUser?'flex-end':'flex-start'};`;
-      // Render markdown básico: **bold**, saltos de línea
-      const html = text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+      const html = _renderChatMarkdown(text);
       div.innerHTML = `
         <div style="max-width:88%;padding:9px 12px;border-radius:${isUser?'12px 12px 4px 12px':'12px 12px 12px 4px'};background:${isUser?'#6366f1':'var(--bg-secondary)'};color:${isUser?'white':'var(--text-primary)'};font-size:13px;line-height:1.5;">${html}</div>`;
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
+    }
+
+    function _appendStreamingMsg() {
+      const container = document.getElementById('route-chat-messages');
+      if (!container) return null;
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;';
+      const bubble = document.createElement('div');
+      bubble.id = 'chat-streaming-bubble';
+      bubble.style.cssText = 'max-width:88%;padding:9px 12px;border-radius:12px 12px 12px 4px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;line-height:1.5;';
+      div.appendChild(bubble);
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+      return bubble;
     }
 
     function _appendChatTyping() {
@@ -12684,7 +12743,7 @@
     async function sendRouteChat() {
       const input = document.getElementById('route-chat-input');
       const msg = input?.value?.trim();
-      if (!msg || !openai) return;
+      if (!msg) return;
       input.value = '';
       input.disabled = true;
 
@@ -12693,40 +12752,144 @@
       _routeChatHistory.push({ role: 'user', content: msg });
 
       try {
-        // Construir contexto compacto de la ruta para el backend
+        // Construir contexto completo de la plataforma
         const exec = executives.find(e => e.id === selectedExecutiveId);
-        const routeContext = {
-          vendorName: exec?.full_name || 'Vendedor',
-          totalStats: optimizedRouteData?.totalStats || null,
-          days: optimizedRouteData?.days ? Object.fromEntries(
-            Object.entries(optimizedRouteData.days).map(([d, data]) => [d, {
-              stats: data.stats,
-              route: (data.route||[]).map(c => ({ name: c.fantasy_name||c.name, segmentation: c.segmentation, commune: c.commune }))
-            }])
-          ) : null
+
+        // Stats generales
+        const stats = {
+          totalClientes: allClients.length,
+          totalVendedores: executives.length,
+          clientes8020: allClients.filter(c => c.segmentation === '80-20').length,
+          clientesL: allClients.filter(c => c.segmentation === 'L').length,
+          clientesConGPS: allClients.filter(c => c.lat && c.lng).length,
+          clientesSinGPS: allClients.filter(c => !c.lat || !c.lng).length,
+          rutasHoy: todayRoutesData ? todayRoutesData.length : 0,
+          fecha: new Date().toLocaleDateString('es-CL', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
         };
 
-        const res = await fetch(`${API}/api/ai/route-chat`, {
+        // Todos los vendedores con sus métricas
+        const vendedores = executives.map(e => {
+          const vc = allClients.filter(c => c.assigned_user_id === e.id);
+          const ruta = todayRoutesData?.find(r => r.user_id === e.id || r.userId === e.id);
+          return {
+            nombre: e.full_name,
+            id: e.id,
+            zona: e.zone || null,
+            totalClientes: vc.length,
+            seg8020: vc.filter(c => c.segmentation === '80-20').length,
+            conGPS: vc.filter(c => c.lat && c.lng).length,
+            sinGPS: vc.filter(c => !c.lat || !c.lng).length,
+            rutaHoy: ruta ? { estado: ruta.status || ruta.state, clientesTotal: ruta.visit_count || ruta.visitCount } : null
+          };
+        });
+
+        // Clientes del vendedor seleccionado (detallados)
+        let vendedorActual = null;
+        if (exec) {
+          const vc = allClients.filter(c => c.assigned_user_id === exec.id);
+          vendedorActual = {
+            nombre: exec.full_name,
+            zona: exec.zone || null,
+            clientes: vc.map(c => ({
+              cod: c.external_id,
+              nombre: c.fantasy_name || c.name,
+              comuna: c.commune,
+              region: c.region || null,
+              seg: c.segmentation,
+              gps: !!(c.lat && c.lng),
+              prioridad: c.priority || null
+            }))
+          };
+        }
+
+        // Ruta optimizada actual (si existe)
+        const rutaOptimizada = optimizedRouteData ? {
+          totalStats: optimizedRouteData.totalStats || null,
+          dias: optimizedRouteData.days ? Object.fromEntries(
+            Object.entries(optimizedRouteData.days).map(([d, dd]) => [d, {
+              stats: dd.stats,
+              clientes: (dd.route||[]).map(c => ({ nombre: c.fantasy_name||c.name, seg: c.segmentation, comuna: c.commune }))
+            }])
+          ) : null
+        } : null;
+
+        // Visitas de hoy (resumen)
+        const visitasHoy = todayRoutesData ? todayRoutesData.map(r => ({
+          vendedor: r.user?.full_name || r.userName || '?',
+          estado: r.status || r.state,
+          completadas: r.completed_visits || r.completedVisits || 0,
+          pendientes: r.pending_visits || r.pendingVisits || 0
+        })) : [];
+
+        const platformContext = { stats, vendedores, vendedorActual, rutaOptimizada, visitasHoy };
+
+        const res = await fetch(`${API}/api/ai/route-chat/stream`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: msg, routeContext, history: _routeChatHistory.slice(-8) })
+          body: JSON.stringify({ message: msg, platformContext, history: _routeChatHistory.slice(-8) })
         });
-        const data = await res.json();
+
         document.getElementById('chat-typing')?.remove();
 
-        if (data.success) {
-          _routeChatHistory.push({ role: 'assistant', content: data.reply });
-          _appendChatMsg('assistant', data.reply);
-        } else {
+        if (!res.ok) {
           _appendChatMsg('assistant', 'Error al procesar tu consulta. Intenta de nuevo.');
+          return;
         }
+
+        const bubble = _appendStreamingMsg();
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+        let buffer = '';
+        const container = document.getElementById('route-chat-messages');
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop(); // keep incomplete line
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const d = JSON.parse(line.slice(6));
+              if (d.delta) {
+                fullText += d.delta;
+                if (bubble) {
+                  bubble.innerHTML = _renderChatMarkdown(fullText) + '<span style="display:inline-block;width:2px;height:13px;background:#6366f1;margin-left:2px;vertical-align:middle;animation:pulse 1s infinite;"></span>';
+                  container.scrollTop = container.scrollHeight;
+                }
+              }
+              if (d.done) {
+                if (bubble) bubble.innerHTML = _renderChatMarkdown(fullText);
+                _routeChatHistory.push({ role: 'assistant', content: fullText });
+              }
+              if (d.error) {
+                if (bubble) bubble.innerHTML = '<span style="color:#ef4444;">Error al generar respuesta.</span>';
+              }
+            } catch (_) {}
+          }
+        }
+        // Fallback: if stream ended without d.done
+        if (fullText && bubble) bubble.innerHTML = _renderChatMarkdown(fullText);
+        if (fullText && !_routeChatHistory.find(h => h.role === 'assistant' && h.content === fullText)) {
+          _routeChatHistory.push({ role: 'assistant', content: fullText });
+        }
+
       } catch (e) {
         document.getElementById('chat-typing')?.remove();
+        document.getElementById('chat-streaming-bubble')?.closest('div')?.remove();
         _appendChatMsg('assistant', 'No se pudo conectar con el asistente.');
       } finally {
         input.disabled = false;
         input.focus();
       }
+    }
+
+    function sendQuickChip(text) {
+      const input = document.getElementById('route-chat-input');
+      if (input) { input.value = text; }
+      sendRouteChat();
     }
 
     // Cerrar con Escape
@@ -12928,11 +13091,17 @@
           const dd = new Date(d + 'T12:00:00');
           return `<option value="${d}">${dayNamesShort[dd.getDay()]} ${dd.getDate()}</option>`;
         }).join('');
-        return `<div style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 13px; ${is8020 ? 'border-left: 3px solid #f5c842; background: rgba(245,200,66,0.04);' : ''}">
+        return `<div style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 13px; ${is8020 ? 'border-left: 3px solid #d4a017; background: rgba(212,160,23,0.05);' : ''}">
           <span style="width: 24px; height: 24px; border-radius: 50%; background: ${i === 0 ? '#10b981' : is8020 ? '#d4a017' : '#3b82f6'}; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">${i + 1}</span>
           <div style="flex: 1; min-width: 0;">
-            <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.fantasy_name || c.name} ${is8020 ? '<span style="color:#c9a227;font-size:11px;">★</span>' : ''}</div>
-            <div style="font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.commune || ''} ${c.address ? '· ' + c.address : ''}</div>
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+              <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width:100%;">${c.fantasy_name || c.name}</span>
+              ${is8020 ? '<span style="background:rgba(212,160,23,0.18);color:#b8860b;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;white-space:nowrap;flex-shrink:0;">⭐ 80/20</span>' : ''}
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:2px;">
+              ${c.external_id ? `<button onclick="event.stopPropagation();openClientModal('${c.id}')" title="Editar cliente" style="font-family:monospace;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;padding:1px 6px;color:var(--text-secondary);font-size:11px;cursor:pointer;line-height:1.4;transition:background 0.15s;" onmouseenter="this.style.background='var(--bg-hover)';this.style.borderColor='#3b82f6';this.style.color='#3b82f6'" onmouseleave="this.style.background='var(--bg-secondary)';this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">${c.external_id} <i data-lucide="pencil" style="width:9px;height:9px;vertical-align:middle;"></i></button>` : ''}
+              <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.commune || ''}${c.address ? ' · ' + c.address : ''}</span>
+            </div>
           </div>
           <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
             <span><i data-lucide="${hasGps ? 'map-pin' : 'alert-triangle'}" style="width:13px;height:13px;color:${hasGps ? '#10b981' : '#f59e0b'};"></i></span>
@@ -13610,7 +13779,7 @@
                   Google Maps
                 </a>
                 <a href="https://waze.com/ul?ll=${pos.lat},${pos.lng}&navigate=yes" target="_blank" rel="noopener"
-                   style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: #33ccff; color: #000; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;">
+                   style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: #0ea5e9; color: #fff; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;">
                   Waze
                 </a>
               </div>
@@ -14303,7 +14472,7 @@
               <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.fantasy_name || c.name}</div>
               <div style="font-size: 9px; color: var(--text-muted);">${c.commune || 'Sin comuna'} · ${c.address || 'Sin dirección'}</div>
             </div>
-            <button onclick="event.stopPropagation(); openEditLocationModal('${c.id}', '${(c.fantasy_name || c.name).replace(/'/g, "\\'")}', '${c.address || ''}')" style="background: #fbbf24; color: #78350f; border: none; padding: 2px 6px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: 600;">+ GPS</button>
+            <button onclick="event.stopPropagation(); openEditLocationModal('${c.id}', '${(c.fantasy_name || c.name).replace(/'/g, "\\'")}', '${c.address || ''}')" style="background: #f59e0b; color: #fff; border: none; padding: 2px 6px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: 600;">+ GPS</button>
           </div>`;
         });
         if (notInRoute.length > 20) {
@@ -15133,7 +15302,7 @@
           <button onclick="openFullRouteInMaps()" style="flex:1; padding:7px 4px; background:#4285f4; color:#fff; border:none; border-radius:7px; cursor:pointer; font-weight:600; font-size:10px; display:flex; align-items:center; justify-content:center; gap:3px;">
             <i data-lucide="map-pin" style="width:11px;height:11px;"></i> Maps
           </button>
-          <button onclick="openWazeNextPending()" style="flex:1; padding:7px 4px; background:#33ccff; color:#000; border:none; border-radius:7px; cursor:pointer; font-weight:600; font-size:10px; display:flex; align-items:center; justify-content:center; gap:3px;">
+          <button onclick="openWazeNextPending()" style="flex:1; padding:7px 4px; background:#0ea5e9; color:#fff; border:none; border-radius:7px; cursor:pointer; font-weight:600; font-size:10px; display:flex; align-items:center; justify-content:center; gap:3px;">
             <i data-lucide="navigation" style="width:11px;height:11px;"></i> Waze
           </button>
         </div>
@@ -16538,6 +16707,10 @@
         return;
       }
 
+      const saveBtn = document.querySelector('#client-modal .btn-primary');
+      const origHTML = saveBtn ? saveBtn.innerHTML : null;
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:14px;height:14px;"></i> Guardando...'; _createIcons(); }
+
       const clientData = {
         external_id: code,
         name: name,
@@ -16573,7 +16746,21 @@
         const data = await res.json();
 
         if (data.success) {
-          showToast('success', id ? 'Cliente actualizado' : 'Cliente creado', name);
+          // Feedback de sync GSheets
+          if (id) {
+            if (data.sheetSync?.success && data.sheetSync?.updated > 0) {
+              showToast('success', 'Cliente actualizado', `${name} — Google Sheets sincronizado`);
+            } else if (data.sheetSync?.success && data.sheetSync?.updated === 0) {
+              showToast('success', 'Cliente actualizado', `${name} (cliente no existe en GSheets — se creará automáticamente)`);
+            } else if (data.sheetSync && !data.sheetSync?.success) {
+              showToast('success', 'Cliente actualizado', name);
+              showToast('warning', 'GSheets no sincronizado', data.sheetSync?.error || 'Revisa la conexión con Google Sheets', 6000);
+            } else {
+              showToast('success', 'Cliente actualizado', name);
+            }
+          } else {
+            showToast('success', 'Cliente creado', name);
+          }
           closeClientModal();
 
           // Patch allClients immediately with fresh data from API response
@@ -16603,9 +16790,11 @@
           }
         } else {
           showToast('error', 'Error', data.error);
+          if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = origHTML; _createIcons(); }
         }
       } catch (error) {
         showToast('error', 'Error de conexión', error.message);
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = origHTML; _createIcons(); }
       }
     }
 
@@ -16934,6 +17123,8 @@
     async function confirmEndRouteNoKm() {
       const routeId = document.getElementById('end-route-id').value;
       if (!routeId) return;
+      const btns = document.querySelectorAll('#end-route-modal button');
+      btns.forEach(b => b.disabled = true);
       try {
         const res = await fetch(`${API}/routes/${routeId}/end`, {
           method: 'POST',
@@ -16963,9 +17154,11 @@
           } else { loadData(); }
         } else {
           showToast('error', 'Error', data.error || 'No se pudo finalizar');
+          document.querySelectorAll('#end-route-modal button').forEach(b => b.disabled = false);
         }
       } catch (e) {
         showToast('error', 'Error', e.message);
+        document.querySelectorAll('#end-route-modal button').forEach(b => b.disabled = false);
       }
     }
 
@@ -16979,6 +17172,9 @@
         showToast('warning', 'KM inválido', 'Ingresa un kilometraje final válido');
         return;
       }
+
+      const btns = document.querySelectorAll('#end-route-modal button');
+      btns.forEach(b => b.disabled = true);
 
       try {
         const res = await fetch(`${API}/routes/${routeId}/end`, {
@@ -17013,9 +17209,11 @@
           if (selUser) setTimeout(() => checkActiveRoute(selUser), 500);
         } else {
           showToast('error', 'Error', data.error || 'No se pudo finalizar la ruta');
+          document.querySelectorAll('#end-route-modal button').forEach(b => b.disabled = false);
         }
       } catch (e) {
         showToast('error', 'Error', 'Error al finalizar la ruta');
+        document.querySelectorAll('#end-route-modal button').forEach(b => b.disabled = false);
       }
     }
 
@@ -18201,7 +18399,9 @@
       event.currentTarget.classList.add('active-card');
 
       const st = window._dashboardState || {};
-      const execList = (executives && executives.length > 0) ? executives : allUsers.filter(u => u.role === 'executive');
+      const execList = (executives && executives.length > 0)
+        ? executives
+        : (allUsers || []).filter(u => u.role === 'executive' || u.role === 'zonal' || u.role === 'supervisor');
       let html = '';
       const closeBtn = `<button onclick="${_closeStatPanel}" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:22px;padding:2px 6px;line-height:1;border-radius:6px;transition:background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">&times;</button>`;
 
@@ -18794,12 +18994,16 @@
             const usersRes = await fetch(`${API}/api/users`);
             const usersData = await usersRes.json();
             if (usersData.success && usersData.data) {
-              if (!allUsers || allUsers.length === 0) allUsers = usersData.data;
+              allUsers = usersData.data;
               executives = usersData.data.filter(u => u.role === 'executive');
             }
           } catch(e) { /* will use whatever is available */ }
         }
-        const totalExecs = executives.length || allUsers.filter(u => u.role === 'executive').length;
+        // Final exec count: executives → allUsers fallback → 0 (never show wrong "0 SIN RUTA")
+        const execsFinal = (executives && executives.length > 0)
+          ? executives
+          : (allUsers || []).filter(u => u.role === 'executive');
+        const totalExecs = execsFinal.length;
         const withoutRoute = Math.max(0, totalExecs - executivesWithRoute.size);
 
         // Calculate total fuel cost (daily routes + scheduled routes)
@@ -18913,6 +19117,11 @@
         }
       } catch (err) {
         console.error('Error updating route dashboard:', err);
+        // Show error in UI so it's visible
+        const alertsDiv = document.getElementById('dashboard-route-alerts');
+        if (alertsDiv) alertsDiv.innerHTML = `<div style="padding:14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;color:#ef4444;font-size:13px;">
+          <strong>Error al cargar dashboard:</strong> ${err.message || err}. <button onclick="updateRouteDashboard()" style="background:#ef4444;color:white;border:none;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:8px;">Reintentar</button>
+        </div>`;
       }
       _createIcons();
     }
@@ -21046,7 +21255,6 @@
             gsheetsData = data;
             _gsCacheSet(data);
             renderAllGsheetsData(gsheetsData);
-            showToast('info', 'Actualizado', 'Datos actualizados en segundo plano');
           }).catch(() => { /* silent fail for background refresh */ });
         }
         return;
@@ -21116,7 +21324,7 @@
           updateDashLoadingProgress(100, 'Dashboard listo');
         }
 
-        if (!initialLoad) showToast('success', 'Datos cargados', 'Google Sheets sincronizado correctamente');
+        // Toast suprimido — el sync timestamp en topbar indica estado
 
         // Auto-generate geo links in background (silent)
         setTimeout(() => batchGenerateGeoLinks(false), 2000);
@@ -22626,9 +22834,12 @@
         if (panel) panel.style.display = 'none';
       }
     });
+    let _syncInProgress = false;
     async function _silentSyncFromSheets(force = false, skipDeletions = false) {
       const now = Date.now();
       if (!force && now - _lastSheetsSync < 60 * 1000) return; // 1 min throttle
+      if (_syncInProgress && !force) return; // evitar sync concurrente (forzado siempre pasa)
+      _syncInProgress = true;
       _lastSheetsSync = now;
 
       const badge = document.getElementById('gs-badge-direcciones');
@@ -22645,8 +22856,12 @@
 
         const headers = gsheetsAllDirecciones[0].map(h => String(h || '').trim().toLowerCase());
         const rows = gsheetsAllDirecciones.slice(1).filter(r => r.some(c => c !== '' && c != null));
-        const colCode = headers.findIndex(h => h.includes('cod'));
-        if (colCode === -1) { if (badge) badge.textContent = ''; return; }
+        const colCode = headers.findIndex(h => h.includes('cod') || h.includes('rut') || h.includes('id'));
+        if (colCode === -1) {
+          if (badge) badge.textContent = '';
+          if (typeof _showSyncBar === 'function') _showSyncBar('error', 'Error: no se encontró columna Código en Excel. Cabeceras: ' + headers.slice(0,5).join(', '));
+          return;
+        }
         const colRazon    = headers.findIndex(h => h.includes('raz'));
         const colFantasia = headers.findIndex(h => h.includes('fan'));
         const colDir      = headers.findIndex(h => h.includes('direcc') || h.includes('address'));
@@ -22683,10 +22898,11 @@
         const clientMap = {};
         allClients.forEach(c => { clientMap[c.external_id] = c; });
         const changed = importRows.filter(r => {
+          const c = clientMap[r.external_id];
+          // Nuevo cliente: siempre importar (sin protección)
+          if (!c) { r._syncTag = 'nuevo'; return true; }
           // Protección: no sobreescribir clientes editados recientemente en la plataforma
           if (_ped[r.external_id]) return false;
-          const c = clientMap[r.external_id];
-          if (!c) { r._syncTag = 'nuevo'; return true; }
           const isDiff = (r.address      && r.address      !== c.address)      ||
                          (r.commune      && r.commune      !== c.commune)      ||
                          (r.name         && r.name         !== c.name)         ||
@@ -22713,14 +22929,15 @@
               const delData = await delRes.json();
               const n = delData.success && delData.data ? delData.data.deleted || 0 : 0;
               if (n > 0) {
-                await fetch(`${API}/api/clients`).then(r => r.json()).then(d => {
-                  if (d.success) { allClients = d.data; filterDireccionesDB(); populateDirFilters(); }
-                }).catch(() => {});
-                showToast('info', 'Excel sincronizado', `${n} clientes eliminados (ya no están en GSheets)`);
+                const reloaded = await getAllClients();
+                if (reloaded && reloaded.length > 0) { allClients = reloaded; filterDireccionesDB(); populateDirFilters(); }
+                _showSyncBar('info', `${n} registros eliminados (ya no están en Excel)`);
               }
             } catch (_e) { /* silencioso */ }
           }
           if (badge) badge.textContent = '';
+          _updateSyncGsTimestamp();
+          if (typeof _showSyncBar === 'function') _showSyncBar('success', '✓ Excel al día');
           return;
         }
 
@@ -22733,11 +22950,21 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ rows: changed.slice(i, i + batchSize) })
           });
+          if (!res2.ok) {
+            const errText = await res2.text().catch(() => res2.status);
+            _showSyncBar('error', `Error ${res2.status} al importar desde Excel`);
+            console.error('[Sync] import-from-sheets error:', res2.status, errText);
+            return;
+          }
           const d = await res2.json();
           if (d.success && d.data) {
             totalCreated += d.data.created || 0;
             totalUpdated += d.data.updated || 0;
             totalGeoReset += d.data.geoReset || 0;
+          } else if (!d.success) {
+            _showSyncBar('error', 'Error al importar: ' + (d.error || 'desconocido'));
+            console.error('[Sync] import error:', d.error);
+            return;
           }
         }
 
@@ -22757,11 +22984,10 @@
           } catch (_e) { /* silencioso */ }
         }
 
-        // Recargar allClients y refrescar tabla
-        const clientsRes = await fetch(`${API}/api/clients`);
-        const clientsData = await clientsRes.json();
-        if (clientsData.success) {
-          allClients = clientsData.data;
+        // Recargar allClients completo (usa paginación para >1000 clientes)
+        const reloadedClients = await getAllClients();
+        if (reloadedClients && reloadedClients.length > 0) {
+          allClients = reloadedClients;
           // Marcar clientes recién sincronizados para mostrar badge en tabla
           const syncNow = Date.now();
           const syncTagMap = {};
@@ -22783,19 +23009,109 @@
           const parts = [];
           if (totalCreated > 0) parts.push(totalCreated + ' nuevos');
           if (totalUpdated > 0) parts.push(totalUpdated + ' actualizados');
-          showToast('success', 'Excel sincronizado', parts.join(', ') + ' desde Google Sheets');
+          _showSyncBar('success', '✓ ' + parts.join(', ') + ' desde Excel');
           _addSyncNotifs(changed);
+          // Refresh CRM table
+          if (typeof filterCrmClients === 'function') filterCrmClients(false);
+          // Refresh map markers
+          if (typeof addClientMarkers === 'function' && mainMap) {
+            setTimeout(() => addClientMarkers(allClients), 500);
+          }
+        } else {
+          _showSyncBar('success', '✓ Excel al día — sin cambios nuevos');
         }
         if (totalDeleted > 0) {
-          showToast('info', 'Excel sincronizado', `${totalDeleted} clientes eliminados (ya no están en GSheets)`);
+          _showSyncBar('info', `${totalDeleted} registros eliminados (ya no están en Excel)`);
+          if (typeof filterCrmClients === 'function') filterCrmClients(false);
+          if (typeof addClientMarkers === 'function' && mainMap) {
+            setTimeout(() => addClientMarkers(allClients), 500);
+          }
         }
         if (totalGeoReset > 0) {
           showToast('warning', 'Geocodificación pendiente', `${totalGeoReset} clientes con dirección cambiada — ve a Direcciones y haz click en "Cargar Geo"`, 8000);
         }
         if (badge) badge.textContent = '';
+        _updateSyncGsTimestamp();
       } catch (e) {
         if (badge) badge.textContent = '';
-        // Falla silenciosa — no interrumpe la UI
+        console.error('[Sync GSheets]', e);
+        if (typeof _showSyncBar === 'function') _showSyncBar('error', 'Error al sincronizar: ' + e.message);
+      } finally {
+        _syncInProgress = false;
+      }
+    }
+
+    function _updateSyncGsTimestamp() {
+      const lbl = document.getElementById('lbl-last-sync-gs');
+      const icon = document.getElementById('icon-sync-gs');
+      if (!lbl) return;
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2,'0');
+      const m = now.getMinutes().toString().padStart(2,'0');
+      lbl.textContent = `${h}:${m}`;
+      lbl.style.display = 'inline';
+      if (icon) { icon.style.color = '#10b981'; setTimeout(() => { if(icon) icon.style.color = ''; }, 3000); }
+    }
+
+    // ── Sync status bar (bottom-center, replaces toast for sync events) ──
+    let _syncBarTimer = null;
+    function _showSyncBar(state, msg) {
+      let bar = document.getElementById('sync-status-bar');
+      if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'sync-status-bar';
+        bar.style.cssText = [
+          'position:fixed', 'bottom:24px', 'left:50%', 'transform:translateX(-50%)',
+          'padding:10px 22px', 'border-radius:24px', 'font-size:13px', 'font-weight:600',
+          'z-index:10001', 'display:flex', 'align-items:center', 'gap:9px',
+          'box-shadow:0 4px 20px rgba(0,0,0,0.35)', 'transition:opacity 0.3s,transform 0.3s',
+          'opacity:0', 'pointer-events:none', 'white-space:nowrap',
+          'max-width:90vw', 'overflow:hidden'
+        ].join(';');
+        document.body.appendChild(bar);
+      }
+      if (_syncBarTimer) { clearTimeout(_syncBarTimer); _syncBarTimer = null; }
+      bar.style.opacity = '1';
+      if (state === 'syncing') {
+        bar.style.background = '#1e40af';
+        bar.style.color = 'white';
+        bar.innerHTML = '<svg style="width:15px;height:15px;flex-shrink:0;animation:spin 1s linear infinite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg><span>' + (msg || 'Sincronizando con Excel...') + '</span>';
+      } else if (state === 'success') {
+        bar.style.background = '#065f46';
+        bar.style.color = 'white';
+        bar.innerHTML = '<svg style="width:15px;height:15px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>' + (msg || 'Sincronizado con Excel') + '</span>';
+        _syncBarTimer = setTimeout(() => { bar.style.opacity = '0'; }, 5000);
+      } else if (state === 'info') {
+        bar.style.background = '#1f2937';
+        bar.style.color = 'white';
+        bar.innerHTML = '<svg style="width:15px;height:15px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span>' + (msg || '') + '</span>';
+        _syncBarTimer = setTimeout(() => { bar.style.opacity = '0'; }, 5000);
+      } else if (state === 'error') {
+        bar.style.background = '#7f1d1d';
+        bar.style.color = 'white';
+        bar.innerHTML = '⚠️ <span>' + (msg || 'Error al sincronizar') + '</span>';
+        _syncBarTimer = setTimeout(() => { bar.style.opacity = '0'; }, 8000);
+      } else {
+        bar.style.opacity = '0';
+      }
+    }
+
+    async function forceSyncFromSheets() {
+      const btn = document.getElementById('btn-sync-gsheets-now');
+      const iconEl = document.getElementById('icon-sync-gs');
+      if (btn) btn.disabled = true;
+      if (iconEl) iconEl.classList.add('spin');
+      _lastSheetsSync = 0;
+      _showSyncBar('syncing', 'Sincronizando con Excel...');
+      try {
+        const result = await _silentSyncFromSheets(true);
+        // result is undefined normally; success/error shown inside _silentSyncFromSheets
+      } catch(e) {
+        _showSyncBar('error', 'Error al sincronizar: ' + e.message);
+      } finally {
+        const iconNow = document.getElementById('icon-sync-gs');
+        if (iconNow) iconNow.classList.remove('spin');
+        if (btn) btn.disabled = false;
       }
     }
 
@@ -22856,9 +23172,9 @@
 
       filterDireccionesDB();
 
-      // Sync automático desde Google Sheets en background
-      // force=true si el throttle fue reseteado por un refresh manual
-      _silentSyncFromSheets(_lastSheetsSync === 0);
+      // Sync automático desde Google Sheets en background (skipDeletions=true — solo manual)
+      const _sinceLastSync = Date.now() - _lastSheetsSync;
+      _silentSyncFromSheets(_lastSheetsSync === 0 || _sinceLastSync > 30000, true);
 
       // Show import banner if Sheet has many more clients than DB
       const sheetCount = gsheetsAllDirecciones ? gsheetsAllDirecciones.length - 1 : 0;
@@ -24706,8 +25022,8 @@
       const seg8020    = allClients.filter(c => c.segmentation === '80-20').length;
       const segLActive = allClients.filter(c => c.segmentation === 'L' && c.segment === 'C').length;  // L con venta
       const segLBase   = allClients.filter(c => c.segmentation === 'L' && c.segment !== 'C').length;  // L sin venta
-      const conGPS     = allClients.filter(c => c.lat && c.lng).length;               // Coordenadas exactas en DB
-      const sinGeo     = allClients.filter(c => !c.geo_link).length;                  // Sin link geo
+      const conGPS     = allClients.filter(c => c.lat && c.lng).length;               // Con coordenadas GPS
+      const sinGeo     = allClients.filter(c => !c.lat || !c.lng).length;             // Sin coordenadas GPS
       const total      = allClients.length;
 
       // Tarjetas KPI
@@ -25846,7 +26162,7 @@
             </div>
             <div style="display: flex; gap: 2px; align-items: center; flex-shrink: 0;">
               ${client.lat && client.lng ? `
-                <button onclick="event.stopPropagation(); openWazeToClient(${client.lat}, ${client.lng})" title="Waze" style="background: #33ccff; border: none; cursor: pointer; color: #000; padding: 2px 5px; border-radius: 4px; font-size: 10px; display:inline-flex; align-items:center;"><i data-lucide="navigation" style="width:11px;height:11px;"></i></button>
+                <button onclick="event.stopPropagation(); openWazeToClient(${client.lat}, ${client.lng})" title="Waze" style="background: #0ea5e9; border: none; cursor: pointer; color: #fff; padding: 2px 5px; border-radius: 4px; font-size: 10px; display:inline-flex; align-items:center;"><i data-lucide="navigation" style="width:11px;height:11px;"></i></button>
               ` : ''}
               ${client.routeStatus === 'pending' && client.scheduledRouteId ? `
                 ${isAdmin ? `
@@ -26652,7 +26968,7 @@
                 <div style="display: flex; gap: 2px; align-items: center; flex-shrink: 0;">
                   ${is8020 ? '<span class="seg-badge seg-badge-8020" style="font-size: 9px; padding: 1px 5px;">80-20</span>' : ''}
                   ${client.lat && client.lng ? `
-                    <button onclick="event.stopPropagation(); openWazeToClient(${client.lat}, ${client.lng})" title="Waze" style="background: #33ccff; border: none; cursor: pointer; color: #000; padding: 2px 5px; border-radius: 4px; font-size: 10px; display:inline-flex; align-items:center;"><i data-lucide="navigation" style="width:11px;height:11px;"></i></button>
+                    <button onclick="event.stopPropagation(); openWazeToClient(${client.lat}, ${client.lng})" title="Waze" style="background: #0ea5e9; border: none; cursor: pointer; color: #fff; padding: 2px 5px; border-radius: 4px; font-size: 10px; display:inline-flex; align-items:center;"><i data-lucide="navigation" style="width:11px;height:11px;"></i></button>
                   ` : ''}
                 </div>
               </div>`;
@@ -27363,8 +27679,15 @@ function installPWA() {
   </div>
   <!-- Messages -->
   <div id="route-chat-messages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px;"></div>
+  <!-- Quick chips -->
+  <div id="chat-quick-chips" style="padding:6px 12px 0;display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;border-top:1px solid var(--border);background:var(--bg-card);">
+    <button onclick="sendQuickChip('¿Cómo van las rutas de hoy?')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">Rutas de hoy</button>
+    <button onclick="sendQuickChip('¿Qué clientes no tienen GPS asignado?')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">Sin GPS</button>
+    <button onclick="sendQuickChip('Dame un resumen de los clientes 80/20 clave')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">⭐ 80/20</button>
+    <button onclick="sendQuickChip('¿Qué vendedor tiene más clientes sin visitar esta semana?')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">Pendientes</button>
+  </div>
   <!-- Input -->
-  <div style="padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:7px;flex-shrink:0;background:var(--bg-card);">
+  <div style="padding:8px 12px 10px;display:flex;gap:7px;flex-shrink:0;background:var(--bg-card);">
     <input id="route-chat-input" type="text" placeholder="Pregunta lo que necesites..." maxlength="400"
       style="flex:1;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:13px;color:var(--text-primary);outline:none;"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRouteChat();}">
