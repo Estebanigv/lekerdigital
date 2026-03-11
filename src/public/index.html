@@ -4434,9 +4434,9 @@
         <img src="/leker-logo.png" alt="LEKER" style="max-width: 200px; height: auto; margin-bottom: 10px;">
         <p>Sistema de Gestión Logística</p>
         <div style="margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
-          <div style="height:1px; width:40px; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15));"></div>
-          <span style="font-size:10px; color:rgba(255,255,255,0.35); letter-spacing:1.5px; font-weight:600;">v2.6.3</span>
-          <div style="height:1px; width:40px; background:linear-gradient(90deg,rgba(255,255,255,0.15),transparent);"></div>
+          <div style="height:1px; width:40px; background:linear-gradient(90deg,transparent,rgba(99,102,241,0.3));"></div>
+          <span style="font-size:10px; color:#6366f1; letter-spacing:1.5px; font-weight:700; opacity:0.8;">v2.6.4</span>
+          <div style="height:1px; width:40px; background:linear-gradient(90deg,rgba(99,102,241,0.3),transparent);"></div>
         </div>
       </div>
 
@@ -4514,7 +4514,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.6.3</div>
+        <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.6.4</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -5637,9 +5637,9 @@
                 <!-- Optimized Route Info Panel -->
                 <div id="optimized-route-panel" class="card" style="display: none; margin-bottom: 12px; border: 1px solid var(--border); overflow: hidden; border-radius: 10px;">
                   <!-- Header -->
-                  <div style="padding: 10px 14px; background: var(--bg-hover); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                  <div id="opt-header-bar" style="padding: 10px 14px; background: var(--bg-hover); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                      <div style="width: 28px; height: 28px; border-radius: 7px; background: #10b981; display: flex; align-items: center; justify-content: center;">
+                      <div id="opt-header-icon" style="width: 28px; height: 28px; border-radius: 7px; background: #10b981; display: flex; align-items: center; justify-content: center;">
                         <i data-lucide="route" style="width: 14px; height: 14px; color: white;"></i>
                       </div>
                       <div>
@@ -5686,7 +5686,7 @@
                     <span><i data-lucide="fuel" style="width: 11px; height: 11px; vertical-align: middle;"></i> <span id="opt-fuel-type">93 oct</span></span>
                     <span><i data-lucide="dollar-sign" style="width: 11px; height: 11px; vertical-align: middle;"></i> <span id="opt-fuel-price">$1.150/L</span></span>
                     <span id="opt-fuel-region" style="font-size: 10px; color: #10b981; font-weight: 500;"></span>
-                    <span style="margin-left: auto; color: #10b981; font-weight: 600; font-size: 10px;">TSP optimizado</span>
+                    <span id="opt-algo-label" style="margin-left: auto; color: #10b981; font-weight: 600; font-size: 10px;">TSP optimizado</span>
                   </div>
 
                   <!-- Day tabs -->
@@ -12908,6 +12908,30 @@
       const aiLabel = optimizedRouteData.aiGenerated ? ' ✨ IA' : '';
       document.getElementById('opt-vendor-name').textContent = (zone ? `${vendorName} - ${zone}` : vendorName) + aiLabel;
 
+      const isAI = optimizedRouteData.aiGenerated;
+      const activeColor = isAI ? '#6366f1' : '#10b981';
+
+      // Header IA vs Algoritmo
+      const headerBar = document.getElementById('opt-header-bar');
+      if (headerBar) {
+        headerBar.style.background = isAI
+          ? 'linear-gradient(135deg,rgba(99,102,241,0.18),rgba(139,92,246,0.10))'
+          : 'var(--bg-hover)';
+        headerBar.style.borderBottom = isAI ? '1px solid rgba(99,102,241,0.35)' : '1px solid var(--border)';
+      }
+      const headerIcon = document.getElementById('opt-header-icon');
+      if (headerIcon) {
+        headerIcon.style.background = isAI ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : '#10b981';
+        headerIcon.innerHTML = isAI
+          ? '<i data-lucide="sparkles" style="width:14px;height:14px;color:white;"></i>'
+          : '<i data-lucide="route" style="width:14px;height:14px;color:white;"></i>';
+      }
+      const algoLabel = document.getElementById('opt-algo-label');
+      if (algoLabel) {
+        algoLabel.textContent = isAI ? '✨ GPT-4o mini' : 'TSP optimizado';
+        algoLabel.style.color = isAI ? '#8b5cf6' : '#10b981';
+      }
+
       // Day tabs
       const tabsContainer = document.getElementById('opt-day-tabs');
       if (isMultiDay) {
@@ -12948,8 +12972,8 @@
           const txtColor = isActive ? 'white' : 'var(--text-muted)';
           return `<button onclick="selectOptDay('${date}')" data-date="${date}" style="
             display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
-            padding: 10px 14px; border-radius: 10px; border: 2px solid ${isActive ? '#10b981' : 'var(--border)'};
-            background: ${isActive ? '#10b981' : 'var(--bg-card)'}; color: ${isActive ? 'white' : 'var(--text)'};
+            padding: 10px 14px; border-radius: 10px; border: 2px solid ${isActive ? activeColor : 'var(--border)'};
+            background: ${isActive ? activeColor : 'var(--bg-card)'}; color: ${isActive ? 'white' : 'var(--text)'};
             cursor: pointer; white-space: nowrap; transition: all 0.15s; min-width: 110px;
           ">
             <span style="font-weight:800; font-size:15px; letter-spacing:-0.3px;">${dayName} ${dayNum}</span>
@@ -12961,8 +12985,8 @@
             </span>
           </button>`;
         }).join('') + '</div>' +
-        `<div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(16,185,129,0.08); border-radius: 10px; border: 1px solid rgba(16,185,129,0.2); margin-top: 6px;">
-          <span style="font-size: 14px; font-weight: 700; color: #059669; display: flex; align-items: center; gap: 6px;"><i data-lucide="bar-chart-3" style="width:16px;height:16px;display:inline-block;vertical-align:middle;"></i> Total Semana (${stats.totalDays} días)</span>
+        `<div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(${isAI ? '99,102,241' : '16,185,129'},0.08); border-radius: 10px; border: 1px solid rgba(${isAI ? '99,102,241' : '16,185,129'},0.2); margin-top: 6px;">
+          <span style="font-size: 14px; font-weight: 700; color: ${isAI ? '#6366f1' : '#059669'}; display: flex; align-items: center; gap: 6px;"><i data-lucide="bar-chart-3" style="width:16px;height:16px;display:inline-block;vertical-align:middle;"></i> Total Semana (${stats.totalDays} días)</span>
           <span style="font-size: 14px; font-weight: 700; color: var(--text); display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
             <span>${stats.totalClients} clientes</span>
             <span>·</span>
@@ -12974,6 +12998,19 @@
           </span>
         </div>`;
         tabsContainer.style.display = 'block';
+
+        // Banner estrategia IA
+        const oldBanner = document.getElementById('ai-strategy-banner');
+        if (oldBanner) oldBanner.remove();
+        if (isAI && optimizedRouteData.aiStrategy) {
+          const banner = document.createElement('div');
+          banner.id = 'ai-strategy-banner';
+          banner.style.cssText = 'padding:10px 14px;background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.06));border-top:1px solid rgba(99,102,241,0.2);display:flex;align-items:flex-start;gap:8px;';
+          banner.innerHTML = `<i data-lucide="sparkles" style="width:13px;height:13px;color:#8b5cf6;flex-shrink:0;margin-top:2px;"></i><span style="font-size:11px;color:var(--text-secondary);line-height:1.5;font-style:italic;">${optimizedRouteData.aiStrategy}</span>`;
+          const dayTabsEl = document.getElementById('opt-day-tabs');
+          dayTabsEl.parentElement.insertBefore(banner, dayTabsEl.nextSibling);
+        }
+
         // Show first day detail
         renderOptDayDetail(selectedOptDay);
       } else {
@@ -13006,9 +13043,10 @@
       // Update tab styling
       document.querySelectorAll('#opt-day-tabs button[data-date]').forEach(btn => {
         const isActive = btn.dataset.date === date;
-        btn.style.background = isActive ? '#10b981' : 'var(--bg-card)';
+        const _activeCol = optimizedRouteData?.aiGenerated ? '#6366f1' : '#10b981';
+        btn.style.background = isActive ? _activeCol : 'var(--bg-card)';
         btn.style.color = isActive ? 'white' : 'var(--text)';
-        btn.style.borderColor = isActive ? '#10b981' : 'var(--border)';
+        btn.style.borderColor = isActive ? _activeCol : 'var(--border)';
         // Update sub-text colors (clients + km lines)
         const subSpans = btn.querySelectorAll('span > span, button > span:nth-child(n+2)');
         btn.querySelectorAll(':scope > span:not(:first-child)').forEach(s => {
@@ -13044,6 +13082,7 @@
       }
       const dayData = optimizedRouteData.days[date];
       const clients = dayData.route || [];
+      const isAI = optimizedRouteData?.aiGenerated;
       const stats = dayData.stats;
       const d = new Date(date + 'T12:00:00');
       const dayNames = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -13091,8 +13130,11 @@
           const dd = new Date(d + 'T12:00:00');
           return `<option value="${d}">${dayNamesShort[dd.getDay()]} ${dd.getDate()}</option>`;
         }).join('');
-        return `<div style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 13px; ${is8020 ? 'border-left: 3px solid #d4a017; background: rgba(212,160,23,0.05);' : ''}">
-          <span style="width: 24px; height: 24px; border-radius: 50%; background: ${i === 0 ? '#10b981' : is8020 ? '#d4a017' : '#3b82f6'}; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">${i + 1}</span>
+        const _cardStyle = is8020
+          ? 'border-left: 3px solid #d4a017; background: rgba(212,160,23,0.05);'
+          : (isAI ? 'border-left: 2px solid rgba(99,102,241,0.25); background: rgba(99,102,241,0.02);' : '');
+        return `<div style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); font-size: 13px; ${_cardStyle}">
+          <span style="width: 24px; height: 24px; border-radius: 50%; background: ${i === 0 ? '#10b981' : is8020 ? '#d4a017' : (isAI ? '#6366f1' : '#3b82f6')}; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">${i + 1}</span>
           <div style="flex: 1; min-width: 0;">
             <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
               <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width:100%;">${c.fantasy_name || c.name}</span>
