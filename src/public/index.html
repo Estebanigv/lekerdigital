@@ -4435,7 +4435,7 @@
         <p>Sistema de Gestión Logística</p>
         <div style="margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
           <div style="height:1px; width:40px; background:linear-gradient(90deg,transparent,rgba(99,102,241,0.3));"></div>
-          <span style="font-size:10px; color:#6366f1; letter-spacing:1.5px; font-weight:700; opacity:0.8;">v2.6.4</span>
+          <span style="font-size:10px; color:#6366f1; letter-spacing:1.5px; font-weight:700; opacity:0.8;">v2.6.5</span>
           <div style="height:1px; width:40px; background:linear-gradient(90deg,rgba(99,102,241,0.3),transparent);"></div>
         </div>
       </div>
@@ -4514,7 +4514,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.6.4</div>
+        <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.6.5</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -7670,6 +7670,9 @@
                   <option value="__none__">Sin asignar</option>
                 </select>
                 <div id="dir-db-geo-filters" style="display:flex;gap:4px;"></div>
+                <button id="dir-filter-nuevo-btn" onclick="_toggleDirNuevo()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;border:1px solid rgba(16,185,129,0.35);background:transparent;color:#059669;cursor:pointer;transition:all 0.15s;">
+                  <span id="dir-nuevo-count-label">● Nuevos</span>
+                </button>
               </div>
               <div class="card-body" style="padding: 0;">
                 <div id="gs-direcciones-body" style="overflow-x: auto;">
@@ -16621,6 +16624,11 @@
 
     // Client Modal Functions
     function openClientModal(clientId = null) {
+      // Marcar cliente como visto → quitar badge NUEVO
+      if (clientId) {
+        const seen = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
+        if (!seen.includes(clientId)) { seen.push(clientId); localStorage.setItem('leker_seen_new', JSON.stringify(seen)); }
+      }
       const modal = document.getElementById('modal-client');
       const title = document.getElementById('modal-client-title');
       const vendorSelect = document.getElementById('client-vendor');
@@ -22578,6 +22586,18 @@
       }
     }
 
+    let _dirFilterNuevo = false;
+
+    function _toggleDirNuevo() {
+      _dirFilterNuevo = !_dirFilterNuevo;
+      const btn = document.getElementById('dir-filter-nuevo-btn');
+      if (btn) {
+        btn.style.background = _dirFilterNuevo ? 'rgba(16,185,129,0.15)' : 'transparent';
+        btn.style.borderColor = _dirFilterNuevo ? '#10b981' : 'rgba(16,185,129,0.35)';
+      }
+      filterDireccionesDB();
+    }
+
     function filterDireccionesDB() {
       const search = (document.getElementById('dir-db-search')?.value || '').toLowerCase().trim();
       const region = document.getElementById('dir-db-region')?.value || '';
@@ -22595,9 +22615,7 @@
           (c.city || '').toLowerCase().includes(search)
         );
       }
-      if (region) {
-        filtered = filtered.filter(c => (c.region || '').trim() === region);
-      }
+      if (region) filtered = filtered.filter(c => (c.region || '').trim() === region);
       if (vendor === '__none__') {
         filtered = filtered.filter(c => !c.assigned_user_id);
       } else if (vendor) {
@@ -22608,6 +22626,23 @@
       } else if (_dirFilterGeo === 'none') {
         filtered = filtered.filter(c => !c.geo_link);
       }
+      if (_dirFilterNuevo) {
+        const seen = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
+        filtered = filtered.filter(c => {
+          const createdAt = c.created_at ? new Date(c.created_at) : null;
+          const daysOld = createdAt ? (Date.now() - createdAt.getTime()) / (1000*60*60*24) : 999;
+          return daysOld < 7 && !seen.includes(c.id);
+        });
+      }
+
+      // Actualizar contador del botón Nuevos
+      const seen = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
+      const nuevosCount = (allClients || []).filter(c => {
+        const d = c.created_at ? (Date.now() - new Date(c.created_at).getTime()) / (1000*60*60*24) : 999;
+        return d < 7 && !seen.includes(c.id);
+      }).length;
+      const lbl = document.getElementById('dir-nuevo-count-label');
+      if (lbl) lbl.textContent = nuevosCount > 0 ? `● Nuevos (${nuevosCount})` : '● Nuevos';
 
       _dirDBFiltered = filtered;
       _dirDBPage = 0;
@@ -22719,10 +22754,11 @@
         const safeComuna = commune.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         const safeName = name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
-        // Badge NUEVO: cliente creado en los últimos 7 días
+        // Badge NUEVO: cliente creado en los últimos 7 días, solo si no ha sido visto
         const createdAt = c.created_at ? new Date(c.created_at) : null;
         const daysOld = createdAt ? (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24) : 999;
-        const isNew = daysOld < 7;
+        const _seenNewClients = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
+        const isNew = daysOld < 7 && !_seenNewClients.includes(c.id);
         const newBadge = isNew
           ? `<span style="display:inline-block;margin-left:4px;padding:0px 5px;font-size:9px;font-weight:700;border-radius:3px;vertical-align:middle;background:rgba(16,185,129,0.18);color:#059669;letter-spacing:0.3px;">NUEVO</span>`
           : '';
@@ -22732,8 +22768,11 @@
         const auditUser = auditUserId ? (vendorMap[auditUserId] || null) : null;
         const auditAt = c.address_updated_at ? new Date(c.address_updated_at) : null;
         const auditDays = auditAt ? Math.floor((Date.now() - auditAt.getTime()) / (1000 * 60 * 60 * 24)) : null;
+        const auditDateStr = auditAt
+          ? (auditDays === 0 ? 'Hoy' : auditDays === 1 ? 'Ayer' : auditDays !== null && auditDays < 8 ? `Hace ${auditDays}d` : auditAt.toLocaleDateString('es-CL', {day:'2-digit',month:'2-digit',year:'2-digit'}))
+          : '';
         const auditLabel = auditUser
-          ? `<div style="font-size:9px;color:var(--text-muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${auditUser} · ${auditAt ? auditAt.toLocaleString('es-CL') : ''}"><i data-lucide="user-check" style="width:9px;height:9px;display:inline;vertical-align:-1px;"></i> ${auditUser.split(' ')[0]}${auditDays !== null ? ` · hace ${auditDays === 0 ? 'hoy' : auditDays + 'd'}` : ''}</div>`
+          ? `<div style="font-size:10.5px;color:var(--text-secondary);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Modificado por ${auditUser} el ${auditAt ? auditAt.toLocaleString('es-CL') : ''}"><span style="color:var(--text-muted);font-size:9.5px;">Mod.</span> <span style="font-weight:500;">${auditUser}</span><span style="color:var(--text-muted);"> · ${auditDateStr}</span></div>`
           : '';
 
         // Geo cell
@@ -22774,10 +22813,12 @@
         const syncBadge = c._syncTag && syncAge < 600000
           ? `<span style="display:inline-block;margin-left:4px;padding:0px 4px;font-size:9px;font-weight:700;border-radius:3px;vertical-align:middle;${c._syncTag === 'nuevo' ? 'background:rgba(16,185,129,0.2);color:#059669;' : 'background:rgba(245,158,11,0.2);color:#b45309;'}">${c._syncTag === 'nuevo' ? 'NUEVO' : 'SYNC'}</span>`
           : '';
+        // Solo mostrar un badge: syncBadge tiene prioridad para evitar duplicados
+        const finalBadge = syncBadge || newBadge;
         const rowHighlight = isNew ? 'background:rgba(16,185,129,0.06);' : rowBg;
         html += `<tr style="${rowHighlight}">
           <td style="padding:3px 5px;overflow:hidden;${br}"><code style="font-size:10px;background:var(--bg-hover);padding:1px 3px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">${code}</code></td>
-          <td style="padding:3px 5px;overflow:hidden;${br}"><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="${name}">${name}${newBadge}${syncBadge}</div>${sub}${auditLabel}</td>
+          <td style="padding:3px 5px;overflow:hidden;${br}"><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="${name}">${name}${finalBadge}</div>${sub}${auditLabel}</td>
           <td style="padding:3px 5px;font-size:11px;overflow:hidden;${br}" title="${dir}"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dir || '<span style="opacity:0.3">—</span>'}</div></td>
           <td style="padding:3px 5px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${br}">${commune}</td>
           <td style="padding:3px 5px;font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${br}">${city}</td>
@@ -22797,7 +22838,7 @@
 
     // Auto-sync desde Google Sheets al abrir Direcciones (máx 1 vez/5min)
     let _lastSheetsSync = 0;
-    let _syncNotifItems = JSON.parse(localStorage.getItem('leker_sync_notifs') || '[]');
+    let _syncNotifItems = JSON.parse(localStorage.getItem('leker_sync_notifs') || '[]').filter(n => n.clientId !== undefined);
 
     function _saveSyncNotifs() {
       // Mantener solo últimos 20 y últimas 4h
@@ -22809,7 +22850,23 @@
     function _addSyncNotifs(changed) {
       const ts = Date.now();
       changed.forEach(r => {
-        _syncNotifItems.unshift({ ts, code: r.external_id, name: r.name || r.external_id, tag: r._syncTag || 'actualizado' });
+        // Dedup: eliminar notificación previa del mismo código
+        _syncNotifItems = _syncNotifItems.filter(n => n.code !== r.external_id);
+        // Buscar datos adicionales en allClients
+        const existing = allClients ? allClients.find(c => c.external_id === r.external_id) : null;
+        const vendor = existing?.assigned_user_id
+          ? (allUsers?.find(u => u.id === existing.assigned_user_id)?.full_name || 'Sin vendedor')
+          : (r.assigned_vendor || 'Sin vendedor');
+        _syncNotifItems.unshift({
+          ts,
+          code: r.external_id,
+          name: r.fantasy_name || r.name || r.external_id,
+          tag: r._syncTag || 'actualizado',
+          clientId: existing?.id || r.id || null,
+          vendor,
+          commune: r.commune || existing?.commune || null,
+          address: r.address || existing?.address || null,
+        });
       });
       _saveSyncNotifs();
       _renderSyncPanel();
@@ -22838,14 +22895,29 @@
       }
       list.innerHTML = _syncNotifItems.map(n => {
         const date = new Date(n.ts).toLocaleString('es-CL', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-        const color = n.tag === 'nuevo' ? '#059669' : '#b45309';
-        const bg = n.tag === 'nuevo' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)';
-        const label = n.tag === 'nuevo' ? 'NUEVO' : 'SYNC';
-        return `<div style="padding:8px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
-          <span style="background:${bg};color:${color};font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;white-space:nowrap;">${label}</span>
+        const isNew = n.tag === 'nuevo';
+        const color = isNew ? '#059669' : '#d97706';
+        const bg = isNew ? 'rgba(16,185,129,0.12)' : 'rgba(217,119,6,0.12)';
+        const label = isNew ? 'NUEVO' : 'SYNC';
+        const hasLink = !!n.clientId;
+        const location = [n.commune, n.address].filter(Boolean).join(' · ');
+        const onclick = hasLink ? `document.getElementById('sync-notif-panel').style.display='none';openClientModal('${n.clientId}')` : '';
+        return `<div onclick="${onclick}" style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;cursor:${hasLink ? 'pointer' : 'default'};transition:background 0.15s;" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background=''">
+          <span style="flex-shrink:0;margin-top:3px;background:${bg};color:${color};font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:0.5px;">${label}</span>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.name}</div>
-            <div style="font-size:10px;color:var(--text-muted);">${n.code} · ${date}</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.name}</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+              <span style="font-family:monospace;background:var(--bg-hover);padding:0 4px;border-radius:3px;">${n.code || ''}</span>
+              ${n.vendor && n.vendor !== 'Sin vendedor' ? `<span style="color:#3b82f6;font-weight:600;">· ${n.vendor}</span>` : ''}
+              ${location ? `<span style="color:var(--text-muted);">· ${location}</span>` : ''}
+            </div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:3px;display:flex;justify-content:space-between;align-items:center;">
+              <span>${date}</span>
+              <div style="display:flex;gap:8px;align-items:center;">
+                ${hasLink ? `<span style="color:#6366f1;font-weight:600;font-size:10px;">Ver →</span>` : ''}
+                <span onclick="event.stopPropagation();_removeSyncNotif('${n.code}')" style="color:#ef4444;font-weight:600;font-size:10px;cursor:pointer;" title="Eliminar notificación">✕</span>
+              </div>
+            </div>
           </div>
         </div>`;
       }).join('');
@@ -22869,6 +22941,12 @@
       _saveSyncNotifs();
       _renderSyncPanel();
       document.getElementById('sync-notif-panel').style.display = 'none';
+    }
+
+    function _removeSyncNotif(code) {
+      _syncNotifItems = _syncNotifItems.filter(n => n.code !== code);
+      _saveSyncNotifs();
+      _renderSyncPanel();
     }
 
     // Cerrar panel al click fuera
@@ -23382,6 +23460,11 @@
 
     // ====== EDIT CLIENT FULL MODAL ======
     function openEditClientFullModal(clientId) {
+      // Marcar cliente como visto → quitar badge NUEVO
+      if (clientId) {
+        const seen = JSON.parse(localStorage.getItem('leker_seen_new') || '[]');
+        if (!seen.includes(clientId)) { seen.push(clientId); localStorage.setItem('leker_seen_new', JSON.stringify(seen)); }
+      }
       const client = allClients.find(c => c.id === clientId);
       if (!client) { showToast('error', 'Error', 'Cliente no encontrado'); return; }
 
