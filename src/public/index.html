@@ -28258,7 +28258,9 @@
 
       content.innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;"><div style="width:16px;height:16px;border:2px solid #6366f1;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>Consultando IA...</div>`;
       if (meta) meta.style.display = 'none';
+      const btn = document.getElementById('btn-ai-pulse-refresh');
       if (ico) ico.style.animation = 'spin 0.8s linear infinite';
+      if (btn) btn.disabled = true;
 
       try {
         const res = await fetch(`${API}/api/ai/company-pulse`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
@@ -28290,7 +28292,11 @@
       } catch (err) {
         content.innerHTML = `<span style="color:var(--text-muted);font-size:12px;">Error al contactar LEKER AI.</span>`;
       } finally {
-        if (ico) ico.style.animation = '';
+        // Re-query: _createIcons() may have replaced the <i> with <svg>, losing the original ref
+        const icoAfter = document.getElementById('ico-pulse-refresh');
+        if (icoAfter) icoAfter.style.animation = '';
+        if (ico && ico !== icoAfter) ico.style.animation = '';
+        if (btn) btn.disabled = false;
       }
     }
 
