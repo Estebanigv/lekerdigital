@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 const { supabase } = require('../../config/database');
 const { authenticate, authorize, JWT_SECRET } = require('../../middlewares/auth');
 
@@ -8,11 +9,19 @@ const router = express.Router();
 
 const TOKEN_EXPIRY = '30d';
 
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 10,
+  message: { success: false, error: 'Demasiados intentos de login. Intenta en 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 /**
  * POST /api/auth/login
  * Public - Validate email + password, return JWT
  */
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {

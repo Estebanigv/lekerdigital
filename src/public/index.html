@@ -27,7 +27,7 @@
   <!-- Google Maps will load its own styles -->
 
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script defer src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
   <style>
     :root {
@@ -1777,6 +1777,21 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.4; }
     }
+    @keyframes micPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+    }
+    .vw-bar {
+      width: 3px;
+      height: 3px;
+      border-radius: 2px;
+      background: #ef4444;
+      transition: height 0.05s ease-out, opacity 0.05s ease-out;
+      flex-shrink: 0;
+    }
+    .mic-recording {
+      animation: micPulse 1.2s ease-in-out infinite;
+    }
     .spin {
       animation: spin 1s linear infinite;
     }
@@ -2793,8 +2808,8 @@
       #dashboard-scheduled-table .vendor-route-row td:nth-child(4) {
         padding-left: 24px !important;
       }
-      #dashboard-scheduled-table .vendor-route-row td:nth-child(4)::before { content: "🏠 "; }
-      #dashboard-scheduled-table .vendor-route-row td:nth-child(5)::before { content: "📍 "; }
+      #dashboard-scheduled-table .vendor-route-row td:nth-child(4)::before { content: ""; }
+      #dashboard-scheduled-table .vendor-route-row td:nth-child(5)::before { content: ""; }
       #dashboard-scheduled-table .vendor-route-row td:nth-child(6) {
         margin-left: auto; font-weight: 700; color: #10b981;
       }
@@ -4531,7 +4546,7 @@
         <p>Sistema de Gestión Logística</p>
         <div style="margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
           <div style="height:1px; width:40px; background:linear-gradient(90deg,transparent,rgba(99,102,241,0.3));"></div>
-          <span style="font-size:10px; color:#6366f1; letter-spacing:1.5px; font-weight:700; opacity:0.8;">v2.6.5</span>
+          <span style="font-size:10px; color:#6366f1; letter-spacing:1.5px; font-weight:700; opacity:0.8;">v2.7.0</span>
           <div style="height:1px; width:40px; background:linear-gradient(90deg,rgba(99,102,241,0.3),transparent);"></div>
         </div>
       </div>
@@ -4610,7 +4625,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.6.5</div>
+        <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.7.0</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -5056,7 +5071,7 @@
             </h3>
             <div style="display:flex;gap:8px;align-items:center;">
               <span id="ai-pulse-time" style="font-size:10px;color:var(--text-muted);"></span>
-              <button onclick="loadAIPulse()" id="btn-ai-pulse-refresh" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);color:#818cf8;border-radius:6px;cursor:pointer;font-weight:600;" title="Actualizar análisis IA">
+              <button onclick="loadAIPulse(true)" id="btn-ai-pulse-refresh" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);color:#818cf8;border-radius:6px;cursor:pointer;font-weight:600;" title="Actualizar análisis IA">
                 <i data-lucide="refresh-cw" style="width:12px;height:12px;" id="ico-pulse-refresh"></i> Actualizar
               </button>
               <button onclick="toggleLekerAIPanel()" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);color:#818cf8;border-radius:6px;cursor:pointer;font-weight:600;">
@@ -5349,10 +5364,31 @@
             </div>
           </div>
           <div class="card-body">
-            <div id="vendor-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-              <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px; grid-column: 1 / -1;">
-                <i data-lucide="users" style="width: 36px; height: 36px; margin-bottom: 8px;"></i>
-                <p>Selecciona un mes para ver rendimiento de vendedores</p>
+            <div style="overflow-x:auto;">
+              <div id="vendor-stats-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;display:none;"></div>
+              <div id="vendor-stats-table-wrap">
+                <table id="vendor-stats-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+                  <thead>
+                    <tr style="border-bottom:2px solid var(--border);">
+                      <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">Vendedor</th>
+                      <th style="padding:8px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">Clientes</th>
+                      <th style="padding:8px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">Con Venta</th>
+                      <th style="padding:8px 8px;text-align:right;font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">Ventas $</th>
+                      <th style="padding:8px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">Visitas</th>
+                      <th style="padding:8px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">Días</th>
+                      <th style="padding:8px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">Semana 1</th>
+                      <th style="padding:8px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">Semana 2</th>
+                      <th style="padding:8px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">Semana 3</th>
+                      <th style="padding:8px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);white-space:nowrap;">Semana 4</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vendor-stats-tbody">
+                    <tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">
+                      <i data-lucide="loader-2" class="spin" style="width:20px;height:20px;"></i>
+                    </td></tr>
+                  </tbody>
+                  <tfoot id="vendor-stats-tfoot"></tfoot>
+                </table>
               </div>
             </div>
           </div>
@@ -5702,10 +5738,10 @@
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                       <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Motor:</span>
                       <button id="btn-route-engine-algo" onclick="setRouteEngine('algo')" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid #10b981; background: #10b981; color: white; cursor: pointer; transition: all 0.15s;">
-                        ⚙️ Algoritmo
+                        Algoritmo
                       </button>
                       <button id="btn-route-engine-ai" onclick="setRouteEngine('ai')" style="padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; transition: all 0.15s;">
-                        ✨ IA
+                        IA
                       </button>
                       <span id="route-engine-badge" style="font-size: 10px; color: var(--text-muted); margin-left: auto;">Optimización matemática</span>
                     </div>
@@ -5714,13 +5750,13 @@
                       <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; white-space: nowrap;">Modelo:</span>
                         <label id="model-opt-4omini" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;border:1px solid #6366f1;background:#6366f1;color:white;font-size:11px;font-weight:600;cursor:pointer;">
-                          <input type="radio" name="ai-model" value="gpt-4o-mini" checked onchange="setAIModel(this.value)" style="display:none;"> ⚡ GPT-4o mini
+                          <input type="radio" name="ai-model" value="gpt-4o-mini" checked onchange="setAIModel(this.value)" style="display:none;"> GPT-4o mini
                         </label>
                         <label id="model-opt-4o" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:11px;font-weight:600;cursor:pointer;">
-                          <input type="radio" name="ai-model" value="gpt-4o" onchange="setAIModel(this.value)" style="display:none;"> 🧠 GPT-4o
+                          <input type="radio" name="ai-model" value="gpt-4o" onchange="setAIModel(this.value)" style="display:none;"> GPT-4o
                         </label>
                         <label id="model-opt-o3mini" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:11px;font-weight:600;cursor:pointer;">
-                          <input type="radio" name="ai-model" value="o3-mini" onchange="setAIModel(this.value)" style="display:none;"> 🔬 o3-mini
+                          <input type="radio" name="ai-model" value="o3-mini" onchange="setAIModel(this.value)" style="display:none;"> o3-mini
                         </label>
                         <span id="ai-model-desc" style="font-size:10px;color:var(--text-muted);margin-left:auto;">Rápido · bajo costo</span>
                       </div>
@@ -6223,7 +6259,7 @@
               </div>
               <button onclick="document.getElementById('ai-response-area').style.display='none'" style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 18px; line-height: 1;">×</button>
             </div>
-            <div id="ai-response-content" style="font-size: 13px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap;"></div>
+            <div id="ai-response-content" style="font-size: 13px; line-height: 1.8; color: var(--text-primary);"></div>
           </div>
 
           <!-- Loading state -->
@@ -8585,8 +8621,8 @@
       _lucideTimer = setTimeout(() => { try { lucide.createIcons(); } catch(e) {} }, 16);
     }
 
-    // Initialize Lucide icons
-    lucide.createIcons();
+    // Initialize Lucide icons (defer-safe: lucide may not be loaded yet at parse time)
+    try { lucide.createIcons(); } catch(e) { /* lucide loads deferred, icons created on DOMContentLoaded */ }
 
     // Toast Notification System
     function showToast(type, title, message, duration = 4000) {
@@ -8947,7 +8983,8 @@
       loadData();
       updateGpsStatus();
       loadDashboardComparativoSummary();
-      setInterval(updateGpsStatus, 30000);
+      if (_gpsInterval) clearInterval(_gpsInterval);
+      _gpsInterval = setInterval(updateGpsStatus, 30000);
 
       // Restore saved tab (or default to visits for executives)
       const savedTab = localStorage.getItem('leker_active_tab');
@@ -9146,6 +9183,7 @@
     let allUsers = [];
     let allVehicles = [];
     let allClients = [];
+    let _gpsInterval = null; // Referencia única para evitar duplicados
     let executives = []; // Vendedores/Ejecutivos
     let allRoutes = [];
     let filteredClients = [];
@@ -9155,6 +9193,25 @@
     // Pagination for clients
     const CLIENTS_PER_PAGE = 50;
     let currentClientsPage = 1;
+
+    // Índices O(1) sobre allClients — rebuilt tras cada loadData/saveClient
+    let _clientById = new Map();       // id → client
+    let _clientsByUser = {};           // assigned_user_id → [clients]
+    let _clientsBySeg = {};            // segmentation → [clients]
+
+    function _rebuildClientIndexes() {
+      _clientById = new Map(allClients.map(c => [c.id, c]));
+      _clientsByUser = {};
+      _clientsBySeg = {};
+      for (const c of allClients) {
+        const uid = c.assigned_user_id || '__none__';
+        if (!_clientsByUser[uid]) _clientsByUser[uid] = [];
+        _clientsByUser[uid].push(c);
+        const seg = c.segmentation || '__none__';
+        if (!_clientsBySeg[seg]) _clientsBySeg[seg] = [];
+        _clientsBySeg[seg].push(c);
+      }
+    }
 
     // Region O'Higgins center coordinates
     const REGION_CENTER = [-34.35, -71.0];
@@ -9704,7 +9761,7 @@
 
     // Zoom to specific client on map
     function zoomToClient(clientId) {
-      const client = allClients.find(c => c.id === clientId);
+      const client = _clientById.get(clientId);
       if (!client || !client.lat || !client.lng) return;
 
       const position = { lat: parseFloat(client.lat), lng: parseFloat(client.lng) };
@@ -10069,6 +10126,9 @@
         filteredClients = [...allClients];
         currentClientsPage = 1;
 
+        // Índices O(1) sobre allClients — reconstruir con _rebuildClientIndexes()
+        _rebuildClientIndexes();
+
         // Show LEKER AI FAB now that user is authenticated and data is loaded
         _showLekerAIFab();
 
@@ -10272,7 +10332,7 @@
       const uid = currentUser.id;
 
       // --- Mis Clientes ---
-      const myClients = allClients.filter(c => c.assigned_user_id === uid);
+      const myClients = (_clientsByUser[uid] || []);
       document.getElementById('exec-stat-clients').textContent = myClients.length;
       document.getElementById('exec-clients-count').textContent = `${myClients.length} clientes asignados`;
 
@@ -10340,7 +10400,7 @@
           const firstPendingIdx = myScheduled.findIndex(s => !visits.find(v => v.client_id === s.client_id && v.status === 'completed'));
           html += '<div style="display:flex;flex-direction:column;">';
           myScheduled.forEach((sc, i) => {
-            const client = allClients.find(c => c.id === sc.client_id);
+            const client = _clientById.get(sc.client_id);
             const visit = visits.find(v => v.client_id === sc.client_id && v.status === 'completed');
             const isDone = !!visit;
             const isNext = i === firstPendingIdx;
@@ -10374,7 +10434,7 @@
           const allDone = firstPendingIdx === -1 && myScheduled.length > 0;
           if (allDone) {
             html = `<div style="margin: 0 0 12px; padding: 14px 16px; background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.05)); border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; display: flex; align-items: center; gap: 12px;">
-              <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">🎯</div>
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i data-lucide="check" style="width:20px;height:20px;color:white;"></i></div>
               <div style="flex: 1;">
                 <div style="font-size: 14px; font-weight: 700; color: #10b981;">¡Ruta completada!</div>
                 <div style="font-size: 12px; color: var(--text-muted); margin-top: 1px;">Visitaste ${myScheduled.length} de ${myScheduled.length} clientes programados</div>
@@ -10410,7 +10470,7 @@
         </div>`;
         html += '<div style="display:flex;flex-direction:column;">';
         myScheduled.forEach((sc, i) => {
-          const client = allClients.find(c => c.id === sc.client_id);
+          const client = _clientById.get(sc.client_id);
           const is8020 = client?.segmentation === '80-20';
           const hasGps = !!(client?.lat && client?.lng);
           const isFirst = i === 0;
@@ -10455,7 +10515,7 @@
         routeActions.innerHTML = `<button onclick="switchRouteTab('planner')" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);border-radius:6px;cursor:pointer;padding:6px 12px;font-size:11px;font-weight:600;color:#6366f1;display:inline-flex;align-items:center;gap:5px;">
           <i data-lucide="calendar-days" style="width:12px;height:12px;"></i> Ver Semana</button>`;
         routeContainer.innerHTML = `<div style="text-align: center; padding: 24px;">
-          <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px;">🎯</div>
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;"><i data-lucide="check-circle" style="width:28px;height:28px;color:white;"></i></div>
           <div style="font-size: 18px; font-weight: 700; color: #10b981; margin-bottom: 4px;">¡Jornada Completada!</div>
           <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Buen trabajo hoy</div>
           <div style="display: grid; grid-template-columns: repeat(${outcomes.sale > 0 ? 3 : 2}, 1fr); gap: 10px; max-width: 320px; margin: 0 auto;">
@@ -11000,7 +11060,7 @@
           await loadData();
           await checkActiveRoute(userId);
           if (data.data.route) {
-            const assignedClients = allClients.filter(c => c.assigned_user_id === userId);
+            const assignedClients = (_clientsByUser[userId] || []);
             const mockRoute = {
               ...data.data.route,
               user: { full_name: data.data.user.name },
@@ -11769,7 +11829,7 @@
       let clients = visits.map(v => v.client).filter(c => c);
       if (clients.length === 0 && route.user_id) {
         // Get assigned clients for this executive
-        clients = allClients.filter(c => c.assigned_user_id === route.user_id);
+        clients = (_clientsByUser[route.user_id] || []);
       }
 
       // Check how many have coordinates (handle string or number)
@@ -11860,7 +11920,7 @@
         // If no visits, create a mock route with assigned clients
         let routeToDisplay = currentActiveRoute;
         if (!currentActiveRoute.visits || currentActiveRoute.visits.length === 0) {
-          const assignedClients = allClients.filter(c => c.assigned_user_id === currentActiveRoute.user_id);
+          const assignedClients = (_clientsByUser[currentActiveRoute.user_id] || []);
 
           // Check if clients have coordinates
           const clientsWithCoords = assignedClients.filter(c => c.lat && c.lng);
@@ -11978,7 +12038,7 @@
       const gsData = findVendedorData(e.full_name);
       let zona = gsData ? gsData.zona : '';
       if (!zona) {
-        const clientZones = allClients.filter(c => c.assigned_user_id === e.id && c.zone).map(c => c.zone);
+        const clientZones = (_clientsByUser[e.id] || []).filter(c => c.zone).map(c => c.zone);
         if (clientZones.length > 0) {
           const zoneCounts = {};
           clientZones.forEach(z => { zoneCounts[z] = (zoneCounts[z] || 0) + 1; });
@@ -11987,7 +12047,7 @@
       }
       const zc = ZONE_COLORS[(zona || '').toLowerCase()] || null;
       const zoneTag = zona ? `<span style="background:${zc ? zc.bg : 'rgba(107,114,128,0.08)'};color:${zc ? zc.color : '#6b7280'};border:1px solid ${zc ? zc.border : 'rgba(107,114,128,0.2)'};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">${zona}</span>` : '';
-      const clientCount = allClients.filter(c => c.assigned_user_id === e.id).length;
+      const clientCount = (_clientsByUser[e.id] || []).length;
       const hasRoute = !!schedData[e.id];
       const schedInfo = hasRoute ? schedData[e.id] : null;
       const schedDays = schedInfo ? Object.keys(schedInfo.dates).length : 0;
@@ -12054,7 +12114,7 @@
       if (!exec) return;
 
       // Get vendor data
-      const assignedClients = allClients.filter(c => c.assigned_user_id === execId);
+      const assignedClients = (_clientsByUser[execId] || []);
       const clientsWithGps = assignedClients.filter(c => c.lat && c.lng);
       const gpsPercent = assignedClients.length > 0 ? Math.round((clientsWithGps.length / assignedClients.length) * 100) : 0;
 
@@ -12140,7 +12200,7 @@
       const vendor = allUsers.find(u => u.id === execId);
       if (!vendor) return;
 
-      const assignedClients = allClients.filter(c => c.assigned_user_id === execId);
+      const assignedClients = (_clientsByUser[execId] || []);
       const clientsWithGps = assignedClients.filter(c => c.lat && c.lng);
 
       if (clientsWithGps.length === 0 && !vendor.home_lat) return;
@@ -12170,8 +12230,8 @@
         homeMarker.addListener('click', () => {
           routeInfoWindow.setContent(`
             <div style="min-width:200px;padding:6px;">
-              <div style="font-weight:700;font-size:14px;color:#7c3aed;margin-bottom:6px;">
-                <span style="margin-right:6px;">🏠</span> Punto de Inicio
+              <div style="font-weight:700;font-size:14px;color:#7c3aed;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+                <i data-lucide="home" style="width:14px;height:14px;"></i> Punto de Inicio
               </div>
               <div style="font-size:13px;color:#374151;font-weight:600;">${vendor.full_name}</div>
               <div style="font-size:12px;color:#6b7280;margin-top:4px;">${vendor.home_address || 'Sin dirección registrada'}</div>
@@ -12613,34 +12673,61 @@
         div.id = 'ai-route-loader';
         div.style.cssText = 'position:absolute;inset:0;background:var(--bg-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;border-radius:12px;padding:32px 24px;';
         div.innerHTML = `
-          <div style="width:100%;max-width:360px;">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
-              <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(99,102,241,0.35);">
-                <i data-lucide="sparkles" style="width:22px;height:22px;color:white;"></i>
+          <style>
+            #ai-route-loader .ai-icon-ring {
+              animation: spin 2s linear infinite;
+            }
+            #ai-route-loader .ai-step-spinner {
+              width:14px;height:14px;border:2px solid rgba(99,102,241,0.3);border-top-color:#6366f1;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;
+            }
+            #ai-route-loader .ai-bar-shimmer {
+              position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.25) 50%,transparent 100%);
+              background-size:200% 100%;animation:ai-shimmer 1.2s linear infinite;
+            }
+            @keyframes ai-shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+            #ai-route-loader .ai-step-enter { animation: slideUp 0.3s ease forwards; }
+            #ai-route-loader .ai-cancel-btn:hover { background:rgba(239,68,68,0.15) !important; color:#ef4444 !important; border-color:rgba(239,68,68,0.4) !important; }
+          </style>
+          <div style="width:100%;max-width:380px;">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
+              <div style="position:relative;width:52px;height:52px;flex-shrink:0;">
+                <div style="position:absolute;inset:0;border-radius:14px;background:linear-gradient(135deg,#6366f1,#4f46e5);box-shadow:0 4px 20px rgba(99,102,241,0.45);display:flex;align-items:center;justify-content:center;">
+                  <i data-lucide="sparkles" style="width:24px;height:24px;color:white;animation:pulse 1.5s ease-in-out infinite;"></i>
+                </div>
+                <div class="ai-icon-ring" style="position:absolute;inset:-4px;border-radius:18px;border:2px solid transparent;border-top-color:rgba(99,102,241,0.6);border-right-color:rgba(139,92,246,0.3);pointer-events:none;"></div>
               </div>
               <div>
-                <div style="font-size:16px;font-weight:700;color:var(--text-primary);line-height:1.2;">Generando Ruta Inteligente</div>
-                <div style="font-size:11px;color:#6366f1;font-weight:600;margin-top:2px;">${modelName} · Leker AI</div>
+                <div style="font-size:17px;font-weight:700;color:var(--text-primary);line-height:1.2;">Generando Ruta Inteligente</div>
+                <div style="font-size:11px;color:#6366f1;font-weight:600;margin-top:3px;display:flex;align-items:center;gap:5px;">
+                  <span style="width:6px;height:6px;border-radius:50%;background:#6366f1;animation:pulse 1s ease-in-out infinite;display:inline-block;"></span>
+                  ${modelName} · Leker AI
+                </div>
               </div>
             </div>
             <div style="margin-bottom:20px;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-                <span id="ai-loader-step-label" style="font-size:12px;color:var(--text-secondary);">Iniciando análisis...</span>
-                <span id="ai-loader-pct" style="font-size:12px;font-weight:700;color:#6366f1;">0%</span>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span id="ai-loader-step-label" style="font-size:12px;color:var(--text-secondary);transition:all 0.3s;">Iniciando análisis...</span>
+                <span id="ai-loader-pct" style="font-size:13px;font-weight:800;color:#6366f1;transition:all 0.3s;">0%</span>
               </div>
-              <div style="width:100%;height:6px;border-radius:3px;background:var(--border);overflow:hidden;">
-                <div id="ai-loader-bar" style="width:0%;height:100%;border-radius:3px;background:linear-gradient(90deg,#6366f1,#8b5cf6);transition:width 0.6s ease;"></div>
+              <div style="position:relative;width:100%;height:8px;border-radius:4px;background:var(--border);overflow:hidden;">
+                <div id="ai-loader-bar" style="width:0%;height:100%;border-radius:4px;background:linear-gradient(90deg,#4f46e5,#6366f1,#8b5cf6);transition:width 0.8s cubic-bezier(0.4,0,0.2,1);position:relative;overflow:hidden;">
+                  <div class="ai-bar-shimmer"></div>
+                </div>
               </div>
             </div>
-            <div id="ai-loader-steps" style="display:flex;flex-direction:column;gap:7px;">
+            <div id="ai-loader-steps" style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px;">
               ${steps.map((s,i) => `
-                <div id="ai-step-${i}" style="display:flex;align-items:center;gap:8px;opacity:0.35;transition:opacity 0.4s;">
-                  <div style="width:20px;height:20px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <div id="ai-step-${i}" style="display:flex;align-items:center;gap:9px;opacity:0.3;transition:opacity 0.4s,transform 0.4s;padding:5px 8px;border-radius:8px;">
+                  <div class="ai-step-dot-${i}" style="width:22px;height:22px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.3s;">
                     <i data-lucide="${s.icon}" style="width:11px;height:11px;color:var(--text-muted);"></i>
                   </div>
-                  <span style="font-size:12px;color:var(--text-secondary);">${s.label}</span>
+                  <span class="ai-step-lbl-${i}" style="font-size:12px;color:var(--text-secondary);flex:1;">${s.label}</span>
                 </div>`).join('')}
             </div>
+            <button class="ai-cancel-btn" onclick="document.getElementById('ai-route-loader') && (document.getElementById('ai-route-loader')._cancelled=true, document.getElementById('ai-route-loader').remove())"
+              style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;">
+              <i data-lucide="x" style="width:13px;height:13px;"></i> Cancelar generación
+            </button>
           </div>`;
         wrap.appendChild(div);
         _createIcons(div);
@@ -12654,17 +12741,25 @@
             const prev = document.getElementById(`ai-step-${si-1}`);
             if (prev) {
               prev.style.opacity='1';
-              const pd = prev.querySelector('div');
-              if (pd) { pd.style.background='rgba(16,185,129,0.2)'; pd.style.borderColor='#10b981'; pd.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><polyline points="20 6 9 17 4 12"></polyline></svg>'; }
-              const sp = prev.querySelector('span'); if (sp) sp.style.color='var(--text-secondary)';
+              prev.style.background='transparent';
+              const pd = prev.querySelector('div.ai-step-dot-'+(si-1) + ',div[class*="ai-step-dot"]') || prev.querySelector('div');
+              if (pd) { pd.style.background='rgba(16,185,129,0.2)'; pd.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><polyline points="20 6 9 17 4 12"></polyline></svg>'; }
+              const sp = prev.querySelector('span'); if (sp) { sp.style.color='var(--text-secondary)'; sp.style.textDecoration=''; }
             }
           }
-          // Activar paso actual
+          // Activar paso actual con spinner
           const cur = document.getElementById(`ai-step-${si}`);
           if (cur) {
             cur.style.opacity='1';
-            const cd = cur.querySelector('div'); if (cd) cd.style.background='rgba(99,102,241,0.25)';
-            const ci = cur.querySelector('i,svg'); if (ci) ci.style.color='#6366f1';
+            cur.style.background='rgba(99,102,241,0.08)';
+            cur.style.transform='translateX(0)';
+            const cd = cur.querySelector('div');
+            if (cd) {
+              // Reemplazar icono por spinner animado
+              cd.style.background='rgba(99,102,241,0.15)';
+              cd.innerHTML='<div class="ai-step-spinner"></div>';
+            }
+            const sp = cur.querySelector('span'); if (sp) { sp.style.color='var(--text-primary)'; sp.style.fontWeight='600'; }
           }
           const lbl = document.getElementById('ai-loader-step-label');
           const pct = document.getElementById('ai-loader-pct');
@@ -12746,7 +12841,7 @@
           const clients = data.data.totalStats?.totalClients || 0;
           const km = data.data.totalStats?.distanceKm || 0;
           // Pre-cargar el mensaje de estrategia en el historial del chat
-          const stratMsg = `✅ Ruta generada con **${modelLabel}**: **${clients} clientes** · **${days} días** · ${km} km.\n\n**Estrategia:** ${data.data.aiStrategy}\n\n¿Quieres ajustar algo?`;
+          const stratMsg = `Ruta generada con **${modelLabel}**: **${clients} clientes** · **${days} días** · ${km} km.\n\n**Estrategia:** ${data.data.aiStrategy}\n\n¿Quieres ajustar algo?`;
           _routeChatHistory.push({ role: 'assistant', content: stratMsg });
           _appendChatMsg('assistant', stratMsg);
         }
@@ -12808,9 +12903,9 @@
           const days = optimizedRouteData?.days ? Object.keys(optimizedRouteData.days).length : 0;
           const clients = optimizedRouteData?.totalStats?.totalClients || optimizedRouteData?.route?.length || 0;
           const km = optimizedRouteData?.totalStats?.distanceKm || optimizedRouteData?.stats?.distanceKm || 0;
-          greeting = `Hola 👋 Soy **LEKER AI**.\n\nRuta de **${vName||'el vendedor'}**: **${clients} clientes** · **${days} días** · ${km} km.\n\nPuedo explicar decisiones, sugerir ajustes o detectar ineficiencias. ¿En qué te ayudo?`;
+          greeting = `Soy **LEKER AI**.\n\nRuta de **${vName||'el vendedor'}**: **${clients} clientes** · **${days} días** · ${km} km.\n\nPuedo explicar decisiones, sugerir ajustes o detectar ineficiencias. ¿En qué te ayudo?`;
         } else {
-          greeting = `Hola 👋 Soy **LEKER AI**, tu asistente de Leker.\n\nEstás en **${panelName}**. ¿En qué puedo ayudarte aquí?`;
+          greeting = `Soy **LEKER AI**, asistente de Leker.\n\nEstás en **${panelName}**. Tengo acceso a ventas, cobranzas, rutas y clientes. ¿En qué te ayudo?`;
         }
         _routeChatHistory.push({ role: 'assistant', content: greeting });
         _appendChatMsg('assistant', greeting);
@@ -12839,6 +12934,9 @@
     }
 
     function _renderChatMarkdown(text) {
+      // Usa el mismo renderer rico que el panel lateral (highlights de dinero, vendedores, %)
+      if (typeof _aiRenderMarkdown === 'function') return _aiRenderMarkdown(text);
+      // Fallback básico
       return text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -12917,7 +13015,7 @@
 
         // Todos los vendedores con sus métricas
         const vendedores = executives.map(e => {
-          const vc = allClients.filter(c => c.assigned_user_id === e.id);
+          const vc = (_clientsByUser[e.id] || []);
           const ruta = todayRoutesData?.find(r => r.user_id === e.id || r.userId === e.id);
           return {
             nombre: e.full_name,
@@ -12934,7 +13032,7 @@
         // Clientes del vendedor seleccionado (detallados)
         let vendedorActual = null;
         if (exec) {
-          const vc = allClients.filter(c => c.assigned_user_id === exec.id);
+          const vc = (_clientsByUser[exec.id] || []);
           vendedorActual = {
             nombre: exec.full_name,
             zona: exec.zone || null,
@@ -14162,7 +14260,7 @@
       }
 
       // Update client count for this executive's assigned clients
-      const assignedClients = allClients.filter(c => c.assigned_user_id === execId);
+      const assignedClients = (_clientsByUser[execId] || []);
       document.getElementById('client-count-label').textContent = `(${assignedClients.length} asignados)`;
 
       // For exec: default outcome to 'contactado' (they're physically visiting the client)
@@ -14486,7 +14584,7 @@
         const _zoneBadge = _zci ? `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:${_zci.bg};color:${_zci.c};font-weight:700;">${_execZone.toUpperCase()}</span>` : '';
         // Efectividad per vendor
         const _efec = row.visitsCount > 0 ? Math.round(((row.outcomes.sale + row.outcomes.contacted) / row.visitsCount) * 100) : null;
-        const _efecHtml = _efec !== null ? `<span style="font-size:10px;color:${_efec>=70?'#10b981':_efec>=40?'#f59e0b':'#6b7280'};font-weight:600;"> · ⚡${_efec}% efec.</span>` : '';
+        const _efecHtml = _efec !== null ? `<span style="font-size:10px;color:${_efec>=70?'#10b981':_efec>=40?'#f59e0b':'#6b7280'};font-weight:600;"> · ${_efec}% efec.</span>` : '';
         const _cardOpacity = row.status === 'none' ? ';opacity:0.6' : '';
 
         html += `
@@ -14545,7 +14643,7 @@
         return;
       }
 
-      executiveClients = allClients.filter(c => c.assigned_user_id === selectedExecutiveId);
+      executiveClients = (_clientsByUser[selectedExecutiveId] || []);
 
       if (executiveClients.length === 0) {
         listDiv.innerHTML = `
@@ -15071,6 +15169,7 @@
             const idx = allClients.findIndex(c => c.id === editingClientId);
             if (idx >= 0) { allClients[idx].lat = lat; allClients[idx].lng = lng; }
           }
+          _rebuildClientIndexes();
           refreshSegmentationFromAllClients();
           loadExecutiveClients();
           setTimeout(() => loadData(), 300);
@@ -15106,7 +15205,7 @@
       } else {
         // Show assigned clients on map (all clients, function handles GPS check)
         clearRouteFromMap();
-        const clients = allClients.filter(c => c.assigned_user_id === selectedExecutiveId);
+        const clients = (_clientsByUser[selectedExecutiveId] || []);
         displayClientsOnRouteMap(clients);
       }
     }
@@ -15242,7 +15341,7 @@
       const activeRoutes = todayRoutesData.filter(r => r.status === 'active');
       const todayVisits = todayRoutesData.reduce((sum, r) => sum + (r.visits?.length || r.visits_count || 0), 0);
       const assignedClients = selectedExecutiveId
-        ? allClients.filter(c => c.assigned_user_id === selectedExecutiveId).length
+        ? (_clientsByUser[selectedExecutiveId] || []).length
         : allClients.filter(c => c.assigned_user_id).length;
 
       document.getElementById('stat-total-executives').textContent = executives.length;
@@ -15301,7 +15400,7 @@
       }
 
       // Get assigned and available clients
-      assignedClientsForModal = allClients.filter(c => c.assigned_user_id === execId);
+      assignedClientsForModal = (_clientsByUser[execId] || []);
       availableClientsForAssignment = allClients.filter(c => !c.assigned_user_id || c.assigned_user_id !== execId);
 
       renderAvailableClients();
@@ -15417,7 +15516,7 @@
           success++;
 
           // Update local data
-          const client = allClients.find(c => c.id === clientId);
+          const client = _clientById.get(clientId);
           if (client) client.assigned_user_id = execId;
         } catch (e) {
           console.error('Error assigning client:', e);
@@ -15455,7 +15554,7 @@
           success++;
 
           // Update local data
-          const client = allClients.find(c => c.id === clientId);
+          const client = _clientById.get(clientId);
           if (client) client.assigned_user_id = null;
         } catch (e) {
           console.error('Error unassigning client:', e);
@@ -15742,7 +15841,7 @@
     function openExecRouteMaps() {
       if (!currentUser) return;
       const scheduled = todayScheduledData[currentUser.id] || [];
-      const clients = scheduled.map(s => allClients.find(c => c.id === s.client_id)).filter(c => c && c.lat && c.lng);
+      const clients = scheduled.map(s => _clientById.get(s.client_id)).filter(c => c && c.lat && c.lng);
       if (clients.length === 0) { showToast('warning', 'Sin GPS', 'Clientes sin coordenadas GPS'); return; }
       openFullRouteInMaps(clients);
     }
@@ -15889,7 +15988,7 @@
         zoneExecs.forEach(exec => {
           const initials = getInitials(exec.full_name);
           const activeRoute = routes?.find(r => r.user_id === exec.id && r.status === 'active');
-          const assignedClients = allClients.filter(c => c.assigned_user_id === exec.id).length;
+          const assignedClients = (_clientsByUser[exec.id] || []).length;
           const isActive = exec.status !== 'inactive';
           const hasRoute = !!activeRoute;
 
@@ -16161,7 +16260,7 @@
       const executives = allUsers.filter(u => u.role === 'executive');
 
       const options = executives.map(e => {
-        const clientCount = allClients.filter(c => c.assigned_user_id === e.id).length;
+        const clientCount = (_clientsByUser[e.id] || []).length;
         return `<option value="${e.id}">${e.full_name} (${clientCount} clientes)</option>`;
       }).join('');
 
@@ -16390,7 +16489,7 @@
         });
         const data = await res.json();
         if (data.success) {
-          const client = allClients.find(c => c.id === clientId);
+          const client = _clientById.get(clientId);
           if (client) client.segment = segment;
           showToast('success', 'Actualizado', `Segmento cambiado a ${segment}`);
           renderClientsTablePaginated();
@@ -16410,7 +16509,7 @@
         });
         const data = await res.json();
         if (data.success) {
-          const client = allClients.find(c => c.id === clientId);
+          const client = _clientById.get(clientId);
           if (client) client.priority = isFoco ? 'FOCO' : 'Normal';
           showToast('success', 'Actualizado', isFoco ? 'Cliente marcado como FOCO' : 'Cliente desmarcado');
           renderClientsTablePaginated();
@@ -16543,7 +16642,7 @@
     }
 
     function selectCheckinClient(clientId) {
-      const client = allClients.find(c => c.id === clientId);
+      const client = _clientById.get(clientId);
       if (!client) return;
 
       // Set hidden input value
@@ -16626,7 +16725,7 @@
 
     // Confirm client address from check-in (uses current GPS if available)
     async function confirmClientAddressFromCheckin(clientId) {
-      const client = allClients.find(c => c.id === clientId);
+      const client = _clientById.get(clientId);
       if (!client) return;
 
       const user = JSON.parse(localStorage.getItem('leker_user') || '{}');
@@ -16862,7 +16961,7 @@
 
       if (clientId) {
         // Edit mode
-        const client = allClients.find(c => c.id === clientId);
+        const client = _clientById.get(clientId);
         if (!client) return;
 
         title.textContent = 'Editar Cliente';
@@ -17007,7 +17106,7 @@
       };
 
       // Detect address change before saving (for auto-geocode trigger)
-      const originalClient = id ? allClients.find(c => c.id === id) : null;
+      const originalClient = id ? (_clientById.get(id) || null) : null;
       const addressChanged = originalClient && clientData.address && (
         clientData.address !== originalClient.address ||
         clientData.commune !== originalClient.commune
@@ -17052,6 +17151,7 @@
             } else {
               allClients.push(data.data);
             }
+            _rebuildClientIndexes();
           }
 
           // Refresh CRM panel with updated data
@@ -17100,7 +17200,7 @@
     }
 
     async function assignVendorQuick(clientId) {
-      const client = allClients.find(c => c.id === clientId);
+      const client = _clientById.get(clientId);
       if (!client) return;
 
       const executives = allUsers.filter(u => u.role === 'executive');
@@ -17276,7 +17376,7 @@
       }
 
       tbody.innerHTML = filteredData.map(r => {
-        const assignedClients = allClients.filter(c => c.assigned_user_id === r.user_id).length;
+        const assignedClients = (_clientsByUser[r.user_id] || []).length;
         const visits = r.visits?.length || r.visits_count || 0;
         const progress = assignedClients > 0 ? Math.round((visits / assignedClients) * 100) : 0;
         const startTime = r.created_at ? new Date(r.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '-';
@@ -17368,7 +17468,7 @@
       // Calculate estimated km for comparison
       let estimatedKm = 0;
       if (currentActiveRoute) {
-        const routeClients = allClients.filter(c => c.assigned_user_id === currentActiveRoute.user_id);
+        const routeClients = (_clientsByUser[currentActiveRoute.user_id] || []);
         const routeMetrics = calculateRouteMetrics(routeClients, currentActiveRoute.vehicle);
         estimatedKm = routeMetrics.distance || 0;
       }
@@ -17545,7 +17645,7 @@
     }
 
     function renderUserZonesBadges(userId) {
-      const uClients = allClients.filter(c => c.assigned_user_id === userId);
+      const uClients = (_clientsByUser[userId] || []);
       const zonesMap = {};
       uClients.forEach(c => {
         const z = c.zone || 'Sin Zona';
@@ -17616,7 +17716,7 @@
         `;
 
         zoneUsers.forEach(u => {
-          const assignedClients = allClients.filter(c => c.assigned_user_id === u.id).length;
+          const assignedClients = (_clientsByUser[u.id] || []).length;
           const todayRoute = todayRoutesData.find(r => r.user_id === u.id);
           const hasActiveRoute = todayRoute?.status === 'active';
           const todayVisits = todayRoute?.visits_count || todayRoute?.visits?.length || 0;
@@ -17942,7 +18042,7 @@
 
       const executives = allUsers.filter(u => u.role === 'executive' || u.role === 'zonal');
       const options = executives.map(e => {
-        const count = allClients.filter(c => c.assigned_user_id === e.id).length;
+        const count = (_clientsByUser[e.id] || []).length;
         return `<option value="${e.id}">${e.full_name} (${count} clientes)</option>`;
       }).join('');
 
@@ -18094,7 +18194,7 @@
       const destId = document.getElementById('reassign-section-to').value;
       const destInfo = document.getElementById('dest-info');
       if (destId) {
-        const destCount = allClients.filter(c => c.assigned_user_id === destId).length;
+        const destCount = (_clientsByUser[destId] || []).length;
         document.getElementById('dest-client-total').textContent = destCount;
         destInfo.style.display = 'block';
       } else {
@@ -18386,9 +18486,9 @@
     let _aiModel = 'gpt-4o-mini'; // modelo OpenAI activo
 
     const _modelInfo = {
-      'gpt-4o-mini': { label: '⚡ GPT-4o mini', desc: 'Rápido · muy bajo costo (~$0.0001/ruta)', badge: 'GPT-4o mini · Rápido y eficiente' },
-      'gpt-4o':      { label: '🧠 GPT-4o',      desc: 'Mayor precisión · costo moderado',       badge: 'GPT-4o · Mayor razonamiento espacial' },
-      'o3-mini':     { label: '🔬 o3-mini',      desc: 'Razonamiento profundo · costo alto',     badge: 'o3-mini · Razonamiento profundo (más lento)' }
+      'gpt-4o-mini': { label: 'GPT-4o mini', desc: 'Rápido · muy bajo costo (~$0.0001/ruta)', badge: 'GPT-4o mini · Rápido y eficiente' },
+      'gpt-4o':      { label: 'GPT-4o',      desc: 'Mayor precisión · costo moderado',       badge: 'GPT-4o · Mayor razonamiento espacial' },
+      'o3-mini':     { label: 'o3-mini',      desc: 'Razonamiento profundo · costo alto',     badge: 'o3-mini · Razonamiento profundo (más lento)' }
     };
 
     function setAIModel(model) {
@@ -18450,10 +18550,133 @@
       document.getElementById('ai-loading-text').textContent = text || 'Consultando IA...';
     }
 
+    function _aiRenderMarkdown(text) {
+      if (!text) return '';
+      const lines = text.split('\n');
+      let html = '';
+      let inBlock = false; // track if inside a section block
+
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+
+        // H3 → sección con borde izquierdo violeta (### texto)
+        const h3m = line.match(/^#{1,3}\s+(.+)/);
+        if (h3m) {
+          if (inBlock) { html += '</div>'; inBlock = false; }
+          const label = _aiInline(h3m[1]);
+          html += `<div style="margin:16px 0 8px;padding:8px 12px;background:rgba(99,102,241,0.07);border-left:3px solid #6366f1;border-radius:0 6px 6px 0;">
+            <div style="font-size:13px;font-weight:700;color:var(--text-primary);">${label}</div>
+          </div>`;
+          // Abrir bloque de contenido de esta sección
+          html += `<div style="padding-left:12px;">`;
+          inBlock = true;
+          continue;
+        }
+
+        // Línea de sub-encabezado tipo **Día 1: Lunes** sola en su línea
+        const dayM = line.match(/^\*\*(.{0,40})\*\*\s*$/);
+        if (dayM) {
+          html += `<div style="margin:10px 0 4px;font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;">${dayM[1]}</div>`;
+          continue;
+        }
+
+        // Bullets con "Justificación:" → texto muted más pequeño
+        const justM = line.match(/^[\-\*]\s+Justificaci[oó]n:\s*(.+)/i);
+        if (justM) {
+          html += `<div style="display:flex;gap:6px;margin:2px 0 6px;padding-left:4px;">
+            <span style="color:var(--text-muted);flex-shrink:0;font-size:11px;margin-top:2px;">↳</span>
+            <span style="font-size:11px;color:var(--text-muted);font-style:italic;">${_aiInline(justM[1])}</span>
+          </div>`;
+          continue;
+        }
+
+        // Bullet normal: - texto o * texto
+        const bm = line.match(/^[\-\*]\s+(.+)/);
+        if (bm) {
+          html += `<div style="display:flex;gap:8px;margin:3px 0;align-items:baseline;">
+            <span style="color:#6366f1;flex-shrink:0;font-size:14px;line-height:1;">·</span>
+            <span style="font-size:13px;color:var(--text-primary);">${_aiInline(bm[1])}</span>
+          </div>`;
+          continue;
+        }
+
+        // Fila con pipes: col1 | col2 | col3 → chips en fila
+        if (line.includes(' | ') && !line.startsWith('#')) {
+          const parts = line.split(' | ').map(p => p.trim()).filter(Boolean);
+          const chips = parts.map(p =>
+            `<span style="display:inline-block;background:var(--bg-card,rgba(255,255,255,0.05));border:1px solid var(--border,#333);padding:2px 9px;border-radius:6px;font-size:12px;white-space:nowrap;">${_aiInline(p)}</span>`
+          ).join('');
+          html += `<div style="display:flex;flex-wrap:wrap;gap:5px;margin:5px 0;">${chips}</div>`;
+          continue;
+        }
+
+        // Línea "Clave: valor" → label muted + valor destacado
+        const kvM = line.match(/^([^:]{2,30}):\s+(.+)$/);
+        if (kvM && !line.startsWith(' ') && !line.startsWith('-')) {
+          html += `<div style="display:flex;gap:6px;align-items:baseline;margin:3px 0;flex-wrap:wrap;">
+            <span style="font-size:11px;color:var(--text-muted);white-space:nowrap;min-width:80px;">${kvM[1]}:</span>
+            <span style="font-size:13px;color:var(--text-primary);font-weight:500;">${_aiInline(kvM[2])}</span>
+          </div>`;
+          continue;
+        }
+
+        // Línea vacía → pequeño espacio
+        if (line.trim() === '') {
+          html += '<div style="height:5px;"></div>';
+          continue;
+        }
+
+        // Párrafo normal
+        html += `<div style="font-size:13px;color:var(--text-secondary);margin:3px 0;line-height:1.6;">${_aiInline(line)}</div>`;
+      }
+
+      if (inBlock) html += '</div>';
+      return html;
+    }
+
+    function _aiInline(text) {
+      // 0. Strip emoji circles comunes en respuestas IA (🔴🟡🟢🟠🔵⚪🟣) → dot tipográfico
+      text = text.replace(/[🔴🟡🟢🟠🔵⚪🟣🟤⭕🔶🔷]/g, '·');
+      // Strip otros emojis decorativos frecuentes
+      text = text.replace(/[👥📋📍⭐✅❌⚠️💡🎯🚀💰📊📈📉🗺️🔔💬🤖👋]/g, '');
+
+      // 1. Dinero en bold **$X.XXX** → chip verde primero (antes del bold genérico)
+      text = text.replace(/\*\*(\$[\d.,]+(?:\s*(?:CLP|pesos)?)?)\*\*/g, (_, m) =>
+        `<span style="display:inline-block;background:rgba(16,185,129,0.13);color:#059669;font-weight:700;padding:1px 7px;border-radius:5px;font-size:12px;white-space:nowrap;">${m}</span>`);
+
+      // 2. Bold genérico: **text**
+      text = text.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--text-primary);font-weight:700;">$1</strong>');
+
+      // 3. Italic
+      text = text.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
+
+      // 4. Dinero standalone: $X.XXX (no dentro de HTML ya procesado)
+      text = text.replace(/(^|[\s(])(\$[\d.,]+)/g, (_, pre, m) =>
+        `${pre}<span style="display:inline-block;background:rgba(16,185,129,0.13);color:#059669;font-weight:600;padding:0 5px;border-radius:4px;font-size:12px;white-space:nowrap;">${m}</span>`);
+
+      // 5. Porcentajes: XX% → chip violeta
+      text = text.replace(/\b(\d+(?:[.,]\d+)?%)/g, (_, m) =>
+        `<span style="background:rgba(99,102,241,0.13);color:#6366f1;font-weight:700;padding:0 5px;border-radius:4px;font-size:12px;">${m}</span>`);
+
+      // 6. Nombres de vendedor estilo X.APELLIDO → badge azul
+      text = text.replace(/\b([A-Z]{1,2}\.[A-Z]{3,})\b/g, (_, m) =>
+        `<span style="background:rgba(59,130,246,0.13);color:#3b82f6;font-weight:700;padding:0 5px;border-radius:4px;font-size:12px;">${m}</span>`);
+
+      return text;
+    }
+
     function _aiShowResult(title, content) {
       document.getElementById('ai-loading').style.display = 'none';
       document.getElementById('ai-response-title').textContent = title;
-      document.getElementById('ai-response-content').textContent = content;
+      document.getElementById('ai-response-content').innerHTML = _aiRenderMarkdown(content);
+      document.getElementById('ai-response-area').style.display = 'block';
+    }
+
+    function _aiShowEmpty(title, message) {
+      document.getElementById('ai-loading').style.display = 'none';
+      document.getElementById('ai-response-title').textContent = title;
+      document.getElementById('ai-response-content').innerHTML =
+        `<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">${message}</div>`;
       document.getElementById('ai-response-area').style.display = 'block';
     }
 
@@ -18483,9 +18706,9 @@
         });
         const data = await res.json();
         if (data.success) {
-          _aiShowResult(`🗺️ Asesor de Rutas — ${info.vendorName}`, data.advice);
+          _aiShowResult(`Asesor de Rutas — ${info.vendorName}`, data.advice);
         } else {
-          _aiShowResult('Error', data.error);
+          _aiShowEmpty(`Asesor de Rutas — ${info.vendorName}`, data.error || 'No hay suficientes datos para generar un análisis.');
         }
       } catch(e) {
         document.getElementById('ai-loading').style.display = 'none';
@@ -18529,9 +18752,9 @@
         });
         const data = await res.json();
         if (data.success) {
-          _aiShowResult(`📊 Desempeño — ${info.vendorName}`, data.summary);
+          _aiShowResult(`Resumen de Desempeño — ${info.vendorName}`, data.summary);
         } else {
-          _aiShowResult('Error', data.error);
+          _aiShowEmpty(`Resumen de Desempeño — ${info.vendorName}`, data.error || 'No hay visitas registradas para analizar en este período.');
         }
       } catch(e) {
         document.getElementById('ai-loading').style.display = 'none';
@@ -18552,11 +18775,10 @@
         });
         const data = await res.json();
         if (data.success) {
-          const title = `⏱️ Frecuencia Adaptativa — ${info.vendorName}` +
-            (data.clientsAnalyzed ? ` (${data.clientsAnalyzed} clientes analizados)` : '');
-          _aiShowResult(title, data.analysis);
+          const suffix = data.clientsAnalyzed ? ` · ${data.clientsAnalyzed} clientes` : '';
+          _aiShowResult(`Frecuencia Adaptativa — ${info.vendorName}${suffix}`, data.analysis);
         } else {
-          _aiShowResult('Error', data.error);
+          _aiShowEmpty(`Frecuencia Adaptativa — ${info.vendorName}`, data.error || 'No hay suficientes datos de visitas para analizar frecuencias.');
         }
       } catch(e) {
         document.getElementById('ai-loading').style.display = 'none';
@@ -19724,7 +19946,7 @@
         return;
       }
 
-      selectedClientData = allClients.find(c => c.id === clientId);
+      selectedClientData = _clientById.get(clientId);
       if (!selectedClientData) {
         verificationDiv.style.display = 'none';
         return;
@@ -20094,7 +20316,7 @@
         const zoneTag = zc ? `<span style="background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">${zona}</span>` : '';
 
         // Count assigned clients
-        const assignedClients = allClients.filter(c => c.assigned_user_id === user.id).length;
+        const assignedClients = (_clientsByUser[user.id] || []).length;
 
         // Check if user has active route today
         const hasActiveRoute = allRoutes.some(r => r.user_id === user.id && r.status === 'active');
@@ -23739,7 +23961,7 @@
 
     // ====== EDIT CLIENT FULL MODAL ======
     function openEditClientFullModal(clientId) {
-      const client = allClients.find(c => c.id === clientId);
+      const client = _clientById.get(clientId);
       if (!client) { showToast('error', 'Error', 'Cliente no encontrado'); return; }
 
       const existing = document.getElementById('modal-edit-client-full');
@@ -23846,7 +24068,7 @@
     }
 
     async function _aiClientInsight(clientId) {
-      const client = allClients.find(c => c.id === clientId);
+      const client = _clientById.get(clientId);
       if (!client) return;
       // Open AI panel
       if (!_aiPanelOpen) toggleLekerAIPanel();
@@ -23901,6 +24123,7 @@
           const idx = allClients.findIndex(c => c.id === clientId);
           if (idx !== -1) {
             allClients[idx] = { ...allClients[idx], ...data.data };
+            _rebuildClientIndexes();
           }
 
           // Marcar este cliente como "editado en plataforma" para que
@@ -24059,6 +24282,7 @@
         const clientsData = await clientsRes.json();
         if (clientsData.success) {
           allClients = clientsData.data;
+          _rebuildClientIndexes();
           filterDireccionesDB();
           populateDirFilters();
           refreshSegmentationFromAllClients();
@@ -24596,7 +24820,7 @@
           showToast('success', `GPS actualizado`, `✓ ${d.ok} geocodificados — ${d.failed} fallaron`, 8000);
           // Recargar clientes
           const r2 = await fetch(`${API}/api/clients`).then(r => r.json()).catch(() => null);
-          if (r2?.data) { allClients = r2.data; filterDireccionesDB(); }
+          if (r2?.data) { allClients = r2.data; _rebuildClientIndexes(); filterDireccionesDB(); }
         } else {
           showToast('error', 'Error', d.error || 'Error al geocodificar');
         }
@@ -24739,7 +24963,7 @@
       // Si hay un vendedor seleccionado, filtrar solo sus clientes (evitar sincronizar 7k filas)
       let vendorCodes = null;
       if (selectedExecutiveId) {
-        const vendorClients = allClients.filter(c => c.assigned_user_id === selectedExecutiveId);
+        const vendorClients = (_clientsByUser[selectedExecutiveId] || []);
         if (vendorClients.length > 0) {
           vendorCodes = new Set(vendorClients.map(c => String(c.external_id || '').trim()));
         }
@@ -24816,6 +25040,7 @@
           const clientsData = await clientsRes.json();
           if (clientsData.success) {
             allClients = clientsData.data;
+            _rebuildClientIndexes();
             showToast('info', 'Datos actualizados', 'Clientes recargados. Ahora puedes geocodificar los que tienen dirección.');
           }
         }
@@ -25174,7 +25399,7 @@
 
         let html = '';
         executives.forEach(exec => {
-          const clients = allClients.filter(c => c.assigned_user_id === exec.id);
+          const clients = (_clientsByUser[exec.id] || []);
           if (clients.length === 0) return;
 
           // Group by zone, then by commune
@@ -25646,7 +25871,7 @@
       }
       if (_aiPanelOpen) {
         setTimeout(() => document.getElementById('ai-chat-input')?.focus(), 350);
-        _createIcons();
+        _createIcons(document.getElementById('leker-ai-panel'));
       }
     }
 
@@ -25770,9 +25995,7 @@
     }
 
     function _aiFormatText(text) {
-      return text
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\n/g, '<br>');
+      return _aiRenderMarkdown(text);
     }
 
     function _showLekerAIFab() {
@@ -27954,11 +28177,11 @@
 
       // Add user message to UI
       const messagesDiv = document.getElementById('ai-chat-messages');
-      messagesDiv.innerHTML += `<div class="ai-msg user">${escapeHtml(message)}</div>`;
+      messagesDiv.insertAdjacentHTML('beforeend', `<div class="ai-msg user">${escapeHtml(message)}</div>`);
 
       // Add loading indicator
       const loadingId = 'ai-loading-' + Date.now();
-      messagesDiv.innerHTML += `<div class="ai-msg assistant" id="${loadingId}" style="opacity: 0.6;"><i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i> Pensando...</div>`;
+      messagesDiv.insertAdjacentHTML('beforeend', `<div class="ai-msg assistant" id="${loadingId}" style="opacity: 0.6;"><i data-lucide="loader-2" class="spin" style="width: 16px; height: 16px;"></i> Pensando...</div>`);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
       _createIcons();
 
@@ -27987,14 +28210,14 @@
         if (data.success) {
           const response = data.data.response;
           aiChatHistory.push({ role: 'assistant', content: response });
-          messagesDiv.innerHTML += `<div class="ai-msg assistant">${formatAiResponse(response)}</div>`;
+          messagesDiv.insertAdjacentHTML('beforeend', `<div class="ai-msg assistant">${formatAiResponse(response)}</div>`);
         } else {
-          messagesDiv.innerHTML += `<div class="ai-msg assistant" style="color: #ef4444;">${data.error || 'Error al procesar tu consulta'}</div>`;
+          messagesDiv.insertAdjacentHTML('beforeend', `<div class="ai-msg assistant" style="color: #ef4444;">${data.error || 'Error al procesar tu consulta'}</div>`);
         }
       } catch (err) {
         const loadingEl = document.getElementById(loadingId);
         if (loadingEl) loadingEl.remove();
-        messagesDiv.innerHTML += `<div class="ai-msg assistant" style="color: #ef4444;">Error de conexión. Verifica que el servidor esté corriendo.</div>`;
+        messagesDiv.insertAdjacentHTML('beforeend', `<div class="ai-msg assistant" style="color: #ef4444;">Error de conexión. Verifica que el servidor esté corriendo.</div>`);
       }
 
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -28020,14 +28243,20 @@
     // LEKER AI — COMPANY PULSE
     // =============================================
 
-    async function loadAIPulse() {
+    let _pulseCachedAt = 0;
+    const PULSE_TTL = 30 * 60 * 1000; // 30 minutos — evita llamar OpenAI en cada loadData
+
+    async function loadAIPulse(force = false) {
       const content = document.getElementById('ai-pulse-content');
       const meta = document.getElementById('ai-pulse-meta');
       const timeEl = document.getElementById('ai-pulse-time');
       const ico = document.getElementById('ico-pulse-refresh');
       if (!content) return;
 
-      content.innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;"><div style="width:16px;height:16px;border:2px solid #6366f1;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>Analizando datos en tiempo real...</div>`;
+      // Saltar si fue cargado hace menos de 30 min (a menos que sea forzado desde el botón)
+      if (!force && _pulseCachedAt && (Date.now() - _pulseCachedAt) < PULSE_TTL) return;
+
+      content.innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:12px;"><div style="width:16px;height:16px;border:2px solid #6366f1;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>Consultando IA...</div>`;
       if (meta) meta.style.display = 'none';
       if (ico) ico.style.animation = 'spin 0.8s linear infinite';
 
@@ -28035,16 +28264,25 @@
         const res = await fetch(`${API}/api/ai/company-pulse`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
         const data = await res.json();
         if (data.success) {
-          content.innerHTML = data.pulse.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-          if (timeEl) timeEl.textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+          content.innerHTML = (typeof _aiRenderMarkdown === 'function') ? _aiRenderMarkdown(data.pulse) : data.pulse.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+          _pulseCachedAt = Date.now();
+          if (timeEl) timeEl.textContent = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
           if (meta && data.meta) {
             meta.style.display = 'flex';
-            meta.innerHTML = [
-              `<span>👥 ${data.meta.vendorsActive}/${data.meta.vendorsTotal} vendedores activos</span>`,
-              `<span>📋 ${data.meta.visitsToday} visitas · ${data.meta.salesToday} ventas</span>`,
-              `<span>⭐ ${data.meta.neglected8020} 80/20 sin visitar</span>`,
-              `<span>📍 ${data.meta.clientsWithoutGPS} sin GPS</span>`
-            ].join('');
+            const chip = (icon, label, val, valColor, borderColor) =>
+              `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:6px;background:var(--bg-secondary);border:1px solid ${borderColor || 'var(--border)'};color:var(--text-secondary);">
+                <i data-lucide="${icon}" style="width:11px;height:11px;color:${valColor};flex-shrink:0;"></i>
+                <span style="font-weight:700;color:${valColor};">${val}</span>
+                <span style="color:var(--text-muted);">${label}</span>
+              </span>`;
+            meta.innerHTML = `<div style="display:flex;gap:5px;flex-wrap:wrap;">
+              ${chip('users', 'activos', `${data.meta.vendorsActive}/${data.meta.vendorsTotal}`, 'var(--text-primary)', 'var(--border)')}
+              ${chip('map-pin', 'visitas', data.meta.visitsToday, data.meta.visitsToday > 0 ? '#10b981' : 'var(--text-muted)', data.meta.visitsToday > 0 ? 'rgba(16,185,129,0.25)' : 'var(--border)')}
+              ${chip('trending-up', 'ventas', data.meta.salesToday, data.meta.salesToday > 0 ? '#10b981' : 'var(--text-muted)', data.meta.salesToday > 0 ? 'rgba(16,185,129,0.25)' : 'var(--border)')}
+              ${chip('star', '80/20 sin visita', data.meta.neglected8020, data.meta.neglected8020 > 0 ? '#f59e0b' : '#10b981', data.meta.neglected8020 > 0 ? 'rgba(245,158,11,0.3)' : 'rgba(16,185,129,0.25)')}
+              ${chip('map-pin-off', 'sin GPS', data.meta.clientsWithoutGPS, data.meta.clientsWithoutGPS > 0 ? '#6366f1' : '#10b981', data.meta.clientsWithoutGPS > 0 ? 'rgba(99,102,241,0.25)' : 'rgba(16,185,129,0.25)')}
+            </div>`;
+            _createIcons(meta);
           }
         } else {
           content.innerHTML = `<span style="color:var(--text-muted);font-size:12px;">No se pudo cargar el análisis. <button onclick="loadAIPulse()" style="color:#6366f1;background:none;border:none;cursor:pointer;font-size:12px;text-decoration:underline;">Reintentar</button></span>`;
@@ -28062,107 +28300,111 @@
 
     async function loadVendorDashboard() {
       const monthInput = document.getElementById('vendor-stats-month');
-      if (!monthInput.value) {
-        monthInput.value = new Date().toISOString().slice(0, 7);
-      }
+      if (!monthInput.value) monthInput.value = new Date().toISOString().slice(0, 7);
       const month = monthInput.value;
-      const grid = document.getElementById('vendor-stats-grid');
-      grid.innerHTML = '<div style="text-align: center; padding: 24px; grid-column: 1 / -1;"><i data-lucide="loader-2" class="spin" style="width: 24px; height: 24px;"></i><p style="font-size: 12px; margin-top: 8px;">Cargando estadísticas...</p></div>';
+
+      const tbody = document.getElementById('vendor-stats-tbody');
+      const tfoot = document.getElementById('vendor-stats-tfoot');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted);"><i data-lucide="loader-2" class="spin" style="width:18px;height:18px;"></i></td></tr>`;
+      if (tfoot) tfoot.innerHTML = '';
       _createIcons();
 
       try {
-        const res = await fetch(`${API}/api/dashboard/vendor-stats?month=${month}`);
-        const data = await res.json();
+        // Fetch DB stats + GSheets sales en paralelo
+        const [statsRes, salesRes] = await Promise.all([
+          fetch(`${API}/api/dashboard/vendor-stats?month=${month}`),
+          fetch(`${API}/api/dashboard/vendor-sales?month=${month}`).catch(() => ({ json: async () => ({ data: {} }) }))
+        ]);
+        const statsData = await statsRes.json();
+        const salesData = await salesRes.json();
 
-        if (data.success && data.data.length > 0) {
-          _vendorStatsForCards = {}; // poblar caché compartida con fichas
-          let html = '';
-          data.data.forEach(vendor => {
-            // Cross-reference allClients to get 80/20 count for this vendor
+        const sheetsMap = salesData.data || {}; // { normalizedKey: { total, clientsWithSale } }
+
+        // Normaliza nombre de vendedor igual que el backend
+        const normV = n => String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
+
+        // Construye lookup: DB full_name → sheets key (e.g. "Eduardo Caceres" → "e caceres")
+        const dbToSheetsKey = (fullName) => {
+          const parts = (fullName || '').split(' ').filter(Boolean);
+          if (parts.length < 2) return normV(fullName);
+          return normV(`${parts[0][0]} ${parts[1]}`);
+        };
+
+        if (statsData.success && statsData.data.length > 0) {
+          _vendorStatsForCards = {};
+          const fmtCLP = n => n > 0 ? '$' + Math.round(n).toLocaleString('es-CL') : '—';
+          const fmtWeek = w => w ? `${w.clients} cl / ${w.days}d` : '—';
+
+          let totalVisits = 0, totalSales = 0, totalCLP = 0, totalDays = 0;
+
+          const rows = statsData.data.map(vendor => {
             const user = (allUsers || []).find(u => u.full_name === vendor.name);
             const userId = user ? user.id : null;
             if (userId) _vendorStatsForCards[userId] = vendor;
-            const vendorClients = userId ? (allClients || []).filter(c => c.assigned_user_id === userId) : [];
+            const vendorClients = userId ? (_clientsByUser[userId] || []) : [];
             const clients8020 = vendorClients.filter(c => c.segmentation === '80-20');
-            const clientsL = vendorClients.filter(c => c.segmentation === 'L');
-            const pct8020 = vendorClients.length > 0 ? Math.round(clients8020.length / vendorClients.length * 100) : 0;
-            const gpsCoverage = vendorClients.filter(c => c.lat && c.lng).length;
-            const gpsPct = vendorClients.length > 0 ? Math.round(gpsCoverage / vendorClients.length * 100) : 0;
             const efecPct = vendor.totalVisits > 0 ? Math.round(vendor.clientsWithSale / vendor.totalVisits * 100) : 0;
-            const avgPerDay = vendor.daysWorked > 0 ? (Math.round(vendor.totalVisits / vendor.daysWorked * 10) / 10) : 0;
-            const zc = user && user.zone ? (ZONE_COLORS[user.zone.toLowerCase()] || {color:'var(--text-muted)',bg:'var(--bg-hover)',border:'var(--border)'}) : {color:'var(--text-muted)',bg:'var(--bg-hover)',border:'var(--border)'};
 
-            let weeklyHtml = '';
-            vendor.weekly.forEach(w => {
-              weeklyHtml += `<div style="display: flex; justify-content: space-between; font-size: 11px; padding: 3px 0; border-bottom: 1px solid var(--border);">
-                <span>${w.week}</span>
-                <span>${w.clients} cl, ${w.days} días</span>
-              </div>`;
-            });
+            // Buscar ventas en GSheets
+            const sk = dbToSheetsKey(vendor.name);
+            const sheetsEntry = sheetsMap[sk] || null;
+            const ventasCLP = sheetsEntry ? sheetsEntry.total : 0;
 
-            html += `
-              <div class="vendor-stat-card" onclick="${userId ? `openVendorDetail('${userId}')` : ''}" style="border-top: 3px solid ${zc.color};${userId ? 'cursor:pointer;' : ''}">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                  <div style="width:34px;height:34px;border-radius:50%;background:${zc.color};color:white;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">${vendor.name.split(' ').map(n=>n[0]||'').join('').substring(0,2).toUpperCase()}</div>
-                  <div style="flex:1;min-width:0;">
-                    <div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${vendor.name}</div>
-                    ${user && user.zone ? `<span style="font-size:9px;background:${zc.bg};color:${zc.color};border:1px solid ${zc.border};padding:1px 5px;border-radius:3px;font-weight:700;">${user.zone.toUpperCase()}</span>` : ''}
-                  </div>
-                  <div style="text-align:right;flex-shrink:0;">
-                    <div style="font-size:12px;font-weight:700;color:var(--text);">${vendor.daysWorked} días</div>
-                    <div style="font-size:10px;color:var(--text-muted);">${avgPerDay} vis/día</div>
-                  </div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;">
-                  <div style="text-align: center; padding: 8px 4px; background: var(--bg-hover); border-radius: 8px;">
-                    <div style="font-size: 20px; font-weight: 700; color: var(--accent);">${vendor.clientsWithSale}</div>
-                    <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Con venta</div>
-                  </div>
-                  <div style="text-align: center; padding: 8px 4px; background: var(--bg-hover); border-radius: 8px;">
-                    <div style="font-size: 20px; font-weight: 700; color: #10b981;">${vendor.totalVisits}</div>
-                    <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Visitas</div>
-                  </div>
-                  <div style="text-align: center; padding: 8px 4px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.2); border-radius: 8px;">
-                    <div style="font-size: 20px; font-weight: 700; color: #b8860b;">${clients8020.length}</div>
-                    <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">80/20</div>
-                  </div>
-                  <div style="text-align: center; padding: 8px 4px; background: ${efecPct>=60?'rgba(16,185,129,0.08)':'var(--bg-hover)'}; border: 1px solid ${efecPct>=60?'rgba(16,185,129,0.2)':'transparent'}; border-radius: 8px;">
-                    <div style="font-size: 20px; font-weight: 700; color: ${efecPct>=60?'#10b981':efecPct>=30?'#f59e0b':'var(--text-muted)'};">${efecPct}%</div>
-                    <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Efec.</div>
-                  </div>
-                </div>
-                ${vendorClients.length > 0 ? `
-                <div style="margin-bottom: 7px;">
-                  <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
-                    <span style="color: var(--text-muted);">80/20 — ${clients8020.length} de ${vendorClients.length} asignados</span>
-                    <span style="font-weight: 700; color: #b8860b;">${pct8020}%</span>
-                  </div>
-                  <div style="height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;">
-                    <div style="height: 100%; width: ${pct8020}%; background: linear-gradient(90deg,#d4af37,#b8860b); border-radius: 2px;"></div>
-                  </div>
-                </div>
-                <div style="margin-bottom: 10px;">
-                  <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
-                    <span style="color: var(--text-muted);">GPS — ${gpsCoverage} de ${vendorClients.length} clientes</span>
-                    <span style="font-weight: 700; color: ${gpsPct>=70?'#10b981':gpsPct>=40?'#f59e0b':'#ef4444'};">${gpsPct}%</span>
-                  </div>
-                  <div style="height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;">
-                    <div style="height: 100%; width: ${gpsPct}%; background: linear-gradient(90deg,#3b82f6,#06b6d4); border-radius: 2px;"></div>
-                  </div>
-                </div>` : ''}
-                ${weeklyHtml}
-              </div>
-            `;
+            totalVisits += vendor.totalVisits;
+            totalSales += vendor.clientsWithSale;
+            totalCLP += ventasCLP;
+            totalDays += vendor.daysWorked;
+
+            // Semanas
+            const weeks = [1,2,3,4].map(n => vendor.weekly.find(w => w.week === `Semana ${n}`) || null);
+
+            // Abreviación del nombre
+            const nameParts = (vendor.name || '').split(' ').filter(Boolean);
+            const shortName = nameParts.length >= 2
+              ? `${nameParts[0][0].toUpperCase()}.${nameParts[1].toUpperCase()}`
+              : vendor.name.toUpperCase();
+
+            const efecColor = efecPct >= 60 ? '#10b981' : efecPct >= 30 ? '#f59e0b' : 'var(--text-muted)';
+
+            return `<tr style="border-bottom:1px solid var(--border);transition:background 0.15s;" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background=''" ${userId ? `onclick="openVendorDetail('${userId}')" style="cursor:pointer;border-bottom:1px solid var(--border);"` : ''}>
+              <td style="padding:9px 10px;white-space:nowrap;">
+                <div style="font-weight:700;font-size:13px;color:var(--text-primary);">${shortName}</div>
+                <div style="font-size:10px;color:var(--text-muted);">${clients8020.length > 0 ? `${clients8020.length} 80/20` : ''}</div>
+              </td>
+              <td style="padding:9px 8px;text-align:center;font-size:13px;font-weight:600;">${vendorClients.length || '—'}</td>
+              <td style="padding:9px 8px;text-align:center;">
+                <span style="font-size:13px;font-weight:700;color:var(--accent);">${vendor.clientsWithSale}</span>
+                <span style="font-size:10px;color:${efecColor};margin-left:4px;">${efecPct}%</span>
+              </td>
+              <td style="padding:9px 8px;text-align:right;font-size:12px;font-weight:700;color:${ventasCLP > 0 ? '#10b981' : 'var(--text-muted)'};">
+                ${fmtCLP(ventasCLP)}
+              </td>
+              <td style="padding:9px 8px;text-align:center;font-size:13px;font-weight:600;color:#10b981;">${vendor.totalVisits}</td>
+              <td style="padding:9px 8px;text-align:center;font-size:12px;color:var(--text-secondary);">${vendor.daysWorked}d</td>
+              <td style="padding:9px 8px;text-align:center;font-size:11px;color:var(--text-secondary);">${fmtWeek(weeks[0])}</td>
+              <td style="padding:9px 8px;text-align:center;font-size:11px;color:var(--text-secondary);">${fmtWeek(weeks[1])}</td>
+              <td style="padding:9px 8px;text-align:center;font-size:11px;color:var(--text-secondary);">${fmtWeek(weeks[2])}</td>
+              <td style="padding:9px 8px;text-align:center;font-size:11px;color:var(--text-secondary);">${fmtWeek(weeks[3])}</td>
+            </tr>`;
           });
 
-          grid.innerHTML = html;
+          if (tbody) tbody.innerHTML = rows.join('');
+          if (tfoot) tfoot.innerHTML = `<tr style="border-top:2px solid var(--border);background:var(--bg-hover);">
+            <td style="padding:8px 10px;font-size:11px;font-weight:700;color:var(--text-muted);">TOTAL</td>
+            <td style="padding:8px;"></td>
+            <td style="padding:8px 8px;text-align:center;font-size:12px;font-weight:700;color:var(--accent);">${totalSales}</td>
+            <td style="padding:8px 8px;text-align:right;font-size:12px;font-weight:700;color:#10b981;">${totalCLP > 0 ? '$' + Math.round(totalCLP).toLocaleString('es-CL') : '—'}</td>
+            <td style="padding:8px 8px;text-align:center;font-size:12px;font-weight:700;color:#10b981;">${totalVisits}</td>
+            <td style="padding:8px 8px;text-align:center;font-size:11px;font-weight:700;">${totalDays}d</td>
+            <td colspan="4"></td>
+          </tr>`;
+
         } else {
-          grid.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-muted); grid-column: 1 / -1;">No hay datos para este mes</div>';
+          if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">No hay datos para este mes</td></tr>';
         }
       } catch (err) {
-        grid.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--danger); grid-column: 1 / -1;">${err.message}</div>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--danger);">${err.message}</td></tr>`;
       }
-
       _createIcons();
     }
 
@@ -28352,7 +28594,8 @@
             loadData();
             updateGpsStatus();
             loadDashboardComparativoSummary();
-            setInterval(updateGpsStatus, 30000);
+            if (_gpsInterval) clearInterval(_gpsInterval);
+      _gpsInterval = setInterval(updateGpsStatus, 30000);
 
             // Restore saved tab
             const savedTab = localStorage.getItem('leker_active_tab');
@@ -28381,7 +28624,8 @@
             loadData();
             updateGpsStatus();
             loadDashboardComparativoSummary();
-            setInterval(updateGpsStatus, 30000);
+            if (_gpsInterval) clearInterval(_gpsInterval);
+      _gpsInterval = setInterval(updateGpsStatus, 30000);
             const savedTab = localStorage.getItem('leker_active_tab');
             const savedSubtab = localStorage.getItem('leker_active_subtab');
             if (savedTab && savedTab !== 'dashboard') {
@@ -28404,7 +28648,8 @@
           updateSidebarUser();
           loadData();
           updateGpsStatus();
-          setInterval(updateGpsStatus, 30000);
+          if (_gpsInterval) clearInterval(_gpsInterval);
+      _gpsInterval = setInterval(updateGpsStatus, 30000);
           return;
         }
       }
@@ -28550,7 +28795,7 @@ function installPWA() {
   if (isIOS) {
     instructions = `
       <div style="text-align:center;">
-        <div style="font-size:40px;margin-bottom:12px;">📱</div>
+        <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;color:#6366f1;margin-bottom:12px;text-transform:uppercase;">iPhone / iPad</div>
         <h3 style="margin:0 0 12px;font-size:17px;color:#1f2937;">Instalar en iPhone/iPad</h3>
         <div style="text-align:left;font-size:14px;color:#4b5563;line-height:1.8;">
           <p><strong>1.</strong> Toca el botón <strong>Compartir</strong> <span style="font-size:18px;">⬆</span> en Safari</p>
@@ -28561,7 +28806,7 @@ function installPWA() {
   } else if (isChrome) {
     instructions = `
       <div style="text-align:center;">
-        <div style="font-size:40px;margin-bottom:12px;">💻</div>
+        <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;color:#6366f1;margin-bottom:12px;text-transform:uppercase;">Chrome</div>
         <h3 style="margin:0 0 12px;font-size:17px;color:#1f2937;">Instalar en Chrome</h3>
         <div style="text-align:left;font-size:14px;color:#4b5563;line-height:1.8;">
           <p><strong>1.</strong> Haz clic en el ícono <strong>⋮</strong> (menú) arriba a la derecha</p>
@@ -28575,7 +28820,7 @@ function installPWA() {
   } else if (isEdge) {
     instructions = `
       <div style="text-align:center;">
-        <div style="font-size:40px;margin-bottom:12px;">🌐</div>
+        <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;color:#6366f1;margin-bottom:12px;text-transform:uppercase;">Edge</div>
         <h3 style="margin:0 0 12px;font-size:17px;color:#1f2937;">Instalar en Edge</h3>
         <div style="text-align:left;font-size:14px;color:#4b5563;line-height:1.8;">
           <p><strong>1.</strong> Haz clic en el ícono <strong>···</strong> (menú) arriba a la derecha</p>
@@ -28586,7 +28831,7 @@ function installPWA() {
   } else {
     instructions = `
       <div style="text-align:center;">
-        <div style="font-size:40px;margin-bottom:12px;">📲</div>
+        <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;color:#6366f1;margin-bottom:12px;text-transform:uppercase;">Instalar App</div>
         <h3 style="margin:0 0 12px;font-size:17px;color:#1f2937;">Instalar LEKER</h3>
         <div style="font-size:14px;color:#4b5563;line-height:1.8;">
           <p>Abre el menú de tu navegador y busca la opción <strong>"Instalar app"</strong> o <strong>"Agregar a pantalla de inicio"</strong>.</p>
@@ -28646,23 +28891,36 @@ function installPWA() {
   <div id="chat-quick-chips" style="padding:6px 12px 0;display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;border-top:1px solid var(--border);background:var(--bg-card);">
     <button onclick="sendQuickChip('¿Cómo van las rutas de hoy?')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">Rutas de hoy</button>
     <button onclick="sendQuickChip('¿Qué clientes no tienen GPS asignado?')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">Sin GPS</button>
-    <button onclick="sendQuickChip('Dame un resumen de los clientes 80/20 clave')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">⭐ 80/20</button>
-    <button onclick="sendQuickChip('¿Qué vendedor tiene más clientes sin visitar esta semana?')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">Pendientes</button>
+    <button onclick="sendQuickChip('Dame un resumen de los clientes 80/20 clave')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">80/20</button>
+    <button onclick="sendQuickChip('¿Cuánto vendió cada vendedor este mes?')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">Ventas</button>
+    <button onclick="sendQuickChip('¿Cuáles son las cobranzas pendientes más grandes?')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">Cobranzas</button>
   </div>
   <!-- Input -->
-  <div style="padding:8px 12px 10px;display:flex;gap:7px;flex-shrink:0;background:var(--bg-card);">
-    <input id="route-chat-input" type="text" placeholder="Pregunta lo que necesites..." maxlength="400"
-      style="flex:1;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:13px;color:var(--text-primary);outline:none;"
-      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRouteChat();}">
-    <button onclick="sendRouteChat()" style="background:#6366f1;color:white;border:none;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-      <i data-lucide="send" style="width:14px;height:14px;"></i>
-    </button>
+  <div style="padding:8px 12px 4px;flex-shrink:0;background:var(--bg-card);">
+    <div style="display:flex;gap:6px;">
+      <input id="route-chat-input" type="text" placeholder="Pregunta lo que necesites..." maxlength="400"
+        style="flex:1;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:13px;color:var(--text-primary);outline:none;"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRouteChat();}">
+      <button id="route-mic-btn" onclick="_routeMicToggle()" style="background:var(--bg-secondary);border:1px solid var(--border);width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s,border-color 0.2s,box-shadow 0.2s;" title="Dictar por voz">
+        <i data-lucide="mic" style="width:14px;height:14px;color:var(--text-muted);"></i>
+      </button>
+      <button onclick="sendRouteChat()" style="background:#6366f1;color:white;border:none;width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i data-lucide="send" style="width:14px;height:14px;"></i>
+      </button>
+    </div>
+    <div id="route-mic-btn-wave" style="display:none;align-items:center;justify-content:center;gap:3px;height:18px;margin-top:4px;margin-bottom:2px;">
+      <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
+      <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
+      <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
+      <div class="vw-bar"></div><div class="vw-bar"></div>
+      <span style="font-size:10px;color:#ef4444;font-weight:600;margin-left:8px;letter-spacing:0.3px;">Escuchando...</span>
+    </div>
   </div>
 </div>
 
   <!-- LEKER AI — Floating Button + Chat Panel -->
   <div id="leker-ai-fab" onclick="toggleLekerAIPanel()" title="LEKER AI" style="position:fixed;bottom:24px;right:24px;z-index:99991;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 20px rgba(99,102,241,0.5);cursor:pointer;display:none;align-items:center;justify-content:center;transition:right 0.3s cubic-bezier(0.4,0,0.2,1),box-shadow 0.2s;" onmouseenter="this.style.boxShadow='0 6px 28px rgba(99,102,241,0.7)'" onmouseleave="this.style.boxShadow='0 4px 20px rgba(99,102,241,0.5)'">
-    <i data-lucide="bot" style="width:24px;height:24px;color:white;"></i>
+    <span style="font-size:13px;font-weight:800;color:white;letter-spacing:0.5px;line-height:1;">AI</span>
     <div id="ai-fab-badge" style="position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:#10b981;border:2px solid white;display:none;"></div>
   </div>
 
@@ -28671,7 +28929,7 @@ function installPWA() {
     <!-- Header -->
     <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08));">
       <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i data-lucide="bot" style="width:18px;height:18px;color:white;"></i>
+        <i data-lucide="sparkles" style="width:17px;height:17px;color:white;"></i>
       </div>
       <div style="flex:1;">
         <div style="font-size:14px;font-weight:700;color:var(--text-primary);">LEKER AI</div>
@@ -28682,31 +28940,182 @@ function installPWA() {
       </button>
     </div>
     <!-- Quick actions -->
-    <div id="ai-quick-actions" style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;">
-      <button onclick="_aiQuickAsk('¿Cómo está el equipo hoy?')" style="font-size:10px;padding:4px 9px;border-radius:14px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;">📊 Estado hoy</button>
-      <button onclick="_aiQuickAsk('¿Qué clientes 80/20 llevan más de 15 días sin visita?')" style="font-size:10px;padding:4px 9px;border-radius:14px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;">⭐ 80/20 olvidados</button>
-      <button onclick="_aiQuickAsk('¿Qué vendedor tiene más clientes sin GPS?')" style="font-size:10px;padding:4px 9px;border-radius:14px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;">📍 Sin GPS</button>
-      <button onclick="_aiQuickAsk('Dame un resumen de rutas activas y visitas de hoy')" style="font-size:10px;padding:4px 9px;border-radius:14px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;">🗺️ Rutas activas</button>
+    <div id="ai-quick-actions" style="padding:10px 12px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;flex-shrink:0;">
+      <button onclick="_aiQuickAsk('¿Cómo está el equipo hoy? Rutas activas, visitas realizadas y efectividad.')" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid rgba(16,185,129,0.25);background:rgba(16,185,129,0.06);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(16,185,129,0.14)';this.style.borderColor='rgba(16,185,129,0.5)'" onmouseout="this.style.background='rgba(16,185,129,0.06)';this.style.borderColor='rgba(16,185,129,0.25)'">
+        <i data-lucide="activity" style="width:12px;height:12px;color:#10b981;flex-shrink:0;"></i>Estado hoy
+      </button>
+      <button onclick="_aiQuickAsk('¿Qué clientes 80/20 llevan más de 15 días sin visita? Detalla por vendedor.')" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid rgba(245,158,11,0.25);background:rgba(245,158,11,0.06);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.14)';this.style.borderColor='rgba(245,158,11,0.5)'" onmouseout="this.style.background='rgba(245,158,11,0.06)';this.style.borderColor='rgba(245,158,11,0.25)'">
+        <i data-lucide="star" style="width:12px;height:12px;color:#f59e0b;flex-shrink:0;"></i>80/20 pendiente
+      </button>
+      <button onclick="_aiQuickAsk('¿Qué vendedor tiene más clientes sin GPS? Lista los clientes sin coordenadas.')" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid rgba(239,68,68,0.2);background:rgba(239,68,68,0.05);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.12)';this.style.borderColor='rgba(239,68,68,0.4)'" onmouseout="this.style.background='rgba(239,68,68,0.05)';this.style.borderColor='rgba(239,68,68,0.2)'">
+        <i data-lucide="map-pin-off" style="width:12px;height:12px;color:#ef4444;flex-shrink:0;"></i>Sin GPS
+      </button>
+      <button onclick="_aiQuickAsk('Dame un resumen de rutas activas y visitas de hoy, con efectividad por vendedor.')" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid rgba(99,102,241,0.2);background:rgba(99,102,241,0.05);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(99,102,241,0.12)';this.style.borderColor='rgba(99,102,241,0.4)'" onmouseout="this.style.background='rgba(99,102,241,0.05)';this.style.borderColor='rgba(99,102,241,0.2)'">
+        <i data-lucide="route" style="width:12px;height:12px;color:#6366f1;flex-shrink:0;"></i>Rutas activas
+      </button>
+      <button onclick="_aiQuickAsk('¿Cuánto vendió cada vendedor este mes y el anterior? Compara y destaca top y bajo rendimiento.')" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid rgba(16,185,129,0.25);background:rgba(16,185,129,0.06);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(16,185,129,0.14)';this.style.borderColor='rgba(16,185,129,0.5)'" onmouseout="this.style.background='rgba(16,185,129,0.06)';this.style.borderColor='rgba(16,185,129,0.25)'">
+        <i data-lucide="bar-chart-2" style="width:12px;height:12px;color:#10b981;flex-shrink:0;"></i>Ventas vendedor
+      </button>
+      <button onclick="_aiQuickAsk('¿Cuáles son las cobranzas pendientes más grandes? Lista por monto y cliente.')" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid rgba(249,115,22,0.2);background:rgba(249,115,22,0.05);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(249,115,22,0.12)';this.style.borderColor='rgba(249,115,22,0.4)'" onmouseout="this.style.background='rgba(249,115,22,0.05)';this.style.borderColor='rgba(249,115,22,0.2)'">
+        <i data-lucide="clock-alert" style="width:12px;height:12px;color:#f97316;flex-shrink:0;"></i>Cobranzas
+      </button>
     </div>
     <!-- Messages -->
     <div id="ai-chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
-      <div style="text-align:center;padding:20px 0;">
-        <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;"><i data-lucide="bot" style="width:24px;height:24px;color:white;"></i></div>
-        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Hola, soy LEKER AI</div>
-        <div style="font-size:12px;color:var(--text-muted);">Tengo acceso a todos los datos de la plataforma.<br>Pregúntame lo que necesites.</div>
+      <div style="text-align:center;padding:24px 16px 16px;">
+        <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:#6366f1;text-transform:uppercase;margin-bottom:6px;">LEKER AI</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">Acceso completo a clientes, rutas, ventas y cobranzas.<br>Haz una pregunta o usa los accesos rápidos.</div>
       </div>
     </div>
     <!-- Input -->
     <div style="padding:12px 14px;border-top:1px solid var(--border);flex-shrink:0;">
-      <div style="display:flex;gap:8px;align-items:flex-end;">
-        <textarea id="ai-chat-input" placeholder="Escribe tu pregunta..." rows="2" style="flex:1;padding:9px 12px;font-size:13px;border-radius:10px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);resize:none;font-family:inherit;line-height:1.4;outline:none;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage();}"></textarea>
+      <div style="display:flex;gap:6px;align-items:flex-end;">
+        <textarea id="ai-chat-input" placeholder="Escribe o dicta tu pregunta..." rows="2" style="flex:1;padding:9px 12px;font-size:13px;border-radius:10px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);resize:none;font-family:inherit;line-height:1.4;outline:none;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage();}"></textarea>
+        <button id="ai-mic-btn" onclick="_aiToggleMic()" style="width:38px;height:38px;border-radius:10px;background:var(--bg-secondary);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s,border-color 0.2s,box-shadow 0.2s;" title="Dictar por voz">
+          <i data-lucide="mic" style="width:16px;height:16px;color:var(--text-muted);"></i>
+        </button>
         <button onclick="sendAIMessage()" style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Enviar">
           <i data-lucide="send" style="width:16px;height:16px;color:white;"></i>
         </button>
       </div>
-      <div style="font-size:10px;color:var(--text-muted);margin-top:5px;text-align:center;">Enter para enviar · Shift+Enter para nueva línea</div>
+      <div id="ai-mic-btn-hint" style="font-size:10px;color:var(--text-muted);margin-top:5px;text-align:center;">Enter para enviar · Shift+Enter para nueva línea</div>
+      <div id="ai-mic-btn-wave" style="display:none;align-items:center;justify-content:center;gap:3px;height:22px;margin-top:5px;">
+        <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
+        <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
+        <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
+        <div class="vw-bar"></div><div class="vw-bar"></div>
+        <span style="font-size:10px;color:#ef4444;font-weight:600;margin-left:8px;letter-spacing:0.3px;">Escuchando...</span>
+      </div>
     </div>
   </div>
+
+  <script>
+  // ── LEKER AI Voice Dictation (ambos paneles) ─────────────────────────────
+  (function() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return; // No soportado en este browser
+
+    // Web Audio visualizer — mueve barras según el volumen real del micrófono
+    async function _startVisualizer(waveId) {
+      const wave = document.getElementById(waveId);
+      if (!wave) return null;
+      const bars = wave.querySelectorAll('.vw-bar');
+      if (!bars.length) return null;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) throw new Error('no AudioContext');
+        const ctx = new AC();
+        const src = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 64;               // 32 bins de frecuencia
+        analyser.smoothingTimeConstant = 0.75;
+        src.connect(analyser);
+        const data = new Uint8Array(analyser.frequencyBinCount); // 32
+        // Mapa simétrico: voz humana ~200Hz-3kHz → bins 1-7 en 44100Hz/64
+        // 11 barras: espejo desde el centro
+        const binMap = [7, 6, 5, 4, 3, 2, 3, 4, 5, 6, 7];
+        let rafId;
+        function draw() {
+          rafId = requestAnimationFrame(draw);
+          analyser.getByteFrequencyData(data);
+          bars.forEach((b, i) => {
+            const v = data[binMap[i]];
+            const h = Math.max(3, Math.round((v / 255) * 20));
+            b.style.height = h + 'px';
+            b.style.opacity = Math.max(0.35, v / 255).toFixed(2);
+          });
+        }
+        draw();
+        return {
+          stop() {
+            cancelAnimationFrame(rafId);
+            stream.getTracks().forEach(t => t.stop());
+            ctx.close();
+            bars.forEach(b => { b.style.height = '3px'; b.style.opacity = '0.35'; });
+          }
+        };
+      } catch(_) {
+        return null; // Sin permiso o no soportado — las barras quedan quietas
+      }
+    }
+
+    function _makeMicToggle(inputId, btnId, onEnd) {
+      let rec = null, listening = false, silenceTimer = null, viz = null;
+      return function() {
+        if (listening) { clearTimeout(silenceTimer); rec && rec.stop(); return; }
+        rec = new SR();
+        rec.lang = 'es-CL';
+        rec.continuous = true;
+        rec.interimResults = true;
+        const btn = document.getElementById(btnId);
+        const input = document.getElementById(inputId);
+        const iconSize = btnId === 'ai-mic-btn' ? '16px' : '14px';
+
+        rec.onstart = () => {
+          listening = true;
+          if (btn) {
+            btn.style.background = 'rgba(239,68,68,0.15)';
+            btn.style.borderColor = '#ef4444';
+            btn.classList.add('mic-recording');
+            btn.innerHTML = `<i data-lucide="mic" style="width:${iconSize};height:${iconSize};color:#ef4444;"></i>`;
+            _createIcons(btn);
+          }
+          const wave = document.getElementById(btnId + '-wave');
+          const hint = document.getElementById(btnId + '-hint');
+          if (wave) wave.style.display = 'flex';
+          if (hint) hint.style.display = 'none';
+          // Arrancar visualizador de audio real
+          _startVisualizer(btnId + '-wave').then(v => { viz = v; });
+          // Safety: para después de 45 segundos
+          silenceTimer = setTimeout(() => rec && rec.stop(), 45000);
+        };
+
+        rec.onresult = (e) => {
+          let final = '', interim = '';
+          for (let i = 0; i < e.results.length; i++) {
+            if (e.results[i].isFinal) final += e.results[i][0].transcript + ' ';
+            else interim += e.results[i][0].transcript;
+          }
+          if (input) input.value = (final + interim).trim();
+          clearTimeout(silenceTimer);
+          silenceTimer = setTimeout(() => rec && rec.stop(), 3000);
+        };
+
+        const _onStop = () => {
+          if (!listening) return;
+          listening = false;
+          clearTimeout(silenceTimer);
+          if (viz) { viz.stop(); viz = null; }
+          if (btn) {
+            btn.style.background = 'var(--bg-secondary)';
+            btn.style.borderColor = 'var(--border)';
+            btn.style.boxShadow = '';
+            btn.classList.remove('mic-recording');
+            btn.innerHTML = `<i data-lucide="mic" style="width:${iconSize};height:${iconSize};color:var(--text-muted);"></i>`;
+            _createIcons(btn);
+          }
+          const wave = document.getElementById(btnId + '-wave');
+          const hint = document.getElementById(btnId + '-hint');
+          if (wave) wave.style.display = 'none';
+          if (hint) hint.style.display = 'block';
+          if (input && input.value.trim()) onEnd();
+        };
+
+        rec.onend = _onStop;
+        rec.onerror = _onStop;
+        rec.start();
+      };
+    }
+
+    window._routeMicToggle = _makeMicToggle('route-chat-input', 'route-mic-btn', () => sendRouteChat());
+
+    let _rec = null;
+    let _listening = false;
+
+    window._aiToggleMic = _makeMicToggle('ai-chat-input', 'ai-mic-btn', () => sendAIMessage());
+  })();
+  </script>
   <!-- AI Panel backdrop removed — panel no bloquea la app -->
 
 </body>

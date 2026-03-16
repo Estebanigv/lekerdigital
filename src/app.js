@@ -13,9 +13,22 @@ const n8nService = require('./services/n8n.service');
 const googleSheetsService = require('./services/googleSheets.service');
 const cneService = require('./services/cne.service');
 
-// Auth
+// Auth + Security
 const authRouter = require('./modules/auth/auth.controller');
 const { authenticate, authorize } = require('./middlewares/auth');
+const { webhookAuth } = require('./middlewares/webhookAuth');
+const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
+const helmet = require('helmet');
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 30,
+  keyGenerator: (req) => req.user?.id || ipKeyGenerator(req),
+  message: { success: false, error: 'Límite de consultas IA alcanzado. Intenta en 1 hora.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // OpenAI
 const OpenAI = require('openai');
@@ -29,7 +42,18 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
 });
 
-app.use(cors());
+// CORS: solo orígenes propios en producción
+const corsOrigins = process.env.NODE_ENV === 'production'
+  ? (process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : true)
+  : true; // dev: permitir todo
+app.use(cors({ origin: corsOrigins, credentials: true }));
+
+// Security headers (Helmet) — desactivar CSP para no romper inline scripts del SPA
+app.use(helmet({
+  contentSecurityPolicy: false,  // El SPA usa scripts inline; CSP requiere refactor mayor
+  crossOriginEmbedderPolicy: false,
+}));
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -50,6 +74,127 @@ app.use('/api', (req, res, next) => {
   authenticate(req, res, next);
 });
 app.use('/routes', authenticate);
+
+// =============================================
+// SHEETS CONTEXT CACHE — para LEKER AI
+// Lee Ventas, Cobranzas, 80-20 y genera resumen para el sistema prompt
+// TTL: 5 minutos
+// =============================================
+let _sheetsCache = { data: null, ts: 0 };
+const SHEETS_CACHE_TTL = 5 * 60 * 1000;
+
+async function _buildSheetsContext() {
+  const now = Date.now();
+  if (_sheetsCache.data && (now - _sheetsCache.ts) < SHEETS_CACHE_TTL) {
+    return _sheetsCache.data;
+  }
+  if (!googleSheetsService.isConfigured()) return '';
+
+  const parseNum = s => parseFloat(String(s || '').replace(/\./g, '').replace(',', '.')) || 0;
+  const fmt = n => '$' + Math.round(n).toLocaleString('es-CL');
+
+  try {
+    const [ventasRows, cobranzasRows, rows8020] = await Promise.all([
+      googleSheetsService.getSheet('Ventas por Mes Clientes').catch(() => []),
+      googleSheetsService.getSheet('Cobranzas').catch(() => []),
+      googleSheetsService.getSheet('80-20 Vendedores').catch(() => []),
+    ]);
+
+    let ctx = '';
+
+    // ── VENTAS ──────────────────────────────────────────────────────────────
+    // Row 0: vacía, Row 1: headers, Row 2+: datos
+    // Cols: 0=Cod, 1=Nombre, 5=Total Neto$, 6=Vendedor, 7=Mes, 8=Año, 9=Zona
+    const ventasByVendedor = {}; // { vendedor: { 'mes/año': total } }
+    const ventasByMes = {};
+    const topClients = {};
+
+    for (const row of ventasRows.slice(2)) {
+      if (!row || row.length < 9) continue;
+      const vendedor = (row[6] || '').trim() || 'Sin vendedor';
+      const mes = (row[7] || '').trim();
+      const anio = (row[8] || '').trim();
+      const total = parseNum(row[5]);
+      const nombre = (row[1] || '').trim();
+      if (!mes || !anio || total === 0) continue;
+      const mk = `${mes}/${anio}`;
+      if (!ventasByVendedor[vendedor]) ventasByVendedor[vendedor] = {};
+      ventasByVendedor[vendedor][mk] = (ventasByVendedor[vendedor][mk] || 0) + total;
+      ventasByMes[mk] = (ventasByMes[mk] || 0) + total;
+      if (nombre) topClients[nombre] = (topClients[nombre] || 0) + total;
+    }
+
+    const mesesSorted = Object.entries(ventasByMes)
+      .sort((a, b) => {
+        const [ma, ya] = a[0].split('/'); const [mb, yb] = b[0].split('/');
+        return (parseInt(yb) * 12 + parseInt(mb)) - (parseInt(ya) * 12 + parseInt(ma));
+      }).slice(0, 4);
+
+    ctx += '\n=== VENTAS (Google Sheet — datos reales) ===\n';
+    ctx += 'Totales por período:\n';
+    for (const [mk, mv] of mesesSorted) {
+      const [m, y] = mk.split('/');
+      ctx += `  Mes ${m}/${y}: ${fmt(mv)}\n`;
+    }
+    ctx += 'Por vendedor (períodos recientes):\n';
+    for (const [vend, meses] of Object.entries(ventasByVendedor)) {
+      const totalVend = Object.values(meses).reduce((a, b) => a + b, 0);
+      const detalles = mesesSorted.map(([mk]) => meses[mk] ? `${mk.replace('/', '-')}: ${fmt(meses[mk])}` : null).filter(Boolean).join(' | ');
+      ctx += `  ${vend}: total=${fmt(totalVend)}${detalles ? ' | ' + detalles : ''}\n`;
+    }
+    const topClientsSorted = Object.entries(topClients).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    ctx += 'Top 10 clientes por venta acumulada:\n';
+    topClientsSorted.forEach(([n, v], i) => { ctx += `  ${i + 1}. ${n}: ${fmt(v)}\n`; });
+
+    // ── COBRANZAS ────────────────────────────────────────────────────────────
+    // Row 0: vacía, Row 1: vacía, Row 2: headers, Row 3+: datos
+    // Cols: 0=Cod, 2=Nombre, 4=FechaVenc, 5=Saldo, 6=Vendedor
+    const cobrData = cobranzasRows.slice(3).filter(r => r && r[2]);
+    const cobByVendedor = {};
+    let totalCob = 0;
+
+    for (const row of cobrData) {
+      const vendedor = (row[6] || '').trim() || 'Sin vendedor';
+      const saldo = parseNum(row[5]);
+      const nombre = (row[2] || '').trim();
+      const vencimiento = (row[4] || '').trim();
+      if (!cobByVendedor[vendedor]) cobByVendedor[vendedor] = { total: 0, count: 0, items: [] };
+      cobByVendedor[vendedor].total += saldo;
+      cobByVendedor[vendedor].count++;
+      cobByVendedor[vendedor].items.push({ nombre, saldo, vencimiento });
+      totalCob += saldo;
+    }
+
+    ctx += `\n=== COBRANZAS PENDIENTES (Google Sheet — datos reales) ===\n`;
+    ctx += `Total general: ${fmt(totalCob)} (${cobrData.length} documentos)\n`;
+    for (const [vend, info] of Object.entries(cobByVendedor)) {
+      ctx += `  ${vend}: ${fmt(info.total)} (${info.count} docs)\n`;
+    }
+    const topCob = cobrData
+      .map(r => ({ nombre: (r[2] || '').trim(), saldo: parseNum(r[5]), vendedor: (r[6] || '?').trim(), vencimiento: (r[4] || '').trim() }))
+      .sort((a, b) => b.saldo - a.saldo).slice(0, 8);
+    ctx += 'Mayores cobranzas pendientes:\n';
+    topCob.forEach((p, i) => { ctx += `  ${i + 1}. ${p.nombre} (${p.vendedor}): ${fmt(p.saldo)} — vence ${p.vencimiento}\n`; });
+
+    // ── 80-20 ─────────────────────────────────────────────────────────────
+    // Headers: Ranking, Cliente, Nombre, FINAL (vendedor), Segmento
+    const data8020 = rows8020.slice(1).filter(r => r && r[1]);
+    ctx += `\n=== CLIENTES 80-20 (Google Sheet) ===\n`;
+    ctx += `Total: ${data8020.length} clientes\n`;
+    const by8020Vend = {};
+    for (const row of data8020) {
+      const v = (row[3] || '?').trim();
+      by8020Vend[v] = (by8020Vend[v] || 0) + 1;
+    }
+    for (const [v, c] of Object.entries(by8020Vend)) { ctx += `  ${v}: ${c} clientes 80-20\n`; }
+
+    _sheetsCache = { data: ctx, ts: now };
+    return ctx;
+  } catch (e) {
+    console.error('[SheetsContext]', e.message);
+    return '';
+  }
+}
 
 // =============================================
 // CONFIGURACIÓN - Precio bencina (en memoria)
@@ -127,7 +272,7 @@ app.put('/api/config/fuel-price', authorize('admin'), (req, res) => {
 // =============================================
 // AI ASSISTANT (OpenAI / ChatGPT)
 // =============================================
-app.post('/api/assistant/chat', authenticate, async (req, res) => {
+app.post('/api/assistant/chat', authenticate, aiLimiter, async (req, res) => {
   try {
     const { message, context, history } = req.body;
 
@@ -1035,7 +1180,7 @@ app.get('/routes/vehicle-config', (req, res) => {
 // =============================================
 
 // Webhook: Actualización de precios (scraping)
-app.post('/webhooks/n8n-price-update', async (req, res) => {
+app.post('/webhooks/n8n-price-update', webhookAuth, async (req, res) => {
   try {
     const { prices, productSku, competitorName, detectedPrice, source, evidenceUrl } = req.body;
     const priceData = prices || { productSku, competitorName, detectedPrice, source, evidenceUrl };
@@ -1053,7 +1198,7 @@ app.post('/webhooks/n8n-price-update', async (req, res) => {
 });
 
 // Webhook: Sincronización de clientes desde ERP/CRM
-app.post('/webhooks/n8n-sync-clients', async (req, res) => {
+app.post('/webhooks/n8n-sync-clients', webhookAuth, async (req, res) => {
   try {
     const { clients, mode = 'upsert' } = req.body;
 
@@ -1093,7 +1238,7 @@ app.post('/webhooks/n8n-sync-clients', async (req, res) => {
 });
 
 // Webhook: Sincronización de productos
-app.post('/webhooks/n8n-sync-products', async (req, res) => {
+app.post('/webhooks/n8n-sync-products', webhookAuth, async (req, res) => {
   try {
     const { products, mode = 'upsert' } = req.body;
 
@@ -1116,7 +1261,7 @@ app.post('/webhooks/n8n-sync-products', async (req, res) => {
 });
 
 // Webhook: Sincronización de ejecutivos
-app.post('/webhooks/n8n-sync-users', async (req, res) => {
+app.post('/webhooks/n8n-sync-users', webhookAuth, async (req, res) => {
   try {
     const { users, mode = 'upsert' } = req.body;
 
@@ -1145,7 +1290,7 @@ app.post('/webhooks/n8n-sync-users', async (req, res) => {
 });
 
 // Webhook: Comparativo de competencia desde n8n (LEKER v32 - STOCKS FIX)
-app.post('/webhooks/n8n-comparativo', async (req, res) => {
+app.post('/webhooks/n8n-comparativo', webhookAuth, async (req, res) => {
   try {
     const { items, data, productos, comparativo } = req.body;
 
@@ -1861,6 +2006,42 @@ app.post('/api/clients/update-visit-frequency', async (req, res) => {
 // DASHBOARD MEJORADO
 // =============================================
 
+// Ventas por vendedor desde Google Sheets para un mes dado
+app.get('/api/dashboard/vendor-sales', authorize('admin', 'supervisor', 'zonal'), async (req, res) => {
+  const month = req.query.month || new Date().toISOString().slice(0, 7);
+  const [year, monthNum] = month.split('-');
+  if (!googleSheetsService.isConfigured()) {
+    return res.json({ success: true, data: {}, configured: false });
+  }
+  try {
+    const rows = await googleSheetsService.getSheet('Ventas por Mes Clientes');
+    const parseNum = s => parseFloat(String(s || '').replace(/\./g, '').replace(',', '.')) || 0;
+    const normV = n => String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
+    const sales = {};
+    const clientSets = {};
+    for (const row of rows.slice(2)) {
+      if (!row || row.length < 9) continue;
+      const vendedor = (row[6] || '').trim();
+      const mes = String(row[7] || '').trim();
+      const anio = String(row[8] || '').trim();
+      const total = parseNum(row[5]);
+      const cod = (row[0] || '').trim();
+      if (mes !== String(parseInt(monthNum)) || anio !== year || total === 0) continue;
+      const key = normV(vendedor);
+      if (!sales[key]) { sales[key] = { total: 0, raw: vendedor }; clientSets[key] = new Set(); }
+      sales[key].total += total;
+      if (cod) clientSets[key].add(cod);
+    }
+    const data = {};
+    for (const [k, v] of Object.entries(sales)) {
+      data[k] = { total: v.total, raw: v.raw, clientsWithSale: clientSets[k].size };
+    }
+    res.json({ success: true, data, month });
+  } catch (e) {
+    res.json({ success: false, error: e.message, data: {} });
+  }
+});
+
 // Estadísticas por vendedor
 app.get('/api/dashboard/vendor-stats', async (req, res) => {
   try {
@@ -2145,7 +2326,7 @@ app.post('/api/gsheets/push', async (req, res) => {
   try {
     const { rows, secret } = req.body;
     // Verificar token simple
-    if (secret !== (process.env.SHEETS_WEBHOOK_SECRET || 'leker-sheets-2026')) {
+    if (!process.env.SHEETS_WEBHOOK_SECRET || secret !== process.env.SHEETS_WEBHOOK_SECRET) {
       return res.status(403).json({ success: false, error: 'Forbidden' });
     }
     if (!rows || !Array.isArray(rows) || rows.length === 0) {
@@ -2501,7 +2682,7 @@ Solo usa fechas de los días disponibles. UUIDs exactos de las listas ids_8020/i
  * Recibe lista de clientes del vendedor y devuelve recomendación de prioridad de visitas.
  * Body: { userId, clients: [{name, segmentation, lastVisit, visitCount, address, commune}], weekdays }
  */
-app.post('/api/ai/route-advisor', authenticate, async (req, res) => {
+app.post('/api/ai/route-advisor', authenticate, aiLimiter, async (req, res) => {
   try {
     const { clients, weekdays, vendorName } = req.body;
     if (!clients || clients.length === 0) {
@@ -2547,7 +2728,7 @@ Por favor:
  * Resume las visitas recientes de un vendedor y sugiere acciones.
  * Body: { visits: [{clientName, outcome, date, notes}], vendorName }
  */
-app.post('/api/ai/visit-summary', authenticate, async (req, res) => {
+app.post('/api/ai/visit-summary', authenticate, aiLimiter, async (req, res) => {
   try {
     const { visits, vendorName } = req.body;
     if (!visits || visits.length === 0) {
@@ -2579,7 +2760,7 @@ Resume: tasa de éxito, clientes que necesitan seguimiento urgente, y 3 acciones
  * Analiza un cliente específico y da recomendación de acción.
  * Body: { client: {...}, visitHistory: [...] }
  */
-app.post('/api/ai/client-insight', authenticate, async (req, res) => {
+app.post('/api/ai/client-insight', authenticate, aiLimiter, async (req, res) => {
   try {
     const { client, visitHistory } = req.body;
     if (!client) return res.status(400).json({ success: false, error: 'Se requiere cliente' });
@@ -2611,7 +2792,7 @@ Visitas: ${visits || 'ninguna registrada'}
  * Analiza clientes con baja conversión y recomienda ajustar frecuencia.
  * Body: { userId }
  */
-app.post('/api/ai/frequency-analysis', authenticate, async (req, res) => {
+app.post('/api/ai/frequency-analysis', authenticate, aiLimiter, async (req, res) => {
   try {
     const { userId } = req.body;
 
@@ -2661,7 +2842,7 @@ Para cada uno recomienda: mantener frecuencia actual, reducir a cada 45 días, o
 
 // ─── AI Company Pulse ────────────────────────────────────────────────────────
 // Returns proactive platform-wide analysis: alerts, opportunities, team status
-app.post('/api/ai/company-pulse', authorize('admin', 'supervisor', 'zonal'), async (req, res) => {
+app.post('/api/ai/company-pulse', authorize('admin', 'supervisor', 'zonal'), aiLimiter, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
 
@@ -2777,7 +2958,7 @@ Responde en español. Usa emojis. Máximo 10 líneas total. Sé directo y accion
  * Puede responder preguntas, sugerir cambios, explicar decisiones.
  * Body: { message, routeContext: { vendorName, days, totalStats }, history: [{role,content}] }
  */
-app.post('/api/ai/route-chat', authenticate, async (req, res) => {
+app.post('/api/ai/route-chat', authenticate, aiLimiter, async (req, res) => {
   try {
     if (!openai) return res.status(400).json({ success: false, error: 'OpenAI no configurado' });
     const { message, platformContext, routeContext, history = [] } = req.body;
@@ -2862,26 +3043,31 @@ app.post('/api/ai/route-chat', authenticate, async (req, res) => {
       if (totalStats) contextBlock += `${totalStats.totalClients} clientes, ${totalStats.totalDays} días, ${totalStats.distanceKm} km\n`;
     }
 
-    const systemPrompt = `Eres LEKER AI, el asistente inteligente de la plataforma Leker (distribuidora de productos de limpieza y hogar en Chile).
+    // Incluir datos reales de Google Sheets (ventas, cobranzas, 80-20) — con caché 5min
+    const sheetsCtx = await _buildSheetsContext().catch(() => '');
 
-DATOS REALES DE LA PLATAFORMA EN ESTE MOMENTO:
-${contextBlock}
+    const systemPrompt = `Eres LEKER AI, asistente inteligente de Leker (distribuidora Chile).
+Tienes acceso a TODOS los datos reales del negocio: clientes, rutas, vendedores, ventas, cobranzas, 80-20.
 
-TU ROL:
-- Responde preguntas usando los datos reales de arriba (clientes, vendedores, rutas, GPS, segmentación)
-- Si preguntan por un vendedor, usa SUS datos específicos de la lista
-- Para rutas: menciona comunas, cantidad de clientes, clientes sin GPS
-- Detecta oportunidades: clientes sin GPS que bloquean ruteo, clientes 80/20 no visitados, zonas ineficientes
-- Sé proactivo: si ves algo importante en los datos, mencíonalo
-- Responde SIEMPRE en español, de forma concisa y directa (máx 6 líneas salvo que pidan detalle)
-- NO pidas información que ya tienes en el contexto`;
+REGLAS DE FORMATO (obligatorias):
+- Nombres de vendedor SIEMPRE en mayúsculas: E.IBARRA, D.TARICCO, RUBILAR, etc.
+- Montos de dinero con formato **$X.XXX.XXX** (bold + signo pesos + puntos miles)
+- Porcentajes con formato **XX%**
+- Para listar métricas por vendedor usa formato: Vendedor | Métrica1: valor | Métrica2: valor
+- Secciones con ### Título
+- Datos clave con "Etiqueta: valor" (una por línea)
+- Bullets con - para listas
+- Responde en español. Máx 8 líneas salvo que pidan detalle.
+- NO pidas info que ya tienes.
+
+${contextBlock}${sheetsCtx}`;
 
     const recentHistory = history.slice(-8).map(m => ({ role: m.role, content: m.content }));
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       temperature: 0.4,
-      max_tokens: 600,
+      max_tokens: 800,
       messages: [
         { role: 'system', content: systemPrompt },
         ...recentHistory,
@@ -2901,7 +3087,7 @@ TU ROL:
  * POST /api/ai/route-chat/stream
  * Versión streaming del chat — texto aparece en tiempo real (SSE)
  */
-app.post('/api/ai/route-chat/stream', authenticate, async (req, res) => {
+app.post('/api/ai/route-chat/stream', authenticate, aiLimiter, async (req, res) => {
   try {
     if (!openai) return res.status(400).json({ success: false, error: 'OpenAI no configurado' });
     const { message, platformContext, history = [] } = req.body;
@@ -2953,10 +3139,24 @@ app.post('/api/ai/route-chat/stream', authenticate, async (req, res) => {
       }
     }
 
-    const systemPrompt = `Eres LEKER AI, asistente de la plataforma Leker (distribuidora Chile).
-DATOS REALES:
-${contextBlock}
-ROL: Responde usando los datos reales. NO pidas info que ya tienes. Sé conciso y directo. Español siempre. Máx 6 líneas salvo que pidan detalle.`;
+    // Incluir datos reales de Google Sheets (ventas, cobranzas, 80-20) — con caché 5min
+    const sheetsCtx = await _buildSheetsContext().catch(() => '');
+
+    const systemPrompt = `Eres LEKER AI, asistente inteligente de Leker (distribuidora Chile).
+Tienes acceso a TODOS los datos reales del negocio: clientes, rutas, vendedores, ventas, cobranzas, 80-20.
+
+REGLAS DE FORMATO (obligatorias):
+- Nombres de vendedor SIEMPRE en mayúsculas: E.IBARRA, D.TARICCO, RUBILAR, etc.
+- Montos de dinero con formato **$X.XXX.XXX** (bold + signo pesos + puntos miles)
+- Porcentajes con formato **XX%**
+- Para listar métricas por vendedor usa formato: Vendedor | Métrica1: valor | Métrica2: valor
+- Secciones con ### Título
+- Datos clave con "Etiqueta: valor" (una por línea)
+- Bullets con - para listas
+- Responde en español. Máx 8 líneas salvo que pidan detalle.
+- NO pidas info que ya tienes.
+
+${contextBlock}${sheetsCtx}`;
 
     // SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
@@ -2969,7 +3169,7 @@ ROL: Responde usando los datos reales. NO pidas info que ya tienes. Sé conciso 
     const stream = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       temperature: 0.4,
-      max_tokens: 600,
+      max_tokens: 800,
       stream: true,
       messages: [
         { role: 'system', content: systemPrompt },

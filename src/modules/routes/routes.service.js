@@ -121,17 +121,59 @@ function twoOptImprovement(route) {
   return bestRoute;
 }
 
-// Nearest Neighbor + 2-opt improvement
+/**
+ * Or-opt: intenta reubicar cada cliente a una mejor posición.
+ * Complementa 2-opt capturando mejoras que este no detecta.
+ * O(n²) por iteración, max 30 iteraciones — seguro para n≤10.
+ */
+function orOptImprovement(route) {
+  if (!route || route.length < 3) return route;
+
+  let best = [...route];
+  let bestDist = routeTotalDistance(best);
+  let improved = true;
+  let iterations = 0;
+
+  while (improved && iterations < 30) {
+    improved = false;
+    iterations++;
+
+    for (let i = 0; i < best.length; i++) {
+      for (let j = 0; j < best.length - 1; j++) {
+        if (j === i || j === i - 1) continue;
+
+        // Mover cliente i → insertarlo después de j
+        const candidate = best.filter((_, idx) => idx !== i);
+        const insertAt = j < i ? j + 1 : j;
+        candidate.splice(insertAt, 0, best[i]);
+
+        const dist = routeTotalDistance(candidate);
+        if (dist < bestDist - 0.001) {
+          best = candidate;
+          bestDist = dist;
+          improved = true;
+          break;
+        }
+      }
+      if (improved) break;
+    }
+  }
+
+  return best;
+}
+
+// Nearest Neighbor + 2-opt + or-opt improvement
 function optimizeRouteOrder(clients, startPoint = null) {
   const nn = nearestNeighborTSP(clients, startPoint);
   if (nn.route.length < 4) return nn;
 
-  const improvedRoute = twoOptImprovement(nn.route);
-  const improvedDistance = routeTotalDistance(improvedRoute);
+  const afterTwoOpt = twoOptImprovement(nn.route);
+  const afterOrOpt = orOptImprovement(afterTwoOpt);
+  const finalDist = routeTotalDistance(afterOrOpt);
 
   return {
-    route: improvedRoute,
-    totalDistance: Math.round(improvedDistance * 10) / 10
+    route: afterOrOpt,
+    totalDistance: Math.round(finalDist * 10) / 10
   };
 }
 
@@ -148,13 +190,11 @@ function clusterClientsByProximity(clients) {
 
   if (!clients || clients.length === 0) return [];
 
-  // Sort by priority: 80-20 first, then L, then N
-  const priorityOrder = { '80-20': 0, 'L': 1, 'N': 2 };
-  const sorted = [...clients].sort((a, b) => {
-    const pa = priorityOrder[a.segmentation] ?? 2;
-    const pb = priorityOrder[b.segmentation] ?? 2;
-    return pa - pb;
-  });
+  // Sort by priority score (incluye segmentación + días vencido + fallos consecutivos)
+  const now = new Date();
+  const sorted = [...clients].sort((a, b) =>
+    clientPriorityScore(b, now) - clientPriorityScore(a, now)
+  );
 
   const assigned = new Set();
   const clusters = [];
@@ -269,6 +309,41 @@ function calculateFuelCost(distanceKm, fuelEfficiency = VEHICLE_CONFIG.FUEL_EFFI
     fuelPriceCLP: VEHICLE_CONFIG.FUEL_PRICE_CLP,
     fuelType: VEHICLE_CONFIG.FUEL_TYPE
   };
+}
+
+/**
+ * Calcula score de prioridad para un cliente.
+ * Mayor score = visitar antes en la semana.
+ * Considera: segmentación, días desde última visita, ventas consecutivas fallidas.
+ */
+function clientPriorityScore(client, now = new Date()) {
+  let score = 0;
+
+  // Segmentación base
+  if (client.segmentation === '80-20') score += 100;
+  else if (client.segmentation === 'L') score += 50;
+  else score += 20;
+
+  // Bonus por estar vencido (no visitado según frecuencia)
+  if (client.last_visit_at) {
+    const daysSince = Math.floor((now - new Date(client.last_visit_at)) / 86400000);
+    const freq = client.visit_frequency_days || 30;
+    const ratio = daysSince / freq;
+    if (ratio >= 2.0) score += 40;       // Muy vencido
+    else if (ratio >= 1.5) score += 30;  // Vencido
+    else if (ratio >= 1.0) score += 20;  // Justo a tiempo
+    else if (ratio >= 0.7) score += 10;  // Próximo
+  } else {
+    score += 35; // Nunca visitado = alta prioridad
+  }
+
+  // Penalidad por fallas consecutivas (no vale la pena visitar ahora)
+  const noSales = client.consecutive_no_sale || 0;
+  if (noSales >= 5) score -= 35;
+  else if (noSales >= 3) score -= 20;
+  else if (noSales >= 2) score -= 8;
+
+  return score;
 }
 
 class RoutesService {
@@ -610,7 +685,8 @@ class RoutesService {
    */
   _geocodeAddress(address) {
     const https = require('https');
-    const key = process.env.GOOGLE_MAPS_KEY || 'AIzaSyA7s1MSGD_1AXZgRHue38c1TteTFiwnt4Q';
+    const key = process.env.GOOGLE_MAPS_KEY;
+    if (!key) throw new Error('GOOGLE_MAPS_KEY no configurado en variables de entorno');
     return new Promise((resolve, reject) => {
       const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}&region=cl&language=es`;
       https.get(url, res => {
@@ -1569,7 +1645,7 @@ class RoutesService {
     // Query 1: clientes asignados al vendedor con coords
     let query = supabase
       .from('clients')
-      .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, priority, zone')
+      .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, priority, zone, last_visit_at, visit_frequency_days, consecutive_no_sale')
       .eq('assigned_user_id', userId)
       .not('lat', 'is', null)
       .not('lng', 'is', null);
@@ -1590,7 +1666,7 @@ class RoutesService {
       if (communes.length > 0) {
         let uQuery = supabase
           .from('clients')
-          .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, priority, zone')
+          .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, priority, zone, last_visit_at, visit_frequency_days, consecutive_no_sale')
           .is('assigned_user_id', null)
           .not('lat', 'is', null)
           .not('lng', 'is', null);
@@ -2237,6 +2313,99 @@ class RoutesService {
   }
 
   /**
+   * Asigna clusters a días respetando cohesión geográfica.
+   * En lugar de "primer día que cabe" usa la distancia entre centroides
+   * para que cada día cubra una zona geográfica coherente.
+   */
+  _geographicDayAssignment(clusters, weekdays, MAX_MINUTES, SPEED_KMH, VISIT_MIN) {
+    // Helper: centroide de un grupo de clientes
+    function centroid(members) {
+      const withCoords = members.filter(c => c.lat && c.lng);
+      if (!withCoords.length) return null;
+      return {
+        lat: withCoords.reduce((s, c) => s + parseFloat(c.lat), 0) / withCoords.length,
+        lng: withCoords.reduce((s, c) => s + parseFloat(c.lng), 0) / withCoords.length
+      };
+    }
+
+    // Helper: tiempo estimado del día
+    function dayTime(clients) {
+      if (!clients.length) return 0;
+      const withCoords = clients.filter(c => c.lat && c.lng);
+      if (withCoords.length < 2) return clients.length * VISIT_MIN;
+      const { totalDistance } = nearestNeighborTSP(withCoords);
+      return (totalDistance / SPEED_KMH) * 60 + clients.length * VISIT_MIN;
+    }
+
+    // Ordenar clusters: primero los que tienen clientes 80-20, luego por tamaño desc
+    const now = new Date();
+    const sortedClusters = [...clusters].sort((a, b) => {
+      const aScore = Math.max(...a.map(c => clientPriorityScore(c, now)));
+      const bScore = Math.max(...b.map(c => clientPriorityScore(c, now)));
+      return bScore - aScore;
+    });
+
+    const schedule = {};
+    weekdays.forEach(d => { schedule[d] = []; });
+
+    for (const cluster of sortedClusters) {
+      const clsCtr = centroid(cluster);
+
+      // Buscar el mejor día: 1) tiene espacio, 2) centroide más cercano al cluster
+      let bestDay = null;
+      let bestScore = Infinity;
+
+      for (const day of weekdays) {
+        const combined = [...schedule[day], ...cluster];
+        if (dayTime(combined) > MAX_MINUTES) continue;
+
+        let geoScore;
+        if (schedule[day].length === 0) {
+          // Día vacío: ligera preferencia para no empezar nuevo día innecesariamente
+          geoScore = 9999;
+        } else {
+          const dayCtr = centroid(schedule[day]);
+          geoScore = (clsCtr && dayCtr)
+            ? haversineDistance(dayCtr.lat, dayCtr.lng, clsCtr.lat, clsCtr.lng)
+            : 9999;
+        }
+
+        // Preferir día con clientes existentes y cercano geográficamente
+        const fillBonus = schedule[day].length > 0 ? -20 : 0;
+        const finalScore = geoScore + fillBonus;
+
+        if (finalScore < bestScore) {
+          bestScore = finalScore;
+          bestDay = day;
+        }
+      }
+
+      if (bestDay) {
+        schedule[bestDay].push(...cluster);
+      } else {
+        // Sin espacio: repartir cliente a cliente en el día menos cargado
+        for (const client of cluster) {
+          let placed = false;
+          for (const day of weekdays) {
+            if (dayTime([...schedule[day], client]) <= MAX_MINUTES) {
+              schedule[day].push(client);
+              placed = true;
+              break;
+            }
+          }
+          if (!placed) {
+            const leastLoaded = weekdays.reduce((best, d) =>
+              schedule[d].length < schedule[best].length ? d : best, weekdays[0]);
+            schedule[leastLoaded].push(client);
+          }
+        }
+      }
+    }
+
+    return schedule;
+  }
+
+  /**
    * Divide clientes en días hábiles usando clustering geográfico por proximidad.
    * Reemplaza la lógica anterior de agrupación por comuna con clusters basados en haversine.
    * @param {Array} clientsToVisit - Clientes a distribuir
@@ -2248,56 +2417,15 @@ class RoutesService {
     const SPEED_KMH = 40;
     const VISIT_MIN = 35;
 
-    // Estimate total time for a set of clients (travel + visits)
-    function estimateDayTime(clients) {
-      if (!clients || clients.length === 0) return 0;
-      const withCoords = clients.filter(c => c.lat && c.lng);
-      if (withCoords.length < 2) return clients.length * VISIT_MIN;
-      const { totalDistance } = nearestNeighborTSP(withCoords);
-      return (totalDistance / SPEED_KMH) * 60 + clients.length * VISIT_MIN;
-    }
-
     // Step 1: Cluster clients by geographic proximity
     const clusters = clusterClientsByProximity(clientsToVisit);
 
     // Sort clusters: smallest first (easier to fit)
     clusters.sort((a, b) => a.length - b.length);
 
-    // Step 2: Assign clusters to days respecting TIME budget
-    const schedule = {};
-    weekdays.forEach(d => { schedule[d] = []; });
-
-    for (const cluster of clusters) {
-      let assigned = false;
-      for (const d of weekdays) {
-        const combined = [...schedule[d], ...cluster];
-        if (estimateDayTime(combined) <= MAX_MINUTES_PER_DAY) {
-          schedule[d].push(...cluster);
-          assigned = true;
-          break;
-        }
-      }
-      if (!assigned) {
-        // Split cluster across days one by one
-        for (const client of cluster) {
-          let placed = false;
-          for (const d of weekdays) {
-            const combined = [...schedule[d], client];
-            if (estimateDayTime(combined) <= MAX_MINUTES_PER_DAY) {
-              schedule[d].push(client);
-              placed = true;
-              break;
-            }
-          }
-          if (!placed) {
-            // Overflow: add to least loaded day
-            const leastLoaded = weekdays.reduce((best, d) =>
-              schedule[d].length < schedule[best].length ? d : best, weekdays[0]);
-            schedule[leastLoaded].push(client);
-          }
-        }
-      }
-    }
+    // Step 2: Assign clusters to days using geographic cohesion
+    // (clusters geográficamente cercanos quedan en el mismo día)
+    const schedule = this._geographicDayAssignment(clusters, weekdays, MAX_MINUTES_PER_DAY, SPEED_KMH, VISIT_MIN);
 
     // Step 3: Optimize route order (NN + 2-opt) and calculate timeline per day
     const optimizedSchedule = {};
