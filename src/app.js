@@ -108,6 +108,7 @@ async function _buildSheetsContext() {
     const ventasByVendedor = {}; // { vendedor: { 'mes/año': total } }
     const ventasByMes = {};
     const topClients = {};
+    const topClientsByVendedor = {}; // { vendedor: { cliente: total } }
 
     for (const row of ventasRows.slice(2)) {
       if (!row || row.length < 9) continue;
@@ -121,7 +122,11 @@ async function _buildSheetsContext() {
       if (!ventasByVendedor[vendedor]) ventasByVendedor[vendedor] = {};
       ventasByVendedor[vendedor][mk] = (ventasByVendedor[vendedor][mk] || 0) + total;
       ventasByMes[mk] = (ventasByMes[mk] || 0) + total;
-      if (nombre) topClients[nombre] = (topClients[nombre] || 0) + total;
+      if (nombre) {
+        topClients[nombre] = (topClients[nombre] || 0) + total;
+        if (!topClientsByVendedor[vendedor]) topClientsByVendedor[vendedor] = {};
+        topClientsByVendedor[vendedor][nombre] = (topClientsByVendedor[vendedor][nombre] || 0) + total;
+      }
     }
 
     const mesesSorted = Object.entries(ventasByMes)
@@ -145,6 +150,12 @@ async function _buildSheetsContext() {
     const topClientsSorted = Object.entries(topClients).sort((a, b) => b[1] - a[1]).slice(0, 10);
     ctx += 'Top 10 clientes por venta acumulada:\n';
     topClientsSorted.forEach(([n, v], i) => { ctx += `  ${i + 1}. ${n}: ${fmt(v)}\n`; });
+    ctx += 'Top 5 clientes por vendedor:\n';
+    for (const [vend, clientes] of Object.entries(topClientsByVendedor)) {
+      const top5 = Object.entries(clientes).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      ctx += `  ${vend}:\n`;
+      top5.forEach(([n, v], i) => { ctx += `    ${i + 1}. ${n}: ${fmt(v)}\n`; });
+    }
 
     // ── COBRANZAS ────────────────────────────────────────────────────────────
     // Row 0: vacía, Row 1: vacía, Row 2: headers, Row 3+: datos
