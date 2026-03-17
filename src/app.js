@@ -34,6 +34,44 @@ const aiLimiter = rateLimit({
 const OpenAI = require('openai');
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
+// AI Usage Tracker — persiste en memoria por sesión de servidor
+const _aiUsage = {
+  totalRequests: 0,
+  totalTokens: 0,
+  totalInputTokens: 0,
+  totalOutputTokens: 0,
+  byEndpoint: {},
+  byUser: {},
+  history: [], // últimas 50 llamadas
+  serverStartedAt: new Date().toISOString()
+};
+
+function _trackAiUsage(endpoint, userId, userName, usage) {
+  const tokens = usage?.total_tokens || 0;
+  const input = usage?.prompt_tokens || 0;
+  const output = usage?.completion_tokens || 0;
+  _aiUsage.totalRequests++;
+  _aiUsage.totalTokens += tokens;
+  _aiUsage.totalInputTokens += input;
+  _aiUsage.totalOutputTokens += output;
+
+  if (!_aiUsage.byEndpoint[endpoint]) _aiUsage.byEndpoint[endpoint] = { requests: 0, tokens: 0 };
+  _aiUsage.byEndpoint[endpoint].requests++;
+  _aiUsage.byEndpoint[endpoint].tokens += tokens;
+
+  if (userId) {
+    if (!_aiUsage.byUser[userId]) _aiUsage.byUser[userId] = { name: userName || userId, requests: 0, tokens: 0 };
+    _aiUsage.byUser[userId].requests++;
+    _aiUsage.byUser[userId].tokens += tokens;
+  }
+
+  _aiUsage.history.unshift({
+    endpoint, user: userName || userId, tokens, input, output,
+    model: 'gpt-4o-mini', timestamp: new Date().toISOString()
+  });
+  if (_aiUsage.history.length > 50) _aiUsage.history.length = 50;
+}
+
 const app = express();
 
 // Configure multer for file uploads
@@ -2530,7 +2568,7 @@ setInterval(async () => {
 // =============================================
 
 // Helper: llama a GPT-4o-mini con system + user prompt
-async function askOpenAI(systemPrompt, userPrompt, maxTokens = 600) {
+async function askOpenAI(systemPrompt, userPrompt, maxTokens = 600, _reqMeta) {
   if (!openai) throw new Error('OPENAI_API_KEY no configurada');
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
@@ -2541,6 +2579,7 @@ async function askOpenAI(systemPrompt, userPrompt, maxTokens = 600) {
     max_tokens: maxTokens,
     temperature: 0.4
   });
+  if (_reqMeta) _trackAiUsage(_reqMeta.endpoint || 'askOpenAI', _reqMeta.userId, _reqMeta.userName, completion.usage);
   return completion.choices[0].message.content.trim();
 }
 
@@ -2742,6 +2781,7 @@ Solo usa fechas de los días disponibles. UUIDs exactos de las listas ids_8020/i
       aiStrategy,
       tokensUsed: completion.usage?.total_tokens || 0
     }});
+    _trackAiUsage('generate-route', req.user?.id, req.user?.full_name, completion.usage);
 
   } catch (error) {
     console.error('[AI generate-route]', error.message);
@@ -3235,6 +3275,7 @@ app.post('/api/ai/route-chat', authenticate, aiLimiter, async (req, res) => {
     });
 
     const reply = completion.choices[0].message.content.trim();
+    _trackAiUsage('route-chat', req.user?.id, req.user?.full_name, completion.usage);
     res.json({ success: true, reply, tokensUsed: completion.usage?.total_tokens || 0 });
   } catch (error) {
     console.error('[AI route-chat]', error.message);
@@ -3287,12 +3328,42 @@ app.post('/api/ai/route-chat/stream', authenticate, aiLimiter, async (req, res) 
       }
       if (chunk.usage) totalTokens = chunk.usage.total_tokens;
     }
+    _trackAiUsage('route-chat-stream', req.user?.id, req.user?.full_name, { total_tokens: totalTokens });
     res.write(`data: ${JSON.stringify({ done: true, tokensUsed: totalTokens })}\n\n`);
     res.end();
   } catch (error) {
     console.error('[AI stream]', error.message);
     try { res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`); res.end(); } catch(_) {}
   }
+});
+
+// =============================================
+// AI USAGE STATS
+// =============================================
+
+// GET /api/ai/usage — estadísticas de uso de IA
+app.get('/api/ai/usage', authenticate, authorize('admin', 'supervisor'), async (req, res) => {
+  // Pricing GPT-4o-mini: $0.15/1M input, $0.60/1M output
+  const inputCost = (_aiUsage.totalInputTokens / 1_000_000) * 0.15;
+  const outputCost = (_aiUsage.totalOutputTokens / 1_000_000) * 0.60;
+  const totalCost = inputCost + outputCost;
+
+  res.json({
+    success: true,
+    data: {
+      totalRequests: _aiUsage.totalRequests,
+      totalTokens: _aiUsage.totalTokens,
+      totalInputTokens: _aiUsage.totalInputTokens,
+      totalOutputTokens: _aiUsage.totalOutputTokens,
+      estimatedCostUSD: Math.round(totalCost * 10000) / 10000,
+      model: 'gpt-4o-mini',
+      pricing: { input: '$0.15/1M tokens', output: '$0.60/1M tokens' },
+      byEndpoint: _aiUsage.byEndpoint,
+      byUser: _aiUsage.byUser,
+      history: _aiUsage.history,
+      serverStartedAt: _aiUsage.serverStartedAt
+    }
+  });
 });
 
 // =============================================

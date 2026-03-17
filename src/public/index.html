@@ -8098,6 +8098,62 @@
             <div style="font-size:13px;">Cargando aprendizajes...</div>
           </div>
         </div>
+
+        <!-- AI Usage Dashboard -->
+        <div style="margin-top:32px;border-top:1px solid var(--border);padding-top:24px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+              <i data-lucide="activity" style="width:18px;height:18px;color:#10b981;"></i>
+              Uso de IA — OpenAI
+            </h3>
+            <button onclick="loadAIUsage()" class="btn" style="font-size:11px;padding:4px 10px;border-radius:6px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;gap:4px;">
+              <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Actualizar
+            </button>
+          </div>
+
+          <!-- Usage stats cards -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px;">
+            <div class="card" style="padding:14px;text-align:center;">
+              <div id="ai-usage-requests" style="font-size:24px;font-weight:800;color:#3b82f6;">-</div>
+              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Consultas</div>
+            </div>
+            <div class="card" style="padding:14px;text-align:center;">
+              <div id="ai-usage-tokens" style="font-size:24px;font-weight:800;color:#8b5cf6;">-</div>
+              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Tokens Usados</div>
+            </div>
+            <div class="card" style="padding:14px;text-align:center;">
+              <div id="ai-usage-cost" style="font-size:24px;font-weight:800;color:#10b981;">-</div>
+              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Costo Estimado</div>
+            </div>
+            <div class="card" style="padding:14px;text-align:center;">
+              <div style="font-size:14px;font-weight:700;color:var(--text-primary);">GPT-4o mini</div>
+              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-top:2px;">Modelo Activo</div>
+              <div style="font-size:9px;color:var(--text-muted);margin-top:4px;">Input: $0.15/1M · Output: $0.60/1M</div>
+            </div>
+          </div>
+
+          <!-- Usage by endpoint -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+            <div class="card" style="padding:14px;">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Por Endpoint</div>
+              <div id="ai-usage-by-endpoint" style="font-size:12px;color:var(--text-secondary);">-</div>
+            </div>
+            <div class="card" style="padding:14px;">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Por Usuario</div>
+              <div id="ai-usage-by-user" style="font-size:12px;color:var(--text-secondary);">-</div>
+            </div>
+          </div>
+
+          <!-- Recent history -->
+          <div class="card" style="padding:14px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Historial Reciente</div>
+            <div id="ai-usage-history" style="max-height:300px;overflow-y:auto;font-size:12px;color:var(--text-secondary);">-</div>
+          </div>
+
+          <div style="margin-top:10px;font-size:10px;color:var(--text-muted);text-align:center;" id="ai-usage-since">
+            Datos desde el inicio del servidor
+          </div>
+        </div>
       </div>
 
       <!-- Users Panel (Control Maestro) -->
@@ -26805,6 +26861,8 @@
       } catch (e) {
         document.getElementById('learnings-list').innerHTML = `<div style="text-align:center;padding:24px;color:#ef4444;">Error al cargar: ${e.message}</div>`;
       }
+      // También cargar stats de uso
+      loadAIUsage();
     }
 
     function _renderLearnings() {
@@ -26974,6 +27032,84 @@
         showToast('success','Eliminado','Aprendizaje eliminado');
         loadAILearnings();
       } catch (e) { showToast('error','Error',e.message); }
+    }
+
+    // ── AI Usage Stats ──────────────────────────────────────
+    async function loadAIUsage() {
+      try {
+        const res = await fetch(`${API}/api/ai/usage`);
+        const json = await res.json();
+        if (!json.success) return;
+        const d = json.data;
+
+        // Main stats
+        const reqEl = document.getElementById('ai-usage-requests');
+        const tokEl = document.getElementById('ai-usage-tokens');
+        const costEl = document.getElementById('ai-usage-cost');
+        if (reqEl) reqEl.textContent = d.totalRequests.toLocaleString('es-CL');
+        if (tokEl) tokEl.textContent = d.totalTokens > 1000 ? (d.totalTokens / 1000).toFixed(1) + 'K' : d.totalTokens;
+        if (costEl) costEl.textContent = '$' + d.estimatedCostUSD.toFixed(4);
+
+        // By endpoint
+        const epEl = document.getElementById('ai-usage-by-endpoint');
+        if (epEl) {
+          const epLabels = { 'route-chat-stream':'Chat IA (stream)', 'route-chat':'Chat IA', 'generate-route':'Generar Ruta IA', 'askOpenAI':'Análisis IA', 'company-pulse':'Pulso Empresa', 'route-advisor':'Asesor Rutas', 'visit-summary':'Resumen Visitas', 'frequency-analysis':'Frecuencia' };
+          const entries = Object.entries(d.byEndpoint);
+          if (entries.length === 0) { epEl.innerHTML = '<span style="color:var(--text-muted);">Sin datos aún</span>'; }
+          else {
+            epEl.innerHTML = entries.map(([ep, info]) => `
+              <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">
+                <span>${epLabels[ep] || ep}</span>
+                <span style="font-weight:600;">${info.requests} req · ${(info.tokens/1000).toFixed(1)}K tok</span>
+              </div>
+            `).join('');
+          }
+        }
+
+        // By user
+        const usrEl = document.getElementById('ai-usage-by-user');
+        if (usrEl) {
+          const entries = Object.values(d.byUser);
+          if (entries.length === 0) { usrEl.innerHTML = '<span style="color:var(--text-muted);">Sin datos aún</span>'; }
+          else {
+            usrEl.innerHTML = entries.sort((a,b) => b.tokens - a.tokens).map(u => `
+              <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">
+                <span>${u.name}</span>
+                <span style="font-weight:600;">${u.requests} req · ${(u.tokens/1000).toFixed(1)}K tok</span>
+              </div>
+            `).join('');
+          }
+        }
+
+        // History
+        const histEl = document.getElementById('ai-usage-history');
+        if (histEl) {
+          if (d.history.length === 0) { histEl.innerHTML = '<span style="color:var(--text-muted);">Sin consultas aún. Usa el asistente IA para ver el historial aquí.</span>'; }
+          else {
+            const epLabels = { 'route-chat-stream':'Chat', 'route-chat':'Chat', 'generate-route':'Ruta IA', 'askOpenAI':'Análisis', 'company-pulse':'Pulso', 'route-advisor':'Asesor', 'visit-summary':'Visitas', 'frequency-analysis':'Frecuencia' };
+            histEl.innerHTML = d.history.map(h => {
+              const time = new Date(h.timestamp).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' });
+              const date = new Date(h.timestamp).toLocaleDateString('es-CL', { day:'2-digit', month:'short' });
+              return `
+              <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);">
+                <span style="font-size:10px;color:var(--text-muted);min-width:70px;">${date} ${time}</span>
+                <span style="font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(99,102,241,0.1);color:#6366f1;font-weight:600;">${epLabels[h.endpoint] || h.endpoint}</span>
+                <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${h.user || '?'}</span>
+                <span style="font-weight:600;color:var(--text-muted);font-size:11px;">${h.tokens} tok</span>
+              </div>`;
+            }).join('');
+          }
+        }
+
+        // Since
+        const sinceEl = document.getElementById('ai-usage-since');
+        if (sinceEl) {
+          const started = new Date(d.serverStartedAt);
+          sinceEl.textContent = `Datos desde ${started.toLocaleDateString('es-CL')} ${started.toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit'})} (inicio del servidor)`;
+        }
+      } catch (e) {
+        console.log('[AI Usage]', e.message);
+      }
     }
 
     // ── Command Palette ─────────────────────────────────────────────
