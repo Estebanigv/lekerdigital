@@ -4344,6 +4344,29 @@
       border-color: rgba(99,102,241,0.65);
       color: #c7d2fe;
     }
+    /* WhatsApp-style typing dots animation */
+    .wa-typing-dots {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 2px;
+      height: 20px;
+    }
+    .wa-typing-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #6366f1;
+      opacity: 0.4;
+      animation: wa-dot-bounce 1.4s infinite ease-in-out both;
+    }
+    .wa-typing-dots span:nth-child(1) { animation-delay: 0s; }
+    .wa-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .wa-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes wa-dot-bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+      40% { transform: scale(1); opacity: 1; }
+    }
     .ai-chat-input {
       padding: 12px 16px;
       border-top: 1px solid var(--border);
@@ -13171,8 +13194,9 @@
 
     // Navegación desde botones de acción del AI chat
     function _aiNavigateTo(dest) {
-      // Cerrar chat (minimizar, no destruir)
+      // Cerrar ambos chats (flotante y panel lateral)
       closeRouteChat();
+      if (_aiPanelOpen && typeof toggleLekerAIPanel === 'function') toggleLekerAIPanel();
 
       const parts = dest.split('.');
       const mainPanel = parts[0]; // e.g. 'routes', 'crm', 'visits', 'dashboard', 'gsheets', 'data'
@@ -26414,29 +26438,123 @@
     }
 
     function _buildAIPlatformContext() {
+      const execs = (allUsers || []).filter(u => u.role === 'executive' || u.role === 'zonal');
       const stats = {
-        fecha: new Date().toLocaleDateString('es-CL'),
+        fecha: new Date().toLocaleDateString('es-CL', { weekday:'long', day:'numeric', month:'long', year:'numeric' }),
         totalClientes: (allClients || []).length,
         clientes8020: (allClients || []).filter(c => c.segmentation === '80-20').length,
         clientesL: (allClients || []).filter(c => c.segmentation === 'L').length,
         clientesConGPS: (allClients || []).filter(c => c.lat && c.lng).length,
         clientesSinGPS: (allClients || []).filter(c => !c.lat || !c.lng).length,
-        rutasHoy: 0,
-        totalVendedores: (allUsers || []).filter(u => u.role === 'executive').length
+        rutasHoy: todayRoutesData ? todayRoutesData.length : 0,
+        totalVendedores: execs.length
       };
-      const vendedores = (allUsers || []).filter(u => u.role === 'executive').map(u => {
-        const myClients = (allClients || []).filter(c => c.assigned_user_id === u.id);
+      const vendedores = execs.map(u => {
+        const vc = (_clientsByUser && _clientsByUser[u.id]) ? _clientsByUser[u.id] : (allClients || []).filter(c => c.assigned_user_id === u.id);
+        const ruta = todayRoutesData?.find(r => r.user_id === u.id || r.userId === u.id);
         return {
           nombre: u.full_name,
-          zona: u.zone || 'sin zona',
-          totalClientes: myClients.length,
-          seg8020: myClients.filter(c => c.segmentation === '80-20').length,
-          conGPS: myClients.filter(c => c.lat && c.lng).length,
-          sinGPS: myClients.filter(c => !c.lat || !c.lng).length,
-          rutaHoy: null
+          id: u.id,
+          zona: u.zone || null,
+          totalClientes: vc.length,
+          seg8020: vc.filter(c => c.segmentation === '80-20').length,
+          conGPS: vc.filter(c => c.lat && c.lng).length,
+          sinGPS: vc.filter(c => !c.lat || !c.lng).length,
+          rutaHoy: ruta ? { estado: ruta.status || ruta.state, clientesTotal: ruta.visit_count || ruta.visitCount } : null
         };
       });
-      return { stats, vendedores };
+
+      // Vendedor seleccionado
+      let vendedorActual = null;
+      const exec = execs.find(e => e.id === selectedExecutiveId);
+      if (exec) {
+        const vc = (_clientsByUser && _clientsByUser[exec.id]) ? _clientsByUser[exec.id] : (allClients || []).filter(c => c.assigned_user_id === exec.id);
+        vendedorActual = {
+          nombre: exec.full_name,
+          zona: exec.zone || null,
+          clientes: vc.slice(0, 80).map(c => ({
+            cod: c.external_id, nombre: c.fantasy_name || c.name, comuna: c.commune,
+            seg: c.segmentation, gps: !!(c.lat && c.lng)
+          }))
+        };
+      }
+
+      // Ruta optimizada
+      const rutaOptimizada = optimizedRouteData ? {
+        totalStats: optimizedRouteData.totalStats || null,
+        dias: optimizedRouteData.days ? Object.fromEntries(
+          Object.entries(optimizedRouteData.days).map(([d, dd]) => [d, {
+            stats: dd.stats,
+            clientes: (dd.route||[]).map(c => ({ nombre: c.fantasy_name||c.name, seg: c.segmentation, comuna: c.commune }))
+          }])
+        ) : null
+      } : null;
+
+      // Visitas hoy
+      const visitasHoy = todayRoutesData ? todayRoutesData.map(r => ({
+        vendedor: r.user?.full_name || r.userName || '?',
+        estado: r.status || r.state,
+        completadas: r.completed_visits || r.completedVisits || 0,
+        pendientes: r.pending_visits || r.pendingVisits || 0
+      })) : [];
+
+      // Panel activo
+      const activePanel = document.querySelector('.panel.active');
+      const panelId = activePanel?.id?.replace('panel-', '') || 'desconocido';
+      const panelLabels = { dashboard:'Dashboard', clients:'CRM Clientes', routes:'Gestionar Rutas', visits:'Visitas', intelligence:'Inteligencia de Mercado', data:'Google Sheets', crm:'CRM Clientes' };
+      const panelActivo = panelLabels[panelId] || panelId;
+      let subTabActivo = null;
+      if (panelId === 'routes') {
+        const art = document.querySelector('.route-tab.active');
+        const rtl = { dashboard:'Dashboard Rutas', gestionar:'Gestionar Rutas', planner:'Planner Semanal', monthly:'Calendario Mensual', ai:'IA Asistente' };
+        subTabActivo = rtl[art?.dataset?.routetab] || null;
+      }
+
+      // Rutas programadas hoy
+      let rutasProgramadasHoy = null;
+      if (todayScheduledData && Object.keys(todayScheduledData).length > 0) {
+        rutasProgramadasHoy = {};
+        Object.entries(todayScheduledData).forEach(([uid, routes]) => {
+          const eu = execs.find(ex => ex.id === uid);
+          rutasProgramadasHoy[eu ? eu.full_name : uid] = (routes || []).map(r => ({
+            cliente: r.client?.fantasy_name || r.client?.name || r.client_name || '?',
+            comuna: r.client?.commune || '', seg: r.client?.segmentation || ''
+          }));
+        });
+      }
+
+      // Planner semanal
+      let plannerSemanal = null;
+      if (typeof weeklyAllExecsData !== 'undefined' && weeklyAllExecsData && Object.keys(weeklyAllExecsData).length > 0) {
+        plannerSemanal = {};
+        Object.entries(weeklyAllExecsData).forEach(([uid, info]) => {
+          plannerSemanal[info.userName || uid] = {};
+          Object.entries(info.dates || {}).forEach(([fecha, routes]) => {
+            plannerSemanal[info.userName || uid][fecha] = {
+              totalClientes: routes.length,
+              clientes8020: routes.filter(r => r.client?.segmentation === '80-20').length,
+              clientes: routes.slice(0, 15).map(r => r.client?.fantasy_name || r.client?.name || '?')
+            };
+          });
+        });
+      }
+
+      // Calendario mensual
+      let calendarioMensual = null;
+      if (monthlyCalendarData && Object.keys(monthlyCalendarData).length > 0) {
+        calendarioMensual = {};
+        Object.entries(monthlyCalendarData).forEach(([uid, info]) => {
+          const eu = execs.find(ex => ex.id === uid) || allUsers?.find(u => u.id === uid);
+          const vName = info.userName || (eu ? eu.full_name : uid);
+          const dias = Object.entries(info.dates || {}).map(([fecha, routes]) => ({
+            fecha, clientes: routes.length,
+            seg8020: routes.filter(r => r.client?.segmentation === '80-20').length
+          }));
+          if (dias.length > 0) calendarioMensual[vName] = { totalDias: dias.length, dias };
+        });
+      }
+
+      return { stats, vendedores, vendedorActual, rutaOptimizada, visitasHoy, panelActivo, subTabActivo, rutasProgramadasHoy, plannerSemanal, calendarioMensual };
     }
 
     async function sendAIMessage() {
@@ -26502,7 +26620,10 @@
           }
         }
 
-        if (bubble) bubble.innerHTML = _aiFormatText(full);
+        if (bubble) {
+          bubble.innerHTML = _aiFormatText(full);
+          _createIcons(bubble);
+        }
         _aiChatHistory.push({ role: 'assistant', content: full });
 
       } catch (err) {
@@ -26521,13 +26642,37 @@
       const div = document.createElement('div');
       if (id) div.id = id;
       div.style.cssText = `display:flex;justify-content:${isUser ? 'flex-end' : 'flex-start'};`;
-      div.innerHTML = `<div style="max-width:88%;padding:9px 13px;border-radius:${isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};background:${isUser ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'var(--bg-secondary)'};color:${isUser ? 'white' : 'var(--text-primary)'};font-size:13px;line-height:1.5;border:${isUser ? 'none' : '1px solid var(--border)'};">${isUser ? text : (text || '<span style="opacity:0.5">▌</span>')}</div>`;
+      // WhatsApp-style typing dots para burbuja vacía del asistente
+      const emptyContent = `<div class="wa-typing-dots"><span></span><span></span><span></span></div>`;
+      div.innerHTML = `<div style="max-width:88%;padding:9px 13px;border-radius:${isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};background:${isUser ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'var(--bg-secondary)'};color:${isUser ? 'white' : 'var(--text-primary)'};font-size:13px;line-height:1.5;border:${isUser ? 'none' : '1px solid var(--border)'};">${isUser ? text : (text || emptyContent)}</div>`;
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
     }
 
     function _aiFormatText(text) {
-      return _aiRenderMarkdown(text);
+      // 1. Extraer botones de acción [[ir:Label|destino]]
+      const actionBtns = [];
+      let cleaned = text.replace(/\[\[ir:(.+?)\|(.+?)\]\]/g, (_, label, dest) => {
+        actionBtns.push({ label: label.trim(), dest: dest.trim() });
+        return '';
+      });
+
+      // 2. Render markdown
+      let html = _aiRenderMarkdown(cleaned);
+
+      // 3. Agregar botones de acción
+      if (actionBtns.length > 0) {
+        html += '<div class="ai-action-btns">';
+        actionBtns.forEach(btn => {
+          html += `<button class="ai-action-btn" onclick="_aiNavigateTo('${btn.dest.replace(/'/g, "\\'")}'); return false;">
+            <i data-lucide="arrow-right" style="width:13px;height:13px;flex-shrink:0;"></i>
+            <span>${btn.label}</span>
+          </button>`;
+        });
+        html += '</div>';
+      }
+
+      return html;
     }
 
     function _showLekerAIFab() {
