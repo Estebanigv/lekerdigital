@@ -8059,9 +8059,15 @@
             </h2>
             <p style="margin:4px 0 0;font-size:12px;color:var(--text-muted);">Enseña a LEKER AI las reglas, correcciones y conocimientos de tu empresa. Todo lo que agregues aquí será recordado en cada conversación.</p>
           </div>
-          <button onclick="_openLearningModal()" class="btn btn-primary" style="display:flex;align-items:center;gap:6px;font-size:13px;padding:8px 16px;border-radius:8px;">
-            <i data-lucide="plus" style="width:15px;height:15px;"></i> Agregar Aprendizaje
-          </button>
+          <div style="display:flex;gap:8px;">
+            <button onclick="document.getElementById('learning-file-input').click()" class="btn" style="display:flex;align-items:center;gap:6px;font-size:13px;padding:8px 16px;border-radius:8px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">
+              <i data-lucide="upload" style="width:15px;height:15px;"></i> Cargar Documento
+            </button>
+            <input type="file" id="learning-file-input" accept=".txt,.pdf,.xlsx,.xls,.csv,.md,.json" style="display:none;" onchange="_uploadLearningDoc(this)">
+            <button onclick="_openLearningModal()" class="btn btn-primary" style="display:flex;align-items:center;gap:6px;font-size:13px;padding:8px 16px;border-radius:8px;">
+              <i data-lucide="plus" style="width:15px;height:15px;"></i> Agregar Manual
+            </button>
+          </div>
         </div>
 
         <!-- Categories filter -->
@@ -26801,13 +26807,15 @@
       const container = document.getElementById('ai-chat-messages');
       if (!container) return;
       const isUser = role === 'user';
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = `display:flex;flex-direction:column;align-items:${isUser ? 'flex-end' : 'flex-start'};`;
       const div = document.createElement('div');
       if (id) div.id = id;
-      div.style.cssText = `display:flex;justify-content:${isUser ? 'flex-end' : 'flex-start'};`;
-      // WhatsApp-style typing dots para burbuja vacía del asistente
       const emptyContent = `<div class="wa-typing-dots"><span></span><span></span><span></span></div>`;
-      div.innerHTML = `<div style="max-width:88%;padding:9px 13px;border-radius:${isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};background:${isUser ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'var(--bg-secondary)'};color:${isUser ? 'white' : 'var(--text-primary)'};font-size:13px;line-height:1.5;border:${isUser ? 'none' : '1px solid var(--border)'};">${isUser ? text : (text || emptyContent)}</div>`;
-      container.appendChild(div);
+      div.style.cssText = `max-width:88%;padding:9px 13px;border-radius:${isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};background:${isUser ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'var(--bg-secondary)'};color:${isUser ? 'white' : 'var(--text-primary)'};font-size:13px;line-height:1.5;border:${isUser ? 'none' : '1px solid var(--border)'};`;
+      div.innerHTML = isUser ? text : (text || emptyContent);
+      wrapper.appendChild(div);
+      container.appendChild(wrapper);
       container.scrollTop = container.scrollHeight;
     }
 
@@ -27032,6 +27040,97 @@
         showToast('success','Eliminado','Aprendizaje eliminado');
         loadAILearnings();
       } catch (e) { showToast('error','Error',e.message); }
+    }
+
+    // ── Upload Document for AI Learning ─────────────────────
+    async function _uploadLearningDoc(input) {
+      const file = input.files[0];
+      if (!file) return;
+      input.value = ''; // reset para permitir resubir
+
+      // Mostrar modal de categoría + preview
+      const overlay = document.createElement('div');
+      overlay.id = 'learning-upload-overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+      overlay.innerHTML = `
+        <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);border:1px solid var(--border);">
+          <h3 style="margin:0 0 16px;font-size:16px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+            <i data-lucide="file-text" style="width:18px;height:18px;color:#6366f1;"></i>
+            Cargar Documento
+          </h3>
+          <div style="padding:12px;background:var(--bg-secondary);border-radius:10px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+            <i data-lucide="file" style="width:20px;height:20px;color:var(--text-muted);"></i>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${file.name}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${(file.size / 1024).toFixed(1)} KB</div>
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Categoría</label>
+            <select id="upload-doc-cat" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;">
+              <option value="general">General</option>
+              <option value="ventas">Ventas</option>
+              <option value="rutas">Rutas</option>
+              <option value="clientes">Clientes</option>
+              <option value="productos">Productos</option>
+              <option value="politicas">Políticas</option>
+            </select>
+          </div>
+          <p style="font-size:11px;color:var(--text-muted);margin:0 0 16px;">La IA leerá el documento, extraerá los puntos clave y los guardará como aprendizajes automáticamente.</p>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button onclick="document.getElementById('learning-upload-overlay').remove()" class="btn" style="font-size:13px;padding:8px 16px;border-radius:8px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">Cancelar</button>
+            <button id="upload-doc-btn" onclick="_processDocUpload()" class="btn btn-primary" style="font-size:13px;padding:8px 20px;border-radius:8px;">
+              <i data-lucide="sparkles" style="width:14px;height:14px;"></i> Procesar con IA
+            </button>
+          </div>
+        </div>`;
+      overlay.addEventListener('mousedown', e => { overlay._bg = e.target === overlay; });
+      overlay.addEventListener('click', e => { if (overlay._bg && e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+      _createIcons(overlay);
+
+      // Guardar referencia al archivo
+      overlay._file = file;
+    }
+
+    async function _processDocUpload() {
+      const overlay = document.getElementById('learning-upload-overlay');
+      if (!overlay || !overlay._file) return;
+      const file = overlay._file;
+      const cat = document.getElementById('upload-doc-cat').value;
+      const btn = document.getElementById('upload-doc-btn');
+
+      // Loading state
+      btn.disabled = true;
+      btn.innerHTML = '<div class="wa-typing-dots" style="justify-content:center;"><span></span><span></span><span></span></div> Procesando...';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('category', cat);
+
+        const res = await fetch(`${API}/api/ai/learnings/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        const json = await res.json();
+
+        overlay.remove();
+
+        if (json.success) {
+          if (json.parseError) {
+            showToast('info', 'Documento procesado', 'La IA analizó el documento pero no pudo estructurar aprendizajes. Revisa el contenido.');
+          } else {
+            showToast('success', 'Documento procesado', `Se crearon ${json.total} aprendizajes desde "${json.fileName}"`);
+          }
+          loadAILearnings();
+        } else {
+          showToast('error', 'Error', json.error);
+        }
+      } catch (e) {
+        overlay.remove();
+        showToast('error', 'Error', e.message);
+      }
     }
 
     // ── AI Usage Stats ──────────────────────────────────────

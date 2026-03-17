@@ -3429,6 +3429,96 @@ async function _buildLearningsContext() {
   }
 }
 
+// POST /api/ai/learnings/upload — subir documento, IA lo resume y crea aprendizajes
+app.post('/api/ai/learnings/upload', authenticate, authorize('admin', 'supervisor'), upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, error: 'Archivo requerido' });
+    if (!openai) return res.status(400).json({ success: false, error: 'OpenAI no configurado' });
+
+    const { originalname, buffer, mimetype } = req.file;
+    const category = req.body.category || 'general';
+    let text = '';
+
+    // Extraer texto según tipo
+    if (mimetype === 'text/plain' || originalname.endsWith('.txt') || originalname.endsWith('.csv')) {
+      text = buffer.toString('utf-8');
+    } else if (mimetype === 'application/pdf' || originalname.endsWith('.pdf')) {
+      // PDF: intentar extraer texto simple (sin dependencia extra)
+      const raw = buffer.toString('utf-8');
+      // Extraer strings legibles del PDF
+      text = raw.replace(/[^\x20-\x7E\xC0-\xFF\n]/g, ' ').replace(/\s{3,}/g, '\n').trim();
+      if (text.length < 50) text = '[PDF con contenido no legible como texto plano. Contenido binario.]';
+    } else if (originalname.endsWith('.xlsx') || originalname.endsWith('.xls')) {
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      const sheets = workbook.SheetNames.map(name => {
+        const data = XLSX.utils.sheet_to_csv(workbook.Sheets[name], { FS: ' | ' });
+        return `[${name}]\n${data}`;
+      });
+      text = sheets.join('\n\n');
+    } else if (mimetype.startsWith('text/') || originalname.endsWith('.md') || originalname.endsWith('.json')) {
+      text = buffer.toString('utf-8');
+    } else {
+      return res.status(400).json({ success: false, error: 'Formato no soportado. Usa TXT, PDF, XLSX, CSV o MD.' });
+    }
+
+    // Limitar texto para no exceder tokens
+    const maxChars = 12000;
+    const truncated = text.length > maxChars;
+    const textForAI = text.slice(0, maxChars);
+
+    // Pedir a la IA que resuma y extraiga reglas/aprendizajes
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      temperature: 0.3,
+      max_tokens: 1200,
+      messages: [
+        { role: 'system', content: `Eres un asistente que analiza documentos de empresa.
+Tu tarea es extraer los puntos clave, reglas, datos importantes o conocimientos del documento.
+
+Responde en este formato JSON exacto (array de objetos):
+[
+  { "title": "Título corto de la regla/dato", "content": "Explicación clara y concisa" },
+  ...
+]
+
+Máximo 8 items. Cada item debe ser un aprendizaje útil e independiente.
+Si el documento tiene datos numéricos o tablas, extrae los más relevantes.
+Responde SOLO con el JSON, sin texto adicional.` },
+        { role: 'user', content: `Documento: "${originalname}"${truncated ? ' (truncado)' : ''}\nCategoría: ${category}\n\nContenido:\n${textForAI}` }
+      ]
+    });
+
+    _trackAiUsage('learnings-upload', req.user?.id, req.user?.full_name, completion.usage);
+
+    const aiResponse = completion.choices[0].message.content.trim();
+    let learnings = [];
+    try {
+      // Limpiar posible markdown wrapper
+      const clean = aiResponse.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+      learnings = JSON.parse(clean);
+    } catch (e) {
+      return res.json({ success: true, data: [], summary: aiResponse, parseError: true, fileName: originalname });
+    }
+
+    // Guardar cada aprendizaje en la DB
+    await _ensureAiLearningsTable();
+    const saved = [];
+    for (const l of learnings) {
+      if (!l.title || !l.content) continue;
+      const { data, error } = await supabase.from('ai_learnings').insert({
+        category, title: l.title, content: l.content, active: true, created_by: req.user.id
+      }).select().single();
+      if (data) saved.push(data);
+    }
+    _learningsCache = null; // invalidar caché
+
+    res.json({ success: true, data: saved, total: saved.length, fileName: originalname });
+  } catch (e) {
+    console.error('[AI learnings upload]', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // GET /api/ai/learnings — listar todos
 app.get('/api/ai/learnings', authenticate, authorize('admin', 'supervisor'), async (req, res) => {
   try {
