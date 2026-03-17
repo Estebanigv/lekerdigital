@@ -182,19 +182,33 @@ function optimizeRouteOrder(clients, startPoint = null) {
  * Greedy seed-based: elige semillas por prioridad 80-20, crece cluster por cercanía
  * al centroide, y para cuando se agota el presupuesto de tiempo (480 min).
  */
-function clusterClientsByProximity(clients) {
-  const TIME_BUDGET_MIN = 480; // 8 horas (09:00 a 17:00)
+function clusterClientsByProximity(clients, shuffle = false) {
+  const TIME_BUDGET_MIN = 510; // 8.5 horas (08:30 a 17:00) — más flexible para incluir todos
   const SPEED_KMH = 40;
   const VISIT_DURATION_MIN = 15; // 15 min por visita (ajustado: muchas visitas son breves)
-  const MAX_PER_CLUSTER = 15;   // máx clientes por día
+  const MAX_PER_CLUSTER = 18;   // máx clientes por día — subido para incluir más
 
   if (!clients || clients.length === 0) return [];
 
   // Sort by priority score (incluye segmentación + días vencido + fallos consecutivos)
   const now = new Date();
-  const sorted = [...clients].sort((a, b) =>
-    clientPriorityScore(b, now) - clientPriorityScore(a, now)
-  );
+  let sorted;
+  if (shuffle) {
+    // Ruta alternativa: randomizar agrupación para obtener distribución diferente
+    // Mantener 80-20 al inicio pero shufflear el resto
+    const top = clients.filter(c => c.segmentation === '80-20');
+    const rest = clients.filter(c => c.segmentation !== '80-20');
+    // Fisher-Yates shuffle
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [rest[i], rest[j]] = [rest[j], rest[i]];
+    }
+    sorted = [...top, ...rest];
+  } else {
+    sorted = [...clients].sort((a, b) =>
+      clientPriorityScore(b, now) - clientPriorityScore(a, now)
+    );
+  }
 
   const assigned = new Set();
   const clusters = [];
@@ -271,7 +285,11 @@ function clusterClientsByProximity(clients) {
       // Check if adding this client would exceed time budget
       const testCluster = [...cluster, nearestClient];
       const time = clusterTime(testCluster);
-      if (time > TIME_BUDGET_MIN) break;
+      if (time > TIME_BUDGET_MIN) {
+        // Time exceeded — stop growing THIS cluster, but client stays unassigned
+        // and will be picked up in the next cluster iteration
+        break;
+      }
 
       cluster.push(nearestClient);
       assigned.add(nearestClient.id);
@@ -280,17 +298,49 @@ function clusterClientsByProximity(clients) {
     clusters.push(cluster);
   }
 
-  // Also collect clients without GPS coords (assign to smallest cluster or new one)
+  // Collect clients without GPS coords — distribute to nearest cluster by commune
   const noGps = sorted.filter(c => !assigned.has(c.id));
   if (noGps.length > 0) {
     for (const c of noGps) {
-      // Add to the smallest cluster that has room
-      let smallest = clusters.reduce((best, cl) =>
-        cl.length < best.length ? cl : best, clusters[0]);
-      if (smallest && smallest.length < MAX_PER_CLUSTER) {
-        smallest.push(c);
+      // Try to find a cluster in the same commune
+      let bestCluster = null;
+      let bestScore = -1;
+      for (const cl of clusters) {
+        if (cl.length >= MAX_PER_CLUSTER) continue;
+        const sameCommune = cl.filter(m => m.commune && c.commune && m.commune === c.commune).length;
+        if (sameCommune > bestScore) { bestScore = sameCommune; bestCluster = cl; }
+      }
+      if (bestCluster) {
+        bestCluster.push(c);
       } else {
+        // All clusters full — create new one
         clusters.push([c]);
+      }
+    }
+  }
+
+  // Ensure minimum cluster size: merge tiny clusters into nearest neighbor
+  const MIN_CLUSTER_SIZE = 4;
+  let merged = true;
+  while (merged) {
+    merged = false;
+    for (let i = clusters.length - 1; i >= 0; i--) {
+      if (clusters[i].length >= MIN_CLUSTER_SIZE) continue;
+      // Find nearest cluster by centroid distance that has room
+      let bestIdx = -1, bestDist = Infinity;
+      const myCtr = centroid(clusters[i]);
+      for (let j = 0; j < clusters.length; j++) {
+        if (j === i) continue;
+        if (clusters[j].length + clusters[i].length > MAX_PER_CLUSTER) continue;
+        const ctr2 = centroid(clusters[j]);
+        const d = haversineDistance(myCtr.lat, myCtr.lng, ctr2.lat, ctr2.lng);
+        if (d < bestDist) { bestDist = d; bestIdx = j; }
+      }
+      if (bestIdx >= 0) {
+        clusters[bestIdx].push(...clusters[i]);
+        clusters.splice(i, 1);
+        merged = true;
+        break; // restart loop after modification
       }
     }
   }
@@ -1810,7 +1860,7 @@ class RoutesService {
     }).sort((a, b) => b.withGps - a.withGps);
   }
 
-  async getOptimizedRoute(userId, zone = null, startPoint = null, excludeIds = [], commune = null, includeIds = []) {
+  async getOptimizedRoute(userId, zone = null, startPoint = null, excludeIds = [], options = {}, commune = null, includeIds = []) {
     // Auto-fetch home address as startPoint if not provided
     if (!startPoint) {
       const { data: userData } = await supabase
@@ -1939,7 +1989,8 @@ class RoutesService {
     });
 
     // Use shared helper to split into days with TSP per day
-    const { schedule: days, sortedDates } = this._splitIntoDays(clients, weekdays, startPoint);
+    const shuffleMode = options && options.shuffle;
+    const { schedule: days, sortedDates } = this._splitIntoDays(clients, weekdays, startPoint, shuffleMode);
 
     // Build per-day route with stats and fuel costs
     const daysResult = {};
@@ -2622,13 +2673,13 @@ class RoutesService {
    * @param {Array} weekdays - Fechas hábiles ['YYYY-MM-DD', ...]
    * @returns {Object} { schedule: {date: {clients, totalDistance, totalHours, ...}}, sortedDates }
    */
-  _splitIntoDays(clientsToVisit, weekdays, startPoint = null) {
+  _splitIntoDays(clientsToVisit, weekdays, startPoint = null, shuffle = false) {
     const MAX_MINUTES_PER_DAY = 480; // 09:00–17:00
     const SPEED_KMH = 40;
     const VISIT_MIN = 15;
 
     // Step 1: Cluster clients by geographic proximity
-    const clusters = clusterClientsByProximity(clientsToVisit);
+    const clusters = clusterClientsByProximity(clientsToVisit, shuffle);
 
     // Sort clusters: smallest first (easier to fit)
     clusters.sort((a, b) => a.length - b.length);
@@ -2673,8 +2724,8 @@ class RoutesService {
     }
 
     // Step 4: Move overloaded clients (arriving after 17:00) to next available day
-    const MIN_PER_DAY = 3;
-    const MAX_PER_DAY = 15;
+    const MIN_PER_DAY = 6;
+    const MAX_PER_DAY = 18;
     const sortedDates = Object.keys(optimizedSchedule).sort();
     for (let i = 0; i < sortedDates.length; i++) {
       const dayData = optimizedSchedule[sortedDates[i]];

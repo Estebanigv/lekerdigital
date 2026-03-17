@@ -1217,13 +1217,14 @@ app.get('/routes/zones/:userId', async (req, res) => {
 // Obtener ruta optimizada para un vendedor (filtrada por zona)
 app.get('/routes/optimize/:userId', async (req, res) => {
   try {
-    const { zone, startLat, startLng, exclude } = req.query;
+    const { zone, startLat, startLng, exclude, shuffle } = req.query;
     let startPoint = null;
     if (startLat && startLng) {
       startPoint = { lat: parseFloat(startLat), lng: parseFloat(startLng) };
     }
     const excludeIds = exclude ? exclude.split(',').filter(Boolean) : [];
-    const result = await routesService.getOptimizedRoute(req.params.userId, zone, startPoint, excludeIds);
+    const options = { shuffle: shuffle === 'true' };
+    const result = await routesService.getOptimizedRoute(req.params.userId, zone, startPoint, excludeIds, options);
     res.json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

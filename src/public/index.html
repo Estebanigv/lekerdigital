@@ -5919,6 +5919,9 @@
                       <button onclick="openFullRouteInMaps()" class="btn" style="background: #4285f4; color: white; border: none; padding: 7px 14px; font-size: 12px; font-weight: 600; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Abrir en Google Maps">
                         <i data-lucide="map-pin" style="width:14px;height:14px;"></i> Abrir en Maps
                       </button>
+                      <button onclick="_generateAlternativeRoute()" class="btn" style="background: rgba(99,102,241,0.08); color: #6366f1; border: 1px solid rgba(99,102,241,0.3); padding: 7px 10px; font-size: 12px; font-weight: 600; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Generar ruta alternativa con diferente distribución">
+                        <i data-lucide="shuffle" style="width: 13px; height: 13px;"></i> Alternativa
+                      </button>
                       <button onclick="generateOptimizedRoute()" class="btn" style="background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border); padding: 7px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Recalcular ruta">
                         <i data-lucide="refresh-cw" style="width: 13px; height: 13px;"></i> Recalcular
                       </button>
@@ -10473,12 +10476,18 @@
           });
           visitExecFilterEl.innerHTML = visitExecOpts;
 
-          // Auto-select executive in visits panel and hide the filter container
+          // Auto-select executive in visits panel and hide the filter completely
           if (currentUser && currentUser.role === 'executive') {
             visitExecFilterEl.value = currentUser.id;
             visitExecFilterEl.style.display = 'none';
             const filterCont = document.getElementById('visit-exec-filter-container');
-            if (filterCont) filterCont.style.display = 'none';
+            if (filterCont) filterCont.style.cssText = 'display:none !important;';
+            // Update header to show vendor name instead of generic title
+            const visitHeader = document.querySelector('#panel-visits .card-body');
+            if (visitHeader) {
+              const titleEl = visitHeader.querySelector('[style*="font-size: 20px"]');
+              if (titleEl) titleEl.textContent = `Mis Visitas — ${currentUser.full_name}`;
+            }
           }
         }
 
@@ -12695,6 +12704,23 @@
     let selectedOptDay = null;
     let _zonesData = []; // cache de zonas con sectores
 
+    function _generateAlternativeRoute() {
+      if (!selectedExecutiveId) {
+        showToast('warning', 'Atención', 'Selecciona un vendedor primero');
+        return;
+      }
+      if (!optimizedRouteData) {
+        showToast('info', 'Info', 'Primero genera una ruta normal, luego podrás ver alternativas');
+        generateOptimizedRoute();
+        return;
+      }
+      // Regenerar con shuffle para obtener una distribución diferente
+      showToast('info', 'Generando alternativa', 'Recalculando con diferente agrupación...');
+      _isAlternativeRoute = true;
+      generateOptimizedRoute();
+    }
+    let _isAlternativeRoute = false;
+
     async function generateOptimizedRoute() {
       if (!selectedExecutiveId) {
         showToast('warning', 'Atención', 'Selecciona un vendedor primero');
@@ -13146,7 +13172,9 @@
         } else {
           showToast('info', 'Calculando', `Generando ruta — ${label}...`);
           // Motor algoritmo (original)
-          const res = await fetch(`${API}/routes/optimize/${selectedExecutiveId}?zone=${encodeURIComponent(zone)}${communeParam}${includeParam}${excludeParam}`);
+          const shuffleParam = _isAlternativeRoute ? '&shuffle=true' : '';
+          _isAlternativeRoute = false;
+          const res = await fetch(`${API}/routes/optimize/${selectedExecutiveId}?zone=${encodeURIComponent(zone)}${communeParam}${includeParam}${excludeParam}${shuffleParam}`);
           data = await res.json();
         }
 
