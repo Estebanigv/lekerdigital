@@ -3153,7 +3153,8 @@ function _buildPlatformContextBlock(platformContext, routeContext) {
 /**
  * Construye el system prompt compartido para AI chat.
  */
-function _buildAiSystemPrompt(contextBlock, sheetsCtx) {
+async function _buildAiSystemPrompt(contextBlock, sheetsCtx) {
+  const learningsCtx = await _buildLearningsContext().catch(() => '');
   return `Eres LEKER AI, asistente inteligente de Leker (distribuidora Chile).
 Tienes acceso a TODOS los datos reales del negocio: clientes, rutas, vendedores, ventas, cobranzas, 80-20.
 Estás integrado en toda la plataforma — siempre sabes en qué sección está el usuario y qué datos tiene cargados.
@@ -3196,7 +3197,7 @@ Ejemplos de uso:
 - Si un vendedor no tiene GPS: [[ir:Ir al CRM|crm]]
 SIEMPRE incluye al menos 1 botón de acción cuando sea relevante. Puedes poner varios en líneas separadas.
 
-${contextBlock}${sheetsCtx}`;
+${contextBlock}${sheetsCtx}${learningsCtx}`;
 }
 
 /**
@@ -3218,7 +3219,7 @@ app.post('/api/ai/route-chat', authenticate, aiLimiter, async (req, res) => {
     // Incluir datos reales de Google Sheets (ventas, cobranzas, 80-20) — con caché 5min
     const sheetsCtx = await _buildSheetsContext().catch(() => '');
 
-    const systemPrompt = _buildAiSystemPrompt(contextBlock, sheetsCtx);
+    const systemPrompt = await _buildAiSystemPrompt(contextBlock, sheetsCtx);
 
     const recentHistory = history.slice(-8).map(m => ({ role: m.role, content: m.content }));
 
@@ -3256,7 +3257,7 @@ app.post('/api/ai/route-chat/stream', authenticate, aiLimiter, async (req, res) 
     // Incluir datos reales de Google Sheets (ventas, cobranzas, 80-20) — con caché 5min
     const sheetsCtx = await _buildSheetsContext().catch(() => '');
 
-    const systemPrompt = _buildAiSystemPrompt(contextBlock, sheetsCtx);
+    const systemPrompt = await _buildAiSystemPrompt(contextBlock, sheetsCtx);
 
     // SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
@@ -3291,6 +3292,128 @@ app.post('/api/ai/route-chat/stream', authenticate, aiLimiter, async (req, res) 
   } catch (error) {
     console.error('[AI stream]', error.message);
     try { res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`); res.end(); } catch(_) {}
+  }
+});
+
+// =============================================
+// AI LEARNINGS — Memoria persistente de la IA
+// =============================================
+
+// Auto-create table on first use
+let _aiLearningsTableReady = false;
+async function _ensureAiLearningsTable() {
+  if (_aiLearningsTableReady) return;
+  try {
+    const { error } = await supabase.from('ai_learnings').select('id').limit(1);
+    if (error && error.code === 'PGRST205') {
+      // Table doesn't exist — create via raw SQL
+      const { error: sqlErr } = await supabase.rpc('exec_sql', {
+        sql: `CREATE TABLE IF NOT EXISTS ai_learnings (
+          id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+          category TEXT NOT NULL DEFAULT 'general',
+          title TEXT NOT NULL,
+          content TEXT NOT NULL,
+          active BOOLEAN DEFAULT true,
+          created_by UUID,
+          created_at TIMESTAMPTZ DEFAULT now(),
+          updated_at TIMESTAMPTZ DEFAULT now()
+        )`
+      });
+      if (sqlErr) console.log('[ai_learnings] Could not auto-create table, create manually:', sqlErr.message);
+    }
+    _aiLearningsTableReady = true;
+  } catch (e) {
+    console.log('[ai_learnings] init:', e.message);
+  }
+}
+
+// Build learnings context for AI prompts
+let _learningsCache = null;
+let _learningsCachedAt = 0;
+const LEARNINGS_TTL = 5 * 60 * 1000; // 5 min cache
+
+async function _buildLearningsContext() {
+  if (_learningsCache && (Date.now() - _learningsCachedAt) < LEARNINGS_TTL) return _learningsCache;
+  try {
+    await _ensureAiLearningsTable();
+    const { data } = await supabase.from('ai_learnings').select('category,title,content').eq('active', true).order('category');
+    if (!data || data.length === 0) { _learningsCache = ''; _learningsCachedAt = Date.now(); return ''; }
+
+    let ctx = '\n=== REGLAS Y APRENDIZAJES DE LA EMPRESA ===\n';
+    ctx += 'IMPORTANTE: Estas son reglas y conocimientos que la empresa ha definido. SIEMPRE respétalas.\n';
+    const byCategory = {};
+    data.forEach(l => {
+      if (!byCategory[l.category]) byCategory[l.category] = [];
+      byCategory[l.category].push(l);
+    });
+    Object.entries(byCategory).forEach(([cat, items]) => {
+      ctx += `\n[${cat.toUpperCase()}]\n`;
+      items.forEach(l => { ctx += `• ${l.title}: ${l.content}\n`; });
+    });
+    _learningsCache = ctx;
+    _learningsCachedAt = Date.now();
+    return ctx;
+  } catch (e) {
+    return '';
+  }
+}
+
+// GET /api/ai/learnings — listar todos
+app.get('/api/ai/learnings', authenticate, authorize('admin', 'supervisor'), async (req, res) => {
+  try {
+    await _ensureAiLearningsTable();
+    const { data, error } = await supabase.from('ai_learnings').select('*').order('category').order('created_at', { ascending: false });
+    if (error) return res.status(500).json({ success: false, error: error.message });
+    res.json({ success: true, data });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// POST /api/ai/learnings — crear
+app.post('/api/ai/learnings', authenticate, authorize('admin', 'supervisor'), async (req, res) => {
+  try {
+    await _ensureAiLearningsTable();
+    const { category, title, content } = req.body;
+    if (!title || !content) return res.status(400).json({ success: false, error: 'Título y contenido requeridos' });
+    const { data, error } = await supabase.from('ai_learnings').insert({
+      category: category || 'general', title, content, active: true, created_by: req.user.id
+    }).select().single();
+    if (error) return res.status(500).json({ success: false, error: error.message });
+    _learningsCache = null; // invalidate cache
+    res.json({ success: true, data });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// PUT /api/ai/learnings/:id — actualizar
+app.put('/api/ai/learnings/:id', authenticate, authorize('admin', 'supervisor'), async (req, res) => {
+  try {
+    const { category, title, content, active } = req.body;
+    const updates = { updated_at: new Date().toISOString() };
+    if (category !== undefined) updates.category = category;
+    if (title !== undefined) updates.title = title;
+    if (content !== undefined) updates.content = content;
+    if (active !== undefined) updates.active = active;
+    const { data, error } = await supabase.from('ai_learnings').update(updates).eq('id', req.params.id).select().single();
+    if (error) return res.status(500).json({ success: false, error: error.message });
+    _learningsCache = null;
+    res.json({ success: true, data });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// DELETE /api/ai/learnings/:id — eliminar
+app.delete('/api/ai/learnings/:id', authenticate, authorize('admin', 'supervisor'), async (req, res) => {
+  try {
+    const { error } = await supabase.from('ai_learnings').delete().eq('id', req.params.id);
+    if (error) return res.status(500).json({ success: false, error: error.message });
+    _learningsCache = null;
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 

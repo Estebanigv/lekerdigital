@@ -4367,6 +4367,17 @@
       0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
       40% { transform: scale(1); opacity: 1; }
     }
+    /* Learning category filter buttons */
+    .learning-cat-btn {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
+    }
+    .learning-cat-btn.active {
+      background: #6366f1; color: white; border-color: #6366f1;
+    }
+    .learning-cat-btn:hover:not(.active) {
+      background: var(--bg-hover); border-color: rgba(99,102,241,0.3);
+    }
     .ai-chat-input {
       padding: 12px 16px;
       border-top: 1px solid var(--border);
@@ -4889,6 +4900,10 @@
 
       <div class="nav-section">
         <div class="nav-section-title">Administración</div>
+        <div class="nav-item" data-tab="ai-learnings" data-tooltip="Aprendizaje IA">
+          <i data-lucide="brain"></i>
+          <span>Aprendizaje IA</span>
+        </div>
         <div class="nav-item" data-tab="users" data-tooltip="Usuarios y Roles">
           <i data-lucide="shield-check"></i>
           <span>Usuarios y Roles</span>
@@ -8034,6 +8049,57 @@
         </div>
       </div>
 
+      <!-- AI Learnings Panel -->
+      <div class="panel" id="panel-ai-learnings">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h2 style="margin:0;font-size:20px;font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:10px;">
+              <i data-lucide="brain" style="width:22px;height:22px;color:#6366f1;"></i>
+              Aprendizaje IA
+            </h2>
+            <p style="margin:4px 0 0;font-size:12px;color:var(--text-muted);">Enseña a LEKER AI las reglas, correcciones y conocimientos de tu empresa. Todo lo que agregues aquí será recordado en cada conversación.</p>
+          </div>
+          <button onclick="_openLearningModal()" class="btn btn-primary" style="display:flex;align-items:center;gap:6px;font-size:13px;padding:8px 16px;border-radius:8px;">
+            <i data-lucide="plus" style="width:15px;height:15px;"></i> Agregar Aprendizaje
+          </button>
+        </div>
+
+        <!-- Categories filter -->
+        <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;" id="learning-category-filters">
+          <button class="btn learning-cat-btn active" onclick="_filterLearnings('all')" data-cat="all" style="font-size:11px;padding:5px 12px;border-radius:20px;">Todos</button>
+          <button class="btn learning-cat-btn" onclick="_filterLearnings('ventas')" data-cat="ventas" style="font-size:11px;padding:5px 12px;border-radius:20px;">Ventas</button>
+          <button class="btn learning-cat-btn" onclick="_filterLearnings('rutas')" data-cat="rutas" style="font-size:11px;padding:5px 12px;border-radius:20px;">Rutas</button>
+          <button class="btn learning-cat-btn" onclick="_filterLearnings('clientes')" data-cat="clientes" style="font-size:11px;padding:5px 12px;border-radius:20px;">Clientes</button>
+          <button class="btn learning-cat-btn" onclick="_filterLearnings('productos')" data-cat="productos" style="font-size:11px;padding:5px 12px;border-radius:20px;">Productos</button>
+          <button class="btn learning-cat-btn" onclick="_filterLearnings('politicas')" data-cat="politicas" style="font-size:11px;padding:5px 12px;border-radius:20px;">Políticas</button>
+          <button class="btn learning-cat-btn" onclick="_filterLearnings('general')" data-cat="general" style="font-size:11px;padding:5px 12px;border-radius:20px;">General</button>
+        </div>
+
+        <!-- Stats -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px;">
+          <div class="card" style="padding:14px;text-align:center;">
+            <div id="learning-total-count" style="font-size:24px;font-weight:800;color:#6366f1;">0</div>
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Total Aprendizajes</div>
+          </div>
+          <div class="card" style="padding:14px;text-align:center;">
+            <div id="learning-active-count" style="font-size:24px;font-weight:800;color:#10b981;">0</div>
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Activos</div>
+          </div>
+          <div class="card" style="padding:14px;text-align:center;">
+            <div id="learning-categories-count" style="font-size:24px;font-weight:800;color:#f59e0b;">0</div>
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Categorías</div>
+          </div>
+        </div>
+
+        <!-- Learnings list -->
+        <div id="learnings-list" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="text-align:center;padding:40px;color:var(--text-muted);">
+            <i data-lucide="loader-2" class="spin" style="width:24px;height:24px;margin-bottom:8px;"></i>
+            <div style="font-size:13px;">Cargando aprendizajes...</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Users Panel (Control Maestro) -->
       <div class="panel" id="panel-users">
         <!-- Admin Actual - Control Total -->
@@ -8929,8 +8995,8 @@
     // AUTH SYSTEM
     // =============================================
     const DEFAULT_ROLE_PANELS = {
-      admin:      ['dashboard', 'routes', 'visits', 'crm', 'intelligence', 'marketing', 'data', 'gsheets', 'users'],
-      supervisor: ['dashboard', 'routes', 'visits', 'crm', 'data', 'gsheets'],
+      admin:      ['dashboard', 'routes', 'visits', 'crm', 'intelligence', 'marketing', 'data', 'gsheets', 'ai-learnings', 'users'],
+      supervisor: ['dashboard', 'routes', 'visits', 'crm', 'data', 'gsheets', 'ai-learnings'],
       zonal:      ['dashboard', 'routes', 'visits', 'crm', 'gsheets'],
       executive:  ['dashboard', 'visits', 'routes'],
       viewer:     ['dashboard']
@@ -9537,11 +9603,15 @@
           data: 'Datos del Sistema',
           marketing: 'Marketing Digital',
           gsheets: 'Datos Comerciales',
+          'ai-learnings': 'Aprendizaje IA',
           users: 'Usuarios y Roles'
         };
         document.getElementById('page-title').textContent = titles[tab] || 'Dashboard';
 
         // Load data for specific tabs
+        if (tab === 'ai-learnings') {
+          loadAILearnings();
+        }
         if (tab === 'marketing') {
           loadMarketingConfig();
         }
@@ -26718,6 +26788,194 @@
     }
     // ══ END LEKER AI FLOATING PANEL ══════════════════════════════════
 
+    // =============================================
+    // AI LEARNINGS — Panel de Aprendizaje
+    // =============================================
+    let _allLearnings = [];
+    let _learningsFilter = 'all';
+
+    async function loadAILearnings() {
+      try {
+        const res = await fetch(`${API}/api/ai/learnings`);
+        const json = await res.json();
+        if (json.success) {
+          _allLearnings = json.data || [];
+          _renderLearnings();
+        }
+      } catch (e) {
+        document.getElementById('learnings-list').innerHTML = `<div style="text-align:center;padding:24px;color:#ef4444;">Error al cargar: ${e.message}</div>`;
+      }
+    }
+
+    function _renderLearnings() {
+      const list = document.getElementById('learnings-list');
+      if (!list) return;
+
+      const filtered = _learningsFilter === 'all' ? _allLearnings : _allLearnings.filter(l => l.category === _learningsFilter);
+
+      // Stats
+      const totalEl = document.getElementById('learning-total-count');
+      const activeEl = document.getElementById('learning-active-count');
+      const catsEl = document.getElementById('learning-categories-count');
+      if (totalEl) totalEl.textContent = _allLearnings.length;
+      if (activeEl) activeEl.textContent = _allLearnings.filter(l => l.active).length;
+      if (catsEl) catsEl.textContent = [...new Set(_allLearnings.map(l => l.category))].length;
+
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div style="text-align:center;padding:40px;">
+            <div style="width:56px;height:56px;border-radius:14px;background:rgba(99,102,241,0.08);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+              <i data-lucide="brain" style="width:28px;height:28px;color:var(--text-muted);"></i>
+            </div>
+            <p style="font-size:14px;font-weight:600;margin:0 0 4px;">Sin aprendizajes${_learningsFilter !== 'all' ? ' en esta categoría' : ''}</p>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 16px;">Agrega reglas, correcciones o conocimientos para que la IA los recuerde.</p>
+            <button onclick="_openLearningModal()" class="btn btn-primary" style="font-size:12px;padding:8px 16px;border-radius:8px;">
+              <i data-lucide="plus" style="width:14px;height:14px;"></i> Agregar primer aprendizaje
+            </button>
+          </div>`;
+        _createIcons(list);
+        return;
+      }
+
+      const catColors = {
+        ventas:'#10b981', rutas:'#3b82f6', clientes:'#f59e0b', productos:'#8b5cf6',
+        politicas:'#ef4444', general:'#6b7280'
+      };
+
+      list.innerHTML = filtered.map(l => {
+        const color = catColors[l.category] || '#6b7280';
+        const date = new Date(l.created_at).toLocaleDateString('es-CL');
+        return `
+        <div class="card" style="padding:14px 16px;border-left:3px solid ${color};opacity:${l.active ? 1 : 0.5};transition:opacity 0.2s;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <span style="font-size:9px;padding:2px 8px;border-radius:10px;background:${color}18;color:${color};font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${l.category}</span>
+                ${!l.active ? '<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(239,68,68,0.1);color:#ef4444;font-weight:600;">INACTIVO</span>' : ''}
+              </div>
+              <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:3px;">${l.title}</div>
+              <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">${l.content}</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:6px;">${date}</div>
+            </div>
+            <div style="display:flex;gap:4px;flex-shrink:0;">
+              <button onclick="_toggleLearning('${l.id}',${!l.active})" title="${l.active ? 'Desactivar' : 'Activar'}" style="background:none;border:1px solid var(--border);width:28px;height:28px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);">
+                <i data-lucide="${l.active ? 'pause' : 'play'}" style="width:12px;height:12px;"></i>
+              </button>
+              <button onclick="_editLearning('${l.id}')" title="Editar" style="background:none;border:1px solid var(--border);width:28px;height:28px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);">
+                <i data-lucide="pencil" style="width:12px;height:12px;"></i>
+              </button>
+              <button onclick="_deleteLearning('${l.id}','${l.title.replace(/'/g,"\\'")}') " title="Eliminar" style="background:none;border:1px solid var(--border);width:28px;height:28px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#ef4444;">
+                <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+              </button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+      _createIcons(list);
+    }
+
+    function _filterLearnings(cat) {
+      _learningsFilter = cat;
+      document.querySelectorAll('.learning-cat-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.cat === cat);
+      });
+      _renderLearnings();
+    }
+
+    function _openLearningModal(existing) {
+      const isEdit = !!existing;
+      const overlay = document.createElement('div');
+      overlay.id = 'learning-modal-overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+      overlay.innerHTML = `
+        <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);border:1px solid var(--border);">
+          <h3 style="margin:0 0 16px;font-size:16px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+            <i data-lucide="${isEdit?'pencil':'plus'}" style="width:18px;height:18px;color:#6366f1;"></i>
+            ${isEdit ? 'Editar' : 'Nuevo'} Aprendizaje
+          </h3>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Categoría</label>
+            <select id="learning-modal-cat" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;">
+              <option value="general" ${existing?.category==='general'?'selected':''}>General</option>
+              <option value="ventas" ${existing?.category==='ventas'?'selected':''}>Ventas</option>
+              <option value="rutas" ${existing?.category==='rutas'?'selected':''}>Rutas</option>
+              <option value="clientes" ${existing?.category==='clientes'?'selected':''}>Clientes</option>
+              <option value="productos" ${existing?.category==='productos'?'selected':''}>Productos</option>
+              <option value="politicas" ${existing?.category==='politicas'?'selected':''}>Políticas</option>
+            </select>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Título / Regla</label>
+            <input id="learning-modal-title" type="text" value="${existing?.title?.replace(/"/g,'&quot;')||''}" placeholder="Ej: Precio mínimo de venta" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;box-sizing:border-box;">
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Contenido / Explicación</label>
+            <textarea id="learning-modal-content" rows="4" placeholder="Explica la regla, corrección o conocimiento que la IA debe recordar..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;resize:vertical;margin-top:4px;font-family:inherit;line-height:1.5;box-sizing:border-box;">${existing?.content||''}</textarea>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button onclick="document.getElementById('learning-modal-overlay').remove()" class="btn" style="font-size:13px;padding:8px 16px;border-radius:8px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">Cancelar</button>
+            <button onclick="_saveLearning(${isEdit ? "'"+existing.id+"'" : 'null'})" class="btn btn-primary" style="font-size:13px;padding:8px 20px;border-radius:8px;">
+              <i data-lucide="check" style="width:14px;height:14px;"></i> ${isEdit ? 'Guardar' : 'Crear'}
+            </button>
+          </div>
+        </div>`;
+      overlay.addEventListener('mousedown', e => { overlay._bg = e.target === overlay; });
+      overlay.addEventListener('click', e => { if (overlay._bg && e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+      _createIcons(overlay);
+      document.getElementById('learning-modal-title').focus();
+    }
+
+    async function _saveLearning(id) {
+      const cat = document.getElementById('learning-modal-cat').value;
+      const title = document.getElementById('learning-modal-title').value.trim();
+      const content = document.getElementById('learning-modal-content').value.trim();
+      if (!title || !content) { showToast('error','Error','Título y contenido requeridos'); return; }
+
+      try {
+        const url = id ? `${API}/api/ai/learnings/${id}` : `${API}/api/ai/learnings`;
+        const method = id ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+          method, headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ category: cat, title, content })
+        });
+        const json = await res.json();
+        if (json.success) {
+          document.getElementById('learning-modal-overlay')?.remove();
+          showToast('success','Listo', id ? 'Aprendizaje actualizado' : 'Aprendizaje creado');
+          loadAILearnings();
+        } else {
+          showToast('error','Error', json.error);
+        }
+      } catch (e) {
+        showToast('error','Error', e.message);
+      }
+    }
+
+    function _editLearning(id) {
+      const l = _allLearnings.find(x => x.id === id);
+      if (l) _openLearningModal(l);
+    }
+
+    async function _toggleLearning(id, active) {
+      try {
+        await fetch(`${API}/api/ai/learnings/${id}`, {
+          method: 'PUT', headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ active })
+        });
+        loadAILearnings();
+      } catch (e) { showToast('error','Error',e.message); }
+    }
+
+    async function _deleteLearning(id, title) {
+      if (!confirm(`¿Eliminar "${title}"? Esta acción no se puede deshacer.`)) return;
+      try {
+        await fetch(`${API}/api/ai/learnings/${id}`, { method: 'DELETE' });
+        showToast('success','Eliminado','Aprendizaje eliminado');
+        loadAILearnings();
+      } catch (e) { showToast('error','Error',e.message); }
+    }
+
     // ── Command Palette ─────────────────────────────────────────────
     let _cmdActiveIdx = -1;
 
@@ -29684,7 +29942,7 @@ function installPWA() {
   <!-- Messages -->
   <div id="route-chat-messages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px;"></div>
   <!-- Quick chips estilo WhatsApp (burbujas de conversación) -->
-  <div id="chat-quick-chips" style="padding:8px 12px 4px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;border-top:1px solid var(--border);background:var(--bg-card);max-height:140px;overflow-y:auto;"></div>
+  <div id="chat-quick-chips" style="padding:8px 12px 4px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;border-top:1px solid var(--border);background:var(--bg-card);"></div>
   <!-- Input -->
   <div style="padding:8px 12px 4px;flex-shrink:0;background:var(--bg-card);">
     <div style="display:flex;gap:6px;">
