@@ -185,8 +185,8 @@ function optimizeRouteOrder(clients, startPoint = null) {
 function clusterClientsByProximity(clients) {
   const TIME_BUDGET_MIN = 480; // 8 horas (09:00 a 17:00)
   const SPEED_KMH = 40;
-  const VISIT_DURATION_MIN = 35; // 35 min por visita
-  const MAX_PER_CLUSTER = 10;   // máx clientes por día (8-10 por jornada)
+  const VISIT_DURATION_MIN = 15; // 15 min por visita (ajustado: muchas visitas son breves)
+  const MAX_PER_CLUSTER = 15;   // máx clientes por día
 
   if (!clients || clients.length === 0) return [];
 
@@ -206,12 +206,13 @@ function clusterClientsByProximity(clients) {
     return { lat: sumLat / members.length, lng: sumLng / members.length };
   }
 
-  // Helper: estimate total time for a cluster
+  // Helper: estimate total time for a cluster (uses per-client adaptive duration if available)
   function clusterTime(members) {
-    if (members.length <= 1) return members.length * VISIT_DURATION_MIN;
+    const visitMin = members.reduce((sum, c) => sum + (c._estimated_visit_min || VISIT_DURATION_MIN), 0);
+    if (members.length <= 1) return visitMin;
     const { totalDistance } = nearestNeighborTSP(members);
     const travelMin = (totalDistance / SPEED_KMH) * 60;
-    return travelMin + members.length * VISIT_DURATION_MIN;
+    return travelMin + visitMin;
   }
 
   while (assigned.size < sorted.length) {
@@ -319,10 +320,15 @@ function calculateFuelCost(distanceKm, fuelEfficiency = VEHICLE_CONFIG.FUEL_EFFI
 function clientPriorityScore(client, now = new Date()) {
   let score = 0;
 
-  // Segmentación base
+  // Segmentación base — diferenciar L con/sin venta
   if (client.segmentation === '80-20') score += 100;
-  else if (client.segmentation === 'L') score += 50;
+  else if (client.segmentation === 'L' && client.segment === 'C') score += 60; // L con venta
+  else if (client.segmentation === 'L') score += 40; // L sin venta
   else score += 20;
+
+  // Bonus por client_learnings (sale_rate)
+  if (client._sale_rate > 0.5) score += 15;
+  else if (client._sale_rate < 0.1 && (client._skip_count || 0) > 3) score -= 10;
 
   // Bonus por estar vencido (no visitado según frecuencia)
   if (client.last_visit_at) {
@@ -347,6 +353,26 @@ function clientPriorityScore(client, now = new Date()) {
 }
 
 class RoutesService {
+  // =============================================
+  // AUDIT LOG
+  // =============================================
+
+  async _logAudit({ entityType, entityId, action, changes, userId, userName }) {
+    try {
+      await supabase.from('audit_log').insert([{
+        entity_type: entityType,
+        entity_id: entityId,
+        action,
+        changes: changes || {},
+        user_id: userId || null,
+        user_name: userName || null,
+        created_at: new Date().toISOString()
+      }]);
+    } catch (err) {
+      console.warn('[Audit] Failed to log:', err.message);
+    }
+  }
+
   // =============================================
   // USUARIOS
   // =============================================
@@ -1223,6 +1249,13 @@ class RoutesService {
 
     if (routeError) throw routeError;
 
+    // Audit log
+    this._logAudit({
+      entityType: 'route', entityId: route.id, action: 'route_start',
+      changes: { start_km: startKm, vehicle_id: vehicleId },
+      userId, userName: user.full_name
+    });
+
     return {
       route,
       user: { id: user.id, name: user.full_name },
@@ -1281,6 +1314,10 @@ class RoutesService {
       updateData.consecutive_no_sale = (client.consecutive_no_sale || 0) + 1;
     }
 
+    // Update store hours if provided in checklist
+    if (checklistData && checklistData.opening_time) updateData.opening_time = checklistData.opening_time;
+    if (checklistData && checklistData.closing_time) updateData.closing_time = checklistData.closing_time;
+
     // If address correction was provided, use that
     if (addressUpdate) {
       if (addressUpdate.address) updateData.address = addressUpdate.address;
@@ -1321,12 +1358,140 @@ class RoutesService {
       .eq('scheduled_date', today)
       .eq('status', 'pending');
 
+    // Audit log
+    this._logAudit({
+      entityType: 'visit', entityId: visit.id, action: 'check_in',
+      changes: { client_id: clientId, outcome, addressUpdated: !!addressUpdate }
+    });
+
+    // Check for route deviation and auto-recalculate (non-blocking)
+    let routeUpdate = null;
+    if (lat && lng) {
+      try {
+        routeUpdate = await this._checkRouteDeviation(routeId, clientId, lat, lng);
+      } catch (e) {
+        console.warn('[checkIn] Route deviation check failed:', e.message);
+      }
+    }
+
     return {
       visit,
       client: { id: client.id, name: client.name },
       location: lat && lng ? { lat, lng } : null,
-      addressUpdated: !!addressUpdate
+      addressUpdated: !!addressUpdate,
+      routeUpdate
     };
+  }
+
+  async checkOut({ visitId, lat, lng }) {
+    const { data: visit, error: visitError } = await supabase
+      .from('visits')
+      .select('id, check_in, check_out, route_id')
+      .eq('id', visitId)
+      .single();
+
+    if (visitError || !visit) throw new Error('Visita no encontrada');
+    if (visit.check_out) throw new Error('Esta visita ya tiene check-out');
+
+    const now = new Date().toISOString();
+    const updateData = {
+      check_out: now,
+      check_out_lat: lat || null,
+      check_out_lng: lng || null
+    };
+
+    const { data, error } = await supabase
+      .from('visits')
+      .update(updateData)
+      .eq('id', visitId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Calculate duration in minutes
+    const durationMin = Math.round((new Date(now) - new Date(visit.check_in)) / 60000);
+
+    // Audit log
+    this._logAudit({
+      entityType: 'visit', entityId: visitId, action: 'check_out',
+      changes: { durationMin, route_id: visit.route_id }
+    });
+
+    // Recompute client learnings (non-blocking)
+    if (data.client_id) {
+      this._recomputeClientLearnings(data.client_id).catch(err =>
+        console.warn('[checkOut] Learning recompute failed:', err.message)
+      );
+    }
+
+    return { visit: data, durationMin };
+  }
+
+  async getAuditLog({ entityType, entityId, userId, limit = 50, offset = 0 } = {}) {
+    let query = supabase
+      .from('audit_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (entityType) query = query.eq('entity_type', entityType);
+    if (entityId) query = query.eq('entity_id', entityId);
+    if (userId) query = query.eq('user_id', userId);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }
+
+  async _attachAdaptiveDurations(clients) {
+    if (!clients || clients.length === 0) return clients;
+    const clientIds = clients.map(c => c.id);
+    try {
+      // Batch query: avg duration per client from visits with check_out
+      const { data: avgData } = await supabase
+        .rpc('avg_visit_duration_by_clients', { client_ids: clientIds });
+
+      if (avgData && avgData.length > 0) {
+        const durationMap = new Map(avgData.map(r => [r.client_id, Math.round(r.avg_minutes)]));
+        clients.forEach(c => {
+          const avg = durationMap.get(c.id);
+          if (avg && avg >= 5 && avg <= 120) {
+            c._estimated_visit_min = avg;
+          }
+        });
+      }
+    } catch (err) {
+      // If RPC doesn't exist yet, fall back to raw query
+      try {
+        const { data: rawData } = await supabase
+          .from('visits')
+          .select('client_id, check_in, check_out')
+          .in('client_id', clientIds.slice(0, 500))
+          .not('check_out', 'is', null);
+
+        if (rawData && rawData.length > 0) {
+          const byClient = {};
+          rawData.forEach(v => {
+            const dur = (new Date(v.check_out) - new Date(v.check_in)) / 60000;
+            if (dur >= 1 && dur <= 240) {
+              if (!byClient[v.client_id]) byClient[v.client_id] = [];
+              byClient[v.client_id].push(dur);
+            }
+          });
+          clients.forEach(c => {
+            const durations = byClient[c.id];
+            if (durations && durations.length > 0) {
+              const avg = Math.round(durations.reduce((s, d) => s + d, 0) / durations.length);
+              if (avg >= 5 && avg <= 120) c._estimated_visit_min = avg;
+            }
+          });
+        }
+      } catch (fallbackErr) {
+        console.warn('[Routes] Adaptive duration fallback failed:', fallbackErr.message);
+      }
+    }
+    return clients;
   }
 
   async getActiveRoute(userId) {
@@ -1473,7 +1638,7 @@ class RoutesService {
     return data || [];
   }
 
-  async endDay(routeId, endKm) {
+  async endDay(routeId, endKm, tollCost) {
     const { data: route } = await supabase
       .from('daily_routes')
       .select('*, vehicle:vehicles(*)')
@@ -1483,15 +1648,25 @@ class RoutesService {
     if (!route) throw new Error('Ruta no encontrada');
 
     const updateData = { status: 'completed' };
+    let fuelCost = 0;
 
     // Only calculate km/cost if endKm is provided
     if (endKm != null && !isNaN(endKm) && endKm >= 0) {
       const kmTraveled = endKm - (route.start_km || 0);
       const fuelEfficiency = route.vehicle?.fuel_efficiency_kml || VEHICLE_CONFIG.FUEL_EFFICIENCY_KML;
       const fuelUsed = kmTraveled / fuelEfficiency;
+      fuelCost = Math.round(fuelUsed * VEHICLE_CONFIG.FUEL_PRICE_CLP);
       updateData.end_km = endKm;
-      updateData.total_cost_clp = Math.round(fuelUsed * VEHICLE_CONFIG.FUEL_PRICE_CLP);
     }
+
+    // Add toll cost
+    const tollAmount = (tollCost != null && !isNaN(tollCost) && tollCost >= 0) ? Math.round(tollCost) : 0;
+    if (tollAmount > 0) {
+      updateData.toll_cost_clp = tollAmount;
+    }
+
+    // Total = fuel + tolls
+    updateData.total_cost_clp = fuelCost + tollAmount;
 
     const { data, error } = await supabase
       .from('daily_routes')
@@ -1501,6 +1676,13 @@ class RoutesService {
       .single();
 
     if (error) throw error;
+
+    // Audit log
+    this._logAudit({
+      entityType: 'route', entityId: routeId, action: 'route_end',
+      changes: { end_km: endKm, fuel_cost: fuelCost, toll_cost: tollAmount, total_cost: fuelCost + tollAmount }
+    });
+
     return data;
   }
 
@@ -1645,7 +1827,7 @@ class RoutesService {
     // Query 1: clientes asignados al vendedor con coords
     let query = supabase
       .from('clients')
-      .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, priority, zone, last_visit_at, visit_frequency_days, consecutive_no_sale')
+      .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, segment, priority, zone, last_visit_at, visit_frequency_days, consecutive_no_sale, opening_time, closing_time')
       .eq('assigned_user_id', userId)
       .not('lat', 'is', null)
       .not('lng', 'is', null);
@@ -1666,7 +1848,7 @@ class RoutesService {
       if (communes.length > 0) {
         let uQuery = supabase
           .from('clients')
-          .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, priority, zone, last_visit_at, visit_frequency_days, consecutive_no_sale')
+          .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, segment, priority, zone, last_visit_at, visit_frequency_days, consecutive_no_sale, opening_time, closing_time')
           .is('assigned_user_id', null)
           .not('lat', 'is', null)
           .not('lng', 'is', null);
@@ -1741,6 +1923,20 @@ class RoutesService {
       }
       cursor.setDate(cursor.getDate() + 1);
     }
+
+    // Attach adaptive visit durations from check-out data
+    await this._attachAdaptiveDurations(clients);
+
+    // Attach client learnings (sale_rate, best_visit_hour, skip_count)
+    await this._attachClientLearnings(clients);
+
+    // Assign _visit_tier to each client for visual segmentation
+    clients.forEach(c => {
+      if (c.segmentation === '80-20') c._visit_tier = 'priority';
+      else if (c.segmentation === 'L' && c.segment === 'C') c._visit_tier = 'recommended';
+      else if (c.segmentation === 'L') c._visit_tier = 'alternative';
+      else c._visit_tier = 'explore';
+    });
 
     // Use shared helper to split into days with TSP per day
     const { schedule: days, sortedDates } = this._splitIntoDays(clients, weekdays, startPoint);
@@ -2243,7 +2439,7 @@ class RoutesService {
    */
   calculateDayTimeline(orderedClients, startTime = '09:00', startPoint = null) {
     const SPEED_KMH = 40;
-    const VISIT_DURATION_MIN = 35;
+    const VISIT_DURATION_MIN = 15;
     const END_OF_DAY = '17:00';
 
     const [startH, startM] = startTime.split(':').map(Number);
@@ -2281,10 +2477,22 @@ class RoutesService {
       const arrivalM = currentMinutes % 60;
       const arrivalTime = `${String(arrivalH).padStart(2, '0')}:${String(arrivalM).padStart(2, '0')}`;
 
-      const departureMinutes = currentMinutes + VISIT_DURATION_MIN;
+      const clientVisitMin = client._estimated_visit_min || VISIT_DURATION_MIN;
+      const departureMinutes = currentMinutes + clientVisitMin;
       const departH = Math.floor(departureMinutes / 60);
       const departM = departureMinutes % 60;
       const departureTime = `${String(departH).padStart(2, '0')}:${String(departM).padStart(2, '0')}`;
+
+      // Check if arrival is outside store hours
+      let outsideHours = false;
+      if (client.opening_time) {
+        const [oh, om] = client.opening_time.split(':').map(Number);
+        if (currentMinutes < oh * 60 + om) outsideHours = true;
+      }
+      if (client.closing_time) {
+        const [ch, cm] = client.closing_time.split(':').map(Number);
+        if (currentMinutes > ch * 60 + cm) outsideHours = true;
+      }
 
       if (currentMinutes > endMinutes) {
         overloaded = true;
@@ -2295,7 +2503,8 @@ class RoutesService {
         estimatedArrival: arrivalTime,
         estimatedDeparture: departureTime,
         travelTimeMin,
-        travelDistKm: Math.round(travelDistKm * 10) / 10
+        travelDistKm: Math.round(travelDistKm * 10) / 10,
+        outsideHours
       });
 
       currentMinutes = departureMinutes;
@@ -2328,13 +2537,14 @@ class RoutesService {
       };
     }
 
-    // Helper: tiempo estimado del día
+    // Helper: tiempo estimado del día (uses per-client adaptive duration if available)
     function dayTime(clients) {
       if (!clients.length) return 0;
+      const visitTotal = clients.reduce((sum, c) => sum + (c._estimated_visit_min || VISIT_MIN), 0);
       const withCoords = clients.filter(c => c.lat && c.lng);
-      if (withCoords.length < 2) return clients.length * VISIT_MIN;
+      if (withCoords.length < 2) return visitTotal;
       const { totalDistance } = nearestNeighborTSP(withCoords);
-      return (totalDistance / SPEED_KMH) * 60 + clients.length * VISIT_MIN;
+      return (totalDistance / SPEED_KMH) * 60 + visitTotal;
     }
 
     // Ordenar clusters: primero los que tienen clientes 80-20, luego por tamaño desc
@@ -2415,7 +2625,7 @@ class RoutesService {
   _splitIntoDays(clientsToVisit, weekdays, startPoint = null) {
     const MAX_MINUTES_PER_DAY = 480; // 09:00–17:00
     const SPEED_KMH = 40;
-    const VISIT_MIN = 35;
+    const VISIT_MIN = 15;
 
     // Step 1: Cluster clients by geographic proximity
     const clusters = clusterClientsByProximity(clientsToVisit);
@@ -2464,7 +2674,7 @@ class RoutesService {
 
     // Step 4: Move overloaded clients (arriving after 17:00) to next available day
     const MIN_PER_DAY = 3;
-    const MAX_PER_DAY = 10;
+    const MAX_PER_DAY = 15;
     const sortedDates = Object.keys(optimizedSchedule).sort();
     for (let i = 0; i < sortedDates.length; i++) {
       const dayData = optimizedSchedule[sortedDates[i]];
@@ -2570,7 +2780,7 @@ class RoutesService {
       if (!c.last_visit_at) return true;
       const lastVisit = new Date(c.last_visit_at);
       const daysSince = Math.floor((now - lastVisit) / (1000 * 60 * 60 * 24));
-      return daysSince >= (c.visit_frequency_days || 30) * 0.7;
+      return daysSince >= (c.visit_frequency_days || 30) * 0.5;
     });
 
     // Generate weekdays between start and end
@@ -2589,6 +2799,9 @@ class RoutesService {
     if (weekdays.length === 0) {
       throw new Error('No hay días hábiles en el rango seleccionado');
     }
+
+    // Attach adaptive visit durations from check-out data
+    await this._attachAdaptiveDurations(clientsToVisit);
 
     // Use shared helper to split into days (proximity-based clustering)
     const { schedule: optimizedSchedule } = this._splitIntoDays(clientsToVisit, weekdays, startPoint);
@@ -3311,7 +3524,7 @@ class RoutesService {
       .from('scheduled_routes')
       .select('*, client:clients(id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation), user:users(id, full_name, role)')
       .eq('scheduled_date', today)
-      .eq('status', 'pending')
+      .in('status', ['pending', 'rescheduled'])
       .order('user_id')
       .order('priority');
 
@@ -3381,6 +3594,232 @@ class RoutesService {
     }
 
     return data;
+  }
+  // =============================================
+  // Mover rutas programadas de un día a otro
+  // =============================================
+
+  async moveScheduledDay(userId, fromDate, toDate) {
+    const { data, error } = await supabase
+      .from('scheduled_routes')
+      .update({ scheduled_date: toDate, updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('scheduled_date', fromDate)
+      .in('status', ['pending', 'rescheduled'])
+      .select('id');
+
+    if (error) throw new Error(`Error moviendo rutas: ${error.message}`);
+    return { moved: (data || []).length };
+  }
+
+  // =============================================
+  // Feature 3: Client Learnings (Memoria)
+  // =============================================
+
+  async _recomputeClientLearnings(clientId) {
+    // Query last 20 visits for this client
+    const { data: visits } = await supabase
+      .from('visits')
+      .select('check_in, check_out, outcome')
+      .eq('client_id', clientId)
+      .not('check_in', 'is', null)
+      .order('check_in', { ascending: false })
+      .limit(20);
+
+    if (!visits || visits.length === 0) return;
+
+    // Calculate avg duration (only visits with check_out)
+    const withDuration = visits.filter(v => v.check_out);
+    const avgDuration = withDuration.length > 0
+      ? Math.round(withDuration.reduce((s, v) => s + (new Date(v.check_out) - new Date(v.check_in)) / 60000, 0) / withDuration.length)
+      : null;
+
+    // Best hour: hour with most sales
+    const hourSales = {};
+    visits.forEach(v => {
+      if (v.outcome === 'sale' && v.check_in) {
+        const h = new Date(v.check_in).getHours();
+        hourSales[h] = (hourSales[h] || 0) + 1;
+      }
+    });
+    const bestHour = Object.keys(hourSales).length > 0
+      ? parseInt(Object.entries(hourSales).sort((a, b) => b[1] - a[1])[0][0])
+      : null;
+
+    // Sale rate
+    const saleCount = visits.filter(v => v.outcome === 'sale').length;
+    const saleRate = Math.round((saleCount / visits.length) * 100) / 100;
+
+    // Upsert
+    const { error } = await supabase
+      .from('client_learnings')
+      .upsert({
+        client_id: clientId,
+        avg_visit_duration_min: avgDuration,
+        best_visit_hour: bestHour,
+        sale_rate: saleRate,
+        last_computed_at: new Date().toISOString()
+      }, { onConflict: 'client_id' });
+
+    if (error) console.warn('[Learnings] Upsert error:', error.message);
+  }
+
+  async _attachClientLearnings(clients) {
+    if (!clients || clients.length === 0) return;
+    const ids = clients.map(c => c.id);
+    // Batch fetch in chunks of 200
+    const allLearnings = [];
+    for (let i = 0; i < ids.length; i += 200) {
+      const chunk = ids.slice(i, i + 200);
+      const { data } = await supabase
+        .from('client_learnings')
+        .select('client_id, avg_visit_duration_min, best_visit_hour, sale_rate, skip_count')
+        .in('client_id', chunk);
+      if (data) allLearnings.push(...data);
+    }
+    const map = {};
+    allLearnings.forEach(l => { map[l.client_id] = l; });
+    clients.forEach(c => {
+      const l = map[c.id];
+      if (l) {
+        c._sale_rate = parseFloat(l.sale_rate) || 0;
+        c._best_visit_hour = l.best_visit_hour;
+        c._skip_count = l.skip_count || 0;
+        c._avg_visit_duration = l.avg_visit_duration_min;
+      }
+    });
+  }
+
+  // =============================================
+  // Feature 4: Auto-corrección de Ruta
+  // =============================================
+
+  async _checkRouteDeviation(routeId, checkedInClientId, lat, lng) {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Get route's user_id
+    const { data: route } = await supabase
+      .from('daily_routes')
+      .select('user_id')
+      .eq('id', routeId)
+      .single();
+    if (!route) return null;
+
+    // Get pending scheduled routes for today, ordered by visit_order
+    const { data: scheduled } = await supabase
+      .from('scheduled_routes')
+      .select('id, client_id, visit_order, client:clients(id, name, fantasy_name, lat, lng, commune)')
+      .eq('user_id', route.user_id)
+      .eq('scheduled_date', today)
+      .eq('status', 'pending')
+      .order('visit_order', { ascending: true });
+
+    if (!scheduled || scheduled.length === 0) return null;
+
+    // The next expected client is the first pending one
+    const nextExpected = scheduled[0];
+    if (nextExpected.client_id === checkedInClientId) return null; // No deviation
+
+    // Deviation detected — recalculate from current position
+    const pendingClients = scheduled
+      .filter(s => s.client_id !== checkedInClientId) // exclude the one just checked in
+      .map(s => s.client)
+      .filter(c => c && c.lat && c.lng);
+
+    if (pendingClients.length === 0) return null;
+
+    const startPoint = { lat: parseFloat(lat), lng: parseFloat(lng) };
+    const { route: newOrder } = optimizeRouteOrder(pendingClients, startPoint);
+
+    // Update scheduled_routes with new order
+    for (let i = 0; i < newOrder.length; i++) {
+      await supabase
+        .from('scheduled_routes')
+        .update({ visit_order: i + 1, updated_at: new Date().toISOString() })
+        .eq('user_id', route.user_id)
+        .eq('scheduled_date', today)
+        .eq('client_id', newOrder[i].id)
+        .eq('status', 'pending');
+    }
+
+    return {
+      deviated: true,
+      previousNext: nextExpected.client?.name || nextExpected.client?.fantasy_name,
+      newSequence: newOrder.map((c, i) => ({
+        order: i + 1,
+        client_id: c.id,
+        name: c.fantasy_name || c.name,
+        commune: c.commune
+      })),
+      message: 'Ruta recalculada desde tu ubicación actual'
+    };
+  }
+
+  async recalculateActiveRoute(userId, lat, lng) {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Get pending scheduled routes
+    const { data: scheduled } = await supabase
+      .from('scheduled_routes')
+      .select('id, client_id, client:clients(id, name, fantasy_name, lat, lng, commune, address)')
+      .eq('user_id', userId)
+      .eq('scheduled_date', today)
+      .eq('status', 'pending')
+      .order('visit_order', { ascending: true });
+
+    if (!scheduled || scheduled.length === 0) {
+      return { message: 'No hay clientes pendientes para recalcular', newSequence: [] };
+    }
+
+    const pendingClients = scheduled
+      .map(s => s.client)
+      .filter(c => c && c.lat && c.lng);
+
+    if (pendingClients.length === 0) {
+      return { message: 'No hay clientes con GPS pendientes', newSequence: [] };
+    }
+
+    const startPoint = { lat: parseFloat(lat), lng: parseFloat(lng) };
+    const { route: newOrder } = optimizeRouteOrder(pendingClients, startPoint);
+
+    // Update scheduled_routes
+    for (let i = 0; i < newOrder.length; i++) {
+      await supabase
+        .from('scheduled_routes')
+        .update({ visit_order: i + 1, updated_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .eq('scheduled_date', today)
+        .eq('client_id', newOrder[i].id)
+        .eq('status', 'pending');
+    }
+
+    // Calculate timeline
+    const timeline = this.calculateDayTimeline(newOrder, undefined, startPoint);
+
+    // Update estimated arrivals
+    if (timeline && timeline.timeline) {
+      for (const entry of timeline.timeline) {
+        await supabase
+          .from('scheduled_routes')
+          .update({ estimated_arrival: entry.estimatedArrival })
+          .eq('user_id', userId)
+          .eq('scheduled_date', today)
+          .eq('client_id', entry.client.id)
+          .eq('status', 'pending');
+      }
+    }
+
+    return {
+      recalculated: true,
+      newSequence: newOrder.map((c, i) => ({
+        order: i + 1,
+        client_id: c.id,
+        name: c.fantasy_name || c.name,
+        commune: c.commune,
+        estimatedArrival: timeline?.timeline?.[i]?.estimatedArrival || null
+      })),
+      message: 'Ruta recalculada desde tu ubicación'
+    };
   }
 }
 

@@ -3201,9 +3201,9 @@
       min-width: 0;
     }
     .schedule-day:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-    .schedule-day.day-green { background: linear-gradient(180deg, rgba(16,185,129,0.04) 0%, var(--bg-card) 100%); }
-    .schedule-day.day-yellow { background: linear-gradient(180deg, rgba(245,158,11,0.04) 0%, var(--bg-card) 100%); }
-    .schedule-day.day-red { background: linear-gradient(180deg, rgba(239,68,68,0.04) 0%, var(--bg-card) 100%); }
+    .schedule-day.day-green { background: linear-gradient(180deg, rgba(16,185,129,0.08) 0%, var(--bg-card) 100%); }
+    .schedule-day.day-yellow { background: linear-gradient(180deg, rgba(245,158,11,0.08) 0%, var(--bg-card) 100%); }
+    .schedule-day.day-red { background: linear-gradient(180deg, rgba(251,146,60,0.1) 0%, var(--bg-card) 100%); }
     .schedule-day-header {
       font-weight: 700;
       font-size: 13px;
@@ -3225,6 +3225,7 @@
       border-radius: 6px;
       margin-bottom: 4px;
       background: var(--bg-hover);
+      color: var(--text-primary);
       display: flex;
       align-items: center;
       gap: 6px;
@@ -3233,7 +3234,7 @@
       font-size: 11px; font-weight: 600; color: var(--accent);
       min-width: 38px; text-align: right;
     }
-    .schedule-day-client.client-8020 { background: rgba(245, 200, 66, 0.08); }
+    .schedule-day-client.client-8020 { background: rgba(245, 200, 66, 0.12); border: 1px solid rgba(212,175,55,0.25); }
 
     /* Executive route layout (list + map) */
     .exec-route-layout {
@@ -4546,7 +4547,7 @@
         <p>Sistema de Gestión Logística</p>
         <div style="margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
           <div style="height:1px; width:40px; background:linear-gradient(90deg,transparent,rgba(99,102,241,0.3));"></div>
-          <span style="font-size:10px; color:#6366f1; letter-spacing:1.5px; font-weight:700; opacity:0.8;">v2.7.0</span>
+          <span style="font-size:10px; color:#6366f1; letter-spacing:1.5px; font-weight:700; opacity:0.8;">v2.9.0</span>
           <div style="height:1px; width:40px; background:linear-gradient(90deg,rgba(99,102,241,0.3),transparent);"></div>
         </div>
       </div>
@@ -4625,7 +4626,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.7.0</div>
+        <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.9.0</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -6021,8 +6022,26 @@
                 <label style="font-weight:600; margin-bottom:6px; display:block;">KM actual del vehículo <span style="font-weight:400;color:var(--text-muted);font-size:12px;">(odómetro)</span></label>
                 <input type="number" id="end-route-km-input" class="form-control" placeholder="Ej: 45120" min="0" style="font-size:18px; padding:12px; text-align:center; letter-spacing:2px;">
               </div>
-              <div id="end-route-km-diff" style="text-align:center; padding:10px; background:var(--bg-hover); border-radius:8px; margin-bottom:16px; font-size:14px; color:var(--text-muted);">
+              <div id="end-route-km-diff" style="text-align:center; padding:10px; background:var(--bg-hover); border-radius:8px; margin-bottom:12px; font-size:14px; color:var(--text-muted);">
                 Ingresa el KM final para ver el recorrido
+              </div>
+              <div class="form-group" style="margin-bottom:12px;">
+                <label style="font-weight:600; margin-bottom:6px; display:block;">Peajes <span style="font-weight:400;color:var(--text-muted);font-size:12px;">(CLP, opcional)</span></label>
+                <input type="number" id="end-route-toll-input" class="form-control" placeholder="Ej: 3500" min="0" style="font-size:16px; padding:10px; text-align:center;">
+              </div>
+              <div id="end-route-cost-breakdown" style="display:none; padding:10px; background:var(--bg-hover); border-radius:8px; margin-bottom:16px; font-size:13px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                  <span style="color:var(--text-muted);">Combustible:</span>
+                  <span id="end-route-fuel-cost" style="font-weight:600;">$0</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                  <span style="color:var(--text-muted);">Peajes:</span>
+                  <span id="end-route-toll-cost" style="font-weight:600;">$0</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-top:1px solid var(--border); padding-top:4px;">
+                  <span style="font-weight:700;">Total:</span>
+                  <span id="end-route-total-cost" style="font-weight:700; color:#6366f1;">$0</span>
+                </div>
               </div>
               <div style="display:flex; gap:8px; flex-direction:column;">
                 <button onclick="confirmEndRoute()" class="btn btn-primary" style="background:#10b981; border-color:#10b981; font-size:14px; padding:12px; font-weight:600;">
@@ -6094,7 +6113,7 @@
                   <span class="week-label" id="week-label">Semana actual</span>
                   <button onclick="navigateWeek(1)" title="Semana siguiente"><i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i></button>
                 </div>
-                <button class="btn" onclick="loadWeeklyAllExecs()" style="font-size: 11px; padding: 6px 12px; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 6px;">
+                <button class="btn" onclick="loadWeeklyAllExecs()" style="font-size: 11px; padding: 6px 12px; background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-secondary); border-radius: 6px;">
                   <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Actualizar
                 </button>
               </div>
@@ -6102,7 +6121,7 @@
             <!-- Hidden controls for individual vendor operations -->
             <div id="planner-vendor-controls" style="display: none; padding: 8px 18px; border-bottom: 1px solid var(--border); background: var(--bg-hover);">
               <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <button class="btn" onclick="loadWeeklyAllExecs()" style="font-size: 11px; padding: 5px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px;">
+                <button class="btn" onclick="loadWeeklyAllExecs()" style="font-size: 11px; padding: 5px 12px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-secondary); border-radius: 6px;">
                   <i data-lucide="arrow-left" style="width: 12px; height: 12px;"></i> Todos los vendedores
                 </button>
                 <select id="schedule-vendor" style="display:none;"><option value="">--</option></select>
@@ -6118,7 +6137,7 @@
                 <button class="btn btn-primary" onclick="generateWeeklySchedule()" style="font-size: 11px; padding: 6px 14px;">
                   <i data-lucide="calendar-plus" style="width: 12px; height: 12px;"></i> Generar Ruta
                 </button>
-                <button class="btn" onclick="loadExistingSchedule()" style="font-size: 11px; padding: 6px 14px; background: var(--bg-primary); border: 1px solid var(--border);">
+                <button class="btn" onclick="loadExistingSchedule()" style="font-size: 11px; padding: 6px 14px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-secondary);">
                   <i data-lucide="download" style="width: 12px; height: 12px;"></i> Cargar
                 </button>
               </div>
@@ -6433,6 +6452,14 @@
                       <div>
                         <label style="font-size: 11px; color: var(--text-muted);">Email</label>
                         <input type="email" id="chk-email" class="form-control" placeholder="correo@email.com" style="font-size: 12px; padding: 6px 10px;">
+                      </div>
+                      <div>
+                        <label style="font-size: 11px; color: var(--text-muted);">Horario apertura</label>
+                        <input type="time" id="chk-opening-time" class="form-control" style="font-size: 12px; padding: 6px 10px;">
+                      </div>
+                      <div>
+                        <label style="font-size: 11px; color: var(--text-muted);">Horario cierre</label>
+                        <input type="time" id="chk-closing-time" class="form-control" style="font-size: 12px; padding: 6px 10px;">
                       </div>
                       <div>
                         <label style="font-size: 11px; color: var(--text-muted);">Segmentación</label>
@@ -8321,6 +8348,27 @@
             </div>
           </div>
         </div>
+
+        <!-- Audit Log -->
+        <div class="card" style="margin-top:16px;">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <h3 style="display:flex;align-items:center;gap:8px;"><i data-lucide="scroll-text" style="width:18px;height:18px;"></i> Historial de Auditoría</h3>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <select id="audit-filter-type" class="form-control" style="width:130px;font-size:12px;" onchange="loadAuditLog()">
+                <option value="">Todos</option>
+                <option value="visit">Visitas</option>
+                <option value="route">Rutas</option>
+                <option value="client">Clientes</option>
+              </select>
+              <button onclick="loadAuditLog()" class="btn btn-secondary" style="font-size:12px;padding:6px 12px;">
+                <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Cargar
+              </button>
+            </div>
+          </div>
+          <div class="card-body" id="audit-log-body" style="max-height:400px;overflow-y:auto;">
+            <p style="text-align:center;color:var(--text-muted);padding:20px;">Haz clic en "Cargar" para ver el historial</p>
+          </div>
+        </div>
       </div>
   </main>
 
@@ -8610,6 +8658,35 @@
   <script>
     // Debounced lucide icon renderer — agrupa múltiples llamadas en un solo tick
     let _lucideTimer = null;
+    // Tier badge helper for visual segmentation
+    function _tierBadge(client) {
+      if (!client) return '';
+      const seg = client.segmentation || client._visit_tier;
+      const segment = client.segment;
+      if (seg === '80-20' || client._visit_tier === 'priority') {
+        return '<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;">⭐ Prioritario</span>';
+      }
+      if ((seg === 'L' && segment === 'C') || client._visit_tier === 'recommended') {
+        return '<span style="font-size:9px;font-weight:700;background:rgba(16,185,129,0.12);color:#059669;border:1px solid rgba(16,185,129,0.3);padding:1px 5px;border-radius:4px;">Activo</span>';
+      }
+      if (seg === 'L' || client._visit_tier === 'alternative') {
+        return '<span style="font-size:9px;font-weight:700;background:rgba(59,130,246,0.1);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);padding:1px 5px;border-radius:4px;">Alternativo</span>';
+      }
+      if (seg === 'N' || client._visit_tier === 'explore') {
+        return '<span style="font-size:9px;font-weight:700;background:rgba(59,130,246,0.08);color:#3b82f6;border:1px solid rgba(59,130,246,0.2);padding:1px 5px;border-radius:4px;">Explorar</span>';
+      }
+      return '';
+    }
+
+    // Tier marker color for map
+    function _tierMarkerColor(client) {
+      if (!client) return '#3b82f6';
+      if (client.segmentation === '80-20' || client._visit_tier === 'priority') return '#b8860b';
+      if ((client.segmentation === 'L' && client.segment === 'C') || client._visit_tier === 'recommended') return '#059669';
+      if (client.segmentation === 'L' || client._visit_tier === 'alternative') return '#3b82f6';
+      return '#3b82f6';
+    }
+
     function _createIcons(scope) {
       if (scope) {
         // Scoped: render inmediato solo en el contenedor dado
@@ -10385,6 +10462,8 @@
             <i data-lucide="map" style="width:12px;height:12px;"></i> Ver Mapa</button>
           <button onclick="endRoute('${myRoute.id}')" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:6px;cursor:pointer;padding:6px 10px;font-size:11px;font-weight:600;color:#f59e0b;display:inline-flex;align-items:center;gap:4px;">
             <i data-lucide="flag" style="width:12px;height:12px;"></i> Finalizar</button>
+          <button onclick="recalculateMyRoute()" style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);border-radius:6px;cursor:pointer;padding:6px 10px;font-size:11px;font-weight:600;color:#a855f7;display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Recalcular</button>
         </div>`;
 
         // Route client list
@@ -10404,18 +10483,18 @@
             const visit = visits.find(v => v.client_id === sc.client_id && v.status === 'completed');
             const isDone = !!visit;
             const isNext = i === firstPendingIdx;
-            const is8020 = client?.segmentation === '80-20';
             const hasGps = !!(client?.lat && client?.lng);
             const rowBg = isDone ? 'rgba(16,185,129,0.05)' : isNext ? 'linear-gradient(90deg,rgba(99,102,241,0.07),transparent)' : 'transparent';
             const numStyle = isDone ? 'background:#10b981;color:white;' : isNext ? 'background:#6366f1;color:white;' : 'background:var(--bg-hover);color:var(--text-muted);border:1px solid var(--border);';
             const clientName = client?.fantasy_name || client?.business_name || sc.client_name || 'Cliente';
             const clientAddr = client?.address ? (client.address + (client?.commune ? ', ' + client.commune : '')) : (client?.commune || '');
+            const tierHtml = _tierBadge(client);
             html += `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:${rowBg};border-bottom:1px solid var(--border);">
               <span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px;${numStyle}">${isDone ? '✓' : (i + 1)}</span>
               <div style="flex:1;min-width:0;">
                 <div style="font-size:12px;font-weight:600;${isDone ? 'text-decoration:line-through;opacity:0.6;' : ''}display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
                   ${clientName}
-                  ${is8020 ? '<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;border:1px solid rgba(212,175,55,0.4);padding:1px 5px;border-radius:4px;">⭐</span>' : ''}
+                  ${tierHtml}
                   ${isNext ? '<span style="font-size:9px;font-weight:700;background:rgba(99,102,241,0.15);color:#6366f1;padding:1px 6px;border-radius:4px;">Próximo</span>' : ''}
                 </div>
                 ${clientAddr ? `<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${clientAddr}</div>` : ''}
@@ -11142,7 +11221,9 @@
         email_contact: (document.getElementById('chk-email')?.value || '').trim() || null,
         has_competitor: document.getElementById('chk-is-competitor')?.checked || false,
         competitor1: (document.getElementById('chk-competitor1')?.value || '').trim() || null,
-        competitor2: (document.getElementById('chk-competitor2')?.value || '').trim() || null
+        competitor2: (document.getElementById('chk-competitor2')?.value || '').trim() || null,
+        opening_time: (document.getElementById('chk-opening-time')?.value || '').trim() || null,
+        closing_time: (document.getElementById('chk-closing-time')?.value || '').trim() || null
       };
 
       const body = {
@@ -11171,6 +11252,11 @@
           }
           showToast('success', 'Check-in registrado', successMsg);
 
+          // Handle route deviation auto-correction
+          if (data.data.routeUpdate?.deviated) {
+            showToast('info', 'Ruta recalculada', data.data.routeUpdate.message || 'Ruta recalculada desde tu ubicación');
+          }
+
           // Reset form: clear client + address + checklist
           correctedAddress = null;
           clearSelectedClient();
@@ -11179,7 +11265,7 @@
             const el = document.getElementById(id);
             if (el) el.checked = false;
           });
-          ['chk-observations', 'chk-owner', 'chk-buyer', 'chk-phone', 'chk-phone2', 'chk-email', 'chk-competitor1', 'chk-competitor2'].forEach(id => {
+          ['chk-observations', 'chk-owner', 'chk-buyer', 'chk-phone', 'chk-phone2', 'chk-email', 'chk-competitor1', 'chk-competitor2', 'chk-opening-time', 'chk-closing-time'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = '';
           });
@@ -11802,6 +11888,8 @@
       document.getElementById('end-route-km-input').value = '';
       document.getElementById('end-route-km-diff').textContent = 'Ingresa el KM final para ver el recorrido';
       document.getElementById('end-route-km-input').min = startKm;
+      document.getElementById('end-route-toll-input').value = '';
+      document.getElementById('end-route-cost-breakdown').style.display = 'none';
       const modal = document.getElementById('end-route-modal');
       modal.style.display = 'flex';
       _createIcons();
@@ -11817,7 +11905,9 @@
         } else {
           document.getElementById('end-route-km-diff').textContent = 'Ingresa el KM final para ver el recorrido';
         }
+        _updateEndRouteCostBreakdown();
       };
+      document.getElementById('end-route-toll-input').oninput = _updateEndRouteCostBreakdown;
     }
 
     // Display active route information
@@ -12905,7 +12995,14 @@
           const km = optimizedRouteData?.totalStats?.distanceKm || optimizedRouteData?.stats?.distanceKm || 0;
           greeting = `Soy **LEKER AI**.\n\nRuta de **${vName||'el vendedor'}**: **${clients} clientes** · **${days} días** · ${km} km.\n\nPuedo explicar decisiones, sugerir ajustes o detectar ineficiencias. ¿En qué te ayudo?`;
         } else {
-          greeting = `Soy **LEKER AI**, asistente de Leker.\n\nEstás en **${panelName}**. Tengo acceso a ventas, cobranzas, rutas y clientes. ¿En qué te ayudo?`;
+          // Contexto enriquecido: mencionar datos disponibles según el panel
+          const scheduledCount = todayScheduledData ? Object.values(todayScheduledData).reduce((s, a) => s + (a?.length || 0), 0) : 0;
+          const routesInfo = todayRoutesData?.length ? `**${todayRoutesData.length} rutas activas** hoy` : '';
+          const schedInfo = scheduledCount > 0 ? `**${scheduledCount} clientes programados**` : '';
+          const plannerInfo = (typeof weeklyAllExecsData !== 'undefined' && weeklyAllExecsData && Object.keys(weeklyAllExecsData).length > 0) ? ', planner semanal' : '';
+          const calendarInfo = (monthlyCalendarData && Object.keys(monthlyCalendarData).length > 0) ? ', calendario mensual' : '';
+          const dataSnippets = [routesInfo, schedInfo].filter(Boolean).join(', ');
+          greeting = `Soy **LEKER AI**, asistente integrado de Leker.\n\nEstás en **${panelName}**. ${dataSnippets ? `Veo ${dataSnippets}.` : ''} Tengo acceso a ventas, cobranzas, rutas, clientes${plannerInfo}${calendarInfo}. ¿En qué te ayudo?`;
         }
         _routeChatHistory.push({ role: 'assistant', content: greeting });
         _appendChatMsg('assistant', greeting);
@@ -12923,7 +13020,60 @@
         _routeChatHistory.push({ role: 'assistant', content: ctxMsg });
         _appendChatMsg('assistant', ctxMsg);
       }
+      _updateChatQuickChips(panelId);
       setTimeout(() => document.getElementById('route-chat-input')?.focus(), 100);
+    }
+
+    function _updateChatQuickChips(panelId) {
+      const container = document.getElementById('chat-quick-chips');
+      if (!container) return;
+      const chipStyle = 'font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;';
+      const chipsByPanel = {
+        'panel-dashboard': [
+          { label: 'Resumen del día', q: '¿Cómo va el equipo hoy? Dame un resumen de rutas activas y visitas' },
+          { label: 'Rendimiento', q: '¿Cuál es el rendimiento de cada vendedor este mes?' },
+          { label: 'Alertas', q: '¿Hay alertas o problemas que deba atender hoy?' },
+          { label: 'Ventas', q: '¿Cuánto vendió cada vendedor este mes?' },
+        ],
+        'panel-clients': [
+          { label: '80/20 clave', q: 'Dame un resumen de los clientes 80/20 clave' },
+          { label: 'Sin GPS', q: '¿Qué clientes no tienen GPS asignado?' },
+          { label: 'Sin vendedor', q: '¿Cuántos clientes no tienen vendedor asignado?' },
+          { label: 'Segmentación', q: 'Analiza la segmentación actual de clientes' },
+        ],
+        'panel-routes': [
+          { label: 'Rutas de hoy', q: '¿Cómo van las rutas de hoy?' },
+          { label: 'Rutas programadas', q: '¿Qué rutas están programadas para esta semana?' },
+          { label: 'Ruta actual', q: 'Analiza la ruta optimizada que tengo cargada' },
+          { label: 'Sugerencias', q: '¿Cómo puedo mejorar la eficiencia de las rutas?' },
+        ],
+        'panel-visits': [
+          { label: 'Efectividad', q: '¿Cuál es la efectividad de visitas de cada vendedor?' },
+          { label: 'Sin visitar', q: '¿Qué clientes 80-20 llevan más tiempo sin visitar?' },
+          { label: 'Hoy', q: '¿Cómo van las visitas de hoy?' },
+          { label: 'Historial', q: 'Resumen de visitas de la última semana' },
+        ],
+        'panel-data': [
+          { label: 'Ventas', q: '¿Cuánto vendió cada vendedor este mes?' },
+          { label: 'Cobranzas', q: '¿Cuáles son las cobranzas pendientes más grandes?' },
+          { label: 'Sync', q: '¿Los datos de Google Sheets están actualizados?' },
+        ],
+        'panel-intelligence': [
+          { label: 'Competencia', q: '¿Qué datos tenemos de la competencia?' },
+          { label: 'Tendencias', q: '¿Qué tendencias ves en los datos de mercado?' },
+        ],
+      };
+      const defaultChips = [
+        { label: 'Rutas de hoy', q: '¿Cómo van las rutas de hoy?' },
+        { label: 'Sin GPS', q: '¿Qué clientes no tienen GPS asignado?' },
+        { label: '80/20', q: 'Dame un resumen de los clientes 80/20 clave' },
+        { label: 'Ventas', q: '¿Cuánto vendió cada vendedor este mes?' },
+        { label: 'Cobranzas', q: '¿Cuáles son las cobranzas pendientes más grandes?' },
+      ];
+      const chips = chipsByPanel[panelId] || defaultChips;
+      container.innerHTML = chips.map(c =>
+        `<button onclick="sendQuickChip('${c.q.replace(/'/g, "\\'")}')" style="${chipStyle}">${c.label}</button>`
+      ).join('');
     }
 
     function closeRouteChat() {
@@ -13067,7 +13217,69 @@
           pendientes: r.pending_visits || r.pendingVisits || 0
         })) : [];
 
-        const platformContext = { stats, vendedores, vendedorActual, rutaOptimizada, visitasHoy };
+        // Panel y subtab activo — para que la IA sepa qué está mirando el usuario
+        const activePanel = document.querySelector('.panel.active');
+        const panelId = activePanel?.id?.replace('panel-', '') || 'desconocido';
+        const panelLabels = { dashboard:'Dashboard', clients:'CRM Clientes', routes:'Gestionar Rutas', visits:'Visitas', intelligence:'Inteligencia de Mercado', data:'Google Sheets', users:'Usuarios', vehicles:'Vehículos', settings:'Configuración' };
+        const panelActivo = panelLabels[panelId] || panelId;
+        let subTabActivo = null;
+        if (panelId === 'routes') {
+          const activeRouteTab = document.querySelector('.route-tab.active');
+          const rtLabels = { dashboard:'Dashboard Rutas', gestionar:'Gestionar Rutas', planner:'Planner Semanal', monthly:'Calendario Mensual', ai:'IA Asistente' };
+          subTabActivo = rtLabels[activeRouteTab?.dataset?.routetab] || activeRouteTab?.dataset?.routetab || null;
+        }
+
+        // Rutas programadas hoy (scheduled_routes) por vendedor
+        let rutasProgramadasHoy = null;
+        if (todayScheduledData && Object.keys(todayScheduledData).length > 0) {
+          rutasProgramadasHoy = {};
+          Object.entries(todayScheduledData).forEach(([uid, routes]) => {
+            const execU = executives.find(ex => ex.id === uid);
+            const vName = execU ? execU.full_name : uid;
+            rutasProgramadasHoy[vName] = (routes || []).map(r => ({
+              cliente: r.client?.fantasy_name || r.client?.name || r.client_name || '?',
+              comuna: r.client?.commune || r.commune || '',
+              seg: r.client?.segmentation || '',
+              hora: r.scheduled_time || null
+            }));
+          });
+        }
+
+        // Planner semanal (si está cargado)
+        let plannerSemanal = null;
+        if (typeof weeklyAllExecsData !== 'undefined' && weeklyAllExecsData && Object.keys(weeklyAllExecsData).length > 0) {
+          plannerSemanal = {};
+          Object.entries(weeklyAllExecsData).forEach(([uid, info]) => {
+            plannerSemanal[info.userName || uid] = {};
+            Object.entries(info.dates || {}).forEach(([fecha, routes]) => {
+              plannerSemanal[info.userName || uid][fecha] = {
+                totalClientes: routes.length,
+                clientes8020: routes.filter(r => r.client?.segmentation === '80-20').length,
+                clientes: routes.slice(0, 15).map(r => r.client?.fantasy_name || r.client?.name || '?')
+              };
+            });
+          });
+        }
+
+        // Calendario mensual (si está cargado)
+        let calendarioMensual = null;
+        if (monthlyCalendarData && Object.keys(monthlyCalendarData).length > 0) {
+          calendarioMensual = {};
+          Object.entries(monthlyCalendarData).forEach(([uid, info]) => {
+            const execU = executives.find(ex => ex.id === uid) || allUsers?.find(u => u.id === uid);
+            const vName = info.userName || (execU ? execU.full_name : uid);
+            const diasConRutas = Object.entries(info.dates || {}).map(([fecha, routes]) => ({
+              fecha,
+              clientes: routes.length,
+              seg8020: routes.filter(r => r.client?.segmentation === '80-20').length
+            }));
+            if (diasConRutas.length > 0) {
+              calendarioMensual[vName] = { totalDias: diasConRutas.length, dias: diasConRutas };
+            }
+          });
+        }
+
+        const platformContext = { stats, vendedores, vendedorActual, rutaOptimizada, visitasHoy, panelActivo, subTabActivo, rutasProgramadasHoy, plannerSemanal, calendarioMensual };
 
         const res = await fetch(`${API}/api/ai/route-chat/stream`, {
           method: 'POST',
@@ -13396,7 +13608,7 @@
           <div style="flex: 1; min-width: 0;">
             <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
               <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width:100%;">${c.fantasy_name || c.name}</span>
-              ${is8020 ? '<span style="background:rgba(212,160,23,0.18);color:#b8860b;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;white-space:nowrap;flex-shrink:0;">⭐ 80/20</span>' : ''}
+              ${_tierBadge(c)}
               ${isOptional ? '<span style="background:rgba(245,158,11,0.15);color:#d97706;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;white-space:nowrap;flex-shrink:0;border:1px dashed rgba(245,158,11,0.4);">Opcional</span>' : ''}
             </div>
             <div style="font-size: 11px; color: var(--text-muted); display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:2px;">
@@ -14041,7 +14253,7 @@
           console.log(`[Map] Marker ${idx+1}: ${client.fantasy_name || client.name} at ${lat.toFixed(5)},${lng.toFixed(5)} (offset: ${count > 0 ? 'yes' : 'no'})`);
 
           const num = idx + 1;
-          const markerColor = idx === 0 ? '#10b981' : '#3b82f6';
+          const markerColor = idx === 0 ? '#10b981' : _tierMarkerColor(client);
 
           // Create numbered marker with inline SVG (always visible at any zoom)
           const svgMarker = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
@@ -14074,7 +14286,11 @@
               <div style="font-size: 12px; margin-bottom: 8px;">
                 <span style="background: ${{A:'#d97706',B:'#3b82f6',C:'#059669',D:'#f97316',E:'#9ca3af'}[client.segment] || '#9ca3af'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">Segmento ${client.segment || '-'}</span>
                 ${client.priority === 'FOCO' ? '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-left: 4px;">FOCO</span>' : ''}
+                ${client._visit_tier === 'priority' ? '<span style="background:#b8860b;color:white;padding:2px 8px;border-radius:4px;font-size:10px;margin-left:4px;">⭐ Prioritario</span>' : ''}
+                ${client._visit_tier === 'recommended' ? '<span style="background:#059669;color:white;padding:2px 8px;border-radius:4px;font-size:10px;margin-left:4px;">Activo</span>' : ''}
               </div>
+              ${client._best_visit_hour != null ? '<div style="font-size:11px;color:#6b7280;margin-bottom:4px;"><strong>Mejor hora:</strong> ' + String(client._best_visit_hour).padStart(2,'0') + ':00</div>' : ''}
+              ${client._sale_rate != null ? '<div style="font-size:11px;color:#6b7280;margin-bottom:4px;"><strong>Tasa venta:</strong> ' + Math.round(client._sale_rate * 100) + '%</div>' : ''}
               <div style="display: flex; gap: 6px;">
                 <a href="https://www.google.com/maps/dir/?api=1&destination=${pos.lat},${pos.lng}&travelmode=driving" target="_blank" rel="noopener"
                    style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: #4285f4; color: white; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;">
@@ -14413,6 +14629,16 @@
         const oc = outcomeColors[v.outcome] || '#6b7280';
         const ocLabel = outcomeLabels[v.outcome] || v.outcome || 'Registrado';
 
+        // Duration / check-out info
+        let durationHtml = '';
+        if (v.check_out) {
+          const durMin = Math.round((new Date(v.check_out) - new Date(v.check_in || v.checked_in_at)) / 60000);
+          const outTime = new Date(v.check_out).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+          durationHtml = `<span style="font-size:10px;color:var(--text-muted);background:var(--bg-hover);padding:1px 6px;border-radius:4px;">${durMin} min (${outTime})</span>`;
+        } else if (isActive) {
+          durationHtml = `<button onclick="doCheckOut('${v.id}')" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:5px;cursor:pointer;padding:2px 8px;font-size:9px;font-weight:600;color:#f59e0b;">Check-out</button>`;
+        }
+
         html += `<div style="display: flex; align-items: stretch; gap: 0; font-size: 13px;">
           <div style="width: 50px; text-align: right; padding: 10px 8px 10px 0; font-size: 11px; color: var(--text-muted); font-weight: 600;">${time}</div>
           <div style="width: 24px; display: flex; flex-direction: column; align-items: center;">
@@ -14424,6 +14650,7 @@
             <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap:wrap;">
               <span style="padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; background: ${oc}15; color: ${oc};">${ocLabel}</span>
               ${commune ? `<span style="font-size: 10px; color: var(--text-muted);">${commune}</span>` : ''}
+              ${durationHtml}
             </div>
             ${v.checklist_data?.observations ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;font-style:italic;">"${v.checklist_data.observations}"</div>` : ''}
           </div>
@@ -14436,7 +14663,6 @@
         const clientName = client.fantasy_name || client.name || 'Cliente';
         const commune = client.commune || '';
         const arrival = sc.estimated_arrival || '';
-        const is8020 = client.segmentation === '80-20';
         const hasGps = client.lat && client.lng;
 
         html += `<div style="display: flex; align-items: stretch; gap: 0; font-size: 13px;">
@@ -14448,7 +14674,7 @@
           <div style="flex: 1; padding: 8px 10px; border-bottom: 1px solid var(--border);">
             <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
               <span style="font-weight: 500;">${clientName}</span>
-              ${is8020 ? '<span style="font-size:9px;font-weight:700;background:rgba(212,175,55,0.2);color:#b8860b;padding:1px 5px;border-radius:8px;">⭐ 80/20</span>' : ''}
+              ${_tierBadge(client)}
             </div>
             <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap;">
               <span style="font-size: 10px; color: #f59e0b; font-weight: 600;">Pendiente</span>
@@ -14467,7 +14693,32 @@
     }
 
     // Overview of all vendors when no vendor is selected
-    function renderTodayVisitsOverview(container) {
+    async function renderTodayVisitsOverview(container) {
+      // Fetch upcoming scheduled routes (this week) if not already loaded
+      if (!window._upcomingByUser) {
+        try {
+          const today = new Date();
+          const endWeek = new Date(today);
+          endWeek.setDate(endWeek.getDate() + 7);
+          const s = today.toISOString().split('T')[0];
+          const e = endWeek.toISOString().split('T')[0];
+          const res = await fetch(`${API}/api/routes/schedule-all?startDate=${s}&endDate=${e}`);
+          const json = await res.json();
+          if (json.success && json.data) {
+            window._upcomingByUser = {};
+            const dayNames = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+            json.data.forEach(sr => {
+              if (sr.scheduled_date !== s && sr.status === 'pending') {
+                if (!window._upcomingByUser[sr.user_id]) {
+                  const d = new Date(sr.scheduled_date + 'T12:00:00');
+                  window._upcomingByUser[sr.user_id] = `${dayNames[d.getDay()]} ${d.getDate()} (${(json.data.filter(x => x.user_id === sr.user_id && x.scheduled_date === sr.scheduled_date).length)} clientes)`;
+                }
+              }
+            });
+          }
+        } catch (e) { window._upcomingByUser = {}; }
+      }
+
       // Global totals
       const totalVisits = todayRoutesData.reduce((sum, r) => sum + (r.visits?.length || 0), 0);
       const totalScheduled = Object.values(todayScheduledData).reduce((sum, arr) => sum + arr.length, 0);
@@ -14543,7 +14794,8 @@
           if (times.length) lastCheckin = new Date(times[times.length - 1]);
         }
 
-        rows.push({ exec, status, sortOrder, visitsCount, scheduledCount, visits, outcomes, lastCheckin, visitedClientIds, scheduled });
+        const _nextSchedule = (status === 'none' && scheduledCount === 0) && window._upcomingByUser ? (window._upcomingByUser[exec.id] || null) : null;
+        rows.push({ exec, status, sortOrder, visitsCount, scheduledCount, visits, outcomes, lastCheckin, visitedClientIds, scheduled, _nextSchedule });
       });
 
       rows.sort((a, b) => a.sortOrder - b.sortOrder);
@@ -14603,7 +14855,7 @@
                   <i data-lucide="${st.icon}" style="width:10px;height:10px;display:inline-block;vertical-align:middle;margin-right:2px;"></i>${st.label}
                 </span>
               </div>
-              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${lastTimeStr}${lastTimeStr && row.scheduledCount > 0 ? ' · ' : ''}${row.scheduledCount > 0 ? row.visitsCount + '/' + row.scheduledCount + ' visitas' : 'Sin programación'}${_efecHtml}</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${lastTimeStr}${lastTimeStr && row.scheduledCount > 0 ? ' · ' : ''}${row.scheduledCount > 0 ? row.visitsCount + '/' + row.scheduledCount + ' visitas' : (row._nextSchedule ? 'Próxima ruta: ' + row._nextSchedule : 'Sin programación')}${_efecHtml}</div>
             </div>
             <div style="text-align: right; flex-shrink: 0;">
               <div style="font-size: 22px; font-weight: 800; color: ${pct >= 80 ? '#10b981' : pct >= 40 ? '#f59e0b' : 'var(--text-muted)'}; line-height: 1;">${pct}%</div>
@@ -15707,6 +15959,73 @@
     }
 
     // Quick check-in from route card: switch to visits tab + pre-select client
+    async function loadAuditLog() {
+      const container = document.getElementById('audit-log-body');
+      if (!container) return;
+      const entityType = document.getElementById('audit-filter-type')?.value || '';
+      container.innerHTML = '<p style="text-align:center;padding:20px;"><i data-lucide="loader-2" class="spin" style="width:20px;height:20px;"></i> Cargando...</p>';
+      _createIcons();
+      try {
+        const params = new URLSearchParams({ limit: '100' });
+        if (entityType) params.set('entity_type', entityType);
+        const res = await fetch(`${API}/api/audit?${params}`);
+        const data = await res.json();
+        if (!data.success || !data.data?.length) {
+          container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">Sin registros</p>';
+          return;
+        }
+        const actionLabels = { check_in: 'Check-in', check_out: 'Check-out', route_start: 'Inicio ruta', route_end: 'Fin ruta', address_change: 'Cambio dirección', client_update: 'Actualización cliente' };
+        const actionColors = { check_in: '#10b981', check_out: '#f59e0b', route_start: '#3b82f6', route_end: '#6366f1', address_change: '#8b5cf6', client_update: '#6b7280' };
+        let html = '<table style="width:100%;font-size:12px;border-collapse:collapse;">';
+        html += '<thead><tr style="background:var(--bg-hover);"><th style="padding:6px 8px;text-align:left;">Fecha</th><th style="padding:6px 8px;">Acción</th><th style="padding:6px 8px;">Tipo</th><th style="padding:6px 8px;">Usuario</th><th style="padding:6px 8px;">Detalles</th></tr></thead><tbody>';
+        data.data.forEach(log => {
+          const date = new Date(log.created_at).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+          const label = actionLabels[log.action] || log.action;
+          const color = actionColors[log.action] || '#6b7280';
+          const changes = log.changes ? Object.entries(log.changes).map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ') : '';
+          html += `<tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:5px 8px;white-space:nowrap;">${date}</td>
+            <td style="padding:5px 8px;"><span style="background:${color}15;color:${color};padding:1px 6px;border-radius:4px;font-weight:600;font-size:10px;">${label}</span></td>
+            <td style="padding:5px 8px;font-size:11px;">${log.entity_type}</td>
+            <td style="padding:5px 8px;font-size:11px;">${log.user_name || '—'}</td>
+            <td style="padding:5px 8px;font-size:10px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${changes}">${changes || '—'}</td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (e) {
+        container.innerHTML = `<p style="text-align:center;color:var(--danger);padding:20px;">Error: ${e.message}</p>`;
+      }
+    }
+
+    async function doCheckOut(visitId) {
+      if (!visitId) return;
+      try {
+        // Get GPS if available
+        let lat = null, lng = null;
+        try {
+          const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000, maximumAge: 30000 }));
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+        } catch (e) { /* GPS not required */ }
+
+        const res = await fetch(`${API}/routes/checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visitId, lat, lng })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Check-out', `Registrado (${data.data.durationMin} min)`);
+          _refreshVisitsData();
+        } else {
+          showToast('error', 'Error', data.error || 'No se pudo registrar check-out');
+        }
+      } catch (e) {
+        showToast('error', 'Error', e.message);
+      }
+    }
+
     async function goToCheckinClient(clientId) {
       document.querySelector('[data-tab=visits]').click();
       await new Promise(r => setTimeout(r, 200));
@@ -15838,6 +16157,45 @@
     }
 
     // Open exec's today route in Google Maps
+    async function recalculateMyRoute() {
+      if (!currentUser) return;
+      if (!navigator.geolocation) {
+        showToast('warning', 'Sin GPS', 'Tu navegador no soporta geolocalización');
+        return;
+      }
+      showToast('info', 'Recalculando...', 'Obteniendo tu ubicación GPS');
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        try {
+          const res = await fetch(`${API}/routes/recalculate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUser.id, lat: pos.coords.latitude, lng: pos.coords.longitude })
+          });
+          const data = await res.json();
+          if (data.success && data.data.recalculated) {
+            showToast('success', 'Ruta recalculada', `${data.data.newSequence.length} clientes reordenados desde tu ubicación`);
+            // Refresh data
+            const [todayRes, schedRes] = await Promise.all([
+              fetch(`${API}/api/daily-routes/today`),
+              fetch(`${API}/api/routes/today-scheduled`)
+            ]);
+            const [todayData, schedData] = await Promise.all([todayRes.json(), schedRes.json()]);
+            if (todayData.success) todayRoutesData = todayData.data;
+            if (schedData.success) todayScheduledData = schedData.data;
+            renderTodayVisits();
+            renderExecDashboard();
+            filterVisitsByExecutive();
+          } else {
+            showToast('info', 'Sin cambios', data.data?.message || 'No hay clientes pendientes');
+          }
+        } catch (e) {
+          showToast('error', 'Error', 'No se pudo recalcular la ruta');
+        }
+      }, () => {
+        showToast('warning', 'Sin GPS', 'No se pudo obtener tu ubicación');
+      }, { enableHighAccuracy: true, timeout: 10000 });
+    }
+
     function openExecRouteMaps() {
       if (!currentUser) return;
       const scheduled = todayScheduledData[currentUser.id] || [];
@@ -17461,6 +17819,8 @@
       document.getElementById('end-route-km-input').value = '';
       document.getElementById('end-route-km-diff').textContent = 'Ingresa el KM final para ver el recorrido';
       document.getElementById('end-route-km-input').min = startKm;
+      document.getElementById('end-route-toll-input').value = '';
+      document.getElementById('end-route-cost-breakdown').style.display = 'none';
       const modal = document.getElementById('end-route-modal');
       modal.style.display = 'flex';
       _createIcons();
@@ -17492,11 +17852,33 @@
         } else {
           document.getElementById('end-route-km-diff').textContent = 'Ingresa el KM final para ver el recorrido';
         }
+        _updateEndRouteCostBreakdown();
       };
+      document.getElementById('end-route-toll-input').oninput = _updateEndRouteCostBreakdown;
     }
 
     function closeEndRouteModal() {
       document.getElementById('end-route-modal').style.display = 'none';
+    }
+
+    function _updateEndRouteCostBreakdown() {
+      const startKm = parseInt(document.getElementById('end-route-km-input')?.min) || 0;
+      const endKm = parseInt(document.getElementById('end-route-km-input')?.value);
+      const toll = parseInt(document.getElementById('end-route-toll-input')?.value) || 0;
+      const breakdown = document.getElementById('end-route-cost-breakdown');
+      if (!breakdown) return;
+
+      if (!isNaN(endKm) && endKm >= startKm) {
+        const kmTraveled = endKm - startKm;
+        const fuelCost = Math.round((kmTraveled / 10) * 1141); // 10 km/L, $1141/L
+        const total = fuelCost + toll;
+        document.getElementById('end-route-fuel-cost').textContent = `$${fuelCost.toLocaleString()}`;
+        document.getElementById('end-route-toll-cost').textContent = `$${toll.toLocaleString()}`;
+        document.getElementById('end-route-total-cost').textContent = `$${total.toLocaleString()}`;
+        breakdown.style.display = 'block';
+      } else {
+        breakdown.style.display = 'none';
+      }
     }
 
     // Finalizar ruta sin registrar km (para cuando el exec no tiene el dato a mano)
@@ -17545,6 +17927,7 @@
     async function confirmEndRoute() {
       const routeId = document.getElementById('end-route-id').value;
       const endKm = parseInt(document.getElementById('end-route-km-input').value);
+      const tollCost = parseInt(document.getElementById('end-route-toll-input').value) || 0;
       const route = todayRoutesData.find(r => r.id === routeId) || (currentActiveRoute?.id === routeId ? currentActiveRoute : null) || (currentStaleRoute?.id === routeId ? currentStaleRoute : null);
       const startKm = route?.start_km || 0;
 
@@ -17560,12 +17943,14 @@
         const res = await fetch(`${API}/routes/${routeId}/end`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endKm })
+          body: JSON.stringify({ endKm, tollCost })
         });
         const data = await res.json();
         if (data.success) {
           closeEndRouteModal();
-          showToast('success', 'Ruta finalizada', `Jornada completada — ${(endKm - startKm).toLocaleString()} km recorridos`);
+          const kmDriven = (endKm - startKm).toLocaleString();
+          const totalCost = data.data?.total_cost_clp ? `$${data.data.total_cost_clp.toLocaleString()}` : '';
+          showToast('success', 'Ruta finalizada', `Jornada completada — ${kmDriven} km${totalCost ? ` | Costo: ${totalCost}` : ''}`);
           // Clear stale/active state
           currentStaleRoute = null;
           currentActiveRoute = null;
@@ -26320,6 +26705,8 @@
       document.getElementById('chk-phone').value = clientData.phone || '';
       document.getElementById('chk-phone2').value = clientData.phone2 || '';
       document.getElementById('chk-email').value = clientData.email || '';
+      document.getElementById('chk-opening-time').value = clientData.opening_time || '';
+      document.getElementById('chk-closing-time').value = clientData.closing_time || '';
       document.getElementById('chk-observations').value = clientData.observations || '';
       document.getElementById('chk-segmentation').value = clientData.segmentation || 'N';
       document.getElementById('chk-is-competitor').checked = clientData.is_competitor_client || false;
@@ -26364,6 +26751,8 @@
             if (cd.client.phone2) document.getElementById('chk-phone2').value = cd.client.phone2;
             if (cd.client.email) document.getElementById('chk-email').value = cd.client.email;
             if (cd.client.observations) document.getElementById('chk-observations').value = cd.client.observations;
+            if (cd.client.opening_time) document.getElementById('chk-opening-time').value = cd.client.opening_time;
+            if (cd.client.closing_time) document.getElementById('chk-closing-time').value = cd.client.closing_time;
             if (cd.client.segmentation) document.getElementById('chk-segmentation').value = cd.client.segmentation;
             document.getElementById('chk-is-competitor').checked = cd.client.is_competitor_client || false;
             if (cd.client.competitor_provider1) document.getElementById('chk-competitor1').value = cd.client.competitor_provider1;
@@ -26729,12 +27118,13 @@
 
         weekDays.forEach(wd => {
           const ds = exec.dayStats[wd.date];
+          const dropHandlers = `ondragover="event.preventDefault();event.stopPropagation();this.style.outline='2px solid #3b82f6';this.style.outlineOffset='-2px';" ondragleave="this.style.outline='none';" ondrop="event.preventDefault();event.stopPropagation();this.style.outline='none';var p=event.dataTransfer.getData('text/plain').split('|');_handleOverviewDayDrop(p[0],'${wd.date}',p[1]);"`;
           if (ds) {
-            html += `<td style="text-align: center; padding: 8px; border-bottom: 1px solid var(--border);">
-              <div onclick="event.stopPropagation(); toggleWeekDayClients('${exec.uid}', '${wd.date}', this)" style="background: ${color}12; color: ${color}; border-radius: 8px; padding: 6px 8px; font-weight: 800; font-size: 16px; cursor: pointer; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.93)'" onmouseup="this.style.transform='scale(1)'">${ds.count}</div>
+            html += `<td style="text-align: center; padding: 8px; border-bottom: 1px solid var(--border);" ${dropHandlers}>
+              <div draggable="true" ondragstart="event.stopPropagation();event.dataTransfer.setData('text/plain','${wd.date}|${exec.uid}');event.dataTransfer.effectAllowed='move';this.style.opacity='0.4';" ondragend="this.style.opacity='1';" onclick="event.stopPropagation(); toggleWeekDayClients('${exec.uid}', '${wd.date}', this)" style="background: ${color}12; color: ${color}; border-radius: 8px; padding: 6px 8px; font-weight: 800; font-size: 16px; cursor: grab; transition: transform 0.1s; user-select:none;" onmousedown="this.style.transform='scale(0.93)'" onmouseup="this.style.transform='scale(1)'">${ds.count}</div>
             </td>`;
           } else {
-            html += `<td style="text-align: center; padding: 8px; border-bottom: 1px solid var(--border);"><span style="color: var(--text-muted); font-size: 11px;">—</span></td>`;
+            html += `<td style="text-align: center; padding: 8px; border-bottom: 1px solid var(--border);" ${dropHandlers}><span style="color: var(--text-muted); font-size: 11px;">—</span></td>`;
           }
         });
 
@@ -27112,7 +27502,7 @@
             <button class="btn" onclick="deleteAllScheduledDays()" style="font-size: 11px; padding: 5px 12px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: #ef4444; border-radius: 6px;">
               <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Eliminar Todo
             </button>
-            <button class="btn" onclick="rescheduleAllPending()" style="font-size: 11px; padding: 5px 12px; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 6px;">
+            <button class="btn" onclick="rescheduleAllPending()" style="font-size: 11px; padding: 5px 12px; background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-secondary); border-radius: 6px;">
               <i data-lucide="clock" style="width: 12px; height: 12px;"></i> Reprogramar
             </button>
           </div>` : ''}
@@ -27151,7 +27541,13 @@
         const dayCostVal = Math.round(((dayData.totalDistance || 0) / 10) * fuelPrice);
 
         html += `
-          <div class="schedule-day ${colorClass}" onclick="expandDayDetail('${date}', '${userId}')">
+          <div class="schedule-day ${colorClass}" draggable="true" data-date="${date}" data-userid="${userId}"
+            onclick="expandDayDetail('${date}', '${userId}')"
+            ondragstart="event.dataTransfer.setData('text/plain','${date}'); event.dataTransfer.effectAllowed='move'; this.style.opacity='0.5';"
+            ondragend="this.style.opacity='1';"
+            ondragover="event.preventDefault(); event.dataTransfer.dropEffect='move'; this.style.outline='2px solid #3b82f6'; this.style.outlineOffset='-2px';"
+            ondragleave="this.style.outline='none';"
+            ondrop="event.preventDefault(); this.style.outline='none'; _handleDayDrop(event.dataTransfer.getData('text/plain'), '${date}', '${userId}');">
             <div class="schedule-day-header">
               <div>
                 <div style="font-size: 13px; font-weight: 800;">${fullDayName}</div>
@@ -27197,6 +27593,67 @@
       _createIcons();
     }
 
+    async function _handleOverviewDayDrop(fromDate, toDate, userId) {
+      if (fromDate === toDate || !fromDate || !toDate || !userId) return;
+
+      const fromDay = new Date(fromDate + 'T12:00:00');
+      const toDay = new Date(toDate + 'T12:00:00');
+      const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+      const fromLabel = `${dayNames[fromDay.getDay()]} ${fromDay.getDate()}`;
+      const toLabel = `${dayNames[toDay.getDay()]} ${toDay.getDate()}`;
+
+      if (!confirm(`¿Mover rutas de ${fromLabel} → ${toLabel}?`)) return;
+
+      try {
+        const res = await fetch(`${API}/api/routes/move-day`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, fromDate, toDate })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('success', 'Rutas movidas', `${data.data.moved} clientes movidos a ${toLabel}`);
+          loadWeeklyAllExecs();
+        } else {
+          showToast('error', 'Error', data.error);
+        }
+      } catch (e) {
+        showToast('error', 'Error', 'No se pudieron mover las rutas');
+      }
+    }
+
+    async function _handleDayDrop(fromDate, toDate, userId) {
+      if (fromDate === toDate) return;
+      if (!lastScheduleData || !lastScheduleData.schedule[fromDate]) return;
+
+      const fromDay = new Date(fromDate + 'T12:00:00');
+      const toDay = new Date(toDate + 'T12:00:00');
+      const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+      const fromLabel = `${dayNames[fromDay.getDay()]} ${fromDay.getDate()}`;
+      const toLabel = `${dayNames[toDay.getDay()]} ${toDay.getDate()}`;
+      const count = lastScheduleData.schedule[fromDate].clients.length;
+
+      if (!confirm(`¿Mover ${count} clientes de ${fromLabel} a ${toLabel}?`)) return;
+
+      try {
+        const res = await fetch(`${API}/api/routes/move-day`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, fromDate, toDate })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', 'Rutas movidas', `${data.data.moved} clientes movidos a ${toLabel}`);
+          showExecWeekDetail(userId);
+        } else {
+          showToast('error', 'Error', data.error || 'No se pudieron mover');
+        }
+      } catch (e) {
+        showToast('error', 'Error', 'No se pudieron mover las rutas');
+      }
+    }
+
     function expandDayDetail(date, userId) {
       if (!lastScheduleData || !lastScheduleData.schedule[date]) return;
       const dayData = lastScheduleData.schedule[date];
@@ -27240,7 +27697,7 @@
                 <button class="btn" onclick="deleteScheduledDay('${userId}', '${date}')" style="font-size: 11px; padding: 5px 10px; background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #ef4444; border-radius: 6px;" title="Eliminar rutas del día">
                   <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Eliminar
                 </button>
-                <button class="btn" onclick="rescheduleDay('${userId}', '${date}')" style="font-size: 11px; padding: 5px 10px; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 6px;">
+                <button class="btn" onclick="rescheduleDay('${userId}', '${date}')" style="font-size: 11px; padding: 5px 10px; background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-secondary); border-radius: 6px;">
                   <i data-lucide="calendar-clock" style="width: 12px; height: 12px;"></i> Reprogramar
                 </button>` : ''}
                 <button onclick="this.closest('.day-detail-overlay').remove()" style="background: none; border: none; cursor: pointer; padding: 4px;">
@@ -28893,14 +29350,8 @@ function installPWA() {
   </div>
   <!-- Messages -->
   <div id="route-chat-messages" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px;"></div>
-  <!-- Quick chips -->
-  <div id="chat-quick-chips" style="padding:6px 12px 0;display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;border-top:1px solid var(--border);background:var(--bg-card);">
-    <button onclick="sendQuickChip('¿Cómo van las rutas de hoy?')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">Rutas de hoy</button>
-    <button onclick="sendQuickChip('¿Qué clientes no tienen GPS asignado?')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">Sin GPS</button>
-    <button onclick="sendQuickChip('Dame un resumen de los clientes 80/20 clave')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">80/20</button>
-    <button onclick="sendQuickChip('¿Cuánto vendió cada vendedor este mes?')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">Ventas</button>
-    <button onclick="sendQuickChip('¿Cuáles son las cobranzas pendientes más grandes?')" style="font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">Cobranzas</button>
-  </div>
+  <!-- Quick chips (dinámicos por panel) -->
+  <div id="chat-quick-chips" style="padding:6px 12px 0;display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;border-top:1px solid var(--border);background:var(--bg-card);"></div>
   <!-- Input -->
   <div style="padding:8px 12px 4px;flex-shrink:0;background:var(--bg-card);">
     <div style="display:flex;gap:6px;">
