@@ -3172,6 +3172,30 @@ REGLAS DE FORMATO (obligatorias):
 - Responde en español. Máx 8 líneas salvo que pidan detalle.
 - NO pidas info que ya tienes.
 
+BOTONES DE ACCIÓN (muy importante):
+Cuando detectes que el usuario necesita completar una tarea o ir a una sección específica, incluye botones de acción al final de tu respuesta.
+Formato: [[ir:Texto del botón|destino]]
+Destinos disponibles:
+- dashboard → Ir al Dashboard
+- routes.gestionar → Ir a Gestionar Rutas
+- routes.planner → Ir al Planner Semanal
+- routes.monthly → Ir al Calendario Mensual
+- crm → Ir al CRM de Clientes
+- visits → Ir a Visitas
+- data.vendedores → Ir a Datos > Vendedores
+- data.clientes → Ir a Datos > Clientes
+- gsheets.gs-ventas → Ir a Google Sheets > Ventas
+- gsheets.gs-cobranzas → Ir a Google Sheets > Cobranzas
+- gsheets.gs-8020 → Ir a Google Sheets > 80-20
+- gsheets.gs-direcciones → Ir a Google Sheets > Direcciones
+- intelligence → Ir a Inteligencia de Mercado
+Ejemplos de uso:
+- Si el vendedor no tiene ruta generada: [[ir:Generar ruta|routes.gestionar]]
+- Si faltan visitas por completar: [[ir:Ver visitas pendientes|visits]]
+- Si preguntan por ventas: [[ir:Ver ventas en detalle|gsheets.gs-ventas]]
+- Si un vendedor no tiene GPS: [[ir:Ir al CRM|crm]]
+SIEMPRE incluye al menos 1 botón de acción cuando sea relevante. Puedes poner varios en líneas separadas.
+
 ${contextBlock}${sheetsCtx}`;
 }
 

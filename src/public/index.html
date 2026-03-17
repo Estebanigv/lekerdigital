@@ -4301,6 +4301,49 @@
       background: rgba(99,102,241,0.12);
       border-color: rgba(99,102,241,0.5);
     }
+    /* AI action buttons — inline navigation from chat responses */
+    .ai-action-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(99,102,241,0.15);
+    }
+    .ai-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(99,102,241,0.35);
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.06));
+      color: #6366f1;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+      line-height: 1.3;
+    }
+    .ai-action-btn:hover {
+      background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(139,92,246,0.12));
+      border-color: rgba(99,102,241,0.6);
+      transform: translateX(3px);
+    }
+    .ai-action-btn:active {
+      transform: scale(0.97);
+    }
+    [data-theme="dark"] .ai-action-btn {
+      color: #a5b4fc;
+      border-color: rgba(99,102,241,0.4);
+      background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08));
+    }
+    [data-theme="dark"] .ai-action-btn:hover {
+      background: linear-gradient(135deg, rgba(99,102,241,0.22), rgba(139,92,246,0.15));
+      border-color: rgba(99,102,241,0.65);
+      color: #c7d2fe;
+    }
     .ai-chat-input {
       padding: 12px 16px;
       border-top: 1px solid var(--border);
@@ -13126,15 +13169,69 @@
       if (bubble) bubble.style.display = 'flex';
     }
 
+    // Navegación desde botones de acción del AI chat
+    function _aiNavigateTo(dest) {
+      // Cerrar chat (minimizar, no destruir)
+      closeRouteChat();
+
+      const parts = dest.split('.');
+      const mainPanel = parts[0]; // e.g. 'routes', 'crm', 'visits', 'dashboard', 'gsheets', 'data'
+      const subTab = parts[1] || null; // e.g. 'gestionar', 'planner', 'gs-ventas'
+
+      // 1. Navegar al panel principal
+      const navItem = document.querySelector(`.nav-item:not(.nav-item-parent)[data-tab="${mainPanel}"]`) ||
+                      document.querySelector(`.nav-subitem[data-tab="${mainPanel}"]`);
+      if (navItem) {
+        navItem.click();
+      }
+
+      // 2. Sub-navegación según el destino
+      if (subTab) {
+        setTimeout(() => {
+          if (mainPanel === 'routes') {
+            switchRouteTab(subTab);
+          } else if (mainPanel === 'gsheets') {
+            if (typeof switchGsheetsTab === 'function') switchGsheetsTab(subTab);
+          } else if (mainPanel === 'data') {
+            if (typeof switchDataTab === 'function') switchDataTab(subTab);
+          }
+        }, 150);
+      }
+    }
+
     function _renderChatMarkdown(text) {
-      // Usa el mismo renderer rico que el panel lateral (highlights de dinero, vendedores, %)
-      if (typeof _aiRenderMarkdown === 'function') return _aiRenderMarkdown(text);
-      // Fallback básico
-      return text
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/`([^`]+)`/g, '<code style="background:rgba(99,102,241,0.12);padding:1px 5px;border-radius:4px;font-size:12px;">$1</code>')
-        .replace(/\n/g, '<br>');
+      // 1. Extraer botones de acción [[ir:Label|destino]] antes del render
+      const actionBtns = [];
+      let cleaned = text.replace(/\[\[ir:(.+?)\|(.+?)\]\]/g, (_, label, dest) => {
+        actionBtns.push({ label: label.trim(), dest: dest.trim() });
+        return ''; // remover del texto
+      });
+
+      // 2. Render markdown
+      let html;
+      if (typeof _aiRenderMarkdown === 'function') {
+        html = _aiRenderMarkdown(cleaned);
+      } else {
+        html = cleaned
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+          .replace(/`([^`]+)`/g, '<code style="background:rgba(99,102,241,0.12);padding:1px 5px;border-radius:4px;font-size:12px;">$1</code>')
+          .replace(/\n/g, '<br>');
+      }
+
+      // 3. Agregar botones de acción al final
+      if (actionBtns.length > 0) {
+        html += '<div class="ai-action-btns">';
+        actionBtns.forEach(btn => {
+          html += `<button class="ai-action-btn" onclick="_aiNavigateTo('${btn.dest.replace(/'/g, "\\'")}'); return false;">
+            <i data-lucide="arrow-right" style="width:13px;height:13px;flex-shrink:0;"></i>
+            <span>${btn.label}</span>
+          </button>`;
+        });
+        html += '</div>';
+      }
+
+      return html;
     }
 
     function _appendChatMsg(role, text) {
@@ -13148,6 +13245,7 @@
         <div style="max-width:88%;padding:9px 12px;border-radius:${isUser?'12px 12px 4px 12px':'12px 12px 12px 4px'};background:${isUser?'#6366f1':'var(--bg-secondary)'};color:${isUser?'white':'var(--text-primary)'};font-size:13px;line-height:1.5;">${html}</div>`;
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
+      _createIcons(div);
     }
 
     function _appendStreamingMsg() {
@@ -13362,7 +13460,10 @@
                 }
               }
               if (d.done) {
-                if (bubble) bubble.innerHTML = _renderChatMarkdown(fullText);
+                if (bubble) {
+                  bubble.innerHTML = _renderChatMarkdown(fullText);
+                  _createIcons(bubble);
+                }
                 _routeChatHistory.push({ role: 'assistant', content: fullText });
               }
               if (d.error) {
@@ -13372,7 +13473,10 @@
           }
         }
         // Fallback: if stream ended without d.done
-        if (fullText && bubble) bubble.innerHTML = _renderChatMarkdown(fullText);
+        if (fullText && bubble) {
+          bubble.innerHTML = _renderChatMarkdown(fullText);
+          _createIcons(bubble);
+        }
         if (fullText && !_routeChatHistory.find(h => h.role === 'assistant' && h.content === fullText)) {
           _routeChatHistory.push({ role: 'assistant', content: fullText });
         }
