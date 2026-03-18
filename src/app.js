@@ -3291,14 +3291,11 @@ app.post('/api/ai/route-chat', authenticate, aiLimiter, async (req, res) => {
 app.post('/api/ai/route-chat/stream', authenticate, aiLimiter, async (req, res) => {
   try {
     if (!openai) return res.status(400).json({ success: false, error: 'OpenAI no configurado' });
-    const { message, platformContext, history = [] } = req.body;
+    const { message, platformContext, history = [], conversationId } = req.body;
     if (!message) return res.status(400).json({ success: false, error: 'Mensaje requerido' });
 
     const contextBlock = _buildPlatformContextBlock(platformContext, null);
-
-    // Incluir datos reales de Google Sheets (ventas, cobranzas, 80-20) — con caché 5min
     const sheetsCtx = await _buildSheetsContext().catch(() => '');
-
     const systemPrompt = await _buildAiSystemPrompt(contextBlock, sheetsCtx);
 
     // SSE headers
@@ -3308,7 +3305,16 @@ app.post('/api/ai/route-chat/stream', authenticate, aiLimiter, async (req, res) 
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders();
 
-    const recentHistory = history.slice(-8).map(m => ({ role: m.role, content: m.content }));
+    // Load DB history if conversationId provided and no frontend history
+    let dbHistory = [];
+    if (conversationId && history.length === 0) {
+      const { data: dbMsgs } = await supabase.from('ai_messages')
+        .select('role,content').eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true }).limit(20);
+      if (dbMsgs) dbHistory = dbMsgs.map(m => ({ role: m.role, content: m.content }));
+    }
+
+    const recentHistory = (history.length > 0 ? history : dbHistory).slice(-8).map(m => ({ role: m.role, content: m.content }));
     const stream = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       temperature: 0.4,
@@ -3322,19 +3328,134 @@ app.post('/api/ai/route-chat/stream', authenticate, aiLimiter, async (req, res) 
     });
 
     let totalTokens = 0;
+    let fullResponse = '';
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta?.content || '';
       if (delta) {
+        fullResponse += delta;
         res.write(`data: ${JSON.stringify({ delta })}\n\n`);
       }
       if (chunk.usage) totalTokens = chunk.usage.total_tokens;
     }
     _trackAiUsage('route-chat-stream', req.user?.id, req.user?.full_name, { total_tokens: totalTokens });
-    res.write(`data: ${JSON.stringify({ done: true, tokensUsed: totalTokens })}\n\n`);
+
+    // Persist conversation in DB (awaited so conversationId is available for done event)
+    let activeConvId = conversationId;
+    try {
+      if (!activeConvId) {
+        const title = message.length > 50 ? message.slice(0, 50) + '...' : message;
+        const { data: conv } = await supabase.from('ai_conversations')
+          .insert({ user_id: req.user.id, title }).select('id').single();
+        if (conv) activeConvId = conv.id;
+      } else {
+        await supabase.from('ai_conversations').update({ updated_at: new Date().toISOString() }).eq('id', activeConvId);
+      }
+      if (activeConvId) {
+        await supabase.from('ai_messages').insert([
+          { conversation_id: activeConvId, role: 'user', content: message },
+          { conversation_id: activeConvId, role: 'assistant', content: fullResponse }
+        ]);
+      }
+
+      // Auto-learn detection: "aprende", "recuerda", "memoriza"
+      const learnMatch = message.match(/^(aprende|recuerda|memoriza|guarda|anota)\s+(?:que\s+)?(.+)/i);
+      if (learnMatch) {
+        const learnContent = learnMatch[2].trim();
+        const extraction = await openai.chat.completions.create({
+          model: 'gpt-4o-mini', temperature: 0.2, max_tokens: 200,
+          messages: [
+            { role: 'system', content: 'Extrae un aprendizaje de negocio del texto. Responde JSON: {"category":"general|ventas|rutas|clientes|productos|politicas","title":"titulo corto","content":"explicación"}. SOLO JSON.' },
+            { role: 'user', content: learnContent }
+          ]
+        });
+        try {
+          const parsed = JSON.parse(extraction.choices[0].message.content.trim());
+          if (parsed.title && parsed.content) {
+            await _ensureAiLearningsTable();
+            await supabase.from('ai_learnings').insert({
+              category: parsed.category || 'general',
+              title: parsed.title,
+              content: parsed.content,
+              created_by: req.user.id
+            });
+            _learningsCache = null;
+            res.write(`data: ${JSON.stringify({ learning_created: { title: parsed.title, category: parsed.category } })}\n\n`);
+          }
+        } catch (_parseErr) { /* ignore parse errors */ }
+      }
+    } catch (e) {
+      console.error('[AI persist]', e.message);
+    }
+
+    res.write(`data: ${JSON.stringify({ done: true, tokensUsed: totalTokens, conversationId: activeConvId })}\n\n`);
     res.end();
   } catch (error) {
     console.error('[AI stream]', error.message);
     try { res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`); res.end(); } catch(_) {}
+  }
+});
+
+// =============================================
+// AI CONVERSATIONS — Historial persistente
+// =============================================
+
+// GET /api/ai/conversations — listar conversaciones del usuario
+app.get('/api/ai/conversations', authenticate, async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('ai_conversations')
+      .select('id,title,created_at,updated_at')
+      .eq('user_id', req.user.id)
+      .order('updated_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    res.json({ success: true, data: data || [] });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// GET /api/ai/conversations/:id/messages — cargar mensajes de una conversación
+app.get('/api/ai/conversations/:id/messages', authenticate, async (req, res) => {
+  try {
+    // Verify ownership
+    const { data: conv } = await supabase.from('ai_conversations')
+      .select('id').eq('id', req.params.id).eq('user_id', req.user.id).single();
+    if (!conv) return res.status(404).json({ success: false, error: 'Conversación no encontrada' });
+
+    const { data, error } = await supabase.from('ai_messages')
+      .select('id,role,content,created_at')
+      .eq('conversation_id', req.params.id)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    res.json({ success: true, data: data || [] });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// DELETE /api/ai/conversations/:id — eliminar conversación
+app.delete('/api/ai/conversations/:id', authenticate, async (req, res) => {
+  try {
+    const { error } = await supabase.from('ai_conversations')
+      .delete().eq('id', req.params.id).eq('user_id', req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// PATCH /api/ai/conversations/:id — renombrar conversación
+app.patch('/api/ai/conversations/:id', authenticate, async (req, res) => {
+  try {
+    const { title } = req.body;
+    if (!title) return res.status(400).json({ success: false, error: 'Título requerido' });
+    const { error } = await supabase.from('ai_conversations')
+      .update({ title }).eq('id', req.params.id).eq('user_id', req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
   }
 });
 

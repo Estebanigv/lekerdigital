@@ -4668,7 +4668,7 @@
         <p>Sistema de Gestión Logística</p>
         <div style="margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
           <div style="height:1px; width:40px; background:linear-gradient(90deg,transparent,rgba(99,102,241,0.3));"></div>
-          <span style="font-size:10px; color:#6366f1; letter-spacing:1.5px; font-weight:700; opacity:0.8;">v2.9.0</span>
+          <span style="font-size:10px; color:#6366f1; letter-spacing:1.5px; font-weight:700; opacity:0.8;">v2.9.1</span>
           <div style="height:1px; width:40px; background:linear-gradient(90deg,rgba(99,102,241,0.3),transparent);"></div>
         </div>
       </div>
@@ -4747,7 +4747,7 @@
           <img src="/leker-logo.png" alt="LEKER" class="logo-img" style="max-width: 130px; height: auto;">
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
-        <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.9.0</div>
+        <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.9.1</div>
         <div class="logo-expand-arrow" onclick="event.stopPropagation(); expandSidebar();" title="Expandir menú" style="display:none; margin-top: 6px; color: var(--text-muted); transition: color 0.2s;">
           <i data-lucide="chevrons-right" style="width: 18px; height: 18px;"></i>
         </div>
@@ -26625,10 +26625,13 @@
       if (el) el.remove();
     }
 
-    // ══ LEKER AI FLOATING PANEL ══════════════════════════════════════
+    // ══ LEKER AI FLOATING PANEL (ChatGPT style) ══════════════════════
     let _aiPanelOpen = false;
     let _aiChatHistory = [];
     let _aiStreaming = false;
+    let _aiCurrentConversationId = sessionStorage.getItem('_aiConvId') || null;
+    let _aiHistoryOpen = false;
+    let _aiConversations = [];
 
     function toggleLekerAIPanel() {
       _aiPanelOpen = !_aiPanelOpen;
@@ -26636,7 +26639,6 @@
       const fab = document.getElementById('leker-ai-fab');
       if (!panel) return;
       panel.style.right = _aiPanelOpen ? '0' : '-440px';
-      // FAB: se mueve a la izquierda del panel cuando está abierto, vuelve a su lugar al cerrar
       if (fab) {
         fab.style.right = _aiPanelOpen ? '436px' : '24px';
         fab.style.bottom = _aiPanelOpen ? '24px' : '24px';
@@ -26644,6 +26646,10 @@
       if (_aiPanelOpen) {
         setTimeout(() => document.getElementById('ai-chat-input')?.focus(), 350);
         _createIcons(document.getElementById('leker-ai-panel'));
+        // Auto-load saved conversation
+        if (_aiCurrentConversationId && _aiChatHistory.length === 0) {
+          _aiLoadConversation(_aiCurrentConversationId);
+        }
       }
     }
 
@@ -26652,6 +26658,136 @@
       if (input) input.value = text;
       sendAIMessage();
     }
+
+    // ── History sidebar ──
+    function _aiToggleHistory() {
+      _aiHistoryOpen = !_aiHistoryOpen;
+      const sidebar = document.getElementById('ai-history-sidebar');
+      if (!sidebar) return;
+      sidebar.style.width = _aiHistoryOpen ? '200px' : '0';
+      if (_aiHistoryOpen) {
+        _aiLoadConversations();
+        _createIcons(sidebar);
+      }
+    }
+
+    async function _aiLoadConversations() {
+      try {
+        const res = await fetch(`${API}/api/ai/conversations`);
+        const json = await res.json();
+        if (json.success) {
+          _aiConversations = json.data || [];
+          _aiRenderHistoryList();
+        }
+      } catch (e) { console.error('[AI history]', e); }
+    }
+
+    function _aiRenderHistoryList() {
+      const list = document.getElementById('ai-history-list');
+      if (!list) return;
+      if (_aiConversations.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:20px 8px;color:var(--text-muted);font-size:11px;">Sin conversaciones aún</div>';
+        return;
+      }
+      const now = Date.now();
+      list.innerHTML = _aiConversations.map(c => {
+        const isActive = c.id === _aiCurrentConversationId;
+        const ago = _aiTimeAgo(c.updated_at);
+        return `<div onclick="_aiLoadConversation('${c.id}')" style="padding:8px 10px;border-radius:8px;cursor:pointer;background:${isActive ? 'rgba(99,102,241,0.12)' : 'transparent'};border:1px solid ${isActive ? 'rgba(99,102,241,0.3)' : 'transparent'};transition:all 0.15s;display:flex;align-items:center;gap:6px;" onmouseover="if(!this.style.borderColor.includes('99,102,241'))this.style.background='var(--bg-card)'" onmouseout="if(!this.style.borderColor.includes('99,102,241'))this.style.background='transparent'">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:11px;font-weight:${isActive?'700':'500'};color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_escHtml(c.title)}</div>
+            <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">${ago}</div>
+          </div>
+          <button onclick="event.stopPropagation();_aiDeleteConversation('${c.id}')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:2px;opacity:0.5;flex-shrink:0;" title="Eliminar" onmouseover="this.style.opacity='1';this.style.color='#ef4444'" onmouseout="this.style.opacity='0.5';this.style.color='var(--text-muted)'">
+            <i data-lucide="trash-2" style="width:11px;height:11px;"></i>
+          </button>
+        </div>`;
+      }).join('');
+      _createIcons(list);
+    }
+
+    function _aiTimeAgo(dateStr) {
+      const diff = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'ahora';
+      if (mins < 60) return `hace ${mins}m`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `hace ${hrs}h`;
+      const days = Math.floor(hrs / 24);
+      if (days < 7) return `hace ${days}d`;
+      return new Date(dateStr).toLocaleDateString('es-CL', { day:'numeric', month:'short' });
+    }
+
+    async function _aiLoadConversation(convId) {
+      try {
+        const res = await fetch(`${API}/api/ai/conversations/${convId}/messages`);
+        const json = await res.json();
+        if (!json.success) return;
+
+        _aiCurrentConversationId = convId;
+        sessionStorage.setItem('_aiConvId', convId);
+        _aiChatHistory = [];
+        const container = document.getElementById('ai-chat-messages');
+        if (container) container.innerHTML = '';
+
+        // Hide welcome screen
+        const welcome = document.getElementById('ai-welcome-screen');
+        if (welcome) welcome.style.display = 'none';
+
+        // Render messages
+        (json.data || []).forEach(m => {
+          _aiAddBubble(m.role, m.role === 'user' ? m.content : _aiFormatText(m.content));
+          _aiChatHistory.push({ role: m.role, content: m.content });
+        });
+
+        // Update title
+        const conv = _aiConversations.find(c => c.id === convId);
+        if (conv) {
+          const titleEl = document.getElementById('ai-panel-title');
+          if (titleEl) titleEl.textContent = conv.title;
+        }
+
+        // Scroll to bottom
+        if (container) container.scrollTop = container.scrollHeight;
+        _createIcons(container);
+
+        // Re-render history to show active
+        _aiRenderHistoryList();
+      } catch (e) { console.error('[AI load conv]', e); }
+    }
+
+    function _aiNewConversation() {
+      _aiCurrentConversationId = null;
+      sessionStorage.removeItem('_aiConvId');
+      _aiChatHistory = [];
+      const container = document.getElementById('ai-chat-messages');
+      if (container) {
+        container.innerHTML = `<div id="ai-welcome-screen" style="text-align:center;padding:40px 16px 16px;">
+          <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+            <i data-lucide="sparkles" style="width:22px;height:22px;color:white;"></i>
+          </div>
+          <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">LEKER AI</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">Acceso completo a clientes, rutas, ventas y cobranzas.<br>Pregunta lo que necesites o di <b>"aprende que..."</b> para enseñarme.</div>
+        </div>`;
+        _createIcons(container);
+      }
+      const titleEl = document.getElementById('ai-panel-title');
+      if (titleEl) titleEl.textContent = 'LEKER AI';
+      document.getElementById('ai-chat-input')?.focus();
+      _aiRenderHistoryList();
+    }
+
+    async function _aiDeleteConversation(convId) {
+      if (!confirm('¿Eliminar esta conversación?')) return;
+      try {
+        await fetch(`${API}/api/ai/conversations/${convId}`, { method: 'DELETE' });
+        if (convId === _aiCurrentConversationId) _aiNewConversation();
+        _aiConversations = _aiConversations.filter(c => c.id !== convId);
+        _aiRenderHistoryList();
+      } catch (e) { showToast('error','Error',e.message); }
+    }
+
+    function _escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
     function _buildAIPlatformContext() {
       const execs = (allUsers || []).filter(u => u.role === 'executive' || u.role === 'zonal');
@@ -26780,11 +26916,15 @@
       if (!msg) return;
       input.value = '';
 
+      // Hide welcome screen
+      const welcome = document.getElementById('ai-welcome-screen');
+      if (welcome) welcome.style.display = 'none';
+
       // Add user bubble
       _aiAddBubble('user', msg);
       _aiChatHistory.push({ role: 'user', content: msg });
 
-      // Keep last 8 messages
+      // Keep last 16 messages
       if (_aiChatHistory.length > 16) _aiChatHistory = _aiChatHistory.slice(-16);
 
       // Add AI bubble (streaming)
@@ -26803,6 +26943,7 @@
             message: msg,
             platformContext: ctx,
             history: _aiChatHistory.slice(-8),
+            conversationId: _aiCurrentConversationId,
             routeContext: null
           })
         });
@@ -26824,13 +26965,31 @@
             if (!raw) continue;
             try {
               const parsed = JSON.parse(raw);
-              if (parsed.done) break;
+              if (parsed.done) {
+                // Save conversation ID from server
+                if (parsed.conversationId) {
+                  const isNew = !_aiCurrentConversationId;
+                  _aiCurrentConversationId = parsed.conversationId;
+                  sessionStorage.setItem('_aiConvId', parsed.conversationId);
+                  if (isNew) {
+                    const titleEl = document.getElementById('ai-panel-title');
+                    if (titleEl) titleEl.textContent = msg.length > 40 ? msg.slice(0, 40) + '...' : msg;
+                  }
+                  // Refresh history sidebar if open
+                  if (_aiHistoryOpen) _aiLoadConversations();
+                }
+                break;
+              }
               if (parsed.delta) {
                 full += parsed.delta;
                 if (bubble) bubble.innerHTML = _aiFormatText(full) + '<span class="ai-cursor">▌</span>';
-                // scroll to bottom
                 const msgs = document.getElementById('ai-chat-messages');
                 if (msgs) msgs.scrollTop = msgs.scrollHeight;
+              }
+              // Learning created event
+              if (parsed.learning_created) {
+                showToast('success', 'Aprendido', `"${parsed.learning_created.title}" guardado en memoria`);
+                if (typeof loadAILearnings === 'function') loadAILearnings();
               }
             } catch {}
           }
@@ -26847,7 +27006,7 @@
         if (bubble) bubble.innerHTML = `<span style="color:#ef4444;">Error al contactar LEKER AI. Intenta de nuevo.</span>`;
       } finally {
         _aiStreaming = false;
-        if (statusEl) statusEl.textContent = 'Asistente inteligente · GPT-4o mini';
+        if (statusEl) statusEl.textContent = 'GPT-4o mini';
       }
     }
 
@@ -30262,73 +30421,101 @@ function installPWA() {
   </div>
 </div>
 
-  <!-- LEKER AI — Floating Button + Chat Panel -->
+  <!-- LEKER AI — Floating Button + Chat Panel (ChatGPT style) -->
   <div id="leker-ai-fab" onclick="toggleLekerAIPanel()" title="LEKER AI" style="position:fixed;bottom:24px;right:24px;z-index:99991;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 20px rgba(99,102,241,0.5);cursor:pointer;display:none;align-items:center;justify-content:center;transition:right 0.3s cubic-bezier(0.4,0,0.2,1),box-shadow 0.2s;" onmouseenter="this.style.boxShadow='0 6px 28px rgba(99,102,241,0.7)'" onmouseleave="this.style.boxShadow='0 4px 20px rgba(99,102,241,0.5)'">
     <span style="font-size:13px;font-weight:800;color:white;letter-spacing:0.5px;line-height:1;">AI</span>
     <div id="ai-fab-badge" style="position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:#10b981;border:2px solid white;display:none;"></div>
   </div>
 
-  <!-- AI Chat Slide Panel -->
-  <div id="leker-ai-panel" style="position:fixed;top:0;right:-440px;width:420px;height:100vh;background:var(--bg-card);border-left:1px solid var(--border);box-shadow:-8px 0 40px rgba(0,0,0,0.3);z-index:99989;display:flex;flex-direction:column;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);">
-    <!-- Header -->
-    <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08));">
-      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i data-lucide="sparkles" style="width:17px;height:17px;color:white;"></i>
-      </div>
-      <div style="flex:1;">
-        <div style="font-size:14px;font-weight:700;color:var(--text-primary);">LEKER AI</div>
-        <div style="font-size:11px;color:var(--text-muted);" id="ai-panel-status">Asistente inteligente · GPT-4o mini</div>
-      </div>
-      <button onclick="toggleLekerAIPanel()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;" title="Cerrar">
-        <i data-lucide="x" style="width:16px;height:16px;"></i>
-      </button>
-    </div>
-    <!-- Quick actions -->
-    <div id="ai-quick-actions" style="padding:10px 12px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;flex-shrink:0;">
-      <button onclick="_aiQuickAsk('¿Cómo está el equipo hoy? Rutas activas, visitas realizadas y efectividad.')" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid rgba(16,185,129,0.25);background:rgba(16,185,129,0.06);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(16,185,129,0.14)';this.style.borderColor='rgba(16,185,129,0.5)'" onmouseout="this.style.background='rgba(16,185,129,0.06)';this.style.borderColor='rgba(16,185,129,0.25)'">
-        <i data-lucide="activity" style="width:12px;height:12px;color:#10b981;flex-shrink:0;"></i>Estado hoy
-      </button>
-      <button onclick="_aiQuickAsk('¿Qué clientes 80/20 llevan más de 15 días sin visita? Detalla por vendedor.')" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid rgba(245,158,11,0.25);background:rgba(245,158,11,0.06);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.14)';this.style.borderColor='rgba(245,158,11,0.5)'" onmouseout="this.style.background='rgba(245,158,11,0.06)';this.style.borderColor='rgba(245,158,11,0.25)'">
-        <i data-lucide="star" style="width:12px;height:12px;color:#f59e0b;flex-shrink:0;"></i>80/20 pendiente
-      </button>
-      <button onclick="_aiQuickAsk('¿Qué vendedor tiene más clientes sin GPS? Lista los clientes sin coordenadas.')" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid rgba(239,68,68,0.2);background:rgba(239,68,68,0.05);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.12)';this.style.borderColor='rgba(239,68,68,0.4)'" onmouseout="this.style.background='rgba(239,68,68,0.05)';this.style.borderColor='rgba(239,68,68,0.2)'">
-        <i data-lucide="map-pin-off" style="width:12px;height:12px;color:#ef4444;flex-shrink:0;"></i>Sin GPS
-      </button>
-      <button onclick="_aiQuickAsk('Dame un resumen de rutas activas y visitas de hoy, con efectividad por vendedor.')" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid rgba(99,102,241,0.2);background:rgba(99,102,241,0.05);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(99,102,241,0.12)';this.style.borderColor='rgba(99,102,241,0.4)'" onmouseout="this.style.background='rgba(99,102,241,0.05)';this.style.borderColor='rgba(99,102,241,0.2)'">
-        <i data-lucide="route" style="width:12px;height:12px;color:#6366f1;flex-shrink:0;"></i>Rutas activas
-      </button>
-      <button onclick="_aiQuickAsk('¿Cuánto vendió cada vendedor este mes y el anterior? Compara y destaca top y bajo rendimiento.')" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid rgba(16,185,129,0.25);background:rgba(16,185,129,0.06);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(16,185,129,0.14)';this.style.borderColor='rgba(16,185,129,0.5)'" onmouseout="this.style.background='rgba(16,185,129,0.06)';this.style.borderColor='rgba(16,185,129,0.25)'">
-        <i data-lucide="bar-chart-2" style="width:12px;height:12px;color:#10b981;flex-shrink:0;"></i>Ventas vendedor
-      </button>
-      <button onclick="_aiQuickAsk('¿Cuáles son las cobranzas pendientes más grandes? Lista por monto y cliente.')" style="display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid rgba(249,115,22,0.2);background:rgba(249,115,22,0.05);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(249,115,22,0.12)';this.style.borderColor='rgba(249,115,22,0.4)'" onmouseout="this.style.background='rgba(249,115,22,0.05)';this.style.borderColor='rgba(249,115,22,0.2)'">
-        <i data-lucide="clock-alert" style="width:12px;height:12px;color:#f97316;flex-shrink:0;"></i>Cobranzas
-      </button>
-    </div>
-    <!-- Messages -->
-    <div id="ai-chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
-      <div style="text-align:center;padding:24px 16px 16px;">
-        <div style="font-size:11px;font-weight:600;letter-spacing:2px;color:#6366f1;text-transform:uppercase;margin-bottom:6px;">LEKER AI</div>
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">Acceso completo a clientes, rutas, ventas y cobranzas.<br>Haz una pregunta o usa los accesos rápidos.</div>
-      </div>
-    </div>
-    <!-- Input -->
-    <div style="padding:12px 14px;border-top:1px solid var(--border);flex-shrink:0;">
-      <div style="display:flex;gap:6px;align-items:flex-end;">
-        <textarea id="ai-chat-input" placeholder="Escribe o dicta tu pregunta..." rows="2" style="flex:1;padding:9px 12px;font-size:13px;border-radius:10px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);resize:none;font-family:inherit;line-height:1.4;outline:none;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage();}"></textarea>
-        <button id="ai-mic-btn" onclick="_aiToggleMic()" style="width:38px;height:38px;border-radius:10px;background:var(--bg-secondary);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s,border-color 0.2s,box-shadow 0.2s;" title="Dictar por voz">
-          <i data-lucide="mic" style="width:16px;height:16px;color:var(--text-muted);"></i>
-        </button>
-        <button onclick="sendAIMessage()" style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Enviar">
-          <i data-lucide="send" style="width:16px;height:16px;color:white;"></i>
+  <!-- AI Chat Slide Panel — with history sidebar -->
+  <div id="leker-ai-panel" style="position:fixed;top:0;right:-440px;width:420px;height:100vh;background:var(--bg-card);border-left:1px solid var(--border);box-shadow:-8px 0 40px rgba(0,0,0,0.3);z-index:99989;display:flex;flex-direction:row;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);">
+
+    <!-- History Sidebar (toggled) -->
+    <div id="ai-history-sidebar" style="width:0;overflow:hidden;background:var(--bg-secondary);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:width 0.25s ease;flex-shrink:0;">
+      <div style="padding:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+        <span style="font-size:12px;font-weight:700;color:var(--text-primary);white-space:nowrap;">Historial</span>
+        <button onclick="_aiToggleHistory()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:2px;" title="Cerrar historial">
+          <i data-lucide="panel-left-close" style="width:14px;height:14px;"></i>
         </button>
       </div>
-      <div id="ai-mic-btn-hint" style="font-size:10px;color:var(--text-muted);margin-top:5px;text-align:center;">Enter para enviar · Shift+Enter para nueva línea</div>
-      <div id="ai-mic-btn-wave" style="display:none;align-items:center;justify-content:center;gap:3px;height:22px;margin-top:5px;">
-        <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
-        <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
-        <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
-        <div class="vw-bar"></div><div class="vw-bar"></div>
-        <span style="font-size:10px;color:#ef4444;font-weight:600;margin-left:8px;letter-spacing:0.3px;">Escuchando...</span>
+      <div id="ai-history-list" style="flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:2px;">
+        <div style="text-align:center;padding:20px 8px;color:var(--text-muted);font-size:11px;">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- Main chat area -->
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
+      <!-- Header -->
+      <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;background:linear-gradient(135deg,rgba(99,102,241,0.10),rgba(139,92,246,0.06));">
+        <div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i data-lucide="sparkles" style="width:15px;height:15px;color:white;"></i>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="ai-panel-title">LEKER AI</div>
+          <div style="font-size:10px;color:var(--text-muted);" id="ai-panel-status">GPT-4o mini</div>
+        </div>
+        <div style="display:flex;gap:2px;flex-shrink:0;">
+          <button onclick="_aiNewConversation()" style="background:none;border:1px solid var(--border);cursor:pointer;color:var(--text-muted);padding:5px;border-radius:7px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;" title="Nueva conversación" onmouseover="this.style.background='var(--bg-secondary)';this.style.color='var(--text-primary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'">
+            <i data-lucide="plus" style="width:14px;height:14px;"></i>
+          </button>
+          <button onclick="_aiToggleHistory()" style="background:none;border:1px solid var(--border);cursor:pointer;color:var(--text-muted);padding:5px;border-radius:7px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;" title="Historial" id="ai-history-toggle-btn" onmouseover="this.style.background='var(--bg-secondary)';this.style.color='var(--text-primary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'">
+            <i data-lucide="history" style="width:14px;height:14px;"></i>
+          </button>
+          <button onclick="toggleLekerAIPanel()" style="background:none;border:1px solid var(--border);cursor:pointer;color:var(--text-muted);padding:5px;border-radius:7px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;" title="Cerrar" onmouseover="this.style.background='var(--bg-secondary)';this.style.color='var(--text-primary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'">
+            <i data-lucide="x" style="width:14px;height:14px;"></i>
+          </button>
+        </div>
+      </div>
+      <!-- Quick actions (collapsible) -->
+      <div id="ai-quick-actions" style="padding:8px 10px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;flex-shrink:0;">
+        <button onclick="_aiQuickAsk('¿Cómo está el equipo hoy? Rutas activas, visitas realizadas y efectividad.')" style="display:flex;align-items:center;gap:5px;font-size:10px;padding:5px 8px;border-radius:7px;border:1px solid rgba(16,185,129,0.25);background:rgba(16,185,129,0.06);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(16,185,129,0.14)'" onmouseout="this.style.background='rgba(16,185,129,0.06)'">
+          <i data-lucide="activity" style="width:11px;height:11px;color:#10b981;flex-shrink:0;"></i>Estado hoy
+        </button>
+        <button onclick="_aiQuickAsk('¿Qué clientes 80/20 llevan más de 15 días sin visita? Detalla por vendedor.')" style="display:flex;align-items:center;gap:5px;font-size:10px;padding:5px 8px;border-radius:7px;border:1px solid rgba(245,158,11,0.25);background:rgba(245,158,11,0.06);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.14)'" onmouseout="this.style.background='rgba(245,158,11,0.06)'">
+          <i data-lucide="star" style="width:11px;height:11px;color:#f59e0b;flex-shrink:0;"></i>80/20 pendiente
+        </button>
+        <button onclick="_aiQuickAsk('¿Qué vendedor tiene más clientes sin GPS? Lista los clientes sin coordenadas.')" style="display:flex;align-items:center;gap:5px;font-size:10px;padding:5px 8px;border-radius:7px;border:1px solid rgba(239,68,68,0.2);background:rgba(239,68,68,0.05);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.12)'" onmouseout="this.style.background='rgba(239,68,68,0.05)'">
+          <i data-lucide="map-pin-off" style="width:11px;height:11px;color:#ef4444;flex-shrink:0;"></i>Sin GPS
+        </button>
+        <button onclick="_aiQuickAsk('Dame un resumen de rutas activas y visitas de hoy, con efectividad por vendedor.')" style="display:flex;align-items:center;gap:5px;font-size:10px;padding:5px 8px;border-radius:7px;border:1px solid rgba(99,102,241,0.2);background:rgba(99,102,241,0.05);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(99,102,241,0.12)'" onmouseout="this.style.background='rgba(99,102,241,0.05)'">
+          <i data-lucide="route" style="width:11px;height:11px;color:#6366f1;flex-shrink:0;"></i>Rutas activas
+        </button>
+        <button onclick="_aiQuickAsk('¿Cuánto vendió cada vendedor este mes y el anterior? Compara y destaca top y bajo rendimiento.')" style="display:flex;align-items:center;gap:5px;font-size:10px;padding:5px 8px;border-radius:7px;border:1px solid rgba(16,185,129,0.25);background:rgba(16,185,129,0.06);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(16,185,129,0.14)'" onmouseout="this.style.background='rgba(16,185,129,0.06)'">
+          <i data-lucide="bar-chart-2" style="width:11px;height:11px;color:#10b981;flex-shrink:0;"></i>Ventas vendedor
+        </button>
+        <button onclick="_aiQuickAsk('¿Cuáles son las cobranzas pendientes más grandes? Lista por monto y cliente.')" style="display:flex;align-items:center;gap:5px;font-size:10px;padding:5px 8px;border-radius:7px;border:1px solid rgba(249,115,22,0.2);background:rgba(249,115,22,0.05);color:var(--text-secondary);cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.background='rgba(249,115,22,0.12)'" onmouseout="this.style.background='rgba(249,115,22,0.05)'">
+          <i data-lucide="clock-alert" style="width:11px;height:11px;color:#f97316;flex-shrink:0;"></i>Cobranzas
+        </button>
+      </div>
+      <!-- Messages -->
+      <div id="ai-chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
+        <div id="ai-welcome-screen" style="text-align:center;padding:40px 16px 16px;">
+          <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+            <i data-lucide="sparkles" style="width:22px;height:22px;color:white;"></i>
+          </div>
+          <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">LEKER AI</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">Acceso completo a clientes, rutas, ventas y cobranzas.<br>Pregunta lo que necesites o di <b>"aprende que..."</b> para enseñarme.</div>
+        </div>
+      </div>
+      <!-- Input -->
+      <div style="padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0;">
+        <div style="display:flex;gap:5px;align-items:flex-end;">
+          <textarea id="ai-chat-input" placeholder="Escribe tu mensaje..." rows="2" style="flex:1;padding:9px 12px;font-size:13px;border-radius:10px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);resize:none;font-family:inherit;line-height:1.4;outline:none;" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage();}"></textarea>
+          <button id="ai-mic-btn" onclick="_aiToggleMic()" style="width:36px;height:36px;border-radius:10px;background:var(--bg-secondary);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s,border-color 0.2s,box-shadow 0.2s;" title="Dictar por voz">
+            <i data-lucide="mic" style="width:15px;height:15px;color:var(--text-muted);"></i>
+          </button>
+          <button onclick="sendAIMessage()" style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="Enviar">
+            <i data-lucide="send" style="width:15px;height:15px;color:white;"></i>
+          </button>
+        </div>
+        <div id="ai-mic-btn-hint" style="font-size:9px;color:var(--text-muted);margin-top:4px;text-align:center;">Enter enviar · Shift+Enter nueva línea · "aprende que..." para enseñar</div>
+        <div id="ai-mic-btn-wave" style="display:none;align-items:center;justify-content:center;gap:3px;height:22px;margin-top:5px;">
+          <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
+          <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
+          <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
+          <div class="vw-bar"></div><div class="vw-bar"></div>
+          <span style="font-size:10px;color:#ef4444;font-weight:600;margin-left:8px;letter-spacing:0.3px;">Escuchando...</span>
+        </div>
       </div>
     </div>
   </div>
