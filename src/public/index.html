@@ -4371,12 +4371,16 @@
     .learning-cat-btn {
       background: var(--bg-secondary); border: 1px solid var(--border);
       color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
+      font-weight: 600;
     }
     .learning-cat-btn.active {
-      background: #6366f1; color: white; border-color: #6366f1;
+      background: #2563eb; color: white; border-color: #2563eb;
+    }
+    .learning-cat-btn.active .lrn-badge {
+      background: rgba(255,255,255,0.25) !important;
     }
     .learning-cat-btn:hover:not(.active) {
-      background: var(--bg-hover); border-color: rgba(99,102,241,0.3);
+      background: var(--bg-hover); border-color: rgba(37,99,235,0.3);
     }
     .ai-chat-input {
       padding: 12px 16px;
@@ -8053,68 +8057,97 @@
       </div>
 
       <!-- AI Learnings Panel -->
-      <div class="panel" id="panel-ai-learnings">
-        <!-- Hero Header -->
-        <div style="background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.05));border:1px solid rgba(99,102,241,0.15);border-radius:16px;padding:24px 28px;margin-bottom:24px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
-            <div style="display:flex;align-items:center;gap:14px;">
-              <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(99,102,241,0.3);">
-                <i data-lucide="brain" style="width:24px;height:24px;color:white;"></i>
-              </div>
-              <div>
-                <h2 style="margin:0;font-size:22px;font-weight:800;color:var(--text-primary);">Aprendizaje IA</h2>
-                <p style="margin:2px 0 0;font-size:12px;color:var(--text-muted);max-width:420px;">Enseña a LEKER AI las reglas y conocimientos de tu empresa. La IA los recordará en cada conversación.</p>
-              </div>
+      <div class="panel" id="panel-ai-learnings" style="padding:24px 28px;">
+        <!-- Header compacto -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(99,102,241,0.3);">
+              <i data-lucide="brain" style="width:20px;height:20px;color:white;"></i>
             </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button onclick="document.getElementById('learning-file-input').click()" class="btn" style="display:flex;align-items:center;gap:6px;font-size:12px;padding:9px 16px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;font-weight:600;transition:all 0.15s;" onmouseover="this.style.borderColor='rgba(99,102,241,0.4)';this.style.background='rgba(99,102,241,0.06)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-card)'">
-                <i data-lucide="file-up" style="width:14px;height:14px;"></i> Cargar Documento
-              </button>
-              <input type="file" id="learning-file-input" accept=".txt,.pdf,.xlsx,.xls,.csv,.md,.json" style="display:none;" onchange="_uploadLearningDoc(this)">
-              <button onclick="_openLearningModal()" class="btn" style="display:flex;align-items:center;gap:6px;font-size:12px;padding:9px 18px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;cursor:pointer;font-weight:600;box-shadow:0 2px 8px rgba(99,102,241,0.3);transition:all 0.15s;" onmouseover="this.style.boxShadow='0 4px 16px rgba(99,102,241,0.45)';this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(99,102,241,0.3)';this.style.transform='none'">
-                <i data-lucide="plus" style="width:14px;height:14px;"></i> Agregar Aprendizaje
-              </button>
+            <div>
+              <h2 style="margin:0;font-size:20px;font-weight:800;color:var(--text-primary);">Aprendizaje IA</h2>
+              <p style="margin:2px 0 0;font-size:11px;color:var(--text-muted);">Reglas y conocimientos que la IA recordará en cada conversación</p>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button onclick="document.getElementById('learning-file-input').click()" class="btn" style="display:flex;align-items:center;gap:6px;font-size:12px;padding:8px 14px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;font-weight:600;transition:all 0.15s;" onmouseover="this.style.borderColor='rgba(99,102,241,0.4)';this.style.background='rgba(99,102,241,0.06)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-card)'">
+              <i data-lucide="file-up" style="width:14px;height:14px;"></i> Cargar Documento
+            </button>
+            <input type="file" id="learning-file-input" accept=".txt,.pdf,.xlsx,.xls,.csv,.md,.json" style="display:none;" onchange="_uploadLearningDoc(this)">
+            <button onclick="_openLearningModal()" class="btn" style="display:flex;align-items:center;gap:6px;font-size:12px;padding:8px 16px;border-radius:10px;background:#2563eb;color:white;border:none;cursor:pointer;font-weight:600;box-shadow:0 2px 8px rgba(37,99,235,0.3);transition:all 0.15s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+              <i data-lucide="plus" style="width:14px;height:14px;"></i> Agregar
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+          <div style="padding:14px;background:rgba(99,102,241,0.04);border:1.5px solid rgba(99,102,241,0.25);border-radius:12px;display:flex;align-items:center;gap:12px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:rgba(99,102,241,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i data-lucide="database" style="width:18px;height:18px;color:#6366f1;"></i>
+            </div>
+            <div>
+              <div id="learning-total-count" style="font-size:22px;font-weight:800;color:#6366f1;line-height:1;">0</div>
+              <div style="font-size:11px;color:var(--text-muted);font-weight:500;margin-top:2px;">Total</div>
+            </div>
+          </div>
+          <div style="padding:14px;background:rgba(16,185,129,0.04);border:1.5px solid rgba(16,185,129,0.25);border-radius:12px;display:flex;align-items:center;gap:12px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i data-lucide="check-circle" style="width:18px;height:18px;color:#10b981;"></i>
+            </div>
+            <div>
+              <div id="learning-active-count" style="font-size:22px;font-weight:800;color:#10b981;line-height:1;">0</div>
+              <div style="font-size:11px;color:var(--text-muted);font-weight:500;margin-top:2px;">Activos</div>
+            </div>
+          </div>
+          <div style="padding:14px;background:rgba(245,158,11,0.04);border:1.5px solid rgba(245,158,11,0.25);border-radius:12px;display:flex;align-items:center;gap:12px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:rgba(245,158,11,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i data-lucide="folder" style="width:18px;height:18px;color:#f59e0b;"></i>
+            </div>
+            <div>
+              <div id="learning-categories-count" style="font-size:22px;font-weight:800;color:#f59e0b;line-height:1;">0</div>
+              <div style="font-size:11px;color:var(--text-muted);font-weight:500;margin-top:2px;">Categorías</div>
             </div>
           </div>
         </div>
 
-        <!-- Stats + Filters Row -->
-        <div style="display:grid;grid-template-columns:1fr auto;gap:16px;margin-bottom:20px;align-items:start;">
-          <!-- Stats -->
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-            <div style="padding:16px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;text-align:center;position:relative;overflow:hidden;">
-              <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6366f1,#8b5cf6);"></div>
-              <div id="learning-total-count" style="font-size:28px;font-weight:800;color:#6366f1;line-height:1;">0</div>
-              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:600;margin-top:4px;letter-spacing:0.5px;">Total</div>
-            </div>
-            <div style="padding:16px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;text-align:center;position:relative;overflow:hidden;">
-              <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#10b981,#059669);"></div>
-              <div id="learning-active-count" style="font-size:28px;font-weight:800;color:#10b981;line-height:1;">0</div>
-              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:600;margin-top:4px;letter-spacing:0.5px;">Activos</div>
-            </div>
-            <div style="padding:16px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;text-align:center;position:relative;overflow:hidden;">
-              <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f59e0b,#d97706);"></div>
-              <div id="learning-categories-count" style="font-size:28px;font-weight:800;color:#f59e0b;line-height:1;">0</div>
-              <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:600;margin-top:4px;letter-spacing:0.5px;">Categorías</div>
-            </div>
-          </div>
-          <!-- Category filters -->
-          <div style="display:flex;gap:5px;flex-wrap:wrap;padding-top:4px;" id="learning-category-filters">
-            <button class="btn learning-cat-btn active" onclick="_filterLearnings('all')" data-cat="all" style="font-size:11px;padding:6px 14px;border-radius:20px;">Todos</button>
-            <button class="btn learning-cat-btn" onclick="_filterLearnings('ventas')" data-cat="ventas" style="font-size:11px;padding:6px 14px;border-radius:20px;">Ventas</button>
-            <button class="btn learning-cat-btn" onclick="_filterLearnings('rutas')" data-cat="rutas" style="font-size:11px;padding:6px 14px;border-radius:20px;">Rutas</button>
-            <button class="btn learning-cat-btn" onclick="_filterLearnings('clientes')" data-cat="clientes" style="font-size:11px;padding:6px 14px;border-radius:20px;">Clientes</button>
-            <button class="btn learning-cat-btn" onclick="_filterLearnings('productos')" data-cat="productos" style="font-size:11px;padding:6px 14px;border-radius:20px;">Productos</button>
-            <button class="btn learning-cat-btn" onclick="_filterLearnings('politicas')" data-cat="politicas" style="font-size:11px;padding:6px 14px;border-radius:20px;">Políticas</button>
-            <button class="btn learning-cat-btn" onclick="_filterLearnings('general')" data-cat="general" style="font-size:11px;padding:6px 14px;border-radius:20px;">General</button>
-          </div>
+        <!-- Category filter tabs -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;" id="learning-category-filters">
+          <button class="btn learning-cat-btn active" onclick="_filterLearnings('all')" data-cat="all" style="font-size:12px;padding:7px 16px;border-radius:8px;display:flex;align-items:center;gap:5px;">
+            <i data-lucide="layers" style="width:13px;height:13px;"></i> Todos
+          </button>
+          <button class="btn learning-cat-btn" onclick="_filterLearnings('ventas')" data-cat="ventas" style="font-size:12px;padding:7px 16px;border-radius:8px;display:flex;align-items:center;gap:5px;">
+            <i data-lucide="trending-up" style="width:13px;height:13px;"></i> Ventas
+          </button>
+          <button class="btn learning-cat-btn" onclick="_filterLearnings('rutas')" data-cat="rutas" style="font-size:12px;padding:7px 16px;border-radius:8px;display:flex;align-items:center;gap:5px;">
+            <i data-lucide="route" style="width:13px;height:13px;"></i> Rutas
+          </button>
+          <button class="btn learning-cat-btn" onclick="_filterLearnings('clientes')" data-cat="clientes" style="font-size:12px;padding:7px 16px;border-radius:8px;display:flex;align-items:center;gap:5px;">
+            <i data-lucide="users" style="width:13px;height:13px;"></i> Clientes
+          </button>
+          <button class="btn learning-cat-btn" onclick="_filterLearnings('productos')" data-cat="productos" style="font-size:12px;padding:7px 16px;border-radius:8px;display:flex;align-items:center;gap:5px;">
+            <i data-lucide="package" style="width:13px;height:13px;"></i> Productos
+          </button>
+          <button class="btn learning-cat-btn" onclick="_filterLearnings('politicas')" data-cat="politicas" style="font-size:12px;padding:7px 16px;border-radius:8px;display:flex;align-items:center;gap:5px;">
+            <i data-lucide="shield" style="width:13px;height:13px;"></i> Políticas
+          </button>
+          <button class="btn learning-cat-btn" onclick="_filterLearnings('general')" data-cat="general" style="font-size:12px;padding:7px 16px;border-radius:8px;display:flex;align-items:center;gap:5px;">
+            <i data-lucide="bookmark" style="width:13px;height:13px;"></i> General
+          </button>
         </div>
 
         <!-- Learnings list -->
         <div id="learnings-list" style="display:flex;flex-direction:column;gap:8px;">
-          <div style="text-align:center;padding:40px;color:var(--text-muted);">
-            <i data-lucide="loader-2" class="spin" style="width:24px;height:24px;margin-bottom:8px;"></i>
-            <div style="font-size:13px;">Cargando aprendizajes...</div>
+          <div id="learnings-loader" style="text-align:center;padding:48px 20px;">
+            <div style="position:relative;width:64px;height:64px;margin:0 auto 16px;">
+              <svg width="64" height="64" viewBox="0 0 64 64" style="transform:rotate(-90deg);">
+                <circle cx="32" cy="32" r="28" fill="none" stroke="var(--border)" stroke-width="4"/>
+                <circle id="learnings-loader-circle" cx="32" cy="32" r="28" fill="none" stroke="#6366f1" stroke-width="4" stroke-linecap="round" stroke-dasharray="175.93" stroke-dashoffset="175.93" style="transition:stroke-dashoffset 0.4s ease;"/>
+              </svg>
+              <div id="learnings-loader-pct" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--text-primary);">0%</div>
+            </div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Cargando aprendizajes</div>
+            <div style="font-size:11px;color:var(--text-muted);">Conectando con la base de conocimiento...</div>
           </div>
         </div>
 
@@ -8137,23 +8170,19 @@
 
           <!-- Usage stats cards -->
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;">
-            <div style="padding:18px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;text-align:center;position:relative;overflow:hidden;">
-              <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#3b82f6;"></div>
+            <div style="padding:18px 14px;background:rgba(59,130,246,0.04);border:1px solid rgba(59,130,246,0.25);border-radius:12px;text-align:center;">
               <div id="ai-usage-requests" style="font-size:26px;font-weight:800;color:#3b82f6;line-height:1;">-</div>
               <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:600;margin-top:5px;">Consultas</div>
             </div>
-            <div style="padding:18px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;text-align:center;position:relative;overflow:hidden;">
-              <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#8b5cf6;"></div>
+            <div style="padding:18px 14px;background:rgba(139,92,246,0.04);border:1px solid rgba(139,92,246,0.25);border-radius:12px;text-align:center;">
               <div id="ai-usage-tokens" style="font-size:26px;font-weight:800;color:#8b5cf6;line-height:1;">-</div>
               <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:600;margin-top:5px;">Tokens</div>
             </div>
-            <div style="padding:18px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;text-align:center;position:relative;overflow:hidden;">
-              <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#10b981;"></div>
+            <div style="padding:18px 14px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.25);border-radius:12px;text-align:center;">
               <div id="ai-usage-cost" style="font-size:26px;font-weight:800;color:#10b981;line-height:1;">-</div>
               <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;font-weight:600;margin-top:5px;">Costo USD</div>
             </div>
-            <div style="padding:18px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;text-align:center;position:relative;overflow:hidden;">
-              <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6366f1,#8b5cf6);"></div>
+            <div style="padding:18px 14px;background:rgba(99,102,241,0.04);border:1px solid rgba(99,102,241,0.25);border-radius:12px;text-align:center;">
               <div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-top:2px;">GPT-4o mini</div>
               <div style="font-size:9px;color:var(--text-muted);margin-top:6px;line-height:1.4;">$0.15 / 1M input<br>$0.60 / 1M output</div>
             </div>
@@ -27066,17 +27095,31 @@
     let _learningsFilter = 'all';
 
     async function loadAILearnings() {
+      const circumference = 175.93;
+      function _setLoaderPct(pct) {
+        const circle = document.getElementById('learnings-loader-circle');
+        const pctEl = document.getElementById('learnings-loader-pct');
+        if (circle) circle.setAttribute('stroke-dashoffset', String(circumference - (circumference * pct / 100)));
+        if (pctEl) pctEl.textContent = Math.round(pct) + '%';
+      }
+      _setLoaderPct(20);
       try {
+        _setLoaderPct(40);
         const res = await fetch(`${API}/api/ai/learnings`);
+        _setLoaderPct(75);
         const json = await res.json();
         if (json.success) {
           _allLearnings = json.data || [];
+          _setLoaderPct(100);
+          await new Promise(r => setTimeout(r, 350));
+          _renderLearnings();
+        } else {
+          _setLoaderPct(100);
           _renderLearnings();
         }
       } catch (e) {
         document.getElementById('learnings-list').innerHTML = `<div style="text-align:center;padding:24px;color:#ef4444;">Error al cargar: ${e.message}</div>`;
       }
-      // También cargar stats de uso
       loadAIUsage();
     }
 
@@ -27094,15 +27137,25 @@
       if (activeEl) activeEl.textContent = _allLearnings.filter(l => l.active).length;
       if (catsEl) catsEl.textContent = [...new Set(_allLearnings.map(l => l.category))].length;
 
+      // Update filter badge counts
+      document.querySelectorAll('.learning-cat-btn').forEach(b => {
+        const cat = b.dataset.cat;
+        const count = cat === 'all' ? _allLearnings.length : _allLearnings.filter(l => l.category === cat).length;
+        let badge = b.querySelector('.lrn-badge');
+        if (!badge) { badge = document.createElement('span'); badge.className = 'lrn-badge'; badge.style.cssText = 'font-size:9px;padding:1px 5px;border-radius:8px;background:rgba(255,255,255,0.2);margin-left:2px;font-weight:700;'; b.appendChild(badge); }
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'inline' : 'none';
+      });
+
       if (filtered.length === 0) {
         list.innerHTML = `
-          <div style="text-align:center;padding:40px;">
-            <div style="width:56px;height:56px;border-radius:14px;background:rgba(99,102,241,0.08);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+          <div style="text-align:center;padding:48px 20px;">
+            <div style="width:56px;height:56px;border-radius:14px;background:rgba(99,102,241,0.08);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
               <i data-lucide="brain" style="width:28px;height:28px;color:var(--text-muted);"></i>
             </div>
-            <p style="font-size:14px;font-weight:600;margin:0 0 4px;">Sin aprendizajes${_learningsFilter !== 'all' ? ' en esta categoría' : ''}</p>
-            <p style="font-size:12px;color:var(--text-muted);margin:0 0 16px;">Agrega reglas, correcciones o conocimientos para que la IA los recuerde.</p>
-            <button onclick="_openLearningModal()" class="btn btn-primary" style="font-size:12px;padding:8px 16px;border-radius:8px;">
+            <p style="font-size:15px;font-weight:700;color:var(--text-primary);margin:0 0 6px;">Sin aprendizajes${_learningsFilter !== 'all' ? ' en esta categoría' : ''}</p>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 20px;line-height:1.5;">Agrega reglas, correcciones o conocimientos para que la IA los recuerde.<br>También puedes decir <b>"aprende que..."</b> en el chat.</p>
+            <button onclick="_openLearningModal()" class="btn" style="font-size:12px;padding:9px 18px;border-radius:10px;background:#2563eb;color:white;border:none;cursor:pointer;font-weight:600;">
               <i data-lucide="plus" style="width:14px;height:14px;"></i> Agregar primer aprendizaje
             </button>
           </div>`;
@@ -27118,46 +27171,76 @@
         ventas:'trending-up', rutas:'route', clientes:'users', productos:'package',
         politicas:'shield', general:'bookmark'
       };
+      const catLabels = {
+        ventas:'Ventas', rutas:'Rutas', clientes:'Clientes', productos:'Productos',
+        politicas:'Políticas', general:'General'
+      };
 
-      list.innerHTML = filtered.map(l => {
-        const color = catColors[l.category] || '#6b7280';
-        const icon = catIcons[l.category] || 'bookmark';
-        const date = new Date(l.created_at).toLocaleDateString('es-CL', { day:'numeric', month:'short', year:'numeric' });
-        return `
-        <div style="padding:16px 18px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;opacity:${l.active ? 1 : 0.45};transition:all 0.2s;position:relative;overflow:hidden;" onmouseover="this.style.borderColor='${color}40'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${color};border-radius:4px 0 0 4px;"></div>
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-            <div style="display:flex;gap:12px;flex:1;min-width:0;">
-              <div style="width:34px;height:34px;border-radius:9px;background:${color}12;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
-                <i data-lucide="${icon}" style="width:16px;height:16px;color:${color};"></i>
+      // Group by category when showing "all"
+      let html = '';
+      if (_learningsFilter === 'all') {
+        const groups = {};
+        filtered.forEach(l => {
+          if (!groups[l.category]) groups[l.category] = [];
+          groups[l.category].push(l);
+        });
+        const catOrder = ['ventas','rutas','clientes','productos','politicas','general'];
+        const sortedCats = Object.keys(groups).sort((a, b) => {
+          const ia = catOrder.indexOf(a), ib = catOrder.indexOf(b);
+          return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+        });
+        sortedCats.forEach(cat => {
+          const color = catColors[cat] || '#6b7280';
+          const icon = catIcons[cat] || 'bookmark';
+          const label = catLabels[cat] || cat;
+          html += `<div style="margin-top:8px;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+            <div style="width:28px;height:28px;border-radius:8px;background:${color}15;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i data-lucide="${icon}" style="width:14px;height:14px;color:${color};"></i>
+            </div>
+            <span style="font-size:13px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:0.5px;">${label}</span>
+            <span style="font-size:10px;color:var(--text-muted);font-weight:600;">${groups[cat].length}</span>
+            <div style="flex:1;height:1px;background:var(--border);margin-left:4px;"></div>
+          </div>`;
+          groups[cat].forEach(l => { html += _renderLearningCard(l, catColors, catIcons); });
+        });
+      } else {
+        filtered.forEach(l => { html += _renderLearningCard(l, catColors, catIcons); });
+      }
+
+      list.innerHTML = html;
+      _createIcons(list);
+    }
+
+    function _renderLearningCard(l, catColors, catIcons) {
+      const color = catColors[l.category] || '#6b7280';
+      const icon = catIcons[l.category] || 'bookmark';
+      const date = new Date(l.created_at).toLocaleDateString('es-CL', { day:'numeric', month:'short', year:'numeric' });
+      return `
+        <div style="padding:14px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;opacity:${l.active ? 1 : 0.45};transition:all 0.2s;margin-bottom:6px;" onmouseover="this.style.borderColor='${color}40';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
+                <span style="font-size:13px;font-weight:700;color:var(--text-primary);line-height:1.3;">${l.title}</span>
+                ${!l.active ? '<span style="font-size:9px;padding:2px 7px;border-radius:6px;background:rgba(239,68,68,0.08);color:#ef4444;font-weight:600;flex-shrink:0;">Pausado</span>' : ''}
               </div>
-              <div style="flex:1;min-width:0;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
-                  <span style="font-size:13px;font-weight:700;color:var(--text-primary);">${l.title}</span>
-                  <span style="font-size:9px;padding:2px 8px;border-radius:10px;background:${color}12;color:${color};font-weight:600;text-transform:uppercase;letter-spacing:0.3px;flex-shrink:0;">${l.category}</span>
-                  ${!l.active ? '<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(239,68,68,0.08);color:#ef4444;font-weight:600;flex-shrink:0;">Pausado</span>' : ''}
-                </div>
-                <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">${l.content}</div>
-                <div style="font-size:10px;color:var(--text-muted);margin-top:6px;display:flex;align-items:center;gap:4px;">
-                  <i data-lucide="calendar" style="width:10px;height:10px;"></i> ${date}
-                </div>
+              <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:4px;">${l.content}</div>
+              <div style="font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:4px;">
+                <i data-lucide="calendar" style="width:10px;height:10px;"></i> ${date}
               </div>
             </div>
-            <div style="display:flex;gap:3px;flex-shrink:0;">
-              <button onclick="_toggleLearning('${l.id}',${!l.active})" title="${l.active ? 'Pausar' : 'Activar'}" style="background:none;border:1px solid var(--border);width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:${l.active ? 'var(--text-muted)' : '#10b981'};transition:all 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
-                <i data-lucide="${l.active ? 'pause' : 'play'}" style="width:13px;height:13px;"></i>
+            <div style="display:flex;gap:2px;flex-shrink:0;">
+              <button onclick="_toggleLearning('${l.id}',${!l.active})" title="${l.active ? 'Pausar' : 'Activar'}" style="background:none;border:1px solid var(--border);width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:${l.active ? 'var(--text-muted)' : '#10b981'};transition:all 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
+                <i data-lucide="${l.active ? 'pause' : 'play'}" style="width:12px;height:12px;"></i>
               </button>
-              <button onclick="_editLearning('${l.id}')" title="Editar" style="background:none;border:1px solid var(--border);width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
-                <i data-lucide="pencil" style="width:13px;height:13px;"></i>
+              <button onclick="_editLearning('${l.id}')" title="Editar" style="background:none;border:1px solid var(--border);width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
+                <i data-lucide="pencil" style="width:12px;height:12px;"></i>
               </button>
-              <button onclick="_deleteLearning('${l.id}','${l.title.replace(/'/g,"\\'")}') " title="Eliminar" style="background:none;border:1px solid var(--border);width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#ef4444;transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.06)'" onmouseout="this.style.background='none'">
-                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+              <button onclick="_deleteLearning('${l.id}','${l.title.replace(/'/g,"\\'")}') " title="Eliminar" style="background:none;border:1px solid var(--border);width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#ef4444;transition:all 0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.06)'" onmouseout="this.style.background='none'">
+                <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
               </button>
             </div>
           </div>
         </div>`;
-      }).join('');
-      _createIcons(list);
     }
 
     function _filterLearnings(cat) {
@@ -27174,42 +27257,171 @@
       overlay.id = 'learning-modal-overlay';
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
       overlay.innerHTML = `
-        <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);border:1px solid var(--border);">
+        <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);border:1px solid var(--border);">
           <h3 style="margin:0 0 16px;font-size:16px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
             <i data-lucide="${isEdit?'pencil':'plus'}" style="width:18px;height:18px;color:#6366f1;"></i>
             ${isEdit ? 'Editar' : 'Nuevo'} Aprendizaje
           </h3>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Categoría</label>
-            <select id="learning-modal-cat" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;">
-              <option value="general" ${existing?.category==='general'?'selected':''}>General</option>
-              <option value="ventas" ${existing?.category==='ventas'?'selected':''}>Ventas</option>
-              <option value="rutas" ${existing?.category==='rutas'?'selected':''}>Rutas</option>
-              <option value="clientes" ${existing?.category==='clientes'?'selected':''}>Clientes</option>
-              <option value="productos" ${existing?.category==='productos'?'selected':''}>Productos</option>
-              <option value="politicas" ${existing?.category==='politicas'?'selected':''}>Políticas</option>
-            </select>
-          </div>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Título / Regla</label>
-            <input id="learning-modal-title" type="text" value="${existing?.title?.replace(/"/g,'&quot;')||''}" placeholder="Ej: Precio mínimo de venta" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;box-sizing:border-box;">
-          </div>
-          <div style="margin-bottom:16px;">
-            <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Contenido / Explicación</label>
-            <textarea id="learning-modal-content" rows="4" placeholder="Explica la regla, corrección o conocimiento que la IA debe recordar..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;resize:vertical;margin-top:4px;font-family:inherit;line-height:1.5;box-sizing:border-box;">${existing?.content||''}</textarea>
-          </div>
-          <div style="display:flex;gap:8px;justify-content:flex-end;">
-            <button onclick="document.getElementById('learning-modal-overlay').remove()" class="btn" style="font-size:13px;padding:8px 16px;border-radius:8px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">Cancelar</button>
-            <button onclick="_saveLearning(${isEdit ? "'"+existing.id+"'" : 'null'})" class="btn btn-primary" style="font-size:13px;padding:8px 20px;border-radius:8px;">
-              <i data-lucide="check" style="width:14px;height:14px;"></i> ${isEdit ? 'Guardar' : 'Crear'}
+
+          ${!isEdit ? `<!-- Tabs: Manual / Documento -->
+          <div style="display:flex;gap:0;margin-bottom:16px;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+            <button id="lrn-tab-manual" onclick="_lrnSwitchTab('manual')" style="flex:1;padding:9px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:#2563eb;color:white;display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.15s;">
+              <i data-lucide="pencil" style="width:13px;height:13px;"></i> Escribir manual
             </button>
+            <button id="lrn-tab-doc" onclick="_lrnSwitchTab('doc')" style="flex:1;padding:9px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:var(--bg-secondary);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.15s;">
+              <i data-lucide="file-up" style="width:13px;height:13px;"></i> Subir documento
+            </button>
+          </div>` : ''}
+
+          <!-- Manual form -->
+          <div id="lrn-form-manual">
+            <div style="margin-bottom:12px;">
+              <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Categoría</label>
+              <select id="learning-modal-cat" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;">
+                <option value="general" ${existing?.category==='general'?'selected':''}>General</option>
+                <option value="ventas" ${existing?.category==='ventas'?'selected':''}>Ventas</option>
+                <option value="rutas" ${existing?.category==='rutas'?'selected':''}>Rutas</option>
+                <option value="clientes" ${existing?.category==='clientes'?'selected':''}>Clientes</option>
+                <option value="productos" ${existing?.category==='productos'?'selected':''}>Productos</option>
+                <option value="politicas" ${existing?.category==='politicas'?'selected':''}>Políticas</option>
+              </select>
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Título / Regla</label>
+              <input id="learning-modal-title" type="text" value="${existing?.title?.replace(/"/g,'&quot;')||''}" placeholder="Ej: Precio mínimo de venta" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Contenido / Explicación</label>
+              <textarea id="learning-modal-content" rows="4" placeholder="Explica la regla, corrección o conocimiento que la IA debe recordar..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;resize:vertical;margin-top:4px;font-family:inherit;line-height:1.5;box-sizing:border-box;">${existing?.content||''}</textarea>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+              <button onclick="document.getElementById('learning-modal-overlay').remove()" class="btn" style="font-size:13px;padding:8px 16px;border-radius:8px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">Cancelar</button>
+              <button onclick="_saveLearning(${isEdit ? "'"+existing.id+"'" : 'null'})" class="btn" style="font-size:13px;padding:8px 20px;border-radius:8px;background:#2563eb;color:white;border:none;cursor:pointer;font-weight:600;">
+                <i data-lucide="check" style="width:14px;height:14px;"></i> ${isEdit ? 'Guardar' : 'Crear'}
+              </button>
+            </div>
           </div>
+
+          ${!isEdit ? `<!-- Document upload form -->
+          <div id="lrn-form-doc" style="display:none;">
+            <div style="margin-bottom:12px;">
+              <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Categoría del documento</label>
+              <select id="learning-doc-cat" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;">
+                <option value="general">General</option>
+                <option value="ventas">Ventas</option>
+                <option value="rutas">Rutas</option>
+                <option value="clientes">Clientes</option>
+                <option value="productos">Productos</option>
+                <option value="politicas">Políticas</option>
+              </select>
+            </div>
+            <div id="lrn-drop-zone" style="border:2px dashed var(--border);border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:16px;"
+              onclick="document.getElementById('lrn-doc-file-input').click()"
+              ondragover="event.preventDefault();this.style.borderColor='#2563eb';this.style.background='rgba(37,99,235,0.04)'"
+              ondragleave="this.style.borderColor='var(--border)';this.style.background='none'"
+              ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='none';_lrnHandleFileDrop(event.dataTransfer.files)">
+              <div style="width:44px;height:44px;border-radius:12px;background:rgba(37,99,235,0.08);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;">
+                <i data-lucide="upload" style="width:22px;height:22px;color:#2563eb;"></i>
+              </div>
+              <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Arrastra un archivo aquí o haz clic</div>
+              <div style="font-size:11px;color:var(--text-muted);line-height:1.5;">PDF, TXT, Excel, CSV, MD — máx 10MB<br>La IA extraerá los puntos clave automáticamente</div>
+              <div id="lrn-doc-file-name" style="display:none;margin-top:10px;font-size:12px;font-weight:600;color:#2563eb;display:flex;align-items:center;justify-content:center;gap:5px;"></div>
+              <input type="file" id="lrn-doc-file-input" accept=".txt,.pdf,.xlsx,.xls,.csv,.md,.json" style="display:none;" onchange="_lrnFileSelected(this)">
+            </div>
+            <div id="lrn-doc-progress" style="display:none;margin-bottom:16px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <i data-lucide="loader-2" class="spin" style="width:14px;height:14px;color:#2563eb;"></i>
+                <span style="font-size:12px;font-weight:600;color:var(--text-primary);">Analizando documento con IA...</span>
+              </div>
+              <div style="height:4px;background:var(--border);border-radius:4px;overflow:hidden;">
+                <div id="lrn-doc-bar" style="height:100%;background:#2563eb;border-radius:4px;width:0%;transition:width 0.5s ease;"></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+              <button onclick="document.getElementById('learning-modal-overlay').remove()" class="btn" style="font-size:13px;padding:8px 16px;border-radius:8px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">Cancelar</button>
+              <button id="lrn-doc-upload-btn" onclick="_lrnUploadDoc()" class="btn" style="font-size:13px;padding:8px 20px;border-radius:8px;background:#2563eb;color:white;border:none;cursor:pointer;font-weight:600;opacity:0.5;pointer-events:none;">
+                <i data-lucide="sparkles" style="width:14px;height:14px;"></i> Analizar y crear
+              </button>
+            </div>
+          </div>` : ''}
         </div>`;
       overlay.addEventListener('mousedown', e => { overlay._bg = e.target === overlay; });
       overlay.addEventListener('click', e => { if (overlay._bg && e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);
       _createIcons(overlay);
-      document.getElementById('learning-modal-title').focus();
+      if (isEdit) document.getElementById('learning-modal-title').focus();
+    }
+
+    // Tab switching in learning modal
+    function _lrnSwitchTab(tab) {
+      const manualForm = document.getElementById('lrn-form-manual');
+      const docForm = document.getElementById('lrn-form-doc');
+      const tabManual = document.getElementById('lrn-tab-manual');
+      const tabDoc = document.getElementById('lrn-tab-doc');
+      if (!manualForm || !docForm) return;
+      if (tab === 'manual') {
+        manualForm.style.display = '';
+        docForm.style.display = 'none';
+        tabManual.style.background = '#2563eb'; tabManual.style.color = 'white';
+        tabDoc.style.background = 'var(--bg-secondary)'; tabDoc.style.color = 'var(--text-secondary)';
+      } else {
+        manualForm.style.display = 'none';
+        docForm.style.display = '';
+        tabDoc.style.background = '#2563eb'; tabDoc.style.color = 'white';
+        tabManual.style.background = 'var(--bg-secondary)'; tabManual.style.color = 'var(--text-secondary)';
+      }
+    }
+
+    let _lrnSelectedFile = null;
+    function _lrnFileSelected(input) {
+      if (input.files && input.files[0]) {
+        _lrnSelectedFile = input.files[0];
+        const nameEl = document.getElementById('lrn-doc-file-name');
+        if (nameEl) { nameEl.style.display = 'flex'; nameEl.innerHTML = '<i data-lucide="file-check" style="width:14px;height:14px;"></i> ' + _lrnSelectedFile.name; _createIcons(nameEl); }
+        const btn = document.getElementById('lrn-doc-upload-btn');
+        if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
+      }
+    }
+    function _lrnHandleFileDrop(files) {
+      if (files && files[0]) {
+        const input = document.getElementById('lrn-doc-file-input');
+        const dt = new DataTransfer(); dt.items.add(files[0]);
+        if (input) { input.files = dt.files; _lrnFileSelected(input); }
+      }
+    }
+    async function _lrnUploadDoc() {
+      if (!_lrnSelectedFile) return;
+      const cat = document.getElementById('learning-doc-cat')?.value || 'general';
+      const progress = document.getElementById('lrn-doc-progress');
+      const bar = document.getElementById('lrn-doc-bar');
+      const btn = document.getElementById('lrn-doc-upload-btn');
+      if (progress) progress.style.display = '';
+      if (btn) { btn.style.opacity = '0.5'; btn.style.pointerEvents = 'none'; }
+      if (bar) bar.style.width = '30%';
+      try {
+        const formData = new FormData();
+        formData.append('file', _lrnSelectedFile);
+        formData.append('category', cat);
+        if (bar) bar.style.width = '60%';
+        const res = await fetch(API + '/api/ai/learnings/upload', { method: 'POST', body: formData });
+        if (bar) bar.style.width = '90%';
+        const json = await res.json();
+        if (bar) bar.style.width = '100%';
+        if (json.success) {
+          document.getElementById('learning-modal-overlay')?.remove();
+          showToast('success', 'Documento analizado', json.created + ' aprendizajes creados desde "' + _lrnSelectedFile.name + '"');
+          _lrnSelectedFile = null;
+          loadAILearnings();
+        } else {
+          showToast('error', 'Error', json.error);
+          if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
+          if (progress) progress.style.display = 'none';
+        }
+      } catch (e) {
+        showToast('error', 'Error', e.message);
+        if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
+        if (progress) progress.style.display = 'none';
+      }
     }
 
     async function _saveLearning(id) {
