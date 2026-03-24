@@ -4978,6 +4978,10 @@
           <i data-lucide="brain"></i>
           <span>Aprendizaje IA</span>
         </div>
+        <div class="nav-item" data-tab="historial" data-tooltip="Historial de Cambios">
+          <i data-lucide="history"></i>
+          <span>Historial</span>
+        </div>
         <div class="nav-item" data-tab="users" data-tooltip="Usuarios y Roles">
           <i data-lucide="shield-check"></i>
           <span>Usuarios y Roles</span>
@@ -8247,6 +8251,43 @@
         </div>
       </div>
 
+      <!-- Historial Panel -->
+      <div class="panel" id="panel-historial">
+        <!-- Header -->
+        <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);">
+          <div class="card-body" style="padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div style="color: white;">
+                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7;">Administración</div>
+                <div style="font-size: 20px; font-weight: 700;">Historial de Cambios</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <select id="historial-range" class="form-control" style="max-width:160px;font-size:12px;background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);" onchange="_renderHistorialPanel()">
+                  <option value="today">Hoy</option>
+                  <option value="yesterday">Ayer</option>
+                  <option value="week" selected>Esta semana</option>
+                  <option value="month">Este mes</option>
+                  <option value="all">Todo</option>
+                </select>
+                <select id="historial-user-filter" class="form-control" style="max-width:180px;font-size:12px;background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);" onchange="_renderHistorialPanel()">
+                  <option value="">Todos los usuarios</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div id="historial-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;"></div>
+
+        <!-- Lista -->
+        <div class="card">
+          <div class="card-body" style="padding:0;">
+            <div id="historial-body" style="max-height:600px;overflow-y:auto;"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- AI Learnings Panel -->
       <div class="panel" id="panel-ai-learnings" style="padding:24px 28px;">
         <!-- Header compacto -->
@@ -9296,8 +9337,8 @@
     // AUTH SYSTEM
     // =============================================
     const DEFAULT_ROLE_PANELS = {
-      admin:      ['dashboard', 'routes', 'visits', 'crm', 'terreno', 'intelligence', 'marketing', 'data', 'gsheets', 'ai-learnings', 'users'],
-      supervisor: ['dashboard', 'routes', 'visits', 'crm', 'terreno', 'data', 'gsheets', 'ai-learnings'],
+      admin:      ['dashboard', 'routes', 'visits', 'crm', 'terreno', 'intelligence', 'marketing', 'data', 'gsheets', 'ai-learnings', 'historial', 'users'],
+      supervisor: ['dashboard', 'routes', 'visits', 'crm', 'terreno', 'data', 'gsheets', 'ai-learnings', 'historial'],
       zonal:      ['dashboard', 'routes', 'visits', 'crm', 'terreno', 'gsheets'],
       executive:  ['dashboard', 'visits', 'routes'],
       viewer:     ['dashboard']
@@ -9928,11 +9969,15 @@
           marketing: 'Marketing Digital',
           gsheets: 'Datos Comerciales',
           'ai-learnings': 'Aprendizaje IA',
+          'historial': 'Historial de Cambios',
           users: 'Usuarios y Roles'
         };
         document.getElementById('page-title').textContent = titles[tab] || 'Dashboard';
 
         // Load data for specific tabs
+        if (tab === 'historial') {
+          _renderHistorialPanel();
+        }
         if (tab === 'ai-learnings') {
           loadAILearnings();
         }
@@ -16333,6 +16378,122 @@
     }
 
     function _isMobileTerreno() { return window.innerWidth <= 768; }
+
+    function _renderHistorialPanel() {
+      const container = document.getElementById('historial-body');
+      const statsDiv = document.getElementById('historial-stats');
+      if (!container) return;
+
+      // Populate user filter
+      const userSel = document.getElementById('historial-user-filter');
+      if (userSel && userSel.options.length <= 1) {
+        (executives || []).forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u.id;
+          opt.textContent = u.full_name;
+          userSel.appendChild(opt);
+        });
+      }
+
+      const range = document.getElementById('historial-range')?.value || 'week';
+      const userFilter = document.getElementById('historial-user-filter')?.value || '';
+      const now = new Date();
+
+      let recent = allClients.filter(c => c.address_updated_at).sort((a, b) => new Date(b.address_updated_at) - new Date(a.address_updated_at));
+
+      if (range !== 'all') {
+        recent = recent.filter(c => {
+          const d = new Date(c.address_updated_at);
+          const diffDays = Math.floor((now - d) / 86400000);
+          if (range === 'today') return d.toDateString() === now.toDateString();
+          if (range === 'yesterday') { const y = new Date(now); y.setDate(y.getDate()-1); return d.toDateString() === y.toDateString(); }
+          if (range === 'week') return diffDays <= 7;
+          if (range === 'month') return diffDays <= 30;
+          return true;
+        });
+      }
+
+      if (userFilter) recent = recent.filter(c => c.address_updated_by === userFilter);
+
+      // Stats
+      const totalMods = recent.length;
+      const withGps = recent.filter(c => c.lat && c.lng).length;
+      const uniqueUsers = [...new Set(recent.map(c => c.address_updated_by).filter(Boolean))].length;
+
+      const vendorMap = {};
+      (executives || []).forEach(u => vendorMap[u.id] = u.full_name);
+
+      if (statsDiv) {
+        statsDiv.innerHTML = `
+          <div class="card"><div class="card-body" style="padding:12px 16px;">
+            <div style="font-size:11px;color:var(--text-muted);">Modificaciones</div>
+            <div style="font-size:22px;font-weight:800;color:var(--text-primary);margin-top:2px;">${totalMods}</div>
+          </div></div>
+          <div class="card" style="border-left:3px solid #10b981;"><div class="card-body" style="padding:12px 16px;">
+            <div style="font-size:11px;color:var(--text-muted);">Con GPS</div>
+            <div style="font-size:22px;font-weight:800;color:#10b981;margin-top:2px;">${withGps}</div>
+          </div></div>
+          <div class="card" style="border-left:3px solid #6366f1;"><div class="card-body" style="padding:12px 16px;">
+            <div style="font-size:11px;color:var(--text-muted);">Usuarios activos</div>
+            <div style="font-size:22px;font-weight:800;color:#6366f1;margin-top:2px;">${uniqueUsers}</div>
+          </div></div>`;
+      }
+
+      if (!recent.length) {
+        container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">
+          <i data-lucide="history" style="width:28px;height:28px;margin-bottom:8px;opacity:0.3;display:inline-block;"></i><br>
+          No hay modificaciones en este período</div>`;
+        _createIcons();
+        return;
+      }
+
+      // Group by date
+      const groups = {};
+      recent.forEach(c => {
+        const d = new Date(c.address_updated_at);
+        const key = d.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(c);
+      });
+
+      let html = '';
+      for (const [date, clients] of Object.entries(groups)) {
+        html += `<div style="padding:10px 18px;background:var(--bg-secondary,#f9fafb);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text-muted);text-transform:capitalize;display:flex;justify-content:space-between;align-items:center;">
+          <span>${date}</span>
+          <span style="font-size:10px;font-weight:600;background:var(--bg-hover);padding:2px 8px;border-radius:10px;">${clients.length}</span>
+        </div>`;
+
+        html += clients.map(c => {
+          const name = c.fantasy_name || c.name || 'Sin nombre';
+          const hasGps = c.lat && c.lng;
+          const updater = vendorMap[c.address_updated_by] || 'Sistema';
+          const timeStr = new Date(c.address_updated_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+          const tag = _clientDateTag(c.address_updated_at);
+          const tagHtml = tag ? `<span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:4px;background:${tag.bg};color:${tag.color};">${tag.text}</span>` : '';
+
+          return `<div onclick="openEditClientFullModal('${c.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
+            <div style="width:8px;height:8px;border-radius:50%;background:${hasGps ? '#10b981' : '#f59e0b'};flex-shrink:0;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <span style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</span>
+                <code style="font-size:10px;background:var(--bg-hover);padding:1px 6px;border-radius:3px;color:var(--text-muted);">${c.external_id || ''}</code>
+                ${tagHtml}
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+                ${c.address || 'Sin dirección'}${c.commune ? ' · ' + c.commune : ''}
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:11px;color:var(--text-primary);font-weight:600;">${timeStr}</div>
+              <div style="font-size:10px;color:#6366f1;font-weight:500;margin-top:1px;">${updater}</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      container.innerHTML = html;
+      _createIcons();
+    }
 
     function _renderTerrenoHistory() {
       const container = document.getElementById('terreno-history-body');
