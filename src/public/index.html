@@ -32390,7 +32390,15 @@ function installPWA() {
             <i data-lucide="send" style="width:15px;height:15px;color:white;"></i>
           </button>
         </div>
-        <div id="ai-mic-btn-hint" style="font-size:9px;color:var(--text-muted);margin-top:4px;text-align:center;">Enter enviar · Shift+Enter nueva línea · "aprende que..." para enseñar</div>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+          <button onclick="document.getElementById('ai-chat-input').value='Aprende que: ';document.getElementById('ai-chat-input').focus();document.getElementById('ai-chat-input').setSelectionRange(14,14);" style="padding:3px 10px;font-size:10px;border:1px solid rgba(16,185,129,0.3);background:rgba(16,185,129,0.06);color:#10b981;border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:3px;">
+            <i data-lucide="brain" style="width:10px;height:10px;"></i> Enseñar
+          </button>
+          <button onclick="document.getElementById('ai-chat-input').value='Recuerda que: ';document.getElementById('ai-chat-input').focus();document.getElementById('ai-chat-input').setSelectionRange(14,14);" style="padding:3px 10px;font-size:10px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.06);color:#6366f1;border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:3px;">
+            <i data-lucide="bookmark" style="width:10px;height:10px;"></i> Recordar
+          </button>
+          <span style="font-size:9px;color:var(--text-muted);display:flex;align-items:center;">Enter enviar · Shift+Enter nueva línea</span>
+        </div>
         <div id="ai-mic-btn-wave" style="display:none;align-items:center;justify-content:center;gap:3px;height:22px;margin-top:5px;">
           <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
           <div class="vw-bar"></div><div class="vw-bar"></div><div class="vw-bar"></div>
