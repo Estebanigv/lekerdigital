@@ -15993,7 +15993,7 @@
       modal.id = 'edit-location-modal';
       modal.style.cssText = `
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.6); z-index: 9999;
+        background: rgba(0,0,0,0.6); z-index: 999999;
         display: flex; align-items: center; justify-content: center;
         padding: 20px;
       `;
@@ -17121,6 +17121,9 @@
       }
       editingClientId = null;
       editLocationMarker = null;
+      // Restore edit client modal if it was hidden
+      const editModal = document.getElementById('modal-edit-client-full');
+      if (editModal && editModal.style.display === 'none') editModal.style.display = '';
     }
 
     async function saveClientLocation() {
@@ -17148,7 +17151,11 @@
         const data = await res.json();
         if (data.success) {
           showToast('success', 'Ubicación guardada', 'El cliente ahora tiene coordenadas GPS');
+          const savedClientId = editingClientId;
           closeEditLocationModal();
+          // Re-open edit modal with fresh data if it was open
+          const editModal = document.getElementById('modal-edit-client-full');
+          if (editModal) { editModal.remove(); setTimeout(() => openEditClientFullModal(savedClientId), 100); }
           // Patch allClients immediately so route map refreshes without stale SW cache
           if (data.data) {
             const idx = allClients.findIndex(c => c.id === editingClientId);
@@ -26023,7 +26030,7 @@
                     </div>
                     <span id="cc-gps-accuracy" style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;"></span>
                   </div>
-                  <div id="cc-gps-map" style="height:180px;border-radius:10px;margin-top:8px;border:1px solid rgba(16,185,129,0.2);overflow:hidden;"></div>
+                  <div id="cc-gps-map" style="height:220px;border-radius:10px;margin-top:8px;border:1px solid rgba(16,185,129,0.2);overflow:hidden;"></div>
                   <div style="font-size:10px;color:var(--text-muted);margin-top:4px;text-align:center;">Arrastra el marcador para ajustar la ubicación</div>
                   <div style="display:flex;gap:8px;margin-top:6px;">
                     <input type="text" id="cc-lat" class="form-control" readonly style="font-size:11px;background:var(--bg-secondary);text-align:center;" placeholder="Lat">
@@ -26281,13 +26288,14 @@
           center: pos, zoom: 17,
           mapTypeControl: false, streetViewControl: false,
           fullscreenControl: false, zoomControl: true,
+          gestureHandling: 'greedy',
           styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }]
         });
 
         const marker = new google.maps.Marker({
           position: pos, map, draggable: true,
           title: 'Arrastra para ajustar',
-          icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: '#2563eb', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 }
+          icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 6, fillColor: '#2563eb', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, anchor: new google.maps.Point(0, 4) }
         });
 
         new google.maps.Circle({
@@ -26484,7 +26492,7 @@
                     <i data-lucide="map-pin" style="width:14px;height:14px;color:#2563eb;"></i> Ubicación GPS
                     ${client.lat && client.lng ? '<span style="background:rgba(16,185,129,0.15);color:#10b981;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;">Verificado</span>' : '<span style="background:rgba(245,158,11,0.15);color:#f59e0b;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;">Sin GPS</span>'}
                   </label>
-                  <button type="button" onclick="openEditLocationModal('${client.id}', '${(client.fantasy_name || client.name).replace(/'/g, "\\'")}', '${(client.address || '').replace(/'/g, "\\'")}')" style="padding:5px 12px;font-size:11px;border:1px solid #2563eb;background:rgba(37,99,235,0.08);color:#2563eb;border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px;" onmouseover="this.style.background='rgba(37,99,235,0.18)'" onmouseout="this.style.background='rgba(37,99,235,0.08)'">
+                  <button type="button" onclick="document.getElementById('modal-edit-client-full').style.display='none';openEditLocationModal('${client.id}', '${(client.fantasy_name || client.name).replace(/'/g, "\\'")}', '${(client.address || '').replace(/'/g, "\\'")}')" style="padding:5px 12px;font-size:11px;border:1px solid #2563eb;background:rgba(37,99,235,0.08);color:#2563eb;border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px;" onmouseover="this.style.background='rgba(37,99,235,0.18)'" onmouseout="this.style.background='rgba(37,99,235,0.08)'">
                     <i data-lucide="crosshair" style="width:12px;height:12px;"></i> ${client.lat ? 'Verificar / Corregir' : 'Agregar GPS'}
                   </button>
                 </div>
