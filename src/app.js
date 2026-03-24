@@ -93,6 +93,16 @@ app.use(helmet({
 }));
 
 app.use(express.json());
+
+// Force no-cache on service-worker.js and index.html so updates propagate immediately
+app.use((req, res, next) => {
+  if (req.path === '/service-worker.js' || req.path === '/' || req.path === '/index.html') {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // =============================================
@@ -3637,6 +3647,157 @@ Responde SOLO con el JSON, sin texto adicional.` },
     res.json({ success: true, data: saved, total: saved.length, fileName: originalname });
   } catch (e) {
     console.error('[AI learnings upload]', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// POST /api/ai/learnings/import-url — importar desde URL (Google Docs, Sheets, Drive, web)
+app.post('/api/ai/learnings/import-url', authenticate, authorize('admin', 'supervisor'), async (req, res) => {
+  try {
+    const { url, category = 'general' } = req.body;
+    if (!url) return res.status(400).json({ success: false, error: 'URL requerida' });
+    if (!openai) return res.status(400).json({ success: false, error: 'OpenAI no configurado' });
+
+    let fetchUrl = url.trim();
+    let sourceName = fetchUrl;
+
+    // Detectar Google Docs → export como texto plano
+    const gdocMatch = fetchUrl.match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/);
+    if (gdocMatch) {
+      fetchUrl = `https://docs.google.com/document/d/${gdocMatch[1]}/export?format=txt`;
+      sourceName = 'Google Doc';
+    }
+
+    // Detectar Google Sheets → export como CSV
+    const gsheetMatch = !gdocMatch && fetchUrl.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    if (gsheetMatch) {
+      fetchUrl = `https://docs.google.com/spreadsheets/d/${gsheetMatch[1]}/export?format=csv`;
+      sourceName = 'Google Sheet';
+    }
+
+    // Detectar Google Drive file → download directo
+    const gdriveMatch = !gdocMatch && !gsheetMatch && fetchUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (gdriveMatch) {
+      fetchUrl = `https://drive.google.com/uc?export=download&id=${gdriveMatch[1]}`;
+      sourceName = 'Google Drive';
+    }
+
+    // Detectar Google Drive open?id= format
+    const gdriveOpen = !gdocMatch && !gsheetMatch && !gdriveMatch && fetchUrl.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+    if (gdriveOpen) {
+      fetchUrl = `https://drive.google.com/uc?export=download&id=${gdriveOpen[1]}`;
+      sourceName = 'Google Drive';
+    }
+
+    // Fetch content
+    const response = await fetch(fetchUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LekerBot/1.0)' },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(15000)
+    });
+
+    if (!response.ok) {
+      return res.status(400).json({ success: false, error: `No se pudo acceder a la URL (${response.status}). Verifica que el link sea público.` });
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    let text = '';
+
+    if (contentType.includes('text/') || contentType.includes('json') || contentType.includes('csv')) {
+      text = await response.text();
+      // Si es HTML, extraer solo el texto visible
+      if (contentType.includes('html')) {
+        text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                    .replace(/<[^>]+>/g, ' ')
+                    .replace(/&nbsp;/g, ' ')
+                    .replace(/&amp;/g, '&')
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&#?\w+;/g, ' ')
+                    .replace(/\s{2,}/g, ' ')
+                    .trim();
+        sourceName = sourceName === fetchUrl ? 'Página web' : sourceName;
+      }
+    } else if (contentType.includes('application/pdf')) {
+      const buffer = Buffer.from(await response.arrayBuffer());
+      text = buffer.toString('utf-8').replace(/[^\x20-\x7E\xC0-\xFF\n]/g, ' ').replace(/\s{3,}/g, '\n').trim();
+      if (text.length < 50) text = '[PDF con contenido no legible como texto plano]';
+      sourceName = sourceName === fetchUrl ? 'PDF online' : sourceName;
+    } else if (contentType.includes('spreadsheet') || contentType.includes('excel')) {
+      const buffer = Buffer.from(await response.arrayBuffer());
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      text = workbook.SheetNames.map(name => {
+        const data = XLSX.utils.sheet_to_csv(workbook.Sheets[name], { FS: ' | ' });
+        return `[${name}]\n${data}`;
+      }).join('\n\n');
+      sourceName = sourceName === fetchUrl ? 'Excel online' : sourceName;
+    } else {
+      // Intentar como texto
+      text = await response.text();
+      if (!text || text.length < 10) {
+        return res.status(400).json({ success: false, error: 'No se pudo extraer contenido del enlace. Formato no soportado.' });
+      }
+    }
+
+    if (!text || text.trim().length < 20) {
+      return res.status(400).json({ success: false, error: 'El documento no tiene contenido suficiente para extraer aprendizajes.' });
+    }
+
+    // Limitar texto
+    const maxChars = 12000;
+    const truncated = text.length > maxChars;
+    const textForAI = text.slice(0, maxChars);
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      temperature: 0.3,
+      max_tokens: 1200,
+      messages: [
+        { role: 'system', content: `Eres un asistente que analiza documentos de empresa.
+Tu tarea es extraer los puntos clave, reglas, datos importantes o conocimientos del documento.
+
+Responde en este formato JSON exacto (array de objetos):
+[
+  { "title": "Título corto de la regla/dato", "content": "Explicación clara y concisa" },
+  ...
+]
+
+Máximo 8 items. Cada item debe ser un aprendizaje útil e independiente.
+Si el documento tiene datos numéricos o tablas, extrae los más relevantes.
+Responde SOLO con el JSON, sin texto adicional.` },
+        { role: 'user', content: `Documento importado desde: ${sourceName}${truncated ? ' (truncado)' : ''}\nCategoría: ${category}\n\nContenido:\n${textForAI}` }
+      ]
+    });
+
+    _trackAiUsage('learnings-import-url', req.user?.id, req.user?.full_name, completion.usage);
+
+    const aiResponse = completion.choices[0].message.content.trim();
+    let learnings = [];
+    try {
+      const clean = aiResponse.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+      learnings = JSON.parse(clean);
+    } catch (e) {
+      return res.json({ success: true, data: [], summary: aiResponse, parseError: true, sourceName });
+    }
+
+    await _ensureAiLearningsTable();
+    const saved = [];
+    for (const l of learnings) {
+      if (!l.title || !l.content) continue;
+      const { data, error } = await supabase.from('ai_learnings').insert({
+        category, title: l.title, content: l.content, active: true, created_by: req.user.id
+      }).select().single();
+      if (data) saved.push(data);
+    }
+    _learningsCache = null;
+
+    res.json({ success: true, data: saved, total: saved.length, sourceName });
+  } catch (e) {
+    console.error('[AI learnings import-url]', e.message);
+    if (e.name === 'TimeoutError') {
+      return res.status(400).json({ success: false, error: 'La URL tardó demasiado en responder. Verifica el enlace.' });
+    }
     res.status(500).json({ success: false, error: e.message });
   }
 });
