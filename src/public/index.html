@@ -25601,6 +25601,32 @@
                   ${vendorOptions}
                 </select>
               </div>
+
+              <!-- Geolocalización -->
+              <div style="grid-column:span 2;margin-top:4px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                  <label style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;"><i data-lucide="navigation" style="width:13px;height:13px;color:#2563eb;"></i> Geolocalización</label>
+                  <span id="cc-gps-status" style="font-size:10px;color:var(--text-muted);">Sin capturar</span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:flex-start;">
+                  <button type="button" onclick="_ccCaptureGps()" id="cc-gps-btn" style="flex:1;padding:10px;border:1.5px dashed rgba(37,99,235,0.3);background:rgba(37,99,235,0.04);color:#2563eb;border-radius:10px;cursor:pointer;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s;">
+                    <i data-lucide="crosshair" style="width:16px;height:16px;"></i> Capturar mi ubicación
+                  </button>
+                </div>
+                <div id="cc-gps-info" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:10px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <i data-lucide="map-pin-check" style="width:14px;height:14px;color:#10b981;"></i>
+                      <span style="font-size:12px;font-weight:600;color:#10b981;">Ubicación capturada</span>
+                    </div>
+                    <span id="cc-gps-accuracy" style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;"></span>
+                  </div>
+                  <div style="display:flex;gap:8px;margin-top:6px;">
+                    <input type="text" id="cc-lat" class="form-control" readonly style="font-size:11px;background:var(--bg-secondary);text-align:center;" placeholder="Lat">
+                    <input type="text" id="cc-lng" class="form-control" readonly style="font-size:11px;background:var(--bg-secondary);text-align:center;" placeholder="Lng">
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
@@ -25615,6 +25641,46 @@
       document.getElementById('cc-code').focus();
     }
 
+    function _ccCaptureGps() {
+      const btn = document.getElementById('cc-gps-btn');
+      const status = document.getElementById('cc-gps-status');
+      if (!navigator.geolocation) {
+        showToast('warning', 'Sin GPS', 'Tu dispositivo no soporta geolocalización');
+        return;
+      }
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:16px;height:16px;"></i> Obteniendo GPS...';
+      status.textContent = 'Capturando...';
+      _createIcons();
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const acc = Math.round(pos.coords.accuracy);
+          document.getElementById('cc-lat').value = lat.toFixed(6);
+          document.getElementById('cc-lng').value = lng.toFixed(6);
+          document.getElementById('cc-gps-info').style.display = 'block';
+          document.getElementById('cc-gps-accuracy').textContent = `±${acc}m`;
+          status.innerHTML = `<span style="color:#10b981;font-weight:600;">✓ GPS capturado</span>`;
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Recapturar ubicación';
+          btn.style.borderColor = 'rgba(16,185,129,0.3)';
+          btn.style.background = 'rgba(16,185,129,0.04)';
+          btn.style.color = '#059669';
+          _createIcons();
+        },
+        (err) => {
+          const msgs = { 1: 'Permiso denegado', 2: 'GPS no disponible', 3: 'Tiempo agotado' };
+          status.innerHTML = `<span style="color:#ef4444;">${msgs[err.code] || 'Error GPS'}</span>`;
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="crosshair" style="width:16px;height:16px;"></i> Reintentar captura';
+          _createIcons();
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
     async function saveNewClient() {
       const code = document.getElementById('cc-code').value.trim();
       const name = document.getElementById('cc-name').value.trim();
@@ -25624,6 +25690,8 @@
       const city = document.getElementById('cc-city').value.trim();
       const region = document.getElementById('cc-region').value;
       const vendor = document.getElementById('cc-vendor').value;
+      const latVal = document.getElementById('cc-lat')?.value;
+      const lngVal = document.getElementById('cc-lng')?.value;
       const btn = document.getElementById('btn-save-new-client');
 
       if (!name && !fantasy) {
@@ -25652,7 +25720,9 @@
           commune: commune || null,
           city: city || null,
           region: region || null,
-          assigned_user_id: vendor || null
+          assigned_user_id: vendor || null,
+          lat: latVal ? parseFloat(latVal) : null,
+          lng: lngVal ? parseFloat(lngVal) : null
         };
 
         const res = await fetch(`${API}/api/clients`, {
