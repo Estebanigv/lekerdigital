@@ -25869,6 +25869,84 @@
       );
     }
 
+    function _showDupeClientModal(client, matchType, matchValue, allowCreate) {
+      const existing = document.getElementById('modal-dupe-client');
+      if (existing) existing.remove();
+
+      const dName = client.fantasy_name || client.name || 'Sin nombre';
+      const hasGps = client.lat && client.lng;
+
+      const overlay = document.createElement('div');
+      overlay.id = 'modal-dupe-client';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto;';
+
+      overlay.innerHTML = `
+        <div onclick="event.stopPropagation()" style="background:var(--bg-card);border-radius:14px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);overflow:hidden;">
+          <div style="padding:16px 20px;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <i data-lucide="alert-triangle" style="width:22px;height:22px;flex-shrink:0;"></i>
+              <div>
+                <div style="font-size:15px;font-weight:700;">Cliente ya existe</div>
+                <div style="font-size:11px;opacity:0.85;margin-top:2px;">Se encontró un cliente con ${matchType} similar a "${matchValue}"</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding:16px 20px;">
+            <div style="background:var(--bg-secondary,#f9fafb);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;">
+              <div style="font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">${dName}</div>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px;">
+                  <i data-lucide="hash" style="width:12px;height:12px;color:var(--text-muted);flex-shrink:0;"></i>
+                  <span style="color:var(--text-muted);">Código:</span>
+                  <code onclick="navigator.clipboard.writeText('${client.external_id || ''}');showToast('success','Copiado','Código copiado al portapapeles')" style="background:var(--bg-hover);padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;user-select:all;" title="Toca para copiar">${client.external_id || '—'}</code>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px;">
+                  <i data-lucide="map-pin" style="width:12px;height:12px;color:var(--text-muted);flex-shrink:0;"></i>
+                  <span style="color:var(--text-muted);">Dirección:</span>
+                  <span style="color:var(--text-primary);user-select:all;">${client.address || 'Sin dirección'}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px;">
+                  <i data-lucide="building-2" style="width:12px;height:12px;color:var(--text-muted);flex-shrink:0;"></i>
+                  <span style="color:var(--text-muted);">Comuna:</span>
+                  <span style="color:var(--text-primary);">${client.commune || '—'}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px;">
+                  <i data-lucide="navigation" style="width:12px;height:12px;color:var(--text-muted);flex-shrink:0;"></i>
+                  <span style="color:var(--text-muted);">GPS:</span>
+                  <span style="color:${hasGps ? '#10b981' : '#f59e0b'};font-weight:600;">${hasGps ? 'Verificado' : 'Sin GPS'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <button onclick="document.getElementById('modal-dupe-client').remove();document.getElementById('modal-create-client')?.remove();openEditClientFullModal('${client.id}')" style="width:100%;padding:12px;border:none;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(37,99,235,0.3);">
+                <i data-lucide="pencil" style="width:16px;height:16px;"></i> Editar este cliente
+              </button>
+              ${allowCreate ? `
+              <button onclick="document.getElementById('modal-dupe-client').remove();_forceCreateClient()" style="width:100%;padding:10px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);border-radius:10px;cursor:pointer;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
+                <i data-lucide="user-plus" style="width:14px;height:14px;"></i> Crear nuevo de todos modos
+              </button>` : ''}
+              <button onclick="document.getElementById('modal-dupe-client').remove()" style="width:100%;padding:10px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-muted);border-radius:10px;cursor:pointer;font-weight:500;font-size:12px;">
+                Volver
+              </button>
+            </div>
+          </div>
+        </div>`;
+
+      overlay.addEventListener('mousedown', (e) => { overlay._mdOnBg = e.target === overlay; });
+      overlay.addEventListener('click', (e) => { if (overlay._mdOnBg && e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+      _createIcons();
+    }
+
+    let _skipDupeCheck = false;
+    function _forceCreateClient() {
+      _skipDupeCheck = true;
+      saveNewClient();
+      _skipDupeCheck = false;
+    }
+
     async function _ccReverseAndFill(lat, lng) {
       const geo = await _reverseGeocode(lat, lng);
       if (!geo) return;
@@ -25944,29 +26022,23 @@
       // Auto-generate code if empty
       const finalCode = code || ('CLI-' + Date.now().toString(36).toUpperCase());
 
-      // Check duplicate by code
-      const dupeByCode = allClients.find(c => c.external_id === finalCode);
-      if (dupeByCode) {
-        const dName = dupeByCode.fantasy_name || dupeByCode.name || 'Sin nombre';
-        if (confirm(`Ya existe un cliente con código "${finalCode}":\n\n${dName}\n${dupeByCode.address || 'Sin dirección'}\n\n¿Deseas abrir y editar ese cliente?`)) {
-          document.getElementById('modal-create-client').remove();
-          openEditClientFullModal(dupeByCode.id);
+      if (!_skipDupeCheck) {
+        // Check duplicate by code
+        const dupeByCode = allClients.find(c => c.external_id === finalCode);
+        if (dupeByCode) {
+          _showDupeClientModal(dupeByCode, 'código', finalCode);
+          return;
         }
-        return;
-      }
 
-      // Check duplicate by name (fuzzy)
-      const searchName = (fantasy || name).toLowerCase();
-      if (searchName.length >= 4) {
-        const dupeByName = allClients.find(c => {
-          const cName = (c.fantasy_name || c.name || '').toLowerCase();
-          return cName === searchName || (cName.length >= 4 && (cName.includes(searchName) || searchName.includes(cName)));
-        });
-        if (dupeByName) {
-          const dName = dupeByName.fantasy_name || dupeByName.name || 'Sin nombre';
-          if (!confirm(`Se encontró un cliente similar:\n\n"${dName}" (${dupeByName.external_id || ''})\n${dupeByName.address || 'Sin dirección'}\n\n¿Deseas crear uno nuevo de todos modos?\n\n(Cancelar para editar el existente)`)) {
-            document.getElementById('modal-create-client').remove();
-            openEditClientFullModal(dupeByName.id);
+        // Check duplicate by name (fuzzy)
+        const searchName = (fantasy || name).toLowerCase();
+        if (searchName.length >= 4) {
+          const dupeByName = allClients.find(c => {
+            const cName = (c.fantasy_name || c.name || '').toLowerCase();
+            return cName === searchName || (cName.length >= 4 && (cName.includes(searchName) || searchName.includes(cName)));
+          });
+          if (dupeByName) {
+            _showDupeClientModal(dupeByName, 'nombre', fantasy || name, true);
             return;
           }
         }
