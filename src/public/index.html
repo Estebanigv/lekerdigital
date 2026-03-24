@@ -25717,6 +25717,8 @@
                     </div>
                     <span id="cc-gps-accuracy" style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;"></span>
                   </div>
+                  <div id="cc-gps-map" style="height:180px;border-radius:10px;margin-top:8px;border:1px solid rgba(16,185,129,0.2);overflow:hidden;"></div>
+                  <div style="font-size:10px;color:var(--text-muted);margin-top:4px;text-align:center;">Arrastra el marcador para ajustar la ubicación</div>
                   <div style="display:flex;gap:8px;margin-top:6px;">
                     <input type="text" id="cc-lat" class="form-control" readonly style="font-size:11px;background:var(--bg-secondary);text-align:center;" placeholder="Lat">
                     <input type="text" id="cc-lng" class="form-control" readonly style="font-size:11px;background:var(--bg-secondary);text-align:center;" placeholder="Lng">
@@ -25815,6 +25817,8 @@
               _createIcons();
             }
           }
+          // Init map with pin from address
+          _ccInitMap(lat, lng);
         }
       });
     }
@@ -25849,22 +25853,10 @@
           _createIcons();
 
           // Reverse geocode to auto-fill address
-          const geo = await _reverseGeocode(lat, lng);
-          if (geo) {
-            const addrEl = document.getElementById('cc-address');
-            const commEl = document.getElementById('cc-commune');
-            const cityEl = document.getElementById('cc-city');
-            const regEl = document.getElementById('cc-region');
-            if (addrEl && !addrEl.value.trim()) addrEl.value = geo.address;
-            if (commEl && !commEl.value.trim()) commEl.value = geo.commune;
-            if (cityEl && !cityEl.value.trim()) cityEl.value = geo.city;
-            if (regEl && !regEl.value && geo.region) {
-              const opts = Array.from(regEl.options);
-              const match = opts.find(o => o.value && geo.region.toLowerCase().includes(o.value.toLowerCase().replace('región ', '').replace('de ', '')));
-              if (match) regEl.value = match.value;
-              else { const o = document.createElement('option'); o.value = geo.region; o.textContent = geo.region; regEl.appendChild(o); regEl.value = geo.region; }
-            }
-          }
+          _ccReverseAndFill(lat, lng);
+
+          // Init draggable map
+          _ccInitMap(lat, lng);
         },
         (err) => {
           const msgs = { 1: 'Permiso denegado', 2: 'GPS no disponible', 3: 'Tiempo agotado' };
@@ -25875,6 +25867,60 @@
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
+    }
+
+    async function _ccReverseAndFill(lat, lng) {
+      const geo = await _reverseGeocode(lat, lng);
+      if (!geo) return;
+      const addrEl = document.getElementById('cc-address');
+      const commEl = document.getElementById('cc-commune');
+      const cityEl = document.getElementById('cc-city');
+      const regEl = document.getElementById('cc-region');
+      if (addrEl) addrEl.value = geo.address;
+      if (commEl) commEl.value = geo.commune;
+      if (cityEl) cityEl.value = geo.city;
+      if (regEl && geo.region) {
+        const opts = Array.from(regEl.options);
+        const match = opts.find(o => o.value && geo.region.toLowerCase().includes(o.value.toLowerCase().replace('región ', '').replace('de ', '')));
+        if (match) regEl.value = match.value;
+        else { const o = document.createElement('option'); o.value = geo.region; o.textContent = geo.region; regEl.appendChild(o); regEl.value = geo.region; }
+      }
+    }
+
+    function _ccInitMap(lat, lng) {
+      setTimeout(() => {
+        const mapEl = document.getElementById('cc-gps-map');
+        if (!mapEl || typeof google === 'undefined') return;
+
+        const pos = { lat, lng };
+        const map = new google.maps.Map(mapEl, {
+          center: pos, zoom: 17,
+          mapTypeControl: false, streetViewControl: false,
+          fullscreenControl: false, zoomControl: true,
+          styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }]
+        });
+
+        const marker = new google.maps.Marker({
+          position: pos, map, draggable: true,
+          title: 'Arrastra para ajustar',
+          icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: '#2563eb', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 }
+        });
+
+        new google.maps.Circle({
+          map, center: pos, radius: 50,
+          fillColor: '#2563eb', fillOpacity: 0.06, strokeColor: '#2563eb', strokeWeight: 1
+        });
+
+        marker.addListener('dragend', async () => {
+          const p = marker.getPosition();
+          const newLat = p.lat();
+          const newLng = p.lng();
+          document.getElementById('cc-lat').value = newLat.toFixed(6);
+          document.getElementById('cc-lng').value = newLng.toFixed(6);
+          // Reverse geocode new position
+          _ccReverseAndFill(newLat, newLng);
+        });
+      }, 200);
     }
 
     async function saveNewClient() {
@@ -25898,10 +25944,32 @@
       // Auto-generate code if empty
       const finalCode = code || ('CLI-' + Date.now().toString(36).toUpperCase());
 
-      // Check duplicate
-      if (allClients.find(c => c.external_id === finalCode)) {
-        showToast('warning', 'Código duplicado', `Ya existe un cliente con código ${finalCode}`);
+      // Check duplicate by code
+      const dupeByCode = allClients.find(c => c.external_id === finalCode);
+      if (dupeByCode) {
+        const dName = dupeByCode.fantasy_name || dupeByCode.name || 'Sin nombre';
+        if (confirm(`Ya existe un cliente con código "${finalCode}":\n\n${dName}\n${dupeByCode.address || 'Sin dirección'}\n\n¿Deseas abrir y editar ese cliente?`)) {
+          document.getElementById('modal-create-client').remove();
+          openEditClientFullModal(dupeByCode.id);
+        }
         return;
+      }
+
+      // Check duplicate by name (fuzzy)
+      const searchName = (fantasy || name).toLowerCase();
+      if (searchName.length >= 4) {
+        const dupeByName = allClients.find(c => {
+          const cName = (c.fantasy_name || c.name || '').toLowerCase();
+          return cName === searchName || (cName.length >= 4 && (cName.includes(searchName) || searchName.includes(cName)));
+        });
+        if (dupeByName) {
+          const dName = dupeByName.fantasy_name || dupeByName.name || 'Sin nombre';
+          if (!confirm(`Se encontró un cliente similar:\n\n"${dName}" (${dupeByName.external_id || ''})\n${dupeByName.address || 'Sin dirección'}\n\n¿Deseas crear uno nuevo de todos modos?\n\n(Cancelar para editar el existente)`)) {
+            document.getElementById('modal-create-client').remove();
+            openEditClientFullModal(dupeByName.id);
+            return;
+          }
+        }
       }
 
       btn.disabled = true;
