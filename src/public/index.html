@@ -25668,6 +25668,88 @@
       document.body.appendChild(overlay);
       _createIcons();
       document.getElementById('cc-code').focus();
+      _initPlacesAutocomplete('cc-address', { commune: 'cc-commune', city: 'cc-city', region: 'cc-region', lat: 'cc-lat', lng: 'cc-lng', gpsInfo: 'cc-gps-info', gpsStatus: 'cc-gps-status', gpsAccuracy: 'cc-gps-accuracy', gpsBtn: 'cc-gps-btn' });
+    }
+
+    // ====== GOOGLE PLACES AUTOCOMPLETE FOR ADDRESS FIELDS ======
+    function _initPlacesAutocomplete(inputId, fieldMap) {
+      const input = document.getElementById(inputId);
+      if (!input || typeof google === 'undefined' || !google.maps?.places) return;
+
+      const autocomplete = new google.maps.places.Autocomplete(input, {
+        types: ['address'],
+        componentRestrictions: { country: 'cl' },
+        fields: ['address_components', 'formatted_address', 'geometry']
+      });
+
+      // Fix z-index for pac-container inside modals
+      setTimeout(() => {
+        const pacContainers = document.querySelectorAll('.pac-container');
+        pacContainers.forEach(c => c.style.zIndex = '999999');
+      }, 300);
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (!place || !place.address_components) return;
+
+        let street = '', number = '', commune = '', city = '', region = '';
+        for (const comp of place.address_components) {
+          const types = comp.types;
+          if (types.includes('route')) street = comp.long_name;
+          if (types.includes('street_number')) number = comp.short_name;
+          if (types.includes('locality') || types.includes('administrative_area_level_3')) commune = comp.long_name;
+          if (types.includes('administrative_area_level_2')) city = comp.long_name;
+          if (types.includes('administrative_area_level_1')) region = comp.long_name;
+        }
+
+        // Set address
+        input.value = place.formatted_address || (street + (number ? ' ' + number : ''));
+
+        // Fill commune, city, region
+        if (fieldMap.commune) { const el = document.getElementById(fieldMap.commune); if (el) el.value = commune; }
+        if (fieldMap.city) { const el = document.getElementById(fieldMap.city); if (el) el.value = city; }
+        if (fieldMap.region) {
+          const el = document.getElementById(fieldMap.region);
+          if (el) {
+            // Try to match region option
+            const opts = Array.from(el.options);
+            const match = opts.find(o => o.value && region.toLowerCase().includes(o.value.toLowerCase().replace('región ', '').replace('de ', '')));
+            if (match) el.value = match.value;
+            else {
+              // Add if not exists
+              const newOpt = document.createElement('option');
+              newOpt.value = region;
+              newOpt.textContent = region;
+              el.appendChild(newOpt);
+              el.value = region;
+            }
+          }
+        }
+
+        // Fill lat/lng if geometry available and fields mapped
+        if (place.geometry?.location && fieldMap.lat) {
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+          const latEl = document.getElementById(fieldMap.lat);
+          const lngEl = document.getElementById(fieldMap.lng);
+          if (latEl) latEl.value = lat.toFixed(6);
+          if (lngEl) lngEl.value = lng.toFixed(6);
+          // Show GPS info section
+          if (fieldMap.gpsInfo) { const el = document.getElementById(fieldMap.gpsInfo); if (el) el.style.display = 'block'; }
+          if (fieldMap.gpsStatus) { const el = document.getElementById(fieldMap.gpsStatus); if (el) el.innerHTML = '<span style="color:#10b981;font-weight:600;">✓ Desde dirección</span>'; }
+          if (fieldMap.gpsAccuracy) { const el = document.getElementById(fieldMap.gpsAccuracy); if (el) el.textContent = 'Dirección'; }
+          if (fieldMap.gpsBtn) {
+            const btn = document.getElementById(fieldMap.gpsBtn);
+            if (btn) {
+              btn.innerHTML = '<i data-lucide="crosshair" style="width:14px;height:14px;"></i> Recapturar con GPS';
+              btn.style.borderColor = 'rgba(16,185,129,0.3)';
+              btn.style.background = 'rgba(16,185,129,0.04)';
+              btn.style.color = '#059669';
+              _createIcons();
+            }
+          }
+        }
+      });
     }
 
     function _ccCaptureGps() {
@@ -25904,6 +25986,7 @@
       overlay.addEventListener('click', (e) => { if (overlay._mdOnBg && e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);
       _createIcons();
+      if (isAdmin) _initPlacesAutocomplete('ec-address', { commune: 'ec-commune', city: 'ec-city', region: 'ec-region' });
     }
 
     async function _aiClientInsight(clientId) {
