@@ -6944,10 +6944,10 @@
                 <span style="font-size:14px;font-weight:700;color:var(--text-primary);">Historial de Modificaciones</span>
               </div>
               <select id="terreno-history-range" class="form-control" style="max-width:140px;font-size:12px;" onchange="_renderTerrenoHistory()">
+                <option value="all" selected>Todo</option>
                 <option value="today">Hoy</option>
-                <option value="week" selected>Esta semana</option>
+                <option value="week">Esta semana</option>
                 <option value="month">Este mes</option>
-                <option value="all">Todo</option>
               </select>
             </div>
             <div id="terreno-history-body" style="max-height:400px;overflow-y:auto;padding:8px 14px;"></div>
@@ -8263,11 +8263,11 @@
               </div>
               <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                 <select id="historial-range" class="form-control" style="max-width:160px;font-size:12px;background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);" onchange="_renderHistorialPanel()">
+                  <option value="all" selected>Todo</option>
                   <option value="today">Hoy</option>
                   <option value="yesterday">Ayer</option>
-                  <option value="week" selected>Esta semana</option>
+                  <option value="week">Esta semana</option>
                   <option value="month">Este mes</option>
-                  <option value="all">Todo</option>
                 </select>
                 <select id="historial-user-filter" class="form-control" style="max-width:180px;font-size:12px;background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);" onchange="_renderHistorialPanel()">
                   <option value="">Todos los usuarios</option>
@@ -16416,6 +16416,8 @@
 
       if (userFilter) recent = recent.filter(c => c.address_updated_by === userFilter);
 
+      recent = recent.slice(0, 200);
+
       // Stats
       const totalMods = recent.length;
       const withGps = recent.filter(c => c.lat && c.lng).length;
@@ -16517,7 +16519,7 @@
         });
       }
 
-      recent = recent.slice(0, 50);
+      recent = recent.slice(0, 100);
 
       if (!recent.length) {
         container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:13px;">No hay modificaciones en este período</div>`;
@@ -26360,6 +26362,19 @@
           });
           if (dupeByName) {
             _showDupeClientModal(dupeByName, 'nombre', fantasy || name, true);
+            return;
+          }
+        }
+
+        // Check duplicate by address
+        if (address && address.length >= 10) {
+          const addrLower = address.toLowerCase().replace(/[,.\s]+/g, ' ').trim();
+          const dupeByAddr = allClients.find(c => {
+            const cAddr = (c.address || '').toLowerCase().replace(/[,.\s]+/g, ' ').trim();
+            return cAddr.length >= 10 && cAddr === addrLower;
+          });
+          if (dupeByAddr) {
+            _showDupeClientModal(dupeByAddr, 'dirección', address, true);
             return;
           }
         }
