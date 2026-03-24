@@ -4730,7 +4730,7 @@
         <p>Sistema de Gestión Logística</p>
         <div style="margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
           <div style="height:1px; width:40px; background:linear-gradient(90deg,transparent,rgba(99,102,241,0.3));"></div>
-          <span style="font-size:10px; color:#6366f1; letter-spacing:1.5px; font-weight:700; opacity:0.8;">v2.9.7</span>
+          <span style="font-size:10px; color:#6366f1; letter-spacing:1.5px; font-weight:700; opacity:0.8;">v2.9.21</span>
           <div style="height:1px; width:40px; background:linear-gradient(90deg,rgba(99,102,241,0.3),transparent);"></div>
         </div>
         <button onclick="_forceAppUpdate()" style="margin-top:12px;background:none;border:1px solid rgba(99,102,241,0.25);border-radius:8px;padding:5px 14px;cursor:pointer;color:#6366f1;font-size:10px;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:all 0.15s;letter-spacing:0.3px;" onmouseover="this.style.background='rgba(99,102,241,0.08)'" onmouseout="this.style.background='none'">
@@ -4813,7 +4813,7 @@
           <img src="/leker-isotipo.png" alt="LEKER" class="logo-isotipo" style="width: 34px; height: auto; display: none;">
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-          <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.9.7</div>
+          <div class="sidebar-version" style="font-size: 11px; color: var(--text-muted); letter-spacing: 1.5px; font-weight: 600; background: var(--bg-hover); padding: 2px 10px; border-radius: 12px; display: inline-block;">v2.9.21</div>
           <button onclick="_forceAppUpdate()" title="Forzar actualización" style="background:none;border:1px solid var(--border);border-radius:8px;padding:3px 6px;cursor:pointer;color:var(--text-muted);display:inline-flex;align-items:center;gap:3px;font-size:9px;transition:all 0.15s;" onmouseover="this.style.color='#2563eb';this.style.borderColor='#2563eb'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border)'">
             <i data-lucide="refresh-cw" style="width:10px;height:10px;"></i>
           </button>
@@ -6874,9 +6874,17 @@
                 <option value="no-gps">Sin GPS</option>
                 <option value="has-gps">Con GPS</option>
               </select>
+              <select id="terreno-date-filter" class="form-control" style="max-width:140px;font-size:13px;" onchange="filterTerrenoClients()">
+                <option value="">Todas las fechas</option>
+                <option value="today">Hoy</option>
+                <option value="yesterday">Ayer</option>
+                <option value="week">Esta semana</option>
+                <option value="month">Este mes</option>
+              </select>
               <select id="terreno-sort-filter" class="form-control" style="max-width:140px;font-size:13px;" onchange="filterTerrenoClients()">
                 <option value="gps">Sin GPS primero</option>
                 <option value="near">Más cercanos</option>
+                <option value="recent">Recientes primero</option>
                 <option value="name">Nombre A-Z</option>
                 <option value="code">Código</option>
               </select>
@@ -6895,7 +6903,7 @@
               <table class="data-table" id="terreno-table">
                 <thead>
                   <tr>
-                    <th style="width:80px;">Código</th>
+                    <th style="width:110px;white-space:nowrap;">Código</th>
                     <th>Cliente</th>
                     <th>Dirección / Comuna</th>
                     <th style="width:120px;">Zona</th>
@@ -6921,6 +6929,25 @@
         <div id="terreno-cards-wrapper" style="display:none;">
           <div id="terreno-cards-body" style="display:flex;flex-direction:column;gap:8px;"></div>
           <div id="terreno-cards-pagination" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px;color:var(--text-muted);flex-wrap:wrap;gap:8px;"></div>
+        </div>
+
+        <!-- Historial de modificaciones -->
+        <div class="card" style="margin-top:20px;">
+          <div class="card-body" style="padding:0;">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <i data-lucide="history" style="width:16px;height:16px;color:#6366f1;"></i>
+                <span style="font-size:14px;font-weight:700;color:var(--text-primary);">Historial de Modificaciones</span>
+              </div>
+              <select id="terreno-history-range" class="form-control" style="max-width:140px;font-size:12px;" onchange="_renderTerrenoHistory()">
+                <option value="today">Hoy</option>
+                <option value="week" selected>Esta semana</option>
+                <option value="month">Este mes</option>
+                <option value="all">Todo</option>
+              </select>
+            </div>
+            <div id="terreno-history-body" style="max-height:400px;overflow-y:auto;padding:8px 14px;"></div>
+          </div>
         </div>
       </div>
 
@@ -16149,6 +16176,7 @@
       }
       _renderTerrenoStats();
       _startTerrenoGps();
+      _renderTerrenoHistory();
       _createIcons();
     }
 
@@ -16228,6 +16256,7 @@
       document.getElementById('terreno-vendor-filter').value = '';
       document.getElementById('terreno-zone-filter').value = '';
       document.getElementById('terreno-gps-filter').value = '';
+      document.getElementById('terreno-date-filter').value = '';
       document.getElementById('terreno-sort-filter').value = 'gps';
       _terrenoPage = 0;
       filterTerrenoClients();
@@ -16238,6 +16267,7 @@
       const vendorId = document.getElementById('terreno-vendor-filter')?.value || '';
       const zoneId = document.getElementById('terreno-zone-filter')?.value || '';
       const gpsFilter = document.getElementById('terreno-gps-filter')?.value || '';
+      const dateFilter = document.getElementById('terreno-date-filter')?.value || '';
       const sortBy = document.getElementById('terreno-sort-filter')?.value || 'gps';
 
       let filtered = allClients;
@@ -16246,6 +16276,21 @@
       if (zoneId) filtered = filtered.filter(c => c.zone === zoneId);
       if (gpsFilter === 'no-gps') filtered = filtered.filter(c => !c.lat || !c.lng);
       if (gpsFilter === 'has-gps') filtered = filtered.filter(c => c.lat && c.lng);
+
+      // Date filter
+      if (dateFilter) {
+        const now = new Date();
+        filtered = filtered.filter(c => {
+          if (!c.address_updated_at) return false;
+          const d = new Date(c.address_updated_at);
+          const diffDays = Math.floor((now - d) / 86400000);
+          if (dateFilter === 'today') return d.toDateString() === now.toDateString();
+          if (dateFilter === 'yesterday') { const y = new Date(now); y.setDate(y.getDate()-1); return d.toDateString() === y.toDateString(); }
+          if (dateFilter === 'week') return diffDays <= 7;
+          if (dateFilter === 'month') return diffDays <= 30;
+          return true;
+        });
+      }
 
       if (query) {
         filtered = filtered.filter(c => {
@@ -16258,7 +16303,9 @@
       }
 
       // Sort
-      if (sortBy === 'near' && _terrenoGpsPos) {
+      if (sortBy === 'recent') {
+        filtered.sort((a, b) => new Date(b.address_updated_at || 0) - new Date(a.address_updated_at || 0));
+      } else if (sortBy === 'near' && _terrenoGpsPos) {
         filtered.forEach(c => {
           c._dist = (c.lat && c.lng) ? _haversineKm(_terrenoGpsPos.lat, _terrenoGpsPos.lng, c.lat, c.lng) : 99999;
         });
@@ -16286,6 +16333,94 @@
     }
 
     function _isMobileTerreno() { return window.innerWidth <= 768; }
+
+    function _renderTerrenoHistory() {
+      const container = document.getElementById('terreno-history-body');
+      if (!container) return;
+
+      const range = document.getElementById('terreno-history-range')?.value || 'week';
+      const now = new Date();
+
+      let recent = allClients.filter(c => c.address_updated_at).sort((a, b) => new Date(b.address_updated_at) - new Date(a.address_updated_at));
+
+      if (range !== 'all') {
+        recent = recent.filter(c => {
+          const d = new Date(c.address_updated_at);
+          const diffDays = Math.floor((now - d) / 86400000);
+          if (range === 'today') return d.toDateString() === now.toDateString();
+          if (range === 'week') return diffDays <= 7;
+          if (range === 'month') return diffDays <= 30;
+          return true;
+        });
+      }
+
+      recent = recent.slice(0, 50);
+
+      if (!recent.length) {
+        container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:13px;">No hay modificaciones en este período</div>`;
+        return;
+      }
+
+      const vendorMap = {};
+      (executives || []).forEach(u => vendorMap[u.id] = u.full_name);
+
+      container.innerHTML = recent.map(c => {
+        const name = c.fantasy_name || c.name || 'Sin nombre';
+        const hasGps = c.lat && c.lng;
+        const updater = vendorMap[c.address_updated_by] || '';
+        const dateObj = new Date(c.address_updated_at);
+        const dateStr = dateObj.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
+        const timeStr = dateObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+        const tag = _clientDateTag(c.address_updated_at);
+        const tagHtml = tag ? `<span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:4px;background:${tag.bg};color:${tag.color};">${tag.text}</span>` : '';
+
+        return `<div onclick="openTerrenoClientDetail('${c.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
+          <div style="width:6px;height:6px;border-radius:50%;background:${hasGps ? '#10b981' : '#f59e0b'};flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span style="font-size:12px;font-weight:600;color:var(--text-primary);">${name}</span>
+              <code style="font-size:9px;background:var(--bg-hover);padding:1px 5px;border-radius:3px;color:var(--text-muted);">${c.external_id || ''}</code>
+              ${tagHtml}
+            </div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:1px;">${c.address || 'Sin dirección'}${updater ? ' · ' + updater : ''}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:10px;color:var(--text-muted);font-weight:600;">${dateStr}</div>
+            <div style="font-size:9px;color:var(--text-muted);opacity:0.7;">${timeStr}</div>
+          </div>
+        </div>`;
+      }).join('');
+      _createIcons();
+    }
+
+    function _clientDateTag(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now - d;
+      const diffDays = Math.floor(diffMs / 86400000);
+      const isToday = d.toDateString() === now.toDateString();
+      const yesterday = new Date(now); yesterday.setDate(yesterday.getDate() - 1);
+      const isYesterday = d.toDateString() === yesterday.toDateString();
+
+      if (isToday) return { text: 'Hoy', color: '#10b981', bg: 'rgba(16,185,129,0.1)' };
+      if (isYesterday) return { text: 'Ayer', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' };
+      if (diffDays <= 7) return { text: 'Esta semana', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' };
+      if (diffDays <= 30) return { text: 'Este mes', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' };
+      return '';
+    }
+
+    function _clientDateBadgeHtml(dateStr) {
+      const tag = _clientDateTag(dateStr);
+      if (!tag) return '';
+      return `<span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:4px;background:${tag.bg};color:${tag.color};white-space:nowrap;">${tag.text}</span>`;
+    }
+
+    function _getUpdaterName(userId) {
+      if (!userId) return '';
+      const user = (executives || []).find(u => u.id === userId);
+      return user ? user.full_name : '';
+    }
 
     function _renderTerrenoPage() {
       const isMobile = _isMobileTerreno();
@@ -16347,8 +16482,8 @@
           : `<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(245,158,11,0.12);color:#f59e0b;"><i data-lucide="map-pin-off" style="width:13px;height:13px;"></i></span>`;
 
         return `<tr style="cursor:pointer;" onclick="openTerrenoClientDetail('${c.id}')">
-          <td style="padding:8px 10px;"><code style="background:var(--bg-hover);padding:2px 6px;border-radius:4px;font-size:11px;">${c.external_id || ''}</code></td>
-          <td style="padding:8px 10px;font-weight:600;font-size:12px;">${name}</td>
+          <td style="padding:8px 10px;white-space:nowrap;"><code style="background:var(--bg-hover);padding:2px 6px;border-radius:4px;font-size:10px;">${c.external_id || ''}</code></td>
+          <td style="padding:8px 10px;"><div style="font-weight:600;font-size:12px;">${name}</div>${_clientDateBadgeHtml(c.address_updated_at)}${c.address_updated_by ? `<div style="font-size:9px;color:var(--text-muted);margin-top:1px;">por ${_getUpdaterName(c.address_updated_by)}</div>` : ''}</td>
           <td style="padding:8px 10px;font-size:11px;color:var(--text-muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${c.address || ''}">${c.address || '<em>Sin dirección</em>'} <span style="color:var(--text-muted);opacity:0.6;">· ${c.commune || ''}</span></td>
           <td style="padding:8px 10px;font-size:11px;">${c.zone || '—'}</td>
           <td style="padding:8px 10px;font-size:11px;color:#6366f1;">${vendor}</td>
@@ -16424,6 +16559,7 @@
                 <code style="background:var(--bg-hover);padding:1px 6px;border-radius:4px;font-size:10px;color:var(--text-muted);">${c.external_id || ''}</code>
                 ${gpsIcon}
                 ${distBadge}
+                ${_clientDateBadgeHtml(c.address_updated_at)}
               </div>
             </div>
             <div style="display:flex;gap:4px;flex-shrink:0;">
@@ -16434,6 +16570,7 @@
           <div style="margin-top:6px;font-size:11px;color:var(--text-muted);line-height:1.4;display:flex;align-items:center;gap:4px;">
             <i data-lucide="map-pin" style="width:10px;height:10px;flex-shrink:0;opacity:0.5;"></i>
             <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.address || 'Sin dirección'}${c.commune ? ' · ' + c.commune : ''}</span>
+            ${c.address_updated_by ? `<span style="font-size:9px;opacity:0.7;margin-left:4px;">· ${_getUpdaterName(c.address_updated_by)}</span>` : ''}
           </div>
         </div>`;
       }).join('');
@@ -16768,6 +16905,7 @@
           showToast('success', 'GPS guardado', `Ubicación actualizada (±${Math.round(_terrenoGpsPos.accuracy)}m)${addrMsg}`);
           document.getElementById('terreno-detail-modal')?.remove();
           _renderTerrenoStats();
+          _renderTerrenoHistory();
           filterTerrenoClients();
         } else {
           showToast('error', 'Error', data.error || 'No se pudo guardar');
@@ -16791,6 +16929,7 @@
           showToast('success', 'Eliminado', `Cliente "${clientName}" eliminado`);
           document.getElementById('terreno-detail-modal')?.remove();
           _renderTerrenoStats();
+          _renderTerrenoHistory();
           filterTerrenoClients();
         } else {
           showToast('error', 'Error', data.error || 'No se pudo eliminar');
