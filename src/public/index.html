@@ -17214,23 +17214,24 @@
 
         const data = await res.json();
         if (data.success) {
-          showToast('success', 'Ubicación guardada', 'El cliente ahora tiene coordenadas GPS');
           const savedClientId = editingClientId;
+          // Patch allClients BEFORE closing modal (editingClientId gets nulled)
+          if (data.data) {
+            const idx = allClients.findIndex(c => c.id === savedClientId);
+            if (idx >= 0) allClients[idx] = { ...allClients[idx], ...data.data };
+          } else {
+            const idx = allClients.findIndex(c => c.id === savedClientId);
+            if (idx >= 0) Object.assign(allClients[idx], body);
+          }
+          showToast('success', 'Ubicación guardada', geo ? `${geo.address}` : 'Coordenadas GPS actualizadas');
           closeEditLocationModal();
+          _rebuildClientIndexes();
           // Re-open edit modal with fresh data if it was open
           const editModal = document.getElementById('modal-edit-client-full');
           if (editModal) { editModal.remove(); setTimeout(() => openEditClientFullModal(savedClientId), 100); }
-          // Patch allClients immediately so route map refreshes without stale SW cache
-          if (data.data) {
-            const idx = allClients.findIndex(c => c.id === editingClientId);
-            if (idx >= 0) allClients[idx] = { ...allClients[idx], ...data.data };
-          } else {
-            const idx = allClients.findIndex(c => c.id === editingClientId);
-            if (idx >= 0) { allClients[idx].lat = lat; allClients[idx].lng = lng; }
-          }
-          _rebuildClientIndexes();
           refreshSegmentationFromAllClients();
           loadExecutiveClients();
+          _renderHistorialPanel();
           setTimeout(() => loadData(), 300);
         } else {
           showToast('error', 'Error', data.error || 'No se pudo guardar');
