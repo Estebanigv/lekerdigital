@@ -113,7 +113,7 @@ class RoutesController {
   async getOptimizedRoute(req, res) {
     try {
       const { userId } = req.params;
-      const { zone, commune, startLat, startLng, exclude, include } = req.query;
+      const { zone, commune, startLat, startLng, exclude, include, shuffle } = req.query;
 
       let startPoint = null;
       if (startLat && startLng) {
@@ -122,13 +122,16 @@ class RoutesController {
 
       const excludeIds = exclude ? exclude.split(',').filter(Boolean) : [];
       const includeIds = include ? include.split(',').filter(Boolean) : [];
-      const result = await routesService.getOptimizedRoute(userId, zone, startPoint, excludeIds, commune, includeIds);
+      const options = {};
+      if (shuffle === 'true') options.shuffle = true;
+      const result = await routesService.getOptimizedRoute(userId, zone, startPoint, excludeIds, options, commune, includeIds);
 
       res.json({
         success: true,
         data: result
       });
     } catch (error) {
+      console.error('[OptimizeRoute ERROR]', error.message, error.stack);
       res.status(500).json({
         success: false,
         error: error.message

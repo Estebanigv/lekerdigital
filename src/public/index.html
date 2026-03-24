@@ -4834,6 +4834,10 @@
           <i data-lucide="contact-2"></i>
           <span>Logística CRM</span>
         </div>
+        <div class="nav-item" data-tab="terreno" data-tooltip="Verificar en Terreno">
+          <i data-lucide="crosshair"></i>
+          <span>Terreno</span>
+        </div>
       </div>
 
       <div class="nav-section">
@@ -6760,6 +6764,53 @@
         </div>
       </div>
 
+      <!-- Terreno Panel - Verificación en campo -->
+      <div class="panel" id="panel-terreno">
+        <!-- Header -->
+        <div class="card" style="margin-bottom: 16px; background: linear-gradient(135deg, #065f46 0%, #059669 100%);">
+          <div class="card-body" style="padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div style="color: white;">
+                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7;">Modo Terreno</div>
+                <div style="font-size: 20px; font-weight: 700;">Verificar Clientes</div>
+              </div>
+              <div id="terreno-gps-badge" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;background:rgba(255,255,255,0.15);color:white;font-size:12px;">
+                <i data-lucide="loader-2" class="spin" style="width:14px;height:14px;"></i> GPS...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buscador -->
+        <div class="card" style="margin-bottom: 16px;">
+          <div class="card-body" style="padding: 14px 16px;">
+            <div style="position: relative;">
+              <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);"></i>
+              <input id="terreno-search" type="text" class="form-control" placeholder="Buscar por código, nombre o dirección..." style="padding-left: 38px; font-size: 14px; height: 44px;" oninput="filterTerrenoClients()">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+              <select id="terreno-vendor-filter" class="form-control" style="flex:1;min-width:140px;font-size:12px;" onchange="filterTerrenoClients()">
+                <option value="">Todos los vendedores</option>
+              </select>
+              <select id="terreno-gps-filter" class="form-control" style="width:130px;font-size:12px;" onchange="filterTerrenoClients()">
+                <option value="">Todos</option>
+                <option value="no-gps">Sin GPS</option>
+                <option value="has-gps">Con GPS</option>
+              </select>
+            </div>
+            <div id="terreno-count" style="font-size:11px;color:var(--text-muted);margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- Lista de clientes -->
+        <div id="terreno-client-list" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="text-align:center;padding:40px 20px;color:var(--text-muted);">
+            <i data-lucide="search" style="width:32px;height:32px;margin-bottom:8px;opacity:0.4;"></i>
+            <p style="font-size:13px;">Busca un cliente por código o nombre para verificar su ubicación</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Intelligence Panel -->
       <div class="panel" id="panel-intelligence">
         <div class="grid-2">
@@ -8070,10 +8121,6 @@
             </div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button onclick="document.getElementById('learning-file-input').click()" class="btn" style="display:flex;align-items:center;gap:6px;font-size:12px;padding:8px 14px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;font-weight:600;transition:all 0.15s;" onmouseover="this.style.borderColor='rgba(99,102,241,0.4)';this.style.background='rgba(99,102,241,0.06)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-card)'">
-              <i data-lucide="file-up" style="width:14px;height:14px;"></i> Cargar Documento
-            </button>
-            <input type="file" id="learning-file-input" accept=".txt,.pdf,.xlsx,.xls,.csv,.md,.json" style="display:none;" onchange="_uploadLearningDoc(this)">
             <button onclick="_openLearningModal()" class="btn" style="display:flex;align-items:center;gap:6px;font-size:12px;padding:8px 16px;border-radius:10px;background:#2563eb;color:white;border:none;cursor:pointer;font-weight:600;box-shadow:0 2px 8px rgba(37,99,235,0.3);transition:all 0.15s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
               <i data-lucide="plus" style="width:14px;height:14px;"></i> Agregar
             </button>
@@ -9109,9 +9156,9 @@
     // AUTH SYSTEM
     // =============================================
     const DEFAULT_ROLE_PANELS = {
-      admin:      ['dashboard', 'routes', 'visits', 'crm', 'intelligence', 'marketing', 'data', 'gsheets', 'ai-learnings', 'users'],
-      supervisor: ['dashboard', 'routes', 'visits', 'crm', 'data', 'gsheets', 'ai-learnings'],
-      zonal:      ['dashboard', 'routes', 'visits', 'crm', 'gsheets'],
+      admin:      ['dashboard', 'routes', 'visits', 'crm', 'terreno', 'intelligence', 'marketing', 'data', 'gsheets', 'ai-learnings', 'users'],
+      supervisor: ['dashboard', 'routes', 'visits', 'crm', 'terreno', 'data', 'gsheets', 'ai-learnings'],
+      zonal:      ['dashboard', 'routes', 'visits', 'crm', 'terreno', 'gsheets'],
       executive:  ['dashboard', 'visits', 'routes'],
       viewer:     ['dashboard']
     };
@@ -9140,6 +9187,7 @@
       routes: 'Rutas y Mapa',
       visits: 'Visitas',
       crm: 'Logística CRM',
+      terreno: 'Verificar en Terreno',
       intelligence: 'Precios Mercado',
       marketing: 'Marketing',
       data: 'Base de Datos',
@@ -9713,6 +9761,7 @@
           routes: 'Rutas y Mapa',
           visits: 'Gestión de Visitas',
           crm: 'Logística CRM',
+          terreno: 'Verificar en Terreno',
           intelligence: 'Inteligencia de Mercado',
           data: 'Datos del Sistema',
           marketing: 'Marketing Digital',
@@ -9745,6 +9794,9 @@
         }
         if (tab === 'crm') {
           renderCrmPanel();
+        }
+        if (tab === 'terreno') {
+          initTerrenoPanel();
         }
         if (tab === 'visits') {
           startVisitsAutoRefresh();
@@ -15728,6 +15780,8 @@
 
     function openEditLocationModal(clientId, clientName, clientAddress) {
       editingClientId = clientId;
+      const client = _clientById.get(clientId);
+      const hasExistingCoords = client && client.lat && client.lng;
 
       const modal = document.createElement('div');
       modal.id = 'edit-location-modal';
@@ -15735,59 +15789,492 @@
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
         background: rgba(0,0,0,0.6); z-index: 9999;
         display: flex; align-items: center; justify-content: center;
+        padding: 20px;
       `;
 
       modal.innerHTML = `
-        <div style="background: white; border-radius: 16px; padding: 24px; max-width: 600px; width: 95%; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
-          <h3 style="margin: 0 0 8px 0; color: #1e40af;"><i data-lucide="map-pin" style="width:16px;height:16px;display:inline-block;vertical-align:middle;"></i> Agregar Ubicación GPS</h3>
-          <p style="margin: 0 0 4px 0; font-weight: 600; color: #1f2937;">${clientName}</p>
-          <p style="margin: 0 0 16px 0; font-size: 12px; color: #6b7280;">${clientAddress || 'Sin dirección registrada'}</p>
+        <div style="background: var(--bg-card, white); border-radius: 16px; padding: 24px; max-width: 600px; width: 95%; box-shadow: 0 20px 40px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
+          <h3 style="margin: 0 0 8px 0; color: #1e40af; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="map-pin" style="width:18px;height:18px;"></i> Verificar Ubicación GPS
+          </h3>
+          <p style="margin: 0 0 2px 0; font-weight: 600; color: var(--text-primary, #1f2937);">${clientName}</p>
+          <p style="margin: 0 0 4px 0; font-size: 12px; color: var(--text-muted, #6b7280);">${clientAddress || 'Sin dirección registrada'}</p>
+          ${client?.external_id ? `<p style="margin: 0 0 12px 0;"><code style="background:var(--bg-hover,#f3f4f6);padding:2px 6px;border-radius:4px;font-size:11px;color:var(--text-muted,#6b7280);">${client.external_id}</code></p>` : ''}
 
-          <div id="edit-location-map" style="height: 300px; border-radius: 12px; margin-bottom: 16px; background: #f3f4f6;"></div>
+          <!-- GPS Status -->
+          <div id="edit-loc-gps-status" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;margin-bottom:12px;background:rgba(245,158,11,0.1);border:1px solid #f59e0b;font-size:12px;">
+            <i data-lucide="loader-2" class="spin" style="width:16px;height:16px;color:#f59e0b;"></i>
+            <span style="color:#f59e0b;">Obteniendo ubicación GPS...</span>
+          </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <!-- Botón Usar mi ubicación -->
+          <button onclick="useMyLocationForEdit()" id="btn-use-my-location" style="width:100%;padding:12px;border:2px dashed #2563eb;background:rgba(37,99,235,0.06);color:#2563eb;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;transition:all 0.15s;" onmouseover="this.style.background='rgba(37,99,235,0.12)'" onmouseout="this.style.background='rgba(37,99,235,0.06)'">
+            <i data-lucide="crosshair" style="width:18px;height:18px;"></i> Usar mi ubicación actual
+          </button>
+
+          <div id="edit-location-map" style="height: 280px; border-radius: 12px; margin-bottom: 12px; background: #f3f4f6;"></div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div>
-              <label style="font-size: 12px; color: #6b7280;">Latitud</label>
-              <input type="number" step="0.000001" id="edit-lat" class="form-control" placeholder="-33.4569" style="font-size: 14px;">
+              <label style="font-size: 12px; color: var(--text-muted, #6b7280);">Latitud</label>
+              <input type="number" step="0.000001" id="edit-lat" class="form-control" placeholder="-33.4569" style="font-size: 14px;" value="${hasExistingCoords ? client.lat : ''}">
             </div>
             <div>
-              <label style="font-size: 12px; color: #6b7280;">Longitud</label>
-              <input type="number" step="0.000001" id="edit-lng" class="form-control" placeholder="-70.6483" style="font-size: 14px;">
+              <label style="font-size: 12px; color: var(--text-muted, #6b7280);">Longitud</label>
+              <input type="number" step="0.000001" id="edit-lng" class="form-control" placeholder="-70.6483" style="font-size: 14px;" value="${hasExistingCoords ? client.lng : ''}">
             </div>
           </div>
 
-          <p style="font-size: 11px; color: #6b7280; margin-bottom: 16px;">
-            <i data-lucide="lightbulb" style="width:12px;height:12px;color:#6b7280;display:inline-block;vertical-align:middle;"></i> Haz clic en el mapa para seleccionar la ubicación, o ingresa las coordenadas manualmente.
+          <!-- Distancia al punto actual -->
+          <div id="edit-loc-distance" style="display:none;padding:8px 12px;border-radius:8px;margin-bottom:12px;font-size:12px;text-align:center;"></div>
+
+          <p style="font-size: 11px; color: var(--text-muted, #6b7280); margin-bottom: 16px;">
+            <i data-lucide="lightbulb" style="width:12px;height:12px;color:var(--text-muted,#6b7280);display:inline-block;vertical-align:middle;"></i>
+            Usa <strong>"Mi ubicación"</strong> si estás frente al cliente, o haz clic en el mapa para corregir manualmente.
           </p>
 
           <div style="display: flex; gap: 12px;">
-            <button onclick="closeEditLocationModal()" style="flex: 1; padding: 12px; border: 1px solid #e5e7eb; background: white; border-radius: 8px; cursor: pointer;">Cancelar</button>
-            <button onclick="saveClientLocation()" style="flex: 1; padding: 12px; border: none; background: #10b981; color: white; border-radius: 8px; cursor: pointer; font-weight: 600;">Guardar Ubicación</button>
+            <button onclick="closeEditLocationModal()" style="flex: 1; padding: 12px; border: 1px solid var(--border, #e5e7eb); background: var(--bg-card, white); color: var(--text-primary, #374151); border-radius: 8px; cursor: pointer; font-weight: 500;">Cancelar</button>
+            <button onclick="saveClientLocation()" style="flex: 1; padding: 12px; border: none; background: #10b981; color: white; border-radius: 8px; cursor: pointer; font-weight: 600; display:flex;align-items:center;justify-content:center;gap:6px;">
+              <i data-lucide="check-circle" style="width:16px;height:16px;"></i> Confirmar Ubicación
+            </button>
           </div>
         </div>
       `;
 
       document.body.appendChild(modal);
+      _createIcons();
 
       // Initialize map after modal is in DOM
       setTimeout(() => {
-        editLocationMap = L.map('edit-location-map').setView([-33.45, -70.65], 10);
+        const initLat = hasExistingCoords ? client.lat : -33.45;
+        const initLng = hasExistingCoords ? client.lng : -70.65;
+        const initZoom = hasExistingCoords ? 16 : 10;
+
+        editLocationMap = L.map('edit-location-map').setView([initLat, initLng], initZoom);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap'
         }).addTo(editLocationMap);
 
+        // Show existing marker if coords exist
+        if (hasExistingCoords) {
+          editLocationMarker = L.marker([client.lat, client.lng]).addTo(editLocationMap)
+            .bindPopup(`<b>${clientName}</b><br>${clientAddress || ''}`).openPopup();
+        }
+
         // Add click handler
         editLocationMap.on('click', function(e) {
           const { lat, lng } = e.latlng;
-          document.getElementById('edit-lat').value = lat.toFixed(6);
-          document.getElementById('edit-lng').value = lng.toFixed(6);
-
-          if (editLocationMarker) {
-            editLocationMap.removeLayer(editLocationMarker);
-          }
-          editLocationMarker = L.marker([lat, lng]).addTo(editLocationMap);
+          _updateEditLocationPin(lat, lng);
         });
-      }, 100);
+
+        // Auto-detect GPS
+        _detectGpsForEditLocation();
+      }, 150);
+    }
+
+    function _updateEditLocationPin(lat, lng) {
+      document.getElementById('edit-lat').value = lat.toFixed(6);
+      document.getElementById('edit-lng').value = lng.toFixed(6);
+      if (editLocationMarker) editLocationMap.removeLayer(editLocationMarker);
+      editLocationMarker = L.marker([lat, lng]).addTo(editLocationMap);
+      editLocationMap.setView([lat, lng], Math.max(editLocationMap.getZoom(), 16));
+      _updateEditLocationDistance(lat, lng);
+    }
+
+    let _editLocGpsPos = null;
+
+    function _detectGpsForEditLocation() {
+      const statusDiv = document.getElementById('edit-loc-gps-status');
+      if (!statusDiv) return;
+
+      if (!navigator.geolocation) {
+        statusDiv.style.background = 'rgba(239,68,68,0.1)';
+        statusDiv.style.borderColor = '#ef4444';
+        statusDiv.innerHTML = `<i data-lucide="x-circle" style="width:16px;height:16px;color:#ef4444;"></i><span style="color:#ef4444;">GPS no disponible en este dispositivo</span>`;
+        document.getElementById('btn-use-my-location').style.display = 'none';
+        _createIcons();
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          _editLocGpsPos = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
+          statusDiv.style.background = 'rgba(16,185,129,0.1)';
+          statusDiv.style.borderColor = '#10b981';
+          statusDiv.innerHTML = `
+            <i data-lucide="navigation" style="width:16px;height:16px;color:#10b981;"></i>
+            <span style="color:#10b981;font-weight:600;">GPS activo</span>
+            <span style="color:var(--text-muted,#6b7280);font-size:11px;margin-left:auto;">
+              ${_editLocGpsPos.lat.toFixed(5)}, ${_editLocGpsPos.lng.toFixed(5)} (±${Math.round(_editLocGpsPos.accuracy)}m)
+            </span>`;
+          _createIcons();
+          // Update distance if coords already set
+          const lat = parseFloat(document.getElementById('edit-lat')?.value);
+          const lng = parseFloat(document.getElementById('edit-lng')?.value);
+          if (!isNaN(lat) && !isNaN(lng)) _updateEditLocationDistance(lat, lng);
+        },
+        (err) => {
+          statusDiv.style.background = 'rgba(245,158,11,0.1)';
+          statusDiv.style.borderColor = '#f59e0b';
+          let msg = 'Error de ubicación';
+          if (err.code === 1) msg = 'Permiso denegado — habilita ubicación en tu navegador';
+          if (err.code === 2) msg = 'Ubicación no disponible';
+          if (err.code === 3) msg = 'Tiempo agotado — reintenta';
+          statusDiv.innerHTML = `
+            <i data-lucide="alert-triangle" style="width:16px;height:16px;color:#f59e0b;"></i>
+            <span style="color:#f59e0b;">${msg}</span>
+            <button onclick="_detectGpsForEditLocation()" style="margin-left:auto;padding:4px 10px;font-size:11px;border:1px solid #f59e0b;background:transparent;color:#f59e0b;border-radius:6px;cursor:pointer;font-weight:600;">Reintentar</button>`;
+          _createIcons();
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    function useMyLocationForEdit() {
+      if (!_editLocGpsPos) {
+        showToast('warning', 'Sin GPS', 'Esperando señal GPS. Asegúrate de tener la ubicación habilitada.');
+        _detectGpsForEditLocation();
+        return;
+      }
+      _updateEditLocationPin(_editLocGpsPos.lat, _editLocGpsPos.lng);
+      showToast('success', 'Ubicación capturada', `${_editLocGpsPos.lat.toFixed(5)}, ${_editLocGpsPos.lng.toFixed(5)} (±${Math.round(_editLocGpsPos.accuracy)}m)`);
+    }
+
+    function _updateEditLocationDistance(lat, lng) {
+      const distDiv = document.getElementById('edit-loc-distance');
+      if (!distDiv || !_editLocGpsPos) { if (distDiv) distDiv.style.display = 'none'; return; }
+
+      const dist = _haversineKm(_editLocGpsPos.lat, _editLocGpsPos.lng, lat, lng) * 1000; // meters
+      distDiv.style.display = 'block';
+      if (dist < 100) {
+        distDiv.style.background = 'rgba(16,185,129,0.1)';
+        distDiv.style.color = '#10b981';
+        distDiv.innerHTML = `<i data-lucide="check-circle" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i> Estás a <strong>${Math.round(dist)}m</strong> del punto — ubicación verificada`;
+      } else if (dist < 500) {
+        distDiv.style.background = 'rgba(245,158,11,0.1)';
+        distDiv.style.color = '#f59e0b';
+        distDiv.innerHTML = `<i data-lucide="alert-triangle" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i> Estás a <strong>${Math.round(dist)}m</strong> del punto`;
+      } else {
+        distDiv.style.background = 'rgba(239,68,68,0.1)';
+        distDiv.style.color = '#ef4444';
+        distDiv.innerHTML = `<i data-lucide="alert-circle" style="width:14px;height:14px;display:inline-block;vertical-align:middle;"></i> Estás a <strong>${dist >= 1000 ? (dist/1000).toFixed(1) + 'km' : Math.round(dist) + 'm'}</strong> del punto — ¿seguro es la ubicación correcta?`;
+      }
+      _createIcons();
+    }
+
+    function _haversineKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // ====== TERRENO PANEL (Verificación en campo) ======
+    let _terrenoGpsPos = null;
+    let _terrenoGpsInterval = null;
+
+    function initTerrenoPanel() {
+      // Populate vendor filter
+      const vendorSel = document.getElementById('terreno-vendor-filter');
+      if (vendorSel && vendorSel.options.length <= 1) {
+        (executives || []).forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u.id;
+          opt.textContent = u.full_name;
+          vendorSel.appendChild(opt);
+        });
+      }
+      // Start GPS tracking
+      _startTerrenoGps();
+      _createIcons();
+    }
+
+    function _startTerrenoGps() {
+      if (_terrenoGpsInterval) clearInterval(_terrenoGpsInterval);
+      _updateTerrenoGps();
+      _terrenoGpsInterval = setInterval(_updateTerrenoGps, 15000);
+    }
+
+    function _updateTerrenoGps() {
+      const badge = document.getElementById('terreno-gps-badge');
+      if (!badge) return;
+      if (!navigator.geolocation) {
+        badge.innerHTML = `<i data-lucide="x-circle" style="width:14px;height:14px;"></i> Sin GPS`;
+        badge.style.background = 'rgba(239,68,68,0.3)';
+        _createIcons();
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          _terrenoGpsPos = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
+          badge.style.background = 'rgba(255,255,255,0.2)';
+          badge.innerHTML = `<i data-lucide="navigation" style="width:14px;height:14px;"></i> GPS OK (±${Math.round(_terrenoGpsPos.accuracy)}m)`;
+          _createIcons();
+          // Re-render distances if list is shown
+          _updateTerrenoDistances();
+        },
+        () => {
+          badge.style.background = 'rgba(245,158,11,0.3)';
+          badge.innerHTML = `<i data-lucide="alert-triangle" style="width:14px;height:14px;"></i> GPS error <button onclick="_updateTerrenoGps()" style="margin-left:6px;padding:2px 8px;font-size:10px;border:1px solid rgba(255,255,255,0.4);background:transparent;color:white;border-radius:4px;cursor:pointer;">Reintentar</button>`;
+          _createIcons();
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      );
+    }
+
+    function filterTerrenoClients() {
+      const query = (document.getElementById('terreno-search')?.value || '').trim().toLowerCase();
+      const vendorId = document.getElementById('terreno-vendor-filter')?.value || '';
+      const gpsFilter = document.getElementById('terreno-gps-filter')?.value || '';
+
+      if (!query && !vendorId && !gpsFilter) {
+        document.getElementById('terreno-client-list').innerHTML = `
+          <div style="text-align:center;padding:40px 20px;color:var(--text-muted);">
+            <i data-lucide="search" style="width:32px;height:32px;margin-bottom:8px;opacity:0.4;"></i>
+            <p style="font-size:13px;">Busca un cliente por código o nombre para verificar su ubicación</p>
+          </div>`;
+        document.getElementById('terreno-count').textContent = '';
+        _createIcons();
+        return;
+      }
+
+      let filtered = allClients;
+
+      if (vendorId) filtered = filtered.filter(c => c.assigned_user_id === vendorId);
+      if (gpsFilter === 'no-gps') filtered = filtered.filter(c => !c.lat || !c.lng);
+      if (gpsFilter === 'has-gps') filtered = filtered.filter(c => c.lat && c.lng);
+
+      if (query) {
+        filtered = filtered.filter(c => {
+          const code = (c.external_id || '').toLowerCase();
+          const name = (c.fantasy_name || c.name || '').toLowerCase();
+          const addr = (c.address || '').toLowerCase();
+          const commune = (c.commune || '').toLowerCase();
+          return code.includes(query) || name.includes(query) || addr.includes(query) || commune.includes(query);
+        });
+      }
+
+      // Sort: without GPS first
+      filtered.sort((a, b) => {
+        const aGps = a.lat && a.lng ? 1 : 0;
+        const bGps = b.lat && b.lng ? 1 : 0;
+        return aGps - bGps;
+      });
+
+      const showing = Math.min(filtered.length, 50);
+      document.getElementById('terreno-count').textContent = `${filtered.length} cliente${filtered.length !== 1 ? 's' : ''} encontrado${filtered.length !== 1 ? 's' : ''}${filtered.length > 50 ? ' (mostrando 50)' : ''}`;
+
+      const listDiv = document.getElementById('terreno-client-list');
+      if (filtered.length === 0) {
+        listDiv.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:13px;">No se encontraron clientes</div>`;
+        return;
+      }
+
+      const vendorMap = {};
+      (executives || []).forEach(u => vendorMap[u.id] = u.full_name);
+
+      listDiv.innerHTML = filtered.slice(0, 50).map(c => {
+        const hasGps = c.lat && c.lng;
+        const name = c.fantasy_name || c.name || 'Sin nombre';
+        const vendor = vendorMap[c.assigned_user_id] || 'Sin vendedor';
+        let distHtml = '';
+
+        if (hasGps && _terrenoGpsPos) {
+          const dist = _haversineKm(_terrenoGpsPos.lat, _terrenoGpsPos.lng, c.lat, c.lng) * 1000;
+          const distText = dist >= 1000 ? (dist/1000).toFixed(1) + ' km' : Math.round(dist) + ' m';
+          const distColor = dist < 100 ? '#10b981' : dist < 500 ? '#f59e0b' : '#6b7280';
+          distHtml = `<span style="font-size:10px;color:${distColor};font-weight:600;">${distText}</span>`;
+        }
+
+        return `
+        <div class="card terreno-client-card" data-client-id="${c.id}" style="cursor:pointer;transition:all 0.15s;" onclick="openTerrenoClientDetail('${c.id}')">
+          <div class="card-body" style="padding:12px 16px;">
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;${hasGps ? 'background:rgba(16,185,129,0.12);color:#10b981;' : 'background:rgba(245,158,11,0.12);color:#f59e0b;'}">
+                <i data-lucide="${hasGps ? 'map-pin-check' : 'map-pin-off'}" style="width:18px;height:18px;"></i>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <strong style="font-size:13px;color:var(--text-primary);">${name}</strong>
+                  <code style="background:var(--bg-hover);padding:1px 6px;border-radius:4px;font-size:10px;color:var(--text-muted);">${c.external_id || ''}</code>
+                  ${distHtml}
+                </div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                  ${c.address || 'Sin dirección'} · ${c.commune || ''}
+                </div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">
+                  <span style="color:#6366f1;">${vendor}</span>
+                  ${c.segment ? ` · Seg. ${c.segment}` : ''}
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0;">
+                ${hasGps
+                  ? `<span style="background:rgba(16,185,129,0.12);color:#10b981;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;">GPS ✓</span>`
+                  : `<span style="background:rgba(245,158,11,0.12);color:#f59e0b;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;">Sin GPS</span>`
+                }
+                <i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--text-muted);"></i>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+      _createIcons();
+    }
+
+    function _updateTerrenoDistances() {
+      document.querySelectorAll('.terreno-client-card').forEach(card => {
+        // Re-render will happen on next search
+      });
+    }
+
+    function openTerrenoClientDetail(clientId) {
+      const client = _clientById.get(clientId);
+      if (!client) return;
+
+      const existing = document.getElementById('terreno-detail-modal');
+      if (existing) existing.remove();
+
+      const hasGps = client.lat && client.lng;
+      const name = client.fantasy_name || client.name || 'Sin nombre';
+      const vendorMap = {};
+      (executives || []).forEach(u => vendorMap[u.id] = u.full_name);
+      const vendor = vendorMap[client.assigned_user_id] || 'Sin vendedor';
+      const isAdmin = currentUser && currentUser.role === 'admin';
+
+      let distHtml = '';
+      if (hasGps && _terrenoGpsPos) {
+        const dist = _haversineKm(_terrenoGpsPos.lat, _terrenoGpsPos.lng, client.lat, client.lng) * 1000;
+        const distText = dist >= 1000 ? (dist/1000).toFixed(1) + ' km' : Math.round(dist) + ' m';
+        const distColor = dist < 100 ? '#10b981' : dist < 500 ? '#f59e0b' : '#ef4444';
+        distHtml = `<div style="text-align:center;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px;background:${dist < 100 ? 'rgba(16,185,129,0.1)' : dist < 500 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)'};color:${distColor};">
+          Estás a ${distText} de este cliente
+        </div>`;
+      }
+
+      const overlay = document.createElement('div');
+      overlay.id = 'terreno-detail-modal';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;';
+
+      overlay.innerHTML = `
+        <div onclick="event.stopPropagation()" style="background:var(--bg-card);border-radius:16px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;margin:auto;">
+          <!-- Header -->
+          <div style="padding:16px 20px;background:linear-gradient(135deg,#065f46,#059669);color:white;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div>
+                <div style="font-size:11px;opacity:0.7;text-transform:uppercase;">Verificación en Terreno</div>
+                <div style="font-size:18px;font-weight:700;margin-top:4px;">${name}</div>
+                <code style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:4px;font-size:11px;">${client.external_id || ''}</code>
+              </div>
+              <button onclick="document.getElementById('terreno-detail-modal').remove()" style="background:rgba(255,255,255,0.2);border:none;color:white;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;line-height:1;">&times;</button>
+            </div>
+          </div>
+
+          <div style="padding:16px 20px;">
+            ${distHtml}
+
+            <!-- Info del cliente -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+              <div style="padding:10px;background:var(--bg-secondary,#f9fafb);border-radius:8px;">
+                <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Dirección</div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-top:2px;">${client.address || 'Sin dirección'}</div>
+              </div>
+              <div style="padding:10px;background:var(--bg-secondary,#f9fafb);border-radius:8px;">
+                <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Comuna</div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-top:2px;">${client.commune || 'Sin comuna'}</div>
+              </div>
+              <div style="padding:10px;background:var(--bg-secondary,#f9fafb);border-radius:8px;">
+                <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">Vendedor</div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-top:2px;">${vendor}</div>
+              </div>
+              <div style="padding:10px;background:var(--bg-secondary,#f9fafb);border-radius:8px;">
+                <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;">GPS</div>
+                <div style="font-size:12px;font-weight:600;margin-top:2px;${hasGps ? 'color:#10b981;' : 'color:#f59e0b;'}">${hasGps ? `${Number(client.lat).toFixed(5)}, ${Number(client.lng).toFixed(5)}` : 'No registrado'}</div>
+              </div>
+            </div>
+
+            <!-- Acciones principales -->
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <!-- Botón principal: Verificar GPS con mi ubicación -->
+              <button onclick="terrenoQuickGps('${client.id}')" style="width:100%;padding:14px;border:none;background:#2563eb;color:white;border-radius:12px;cursor:pointer;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.15s;" id="terreno-quick-gps-btn">
+                <i data-lucide="crosshair" style="width:20px;height:20px;"></i>
+                ${hasGps ? 'Corregir con mi ubicación' : 'Capturar mi ubicación'}
+              </button>
+
+              <!-- Abrir mapa para ajustar manualmente -->
+              <button onclick="document.getElementById('terreno-detail-modal').remove();openEditLocationModal('${client.id}', '${name.replace(/'/g, "\\'")}', '${(client.address || '').replace(/'/g, "\\'")}')" style="width:100%;padding:12px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);border-radius:12px;cursor:pointer;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i data-lucide="map" style="width:18px;height:18px;"></i> Ajustar en mapa
+              </button>
+
+              <!-- Editar datos completos -->
+              ${isAdmin ? `
+              <button onclick="document.getElementById('terreno-detail-modal').remove();openEditClientFullModal('${client.id}')" style="width:100%;padding:12px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);border-radius:12px;cursor:pointer;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i data-lucide="pencil" style="width:18px;height:18px;"></i> Editar nombre, dirección y datos
+              </button>
+              ` : ''}
+
+              ${hasGps ? `
+              <button onclick="terrenoConfirmOk('${client.id}')" style="width:100%;padding:12px;border:2px solid #10b981;background:rgba(16,185,129,0.08);color:#10b981;border-radius:12px;cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i data-lucide="check-circle" style="width:18px;height:18px;"></i> Dirección correcta — Confirmar OK
+              </button>` : ''}
+            </div>
+          </div>
+        </div>`;
+
+      overlay.addEventListener('mousedown', (e) => { overlay._mdOnBg = e.target === overlay; });
+      overlay.addEventListener('click', (e) => { if (overlay._mdOnBg && e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+      _createIcons();
+    }
+
+    async function terrenoQuickGps(clientId) {
+      if (!_terrenoGpsPos) {
+        showToast('warning', 'Sin GPS', 'Esperando señal GPS. Asegúrate de tener la ubicación habilitada.');
+        _updateTerrenoGps();
+        return;
+      }
+
+      const btn = document.getElementById('terreno-quick-gps-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:20px;height:20px;"></i> Guardando...';
+        _createIcons();
+      }
+
+      try {
+        const res = await fetch(`${API}/api/clients/${clientId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat: _terrenoGpsPos.lat, lng: _terrenoGpsPos.lng })
+        });
+        const data = await res.json();
+        if (data.success) {
+          // Update local
+          const idx = allClients.findIndex(c => c.id === clientId);
+          if (idx >= 0) {
+            allClients[idx] = { ...allClients[idx], ...data.data, lat: _terrenoGpsPos.lat, lng: _terrenoGpsPos.lng };
+          }
+          _rebuildClientIndexes();
+          showToast('success', 'GPS guardado', `Ubicación actualizada: ${_terrenoGpsPos.lat.toFixed(5)}, ${_terrenoGpsPos.lng.toFixed(5)} (±${Math.round(_terrenoGpsPos.accuracy)}m)`);
+          document.getElementById('terreno-detail-modal')?.remove();
+          filterTerrenoClients(); // Refresh list
+        } else {
+          showToast('error', 'Error', data.error || 'No se pudo guardar');
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="crosshair" style="width:20px;height:20px;"></i> Reintentar'; _createIcons(); }
+        }
+      } catch (e) {
+        showToast('error', 'Error', e.message);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="crosshair" style="width:20px;height:20px;"></i> Reintentar'; _createIcons(); }
+      }
+    }
+
+    function terrenoConfirmOk(clientId) {
+      const client = _clientById.get(clientId);
+      if (!client) return;
+      showToast('success', 'Verificado', `${client.fantasy_name || client.name} — dirección confirmada OK`);
+      document.getElementById('terreno-detail-modal')?.remove();
     }
 
     function closeEditLocationModal() {
@@ -16963,6 +17450,7 @@
           routes: 'Rutas y Mapa',
           visits: 'Gestión de Visitas',
           crm: 'Logística CRM',
+          terreno: 'Verificar en Terreno',
           intelligence: 'Inteligencia de Mercado',
           data: 'Datos del Sistema',
           marketing: 'Marketing Digital',
@@ -24845,6 +25333,26 @@
                 <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Geo Link</label>
                 <input type="text" id="ec-geolink" class="form-control" value="${client.geo_link || ''}" style="font-size:13px;" ${isAdmin ? '' : 'disabled'} placeholder="URL de Google Maps">
               </div>
+              <!-- Sección Verificación GPS -->
+              ${isAdmin ? `
+              <div style="grid-column:span 2;border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--bg-secondary,#f9fafb);">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                  <label style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;margin:0;">
+                    <i data-lucide="map-pin" style="width:14px;height:14px;color:#2563eb;"></i> Ubicación GPS
+                    ${client.lat && client.lng ? '<span style="background:rgba(16,185,129,0.15);color:#10b981;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;">Verificado</span>' : '<span style="background:rgba(245,158,11,0.15);color:#f59e0b;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;">Sin GPS</span>'}
+                  </label>
+                  <button type="button" onclick="openEditLocationModal('${client.id}', '${(client.fantasy_name || client.name).replace(/'/g, "\\'")}', '${(client.address || '').replace(/'/g, "\\'")}')" style="padding:5px 12px;font-size:11px;border:1px solid #2563eb;background:rgba(37,99,235,0.08);color:#2563eb;border-radius:6px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:4px;" onmouseover="this.style.background='rgba(37,99,235,0.18)'" onmouseout="this.style.background='rgba(37,99,235,0.08)'">
+                    <i data-lucide="crosshair" style="width:12px;height:12px;"></i> ${client.lat ? 'Verificar / Corregir' : 'Agregar GPS'}
+                  </button>
+                </div>
+                ${client.lat && client.lng ? `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;color:var(--text-muted);">
+                  <div>Lat: <strong style="color:var(--text-primary);">${Number(client.lat).toFixed(6)}</strong></div>
+                  <div>Lng: <strong style="color:var(--text-primary);">${Number(client.lng).toFixed(6)}</strong></div>
+                </div>` : `
+                <p style="font-size:11px;color:var(--text-muted);margin:0;">Ve al cliente y usa "Agregar GPS" para capturar la ubicación exacta desde tu celular.</p>`}
+              </div>
+              ` : ''}
               <div class="form-group" style="grid-column:span 2;">
                 <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;display:flex;align-items:center;gap:6px;"><i data-lucide="sticky-note" style="width:12px;height:12px;color:var(--text-muted);"></i> Notas internas</label>
                 <textarea id="ec-notes" class="form-control" rows="3" style="font-size:13px;resize:vertical;" ${isAdmin ? '' : 'disabled'} placeholder="Observaciones, recordatorios, info de contacto...">${client.notes || ''}</textarea>
@@ -27251,99 +27759,94 @@
       _renderLearnings();
     }
 
+    let _lrnSelectedFiles = [];
+
     function _openLearningModal(existing) {
       const isEdit = !!existing;
+      _lrnSelectedFiles = [];
       const overlay = document.createElement('div');
       overlay.id = 'learning-modal-overlay';
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
       overlay.innerHTML = `
-        <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);border:1px solid var(--border);">
+        <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);border:1px solid var(--border);max-height:90vh;overflow-y:auto;">
           <h3 style="margin:0 0 16px;font-size:16px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
             <i data-lucide="${isEdit?'pencil':'plus'}" style="width:18px;height:18px;color:#6366f1;"></i>
             ${isEdit ? 'Editar' : 'Nuevo'} Aprendizaje
           </h3>
 
-          ${!isEdit ? `<!-- Tabs: Manual / Documento -->
-          <div style="display:flex;gap:0;margin-bottom:16px;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
-            <button id="lrn-tab-manual" onclick="_lrnSwitchTab('manual')" style="flex:1;padding:9px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:#2563eb;color:white;display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.15s;">
-              <i data-lucide="pencil" style="width:13px;height:13px;"></i> Escribir manual
-            </button>
-            <button id="lrn-tab-doc" onclick="_lrnSwitchTab('doc')" style="flex:1;padding:9px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:var(--bg-secondary);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.15s;">
-              <i data-lucide="file-up" style="width:13px;height:13px;"></i> Subir documento
-            </button>
-          </div>` : ''}
-
-          <!-- Manual form -->
-          <div id="lrn-form-manual">
-            <div style="margin-bottom:12px;">
-              <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Categoría</label>
-              <select id="learning-modal-cat" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;">
-                <option value="general" ${existing?.category==='general'?'selected':''}>General</option>
-                <option value="ventas" ${existing?.category==='ventas'?'selected':''}>Ventas</option>
-                <option value="rutas" ${existing?.category==='rutas'?'selected':''}>Rutas</option>
-                <option value="clientes" ${existing?.category==='clientes'?'selected':''}>Clientes</option>
-                <option value="productos" ${existing?.category==='productos'?'selected':''}>Productos</option>
-                <option value="politicas" ${existing?.category==='politicas'?'selected':''}>Políticas</option>
-              </select>
-            </div>
-            <div style="margin-bottom:12px;">
-              <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Título / Regla</label>
-              <input id="learning-modal-title" type="text" value="${existing?.title?.replace(/"/g,'&quot;')||''}" placeholder="Ej: Precio mínimo de venta" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;box-sizing:border-box;">
-            </div>
-            <div style="margin-bottom:16px;">
-              <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Contenido / Explicación</label>
-              <textarea id="learning-modal-content" rows="4" placeholder="Explica la regla, corrección o conocimiento que la IA debe recordar..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;resize:vertical;margin-top:4px;font-family:inherit;line-height:1.5;box-sizing:border-box;">${existing?.content||''}</textarea>
-            </div>
-            <div style="display:flex;gap:8px;justify-content:flex-end;">
-              <button onclick="document.getElementById('learning-modal-overlay').remove()" class="btn" style="font-size:13px;padding:8px 16px;border-radius:8px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">Cancelar</button>
-              <button onclick="_saveLearning(${isEdit ? "'"+existing.id+"'" : 'null'})" class="btn" style="font-size:13px;padding:8px 20px;border-radius:8px;background:#2563eb;color:white;border:none;cursor:pointer;font-weight:600;">
-                <i data-lucide="check" style="width:14px;height:14px;"></i> ${isEdit ? 'Guardar' : 'Crear'}
-              </button>
-            </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Categoría</label>
+            <select id="learning-modal-cat" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;">
+              <option value="general" ${existing?.category==='general'?'selected':''}>General</option>
+              <option value="ventas" ${existing?.category==='ventas'?'selected':''}>Ventas</option>
+              <option value="rutas" ${existing?.category==='rutas'?'selected':''}>Rutas</option>
+              <option value="clientes" ${existing?.category==='clientes'?'selected':''}>Clientes</option>
+              <option value="productos" ${existing?.category==='productos'?'selected':''}>Productos</option>
+              <option value="politicas" ${existing?.category==='politicas'?'selected':''}>Políticas</option>
+            </select>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Título / Regla</label>
+            <input id="learning-modal-title" type="text" value="${existing?.title?.replace(/"/g,'&quot;')||''}" placeholder="Ej: Precio mínimo de venta" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;box-sizing:border-box;">
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Contenido / Explicación</label>
+            <textarea id="learning-modal-content" rows="3" placeholder="Explica la regla, corrección o conocimiento que la IA debe recordar..." style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;resize:vertical;margin-top:4px;font-family:inherit;line-height:1.5;box-sizing:border-box;">${existing?.content||''}</textarea>
           </div>
 
-          ${!isEdit ? `<!-- Document upload form -->
-          <div id="lrn-form-doc" style="display:none;">
-            <div style="margin-bottom:12px;">
-              <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Categoría del documento</label>
-              <select id="learning-doc-cat" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;">
-                <option value="general">General</option>
-                <option value="ventas">Ventas</option>
-                <option value="rutas">Rutas</option>
-                <option value="clientes">Clientes</option>
-                <option value="productos">Productos</option>
-                <option value="politicas">Políticas</option>
-              </select>
+          ${!isEdit ? `<!-- Document upload + URL import (optional) -->
+          <div style="margin-bottom:14px;">
+            <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;">Importar fuente <span style="font-weight:400;text-transform:none;letter-spacing:0;">(opcional — la IA extraerá aprendizajes)</span></label>
+
+            <!-- URL import -->
+            <div style="display:flex;gap:6px;margin-bottom:8px;">
+              <div style="flex:1;position:relative;">
+                <i data-lucide="link" style="width:14px;height:14px;color:var(--text-muted);position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;"></i>
+                <input id="lrn-url-input" type="url" placeholder="Pega un link: Google Docs, Sheets, Drive, web..." style="width:100%;padding:8px 10px 8px 32px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:12px;box-sizing:border-box;" oninput="_lrnUrlChanged()">
+              </div>
             </div>
-            <div id="lrn-drop-zone" style="border:2px dashed var(--border);border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:16px;"
+            <div id="lrn-url-preview" style="display:none;margin-bottom:8px;"></div>
+
+            <!-- Divider -->
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <div style="flex:1;height:1px;background:var(--border);"></div>
+              <span style="font-size:10px;color:var(--text-muted);font-weight:600;">O SUBE ARCHIVOS</span>
+              <div style="flex:1;height:1px;background:var(--border);"></div>
+            </div>
+
+            <!-- File drop zone -->
+            <div id="lrn-drop-zone" style="border:2px dashed var(--border);border-radius:10px;padding:14px 14px;text-align:center;cursor:pointer;transition:all 0.2s;"
               onclick="document.getElementById('lrn-doc-file-input').click()"
               ondragover="event.preventDefault();this.style.borderColor='#2563eb';this.style.background='rgba(37,99,235,0.04)'"
               ondragleave="this.style.borderColor='var(--border)';this.style.background='none'"
               ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='none';_lrnHandleFileDrop(event.dataTransfer.files)">
-              <div style="width:44px;height:44px;border-radius:12px;background:rgba(37,99,235,0.08);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;">
-                <i data-lucide="upload" style="width:22px;height:22px;color:#2563eb;"></i>
+              <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i data-lucide="upload" style="width:16px;height:16px;color:#2563eb;"></i>
+                <span style="font-size:12px;color:var(--text-secondary);">Arrastra archivos o <b style="color:#2563eb;">haz clic aquí</b></span>
               </div>
-              <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Arrastra un archivo aquí o haz clic</div>
-              <div style="font-size:11px;color:var(--text-muted);line-height:1.5;">PDF, TXT, Excel, CSV, MD — máx 10MB<br>La IA extraerá los puntos clave automáticamente</div>
-              <div id="lrn-doc-file-name" style="display:none;margin-top:10px;font-size:12px;font-weight:600;color:#2563eb;display:flex;align-items:center;justify-content:center;gap:5px;"></div>
-              <input type="file" id="lrn-doc-file-input" accept=".txt,.pdf,.xlsx,.xls,.csv,.md,.json" style="display:none;" onchange="_lrnFileSelected(this)">
+              <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">PDF, TXT, Excel, CSV, MD — múltiples archivos</div>
+              <input type="file" id="lrn-doc-file-input" accept=".txt,.pdf,.xlsx,.xls,.csv,.md,.json" multiple style="display:none;" onchange="_lrnFilesSelected(this)">
             </div>
-            <div id="lrn-doc-progress" style="display:none;margin-bottom:16px;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                <i data-lucide="loader-2" class="spin" style="width:14px;height:14px;color:#2563eb;"></i>
-                <span style="font-size:12px;font-weight:600;color:var(--text-primary);">Analizando documento con IA...</span>
-              </div>
-              <div style="height:4px;background:var(--border);border-radius:4px;overflow:hidden;">
-                <div id="lrn-doc-bar" style="height:100%;background:#2563eb;border-radius:4px;width:0%;transition:width 0.5s ease;"></div>
-              </div>
-            </div>
-            <div style="display:flex;gap:8px;justify-content:flex-end;">
-              <button onclick="document.getElementById('learning-modal-overlay').remove()" class="btn" style="font-size:13px;padding:8px 16px;border-radius:8px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">Cancelar</button>
-              <button id="lrn-doc-upload-btn" onclick="_lrnUploadDoc()" class="btn" style="font-size:13px;padding:8px 20px;border-radius:8px;background:#2563eb;color:white;border:none;cursor:pointer;font-weight:600;opacity:0.5;pointer-events:none;">
-                <i data-lucide="sparkles" style="width:14px;height:14px;"></i> Analizar y crear
-              </button>
-            </div>
+            <div id="lrn-files-list" style="margin-top:8px;display:flex;flex-direction:column;gap:4px;"></div>
           </div>` : ''}
+
+          <!-- Progress (hidden) -->
+          <div id="lrn-doc-progress" style="display:none;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <i data-lucide="loader-2" class="spin" style="width:14px;height:14px;color:#2563eb;"></i>
+              <span id="lrn-progress-text" style="font-size:12px;font-weight:600;color:var(--text-primary);">Procesando...</span>
+            </div>
+            <div style="height:4px;background:var(--border);border-radius:4px;overflow:hidden;">
+              <div id="lrn-doc-bar" style="height:100%;background:#2563eb;border-radius:4px;width:0%;transition:width 0.5s ease;"></div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button onclick="document.getElementById('learning-modal-overlay').remove()" class="btn" style="font-size:13px;padding:8px 16px;border-radius:8px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">Cancelar</button>
+            <button id="lrn-save-btn" onclick="_saveLearning(${isEdit ? "'"+existing.id+"'" : 'null'})" class="btn" style="font-size:13px;padding:8px 20px;border-radius:8px;background:#2563eb;color:white;border:none;cursor:pointer;font-weight:600;">
+              <i data-lucide="check" style="width:14px;height:14px;"></i> ${isEdit ? 'Guardar' : 'Crear'}
+            </button>
+          </div>
         </div>`;
       overlay.addEventListener('mousedown', e => { overlay._bg = e.target === overlay; });
       overlay.addEventListener('click', e => { if (overlay._bg && e.target === overlay) overlay.remove(); });
@@ -27352,101 +27855,170 @@
       if (isEdit) document.getElementById('learning-modal-title').focus();
     }
 
-    // Tab switching in learning modal
-    function _lrnSwitchTab(tab) {
-      const manualForm = document.getElementById('lrn-form-manual');
-      const docForm = document.getElementById('lrn-form-doc');
-      const tabManual = document.getElementById('lrn-tab-manual');
-      const tabDoc = document.getElementById('lrn-tab-doc');
-      if (!manualForm || !docForm) return;
-      if (tab === 'manual') {
-        manualForm.style.display = '';
-        docForm.style.display = 'none';
-        tabManual.style.background = '#2563eb'; tabManual.style.color = 'white';
-        tabDoc.style.background = 'var(--bg-secondary)'; tabDoc.style.color = 'var(--text-secondary)';
-      } else {
-        manualForm.style.display = 'none';
-        docForm.style.display = '';
-        tabDoc.style.background = '#2563eb'; tabDoc.style.color = 'white';
-        tabManual.style.background = 'var(--bg-secondary)'; tabManual.style.color = 'var(--text-secondary)';
+    function _lrnFilesSelected(input) {
+      if (!input.files || !input.files.length) return;
+      for (const f of input.files) {
+        if (!_lrnSelectedFiles.some(sf => sf.name === f.name && sf.size === f.size)) {
+          _lrnSelectedFiles.push(f);
+        }
       }
+      input.value = '';
+      _lrnRenderFilesList();
     }
 
-    let _lrnSelectedFile = null;
-    function _lrnFileSelected(input) {
-      if (input.files && input.files[0]) {
-        _lrnSelectedFile = input.files[0];
-        const nameEl = document.getElementById('lrn-doc-file-name');
-        if (nameEl) { nameEl.style.display = 'flex'; nameEl.innerHTML = '<i data-lucide="file-check" style="width:14px;height:14px;"></i> ' + _lrnSelectedFile.name; _createIcons(nameEl); }
-        const btn = document.getElementById('lrn-doc-upload-btn');
-        if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
-      }
-    }
     function _lrnHandleFileDrop(files) {
-      if (files && files[0]) {
-        const input = document.getElementById('lrn-doc-file-input');
-        const dt = new DataTransfer(); dt.items.add(files[0]);
-        if (input) { input.files = dt.files; _lrnFileSelected(input); }
-      }
-    }
-    async function _lrnUploadDoc() {
-      if (!_lrnSelectedFile) return;
-      const cat = document.getElementById('learning-doc-cat')?.value || 'general';
-      const progress = document.getElementById('lrn-doc-progress');
-      const bar = document.getElementById('lrn-doc-bar');
-      const btn = document.getElementById('lrn-doc-upload-btn');
-      if (progress) progress.style.display = '';
-      if (btn) { btn.style.opacity = '0.5'; btn.style.pointerEvents = 'none'; }
-      if (bar) bar.style.width = '30%';
-      try {
-        const formData = new FormData();
-        formData.append('file', _lrnSelectedFile);
-        formData.append('category', cat);
-        if (bar) bar.style.width = '60%';
-        const res = await fetch(API + '/api/ai/learnings/upload', { method: 'POST', body: formData });
-        if (bar) bar.style.width = '90%';
-        const json = await res.json();
-        if (bar) bar.style.width = '100%';
-        if (json.success) {
-          document.getElementById('learning-modal-overlay')?.remove();
-          showToast('success', 'Documento analizado', json.created + ' aprendizajes creados desde "' + _lrnSelectedFile.name + '"');
-          _lrnSelectedFile = null;
-          loadAILearnings();
-        } else {
-          showToast('error', 'Error', json.error);
-          if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
-          if (progress) progress.style.display = 'none';
+      if (!files || !files.length) return;
+      for (const f of files) {
+        if (!_lrnSelectedFiles.some(sf => sf.name === f.name && sf.size === f.size)) {
+          _lrnSelectedFiles.push(f);
         }
-      } catch (e) {
-        showToast('error', 'Error', e.message);
-        if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
-        if (progress) progress.style.display = 'none';
       }
+      _lrnRenderFilesList();
+    }
+
+    function _lrnRemoveFile(idx) {
+      _lrnSelectedFiles.splice(idx, 1);
+      _lrnRenderFilesList();
+    }
+
+    function _lrnRenderFilesList() {
+      const list = document.getElementById('lrn-files-list');
+      if (!list) return;
+      if (_lrnSelectedFiles.length === 0) { list.innerHTML = ''; return; }
+      list.innerHTML = _lrnSelectedFiles.map((f, i) => `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border);">
+          <i data-lucide="file-text" style="width:14px;height:14px;color:#2563eb;flex-shrink:0;"></i>
+          <span style="font-size:12px;font-weight:600;color:var(--text-primary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+          <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;">${(f.size/1024).toFixed(0)} KB</span>
+          <button onclick="_lrnRemoveFile(${i})" style="background:none;border:none;cursor:pointer;padding:2px;display:flex;color:var(--text-muted);" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">
+            <i data-lucide="x" style="width:14px;height:14px;"></i>
+          </button>
+        </div>`).join('');
+      _createIcons(list);
+    }
+
+    function _lrnUrlChanged() {
+      const input = document.getElementById('lrn-url-input');
+      const preview = document.getElementById('lrn-url-preview');
+      if (!input || !preview) return;
+      const url = input.value.trim();
+      if (!url) { preview.style.display = 'none'; return; }
+
+      let type = 'link', icon = 'globe', color = '#6b7280', label = 'Página web';
+      if (/docs\.google\.com\/document/.test(url)) { type = 'gdoc'; icon = 'file-text'; color = '#2563eb'; label = 'Google Docs'; }
+      else if (/docs\.google\.com\/spreadsheets/.test(url)) { type = 'gsheet'; icon = 'table'; color = '#10b981'; label = 'Google Sheets'; }
+      else if (/drive\.google\.com/.test(url)) { type = 'gdrive'; icon = 'hard-drive'; color = '#f59e0b'; label = 'Google Drive'; }
+
+      preview.style.display = 'flex';
+      preview.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:${color}08;border:1px solid ${color}30;border-radius:8px;">
+          <i data-lucide="${icon}" style="width:14px;height:14px;color:${color};flex-shrink:0;"></i>
+          <span style="font-size:11px;font-weight:600;color:${color};">${label}</span>
+          <span style="font-size:11px;color:var(--text-muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${url.length > 50 ? url.slice(0,50)+'...' : url}</span>
+          <button onclick="document.getElementById('lrn-url-input').value='';_lrnUrlChanged();" style="background:none;border:none;cursor:pointer;padding:2px;display:flex;color:var(--text-muted);" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">
+            <i data-lucide="x" style="width:14px;height:14px;"></i>
+          </button>
+        </div>`;
+      _createIcons(preview);
     }
 
     async function _saveLearning(id) {
       const cat = document.getElementById('learning-modal-cat').value;
       const title = document.getElementById('learning-modal-title').value.trim();
       const content = document.getElementById('learning-modal-content').value.trim();
-      if (!title || !content) { showToast('error','Error','Título y contenido requeridos'); return; }
+      const urlInput = document.getElementById('lrn-url-input');
+      const importUrl = urlInput ? urlInput.value.trim() : '';
+      const hasText = title && content;
+      const hasFiles = _lrnSelectedFiles.length > 0;
+      const hasUrl = importUrl.length > 0;
+
+      if (!hasText && !hasFiles && !hasUrl) { showToast('error','Error','Ingresa título y contenido, sube documentos, o pega un link'); return; }
+
+      const btn = document.getElementById('lrn-save-btn');
+      const progress = document.getElementById('lrn-doc-progress');
+      const bar = document.getElementById('lrn-doc-bar');
+      const progressText = document.getElementById('lrn-progress-text');
+      if (btn) { btn.style.opacity = '0.5'; btn.style.pointerEvents = 'none'; }
+
+      let totalDocsCreated = 0;
+      let errors = [];
 
       try {
-        const url = id ? `${API}/api/ai/learnings/${id}` : `${API}/api/ai/learnings`;
-        const method = id ? 'PUT' : 'POST';
-        const res = await fetch(url, {
-          method, headers: { 'Content-Type':'application/json' },
-          body: JSON.stringify({ category: cat, title, content })
-        });
-        const json = await res.json();
-        if (json.success) {
-          document.getElementById('learning-modal-overlay')?.remove();
-          showToast('success','Listo', id ? 'Aprendizaje actualizado' : 'Aprendizaje creado');
-          loadAILearnings();
-        } else {
-          showToast('error','Error', json.error);
+        // 1) Save manual learning if text provided
+        if (hasText) {
+          if (progress && !hasFiles && !hasUrl) { progress.style.display = ''; if (progressText) progressText.textContent = 'Guardando...'; if (bar) bar.style.width = '50%'; }
+          const url = id ? `${API}/api/ai/learnings/${id}` : `${API}/api/ai/learnings`;
+          const method = id ? 'PUT' : 'POST';
+          const res = await fetch(url, { method, headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ category: cat, title, content }) });
+          const json = await res.json();
+          if (!json.success) errors.push(json.error || 'Error al guardar');
+          if (!hasFiles && !hasUrl && bar) bar.style.width = '100%';
         }
+
+        // 2) Import from URL if provided (only in create mode)
+        if (hasUrl && !id) {
+          if (progress) { progress.style.display = ''; _createIcons(progress); }
+          if (progressText) progressText.textContent = 'Importando desde URL...';
+          if (bar) bar.style.width = hasFiles ? '15%' : '40%';
+          try {
+            const res = await fetch(API + '/api/ai/learnings/import-url', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: importUrl, category: cat })
+            });
+            const json = await res.json();
+            if (json.success && !json.parseError) {
+              totalDocsCreated += (json.total || 0);
+            } else if (json.parseError) {
+              errors.push('URL procesada pero sin aprendizajes estructurados');
+            } else {
+              errors.push('URL: ' + (json.error || 'Error'));
+            }
+          } catch (e) { errors.push('URL: ' + e.message); }
+          if (!hasFiles && bar) bar.style.width = '100%';
+        }
+
+        // 3) Upload documents if any (only in create mode)
+        if (hasFiles && !id) {
+          if (progress) { progress.style.display = ''; _createIcons(progress); }
+          for (let i = 0; i < _lrnSelectedFiles.length; i++) {
+            const file = _lrnSelectedFiles[i];
+            const pct = hasUrl ? 50 + Math.round((i / _lrnSelectedFiles.length) * 50) : Math.round((i / _lrnSelectedFiles.length) * 100);
+            if (progressText) progressText.textContent = `Analizando ${file.name}... (${i+1}/${_lrnSelectedFiles.length})`;
+            if (bar) bar.style.width = Math.max(10, pct) + '%';
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('category', cat);
+            try {
+              const res = await fetch(API + '/api/ai/learnings/upload', { method: 'POST', body: formData });
+              const json = await res.json();
+              if (json.success) { totalDocsCreated += (json.total || 0); } else { errors.push(file.name + ': ' + (json.error || 'Error')); }
+            } catch (e) { errors.push(file.name + ': ' + e.message); }
+          }
+          if (bar) bar.style.width = '100%';
+        }
+
+        // Done
+        document.getElementById('learning-modal-overlay')?.remove();
+        _lrnSelectedFiles = [];
+
+        if (errors.length > 0) {
+          showToast('error', 'Errores', errors.join('; '));
+        }
+        const hasSources = hasFiles || hasUrl;
+        if (hasText && !hasSources) {
+          showToast('success', 'Listo', id ? 'Aprendizaje actualizado' : 'Aprendizaje creado');
+        } else if (hasText && hasSources) {
+          showToast('success', 'Listo', `Aprendizaje creado + ${totalDocsCreated} desde fuentes externas`);
+        } else if (hasSources) {
+          showToast('success', 'Importación completada', `${totalDocsCreated} aprendizajes creados`);
+        }
+        loadAILearnings();
       } catch (e) {
-        showToast('error','Error', e.message);
+        showToast('error', 'Error', e.message);
+        if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
+        if (progress) progress.style.display = 'none';
       }
     }
 
@@ -27474,96 +28046,7 @@
       } catch (e) { showToast('error','Error',e.message); }
     }
 
-    // ── Upload Document for AI Learning ─────────────────────
-    async function _uploadLearningDoc(input) {
-      const file = input.files[0];
-      if (!file) return;
-      input.value = ''; // reset para permitir resubir
-
-      // Mostrar modal de categoría + preview
-      const overlay = document.createElement('div');
-      overlay.id = 'learning-upload-overlay';
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
-      overlay.innerHTML = `
-        <div style="background:var(--bg-card);border-radius:16px;padding:24px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);border:1px solid var(--border);">
-          <h3 style="margin:0 0 16px;font-size:16px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
-            <i data-lucide="file-text" style="width:18px;height:18px;color:#6366f1;"></i>
-            Cargar Documento
-          </h3>
-          <div style="padding:12px;background:var(--bg-secondary);border-radius:10px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
-            <i data-lucide="file" style="width:20px;height:20px;color:var(--text-muted);"></i>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${file.name}</div>
-              <div style="font-size:11px;color:var(--text-muted);">${(file.size / 1024).toFixed(1)} KB</div>
-            </div>
-          </div>
-          <div style="margin-bottom:14px;">
-            <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;">Categoría</label>
-            <select id="upload-doc-cat" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text-primary);font-size:13px;margin-top:4px;">
-              <option value="general">General</option>
-              <option value="ventas">Ventas</option>
-              <option value="rutas">Rutas</option>
-              <option value="clientes">Clientes</option>
-              <option value="productos">Productos</option>
-              <option value="politicas">Políticas</option>
-            </select>
-          </div>
-          <p style="font-size:11px;color:var(--text-muted);margin:0 0 16px;">La IA leerá el documento, extraerá los puntos clave y los guardará como aprendizajes automáticamente.</p>
-          <div style="display:flex;gap:8px;justify-content:flex-end;">
-            <button onclick="document.getElementById('learning-upload-overlay').remove()" class="btn" style="font-size:13px;padding:8px 16px;border-radius:8px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">Cancelar</button>
-            <button id="upload-doc-btn" onclick="_processDocUpload()" class="btn btn-primary" style="font-size:13px;padding:8px 20px;border-radius:8px;">
-              <i data-lucide="sparkles" style="width:14px;height:14px;"></i> Procesar con IA
-            </button>
-          </div>
-        </div>`;
-      overlay.addEventListener('mousedown', e => { overlay._bg = e.target === overlay; });
-      overlay.addEventListener('click', e => { if (overlay._bg && e.target === overlay) overlay.remove(); });
-      document.body.appendChild(overlay);
-      _createIcons(overlay);
-
-      // Guardar referencia al archivo
-      overlay._file = file;
-    }
-
-    async function _processDocUpload() {
-      const overlay = document.getElementById('learning-upload-overlay');
-      if (!overlay || !overlay._file) return;
-      const file = overlay._file;
-      const cat = document.getElementById('upload-doc-cat').value;
-      const btn = document.getElementById('upload-doc-btn');
-
-      // Loading state
-      btn.disabled = true;
-      btn.innerHTML = '<div class="wa-typing-dots" style="justify-content:center;"><span></span><span></span><span></span></div> Procesando...';
-
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('category', cat);
-
-        const res = await fetch(`${API}/api/ai/learnings/upload`, {
-          method: 'POST',
-          body: formData
-        });
-        const json = await res.json();
-
-        overlay.remove();
-
-        if (json.success) {
-          if (json.parseError) {
-            showToast('info', 'Documento procesado', 'La IA analizó el documento pero no pudo estructurar aprendizajes. Revisa el contenido.');
-          } else {
-            showToast('success', 'Documento procesado', `Se crearon ${json.total} aprendizajes desde "${json.fileName}"`);
-          }
-          loadAILearnings();
-        } else {
-          showToast('error', 'Error', json.error);
-        }
-      } catch (e) {
-        overlay.remove();
-        showToast('error', 'Error', e.message);
-      }
-    }
+    // _uploadLearningDoc and _processDocUpload removed — unified into _openLearningModal + _saveLearning
 
     // ── AI Usage Stats ──────────────────────────────────────
     async function loadAIUsage() {

@@ -1877,7 +1877,7 @@ class RoutesService {
     // Query 1: clientes asignados al vendedor con coords
     let query = supabase
       .from('clients')
-      .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, segment, priority, zone, last_visit_at, visit_frequency_days, consecutive_no_sale, opening_time, closing_time')
+      .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, segment, priority, zone, last_visit_at, visit_frequency_days, consecutive_no_sale')
       .eq('assigned_user_id', userId)
       .not('lat', 'is', null)
       .not('lng', 'is', null);
@@ -1898,7 +1898,7 @@ class RoutesService {
       if (communes.length > 0) {
         let uQuery = supabase
           .from('clients')
-          .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, segment, priority, zone, last_visit_at, visit_frequency_days, consecutive_no_sale, opening_time, closing_time')
+          .select('id, external_id, name, fantasy_name, address, commune, lat, lng, segmentation, segment, priority, zone, last_visit_at, visit_frequency_days, consecutive_no_sale')
           .is('assigned_user_id', null)
           .not('lat', 'is', null)
           .not('lng', 'is', null);
