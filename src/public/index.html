@@ -17060,13 +17060,12 @@
         const geo = await _reverseGeocode(_terrenoGpsPos.lat, _terrenoGpsPos.lng);
         const body = { lat: _terrenoGpsPos.lat, lng: _terrenoGpsPos.lng };
 
-        // Only set address fields if client doesn't already have them or if geo returned data
+        // Always update address from reverse geocode
         if (geo) {
-          const client = _clientById.get(clientId);
-          if (!client?.address || !client.address.trim()) body.address = geo.address;
-          if (!client?.commune || !client.commune.trim()) body.commune = geo.commune;
-          if (!client?.city || !client.city.trim()) body.city = geo.city;
-          if (!client?.region || !client.region.trim()) body.region = geo.region;
+          body.address = geo.address;
+          body.commune = geo.commune;
+          body.city = geo.city;
+          body.region = geo.region;
         }
 
         const res = await fetch(`${API}/api/clients/${clientId}`, {
@@ -17201,11 +17200,10 @@
         const body = { lat, lng };
         const geo = await _reverseGeocode(lat, lng);
         if (geo) {
-          const client = _clientById.get(editingClientId);
-          if (!client?.address || !client.address.trim()) body.address = geo.address;
-          if (!client?.commune || !client.commune.trim()) body.commune = geo.commune;
-          if (!client?.city || !client.city.trim()) body.city = geo.city;
-          if (!client?.region || !client.region.trim()) body.region = geo.region;
+          body.address = geo.address;
+          body.commune = geo.commune;
+          body.city = geo.city;
+          body.region = geo.region;
         }
 
         const res = await fetch(`${API}/api/clients/${editingClientId}`, {
