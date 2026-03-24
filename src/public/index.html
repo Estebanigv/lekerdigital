@@ -11633,8 +11633,8 @@
           }
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 60000
+            timeout: 15000,
+            maximumAge: 0
           });
         });
         lat = position.coords.latitude;
@@ -16187,7 +16187,7 @@
           badge.innerHTML = `<i data-lucide="alert-triangle" style="width:14px;height:14px;"></i> GPS error <button onclick="_updateTerrenoGps()" style="margin-left:6px;padding:2px 8px;font-size:10px;border:1px solid rgba(255,255,255,0.4);background:transparent;color:white;border-radius:4px;cursor:pointer;">Reintentar</button>`;
           _createIcons();
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
     }
 
@@ -17338,7 +17338,7 @@
         // Get GPS if available
         let lat = null, lng = null;
         try {
-          const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000, maximumAge: 30000 }));
+          const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }));
           lat = pos.coords.latitude;
           lng = pos.coords.longitude;
         } catch (e) { /* GPS not required */ }
