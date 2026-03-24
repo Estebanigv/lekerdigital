@@ -10819,6 +10819,10 @@
         if (!_crmFiltered || _crmFiltered.length === 0 || document.getElementById('panel-crm')?.classList.contains('active')) {
           renderCrmPanel();
         }
+        // Render historial if active
+        if (document.getElementById('panel-historial')?.classList.contains('active')) {
+          _renderHistorialPanel();
+        }
         renderProductsTable(products.data);
         renderPricesTable(prices.data);
 
