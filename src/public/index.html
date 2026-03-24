@@ -16562,6 +16562,11 @@
               <button onclick="terrenoConfirmOk('${client.id}')" style="width:100%;padding:11px;border:1.5px solid #10b981;background:rgba(16,185,129,0.06);color:#10b981;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;">
                 <i data-lucide="check-circle" style="width:18px;height:18px;"></i> Confirmar dirección correcta
               </button>` : ''}
+
+              ${isAdmin ? `
+              <button onclick="_terrenoDeleteClient('${client.id}', '${name.replace(/'/g, "\\'")}')" style="width:100%;padding:10px;border:1px solid rgba(239,68,68,0.2);background:rgba(239,68,68,0.04);color:#ef4444;border-radius:10px;cursor:pointer;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;">
+                <i data-lucide="trash-2" style="width:15px;height:15px;"></i> Eliminar cliente
+              </button>` : ''}
             </div>
           </div>
         </div>`;
@@ -16700,6 +16705,30 @@
       }, 200);
     }
 
+    async function _reverseGeocode(lat, lng) {
+      if (typeof google === 'undefined' || !google.maps) return null;
+      try {
+        const geocoder = new google.maps.Geocoder();
+        const result = await new Promise((resolve, reject) => {
+          geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+            if (status === 'OK' && results[0]) resolve(results[0]);
+            else reject(new Error(status));
+          });
+        });
+        let address = result.formatted_address || '';
+        let commune = '', city = '', region = '';
+        for (const comp of result.address_components) {
+          if (comp.types.includes('locality') || comp.types.includes('administrative_area_level_3')) commune = comp.long_name;
+          if (comp.types.includes('administrative_area_level_2')) city = comp.long_name;
+          if (comp.types.includes('administrative_area_level_1')) region = comp.long_name;
+        }
+        return { address, commune, city, region };
+      } catch (e) {
+        console.warn('Reverse geocode failed:', e);
+        return null;
+      }
+    }
+
     async function _terrenoConfirmSaveGps(clientId) {
       const btn = document.getElementById('terreno-confirm-save-btn');
       if (btn) {
@@ -16710,19 +16739,33 @@
       }
 
       try {
+        // Reverse geocode to get address
+        const geo = await _reverseGeocode(_terrenoGpsPos.lat, _terrenoGpsPos.lng);
+        const body = { lat: _terrenoGpsPos.lat, lng: _terrenoGpsPos.lng };
+
+        // Only set address fields if client doesn't already have them or if geo returned data
+        if (geo) {
+          const client = _clientById.get(clientId);
+          if (!client?.address || !client.address.trim()) body.address = geo.address;
+          if (!client?.commune || !client.commune.trim()) body.commune = geo.commune;
+          if (!client?.city || !client.city.trim()) body.city = geo.city;
+          if (!client?.region || !client.region.trim()) body.region = geo.region;
+        }
+
         const res = await fetch(`${API}/api/clients/${clientId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lat: _terrenoGpsPos.lat, lng: _terrenoGpsPos.lng })
+          body: JSON.stringify(body)
         });
         const data = await res.json();
         if (data.success) {
           const idx = allClients.findIndex(c => c.id === clientId);
           if (idx >= 0) {
-            allClients[idx] = { ...allClients[idx], ...data.data, lat: _terrenoGpsPos.lat, lng: _terrenoGpsPos.lng };
+            allClients[idx] = { ...allClients[idx], ...data.data, ...body };
           }
           _rebuildClientIndexes();
-          showToast('success', 'GPS guardado', `Ubicación actualizada: ${_terrenoGpsPos.lat.toFixed(5)}, ${_terrenoGpsPos.lng.toFixed(5)} (±${Math.round(_terrenoGpsPos.accuracy)}m)`);
+          const addrMsg = geo?.address ? ` — ${geo.address}` : '';
+          showToast('success', 'GPS guardado', `Ubicación actualizada (±${Math.round(_terrenoGpsPos.accuracy)}m)${addrMsg}`);
           document.getElementById('terreno-detail-modal')?.remove();
           _renderTerrenoStats();
           filterTerrenoClients();
@@ -16733,6 +16776,27 @@
       } catch (e) {
         showToast('error', 'Error', e.message);
         if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = '<i data-lucide="check-circle" style="width:20px;height:20px;"></i> Reintentar'; _createIcons(); }
+      }
+    }
+
+    async function _terrenoDeleteClient(clientId, clientName) {
+      if (!confirm(`¿Estás seguro de eliminar al cliente "${clientName}"?\n\nEsta acción no se puede deshacer.`)) return;
+
+      try {
+        const res = await fetch(`${API}/api/clients/${clientId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          allClients = allClients.filter(c => c.id !== clientId);
+          _rebuildClientIndexes();
+          showToast('success', 'Eliminado', `Cliente "${clientName}" eliminado`);
+          document.getElementById('terreno-detail-modal')?.remove();
+          _renderTerrenoStats();
+          filterTerrenoClients();
+        } else {
+          showToast('error', 'Error', data.error || 'No se pudo eliminar');
+        }
+      } catch (e) {
+        showToast('error', 'Error', e.message);
       }
     }
 
@@ -25768,7 +25832,7 @@
       _createIcons();
 
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        async (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           const acc = Math.round(pos.coords.accuracy);
@@ -25783,6 +25847,24 @@
           btn.style.background = 'rgba(16,185,129,0.04)';
           btn.style.color = '#059669';
           _createIcons();
+
+          // Reverse geocode to auto-fill address
+          const geo = await _reverseGeocode(lat, lng);
+          if (geo) {
+            const addrEl = document.getElementById('cc-address');
+            const commEl = document.getElementById('cc-commune');
+            const cityEl = document.getElementById('cc-city');
+            const regEl = document.getElementById('cc-region');
+            if (addrEl && !addrEl.value.trim()) addrEl.value = geo.address;
+            if (commEl && !commEl.value.trim()) commEl.value = geo.commune;
+            if (cityEl && !cityEl.value.trim()) cityEl.value = geo.city;
+            if (regEl && !regEl.value && geo.region) {
+              const opts = Array.from(regEl.options);
+              const match = opts.find(o => o.value && geo.region.toLowerCase().includes(o.value.toLowerCase().replace('región ', '').replace('de ', '')));
+              if (match) regEl.value = match.value;
+              else { const o = document.createElement('option'); o.value = geo.region; o.textContent = geo.region; regEl.appendChild(o); regEl.value = geo.region; }
+            }
+          }
         },
         (err) => {
           const msgs = { 1: 'Permiso denegado', 2: 'GPS no disponible', 3: 'Tiempo agotado' };
