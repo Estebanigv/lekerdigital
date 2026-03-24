@@ -17097,8 +17097,46 @@
       }
     }
 
-    async function _terrenoDeleteClient(clientId, clientName) {
-      if (!confirm(`¿Estás seguro de eliminar al cliente "${clientName}"?\n\nEsta acción no se puede deshacer.`)) return;
+    function _terrenoDeleteClient(clientId, clientName) {
+      const existing = document.getElementById('modal-confirm-delete');
+      if (existing) existing.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'modal-confirm-delete';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999999;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+      overlay.innerHTML = `
+        <div onclick="event.stopPropagation()" style="background:var(--bg-card);border-radius:14px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);overflow:hidden;">
+          <div style="padding:18px 20px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:white;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <i data-lucide="alert-triangle" style="width:22px;height:22px;"></i>
+              <div style="font-size:16px;font-weight:700;">Eliminar cliente</div>
+            </div>
+          </div>
+          <div style="padding:20px;">
+            <p style="margin:0 0 8px;font-size:14px;color:var(--text-primary);">¿Estás seguro de eliminar a:</p>
+            <div style="padding:10px 14px;background:var(--bg-secondary,#f9fafb);border-radius:8px;border:1px solid var(--border);margin-bottom:16px;">
+              <div style="font-size:14px;font-weight:700;color:var(--text-primary);">${clientName}</div>
+            </div>
+            <p style="margin:0 0 16px;font-size:12px;color:#ef4444;font-weight:500;">Esta acción no se puede deshacer.</p>
+            <div style="display:flex;gap:8px;">
+              <button onclick="document.getElementById('modal-confirm-delete').remove()" style="flex:1;padding:11px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;">Cancelar</button>
+              <button onclick="_executeDeleteClient('${clientId}','${clientName.replace(/'/g, "\\'")}')" style="flex:1;padding:11px;border:none;background:linear-gradient(135deg,#dc2626,#b91c1c);color:white;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;">
+                <i data-lucide="trash-2" style="width:15px;height:15px;"></i> Eliminar
+              </button>
+            </div>
+          </div>
+        </div>`;
+
+      overlay.addEventListener('mousedown', (e) => { overlay._mdOnBg = e.target === overlay; });
+      overlay.addEventListener('click', (e) => { if (overlay._mdOnBg && e.target === overlay) overlay.remove(); });
+      document.body.appendChild(overlay);
+      _createIcons();
+    }
+
+    async function _executeDeleteClient(clientId, clientName) {
+      const btn = document.querySelector('#modal-confirm-delete button[onclick*="executeDelete"]');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="spin" style="width:15px;height:15px;"></i> Eliminando...'; _createIcons(); }
 
       try {
         const res = await fetch(`${API}/api/clients/${clientId}`, { method: 'DELETE' });
@@ -17107,15 +17145,19 @@
           allClients = allClients.filter(c => c.id !== clientId);
           _rebuildClientIndexes();
           showToast('success', 'Eliminado', `Cliente "${clientName}" eliminado`);
+          document.getElementById('modal-confirm-delete')?.remove();
           document.getElementById('terreno-detail-modal')?.remove();
           _renderTerrenoStats();
           _renderTerrenoHistory();
+          _renderHistorialPanel();
           filterTerrenoClients();
         } else {
           showToast('error', 'Error', data.error || 'No se pudo eliminar');
+          if (btn) { btn.disabled = false; btn.textContent = 'Reintentar'; }
         }
       } catch (e) {
         showToast('error', 'Error', e.message);
+        if (btn) { btn.disabled = false; btn.textContent = 'Reintentar'; }
       }
     }
 
