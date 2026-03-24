@@ -16326,8 +16326,9 @@
       if (dateFilter) {
         const now = new Date();
         filtered = filtered.filter(c => {
-          if (!c.address_updated_at) return false;
-          const d = new Date(c.address_updated_at);
+          const lastDate = _clientLastDate(c);
+          if (!lastDate) return false;
+          const d = new Date(lastDate);
           const diffDays = Math.floor((now - d) / 86400000);
           if (dateFilter === 'today') return d.toDateString() === now.toDateString();
           if (dateFilter === 'yesterday') { const y = new Date(now); y.setDate(y.getDate()-1); return d.toDateString() === y.toDateString(); }
@@ -16349,7 +16350,7 @@
 
       // Sort
       if (sortBy === 'recent') {
-        filtered.sort((a, b) => new Date(b.address_updated_at || 0) - new Date(a.address_updated_at || 0));
+        filtered.sort((a, b) => new Date(_clientLastDate(b) || 0) - new Date(_clientLastDate(a) || 0));
       } else if (sortBy === 'near' && _terrenoGpsPos) {
         filtered.forEach(c => {
           c._dist = (c.lat && c.lng) ? _haversineKm(_terrenoGpsPos.lat, _terrenoGpsPos.lng, c.lat, c.lng) : 99999;
@@ -16399,11 +16400,11 @@
       const userFilter = document.getElementById('historial-user-filter')?.value || '';
       const now = new Date();
 
-      let recent = allClients.filter(c => c.address_updated_at).sort((a, b) => new Date(b.address_updated_at) - new Date(a.address_updated_at));
+      let recent = allClients.filter(c => _clientLastDate(c)).sort((a, b) => new Date(_clientLastDate(b)) - new Date(_clientLastDate(a)));
 
       if (range !== 'all') {
         recent = recent.filter(c => {
-          const d = new Date(c.address_updated_at);
+          const d = new Date(_clientLastDate(c));
           const diffDays = Math.floor((now - d) / 86400000);
           if (range === 'today') return d.toDateString() === now.toDateString();
           if (range === 'yesterday') { const y = new Date(now); y.setDate(y.getDate()-1); return d.toDateString() === y.toDateString(); }
@@ -16450,7 +16451,7 @@
       // Group by date
       const groups = {};
       recent.forEach(c => {
-        const d = new Date(c.address_updated_at);
+        const d = new Date(_clientLastDate(c));
         const key = d.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
         if (!groups[key]) groups[key] = [];
         groups[key].push(c);
@@ -16467,8 +16468,9 @@
           const name = c.fantasy_name || c.name || 'Sin nombre';
           const hasGps = c.lat && c.lng;
           const updater = vendorMap[c.address_updated_by] || 'Sistema';
-          const timeStr = new Date(c.address_updated_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-          const tag = _clientDateTag(c.address_updated_at);
+          const lastDate = _clientLastDate(c);
+          const timeStr = new Date(lastDate).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+          const tag = _clientDateTag(lastDate);
           const tagHtml = tag ? `<span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:4px;background:${tag.bg};color:${tag.color};">${tag.text}</span>` : '';
 
           return `<div onclick="openEditClientFullModal('${c.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
@@ -16502,11 +16504,11 @@
       const range = document.getElementById('terreno-history-range')?.value || 'week';
       const now = new Date();
 
-      let recent = allClients.filter(c => c.address_updated_at).sort((a, b) => new Date(b.address_updated_at) - new Date(a.address_updated_at));
+      let recent = allClients.filter(c => _clientLastDate(c)).sort((a, b) => new Date(_clientLastDate(b)) - new Date(_clientLastDate(a)));
 
       if (range !== 'all') {
         recent = recent.filter(c => {
-          const d = new Date(c.address_updated_at);
+          const d = new Date(_clientLastDate(c));
           const diffDays = Math.floor((now - d) / 86400000);
           if (range === 'today') return d.toDateString() === now.toDateString();
           if (range === 'week') return diffDays <= 7;
@@ -16529,10 +16531,11 @@
         const name = c.fantasy_name || c.name || 'Sin nombre';
         const hasGps = c.lat && c.lng;
         const updater = vendorMap[c.address_updated_by] || '';
-        const dateObj = new Date(c.address_updated_at);
+        const lastDate = _clientLastDate(c);
+        const dateObj = new Date(lastDate);
         const dateStr = dateObj.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
         const timeStr = dateObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-        const tag = _clientDateTag(c.address_updated_at);
+        const tag = _clientDateTag(lastDate);
         const tagHtml = tag ? `<span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:4px;background:${tag.bg};color:${tag.color};">${tag.text}</span>` : '';
 
         return `<div onclick="openTerrenoClientDetail('${c.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
@@ -16552,6 +16555,10 @@
         </div>`;
       }).join('');
       _createIcons();
+    }
+
+    function _clientLastDate(c) {
+      return c.address_updated_at || c.created_at || '';
     }
 
     function _clientDateTag(dateStr) {
@@ -16644,7 +16651,7 @@
 
         return `<tr style="cursor:pointer;" onclick="openTerrenoClientDetail('${c.id}')">
           <td style="padding:8px 10px;white-space:nowrap;"><code style="background:var(--bg-hover);padding:2px 6px;border-radius:4px;font-size:10px;">${c.external_id || ''}</code></td>
-          <td style="padding:8px 10px;"><div style="font-weight:600;font-size:12px;">${name}</div>${_clientDateBadgeHtml(c.address_updated_at)}${c.address_updated_by ? `<div style="font-size:9px;color:var(--text-muted);margin-top:1px;">por ${_getUpdaterName(c.address_updated_by)}</div>` : ''}</td>
+          <td style="padding:8px 10px;"><span style="font-weight:600;font-size:12px;">${name}</span> ${_clientDateBadgeHtml(_clientLastDate(c))}</td>
           <td style="padding:8px 10px;font-size:11px;color:var(--text-muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${c.address || ''}">${c.address || '<em>Sin dirección</em>'} <span style="color:var(--text-muted);opacity:0.6;">· ${c.commune || ''}</span></td>
           <td style="padding:8px 10px;font-size:11px;">${c.zone || '—'}</td>
           <td style="padding:8px 10px;font-size:11px;color:#6366f1;">${vendor}</td>
@@ -16720,7 +16727,7 @@
                 <code style="background:var(--bg-hover);padding:1px 6px;border-radius:4px;font-size:10px;color:var(--text-muted);">${c.external_id || ''}</code>
                 ${gpsIcon}
                 ${distBadge}
-                ${_clientDateBadgeHtml(c.address_updated_at)}
+                ${_clientDateBadgeHtml(_clientLastDate(c))}
               </div>
             </div>
             <div style="display:flex;gap:4px;flex-shrink:0;">
@@ -16731,7 +16738,6 @@
           <div style="margin-top:6px;font-size:11px;color:var(--text-muted);line-height:1.4;display:flex;align-items:center;gap:4px;">
             <i data-lucide="map-pin" style="width:10px;height:10px;flex-shrink:0;opacity:0.5;"></i>
             <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.address || 'Sin dirección'}${c.commune ? ' · ' + c.commune : ''}</span>
-            ${c.address_updated_by ? `<span style="font-size:9px;opacity:0.7;margin-left:4px;">· ${_getUpdaterName(c.address_updated_by)}</span>` : ''}
           </div>
         </div>`;
       }).join('');
