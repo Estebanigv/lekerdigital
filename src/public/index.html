@@ -4932,7 +4932,7 @@
               <span>Google Ads</span>
             </div>
             <div class="nav-subitem" data-tab="marketing" data-subtab="meta-ads">
-              <i data-lucide="facebook" style="width: 16px; height: 16px;"></i>
+              <i data-lucide="megaphone" style="width: 16px; height: 16px;"></i>
               <span>Meta Ads</span>
             </div>
           </div>
@@ -7706,12 +7706,12 @@
         <div class="data-subpanel" id="subpanel-meta-ads">
           <div class="card">
             <div class="card-header">
-              <h3><i data-lucide="facebook" style="width: 18px; height: 18px;"></i> Meta Ads (Facebook & Instagram)</h3>
+              <h3><i data-lucide="megaphone" style="width: 18px; height: 18px;"></i> Meta Ads (Facebook & Instagram)</h3>
             </div>
             <div class="card-body">
               <div style="text-align: center; padding: 40px;">
                 <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: #0081FB; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
-                  <i data-lucide="facebook" style="width: 40px; height: 40px; color: white;"></i>
+                  <i data-lucide="megaphone" style="width: 40px; height: 40px; color: white;"></i>
                 </div>
                 <h3 style="margin-bottom: 8px;">Meta Pixel</h3>
                 <p style="color: var(--text-muted); margin-bottom: 20px;">Conecta Meta Pixel para rastrear conversiones de Facebook e Instagram</p>
@@ -25965,10 +25965,6 @@
                 <p style="font-size:11px;color:var(--text-muted);margin:0;">Ve al cliente y usa "Agregar GPS" para capturar la ubicación exacta desde tu celular.</p>`}
               </div>
               ` : ''}
-              <div class="form-group" style="grid-column:span 2;">
-                <label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;display:flex;align-items:center;gap:6px;"><i data-lucide="sticky-note" style="width:12px;height:12px;color:var(--text-muted);"></i> Notas internas</label>
-                <textarea id="ec-notes" class="form-control" rows="3" style="font-size:13px;resize:vertical;" ${isAdmin ? '' : 'disabled'} placeholder="Observaciones, recordatorios, info de contacto...">${client.notes || ''}</textarea>
-              </div>
             </div>
             ${client.address_updated_at ? `<div style="margin-top:12px;padding:8px 12px;background:var(--bg-hover);border-radius:8px;font-size:11px;color:var(--text-muted);">Última modificación: ${new Date(client.address_updated_at).toLocaleString('es-CL')}</div>` : ''}
           </div>
@@ -26015,8 +26011,7 @@
         zone: document.getElementById('ec-zone').value.trim() || null,
         segment: document.getElementById('ec-segment').value || null,
         assigned_user_id: document.getElementById('ec-vendor').value || null,
-        geo_link: document.getElementById('ec-geolink').value.trim() || null,
-        notes: document.getElementById('ec-notes')?.value.trim() || null
+        geo_link: document.getElementById('ec-geolink').value.trim() || null
       };
 
       if (!body.name && !body.fantasy_name) {
