@@ -4661,6 +4661,64 @@
       /* TOPBAR ACTIONS: ocultar texto, solo íconos */
       .topbar-user-name { display: none !important; }
     }
+
+    /* ====== TERRENO PANEL RESPONSIVE ====== */
+    @media (max-width: 768px) {
+      /* Stats: 2x2 grid compacto */
+      #terreno-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+      }
+      #terreno-stats .card .card-body {
+        padding: 10px 12px !important;
+      }
+      #terreno-stats .card .card-body div:nth-child(2) {
+        font-size: 18px !important;
+      }
+
+      /* Filtros: 2x2 grid */
+      #panel-terreno .card-body > div[style*="display:flex"][style*="flex-wrap"] {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+      }
+      #panel-terreno .card-body > div[style*="display:flex"][style*="flex-wrap"] > div[style*="position:relative"] {
+        grid-column: 1 / -1 !important;
+        min-width: 0 !important;
+      }
+      #panel-terreno .card-body > div[style*="display:flex"][style*="flex-wrap"] select {
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+
+      /* Header terreno */
+      #panel-terreno > .card:first-child .card-body {
+        padding: 12px 14px !important;
+      }
+      #panel-terreno > .card:first-child .card-body div[style*="font-size: 20px"] {
+        font-size: 16px !important;
+      }
+
+      /* Terreno detail modal */
+      .terreno-detail-grid {
+        grid-template-columns: 1fr !important;
+      }
+      #terreno-detail-modal > div[onclick] {
+        max-width: 100% !important;
+        border-radius: 12px !important;
+      }
+
+      /* Quick GPS map height */
+      #terreno-confirm-map {
+        height: 200px !important;
+      }
+
+      /* GPS badge */
+      #terreno-gps-badge {
+        font-size: 10px !important;
+        padding: 4px 10px !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -6819,8 +6877,8 @@
           </div>
         </div>
 
-        <!-- Tabla de clientes -->
-        <div class="card">
+        <!-- Tabla de clientes (desktop) -->
+        <div class="card" id="terreno-table-wrapper">
           <div class="card-body" style="padding:0;">
             <div style="overflow-x:auto;">
               <table class="data-table" id="terreno-table">
@@ -6844,8 +6902,14 @@
                 </tbody>
               </table>
             </div>
-            <div id="terreno-pagination" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid var(--border);font-size:13px;color:var(--text-muted);"></div>
+            <div id="terreno-pagination" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid var(--border);font-size:13px;color:var(--text-muted);flex-wrap:wrap;gap:8px;"></div>
           </div>
+        </div>
+
+        <!-- Cards de clientes (mobile) -->
+        <div id="terreno-cards-wrapper" style="display:none;">
+          <div id="terreno-cards-body" style="display:flex;flex-direction:column;gap:8px;"></div>
+          <div id="terreno-cards-pagination" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px;color:var(--text-muted);flex-wrap:wrap;gap:8px;"></div>
         </div>
       </div>
 
@@ -16189,7 +16253,25 @@
       _renderTerrenoPage();
     }
 
+    function _isMobileTerreno() { return window.innerWidth <= 768; }
+
     function _renderTerrenoPage() {
+      const isMobile = _isMobileTerreno();
+      const tableWrap = document.getElementById('terreno-table-wrapper');
+      const cardsWrap = document.getElementById('terreno-cards-wrapper');
+
+      if (tableWrap) tableWrap.style.display = isMobile ? 'none' : '';
+      if (cardsWrap) cardsWrap.style.display = isMobile ? '' : 'none';
+
+      if (isMobile) {
+        _renderTerrenoCards();
+      } else {
+        _renderTerrenoTable();
+      }
+      _createIcons();
+    }
+
+    function _renderTerrenoTable() {
       const tbody = document.getElementById('terreno-table-body');
       const pagDiv = document.getElementById('terreno-pagination');
       if (!tbody) return;
@@ -16244,17 +16326,88 @@
         </tr>`;
       }).join('');
 
-      // Pagination
-      if (pagDiv) {
-        pagDiv.innerHTML = `
-          <span>Pág. ${_terrenoPage + 1} de ${totalPages} (${filtered.length} clientes)</span>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn-secondary" style="padding:4px 10px;font-size:12px;" ${_terrenoPage === 0 ? 'disabled' : ''} onclick="_terrenoPage--;_renderTerrenoPage();_createIcons();">← Anterior</button>
-            <button class="btn btn-secondary" style="padding:4px 10px;font-size:12px;" ${_terrenoPage >= totalPages - 1 ? 'disabled' : ''} onclick="_terrenoPage++;_renderTerrenoPage();_createIcons();">Siguiente →</button>
-          </div>`;
+      _renderTerrenoPagination(pagDiv, filtered.length);
+    }
+
+    function _renderTerrenoCards() {
+      const container = document.getElementById('terreno-cards-body');
+      const pagDiv = document.getElementById('terreno-cards-pagination');
+      if (!container) return;
+
+      const filtered = _terrenoFiltered;
+      if (!filtered.length) {
+        container.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:40px 20px;">
+          <i data-lucide="crosshair" style="width:28px;height:28px;margin-bottom:8px;opacity:0.3;display:inline-block;"></i><br>
+          No se encontraron clientes</div>`;
+        if (pagDiv) pagDiv.innerHTML = '';
+        return;
       }
 
-      _createIcons();
+      const totalPages = Math.ceil(filtered.length / _terrenoPageSize);
+      if (_terrenoPage >= totalPages) _terrenoPage = totalPages - 1;
+      const start = _terrenoPage * _terrenoPageSize;
+      const page = filtered.slice(start, start + _terrenoPageSize);
+
+      const vendorMap = {};
+      (executives || []).forEach(u => vendorMap[u.id] = u.full_name);
+
+      container.innerHTML = page.map(c => {
+        const hasGps = c.lat && c.lng;
+        const name = c.fantasy_name || c.name || 'Sin nombre';
+        const vendor = vendorMap[c.assigned_user_id] || '—';
+        let distText = '';
+        let distColor = 'var(--text-muted)';
+        let distBg = 'transparent';
+
+        if (hasGps && _terrenoGpsPos) {
+          const dist = _haversineKm(_terrenoGpsPos.lat, _terrenoGpsPos.lng, c.lat, c.lng) * 1000;
+          distText = dist >= 1000 ? (dist/1000).toFixed(1) + ' km' : Math.round(dist) + ' m';
+          distColor = dist < 100 ? '#10b981' : dist < 500 ? '#f59e0b' : '#6b7280';
+          distBg = dist < 100 ? 'rgba(16,185,129,0.08)' : dist < 500 ? 'rgba(245,158,11,0.08)' : 'transparent';
+        }
+
+        const gpsIcon = hasGps
+          ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;font-size:10px;font-weight:600;"><i data-lucide="map-pin-check" style="width:11px;height:11px;"></i>GPS</span>`
+          : `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;background:rgba(245,158,11,0.1);color:#f59e0b;font-size:10px;font-weight:600;"><i data-lucide="map-pin-off" style="width:11px;height:11px;"></i>Sin GPS</span>`;
+
+        const distBadge = distText
+          ? `<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;background:${distBg};color:${distColor};font-size:10px;font-weight:700;"><i data-lucide="navigation" style="width:10px;height:10px;"></i>${distText}</span>`
+          : '';
+
+        return `<div onclick="openTerrenoClientDetail('${c.id}')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color 0.15s;${!hasGps ? 'border-left:3px solid #f59e0b;' : ''}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:700;color:var(--text-primary);line-height:1.3;margin-bottom:3px;">${name}</div>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <code style="background:var(--bg-hover);padding:1px 6px;border-radius:4px;font-size:10px;color:var(--text-muted);">${c.external_id || ''}</code>
+                ${gpsIcon}
+                ${distBadge}
+              </div>
+            </div>
+            <div style="display:flex;gap:4px;flex-shrink:0;">
+              <button onclick="event.stopPropagation();openTerrenoClientDetail('${c.id}')" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);display:flex;align-items:center;justify-content:center;cursor:pointer;"><i data-lucide="crosshair" style="width:14px;height:14px;color:#2563eb;"></i></button>
+              <button onclick="event.stopPropagation();openEditLocationModal('${c.id}', '${name.replace(/'/g, "\\'")}', '${(c.address || '').replace(/'/g, "\\'")}')" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);display:flex;align-items:center;justify-content:center;cursor:pointer;"><i data-lucide="map" style="width:14px;height:14px;color:#059669;"></i></button>
+            </div>
+          </div>
+          <div style="margin-top:6px;font-size:11px;color:var(--text-muted);line-height:1.4;display:flex;align-items:center;gap:4px;">
+            <i data-lucide="map-pin" style="width:10px;height:10px;flex-shrink:0;opacity:0.5;"></i>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.address || 'Sin dirección'}${c.commune ? ' · ' + c.commune : ''}</span>
+          </div>
+        </div>`;
+      }).join('');
+
+      _renderTerrenoPagination(pagDiv, filtered.length);
+    }
+
+    function _renderTerrenoPagination(pagDiv, totalCount) {
+      if (!pagDiv) return;
+      const totalPages = Math.ceil(totalCount / _terrenoPageSize);
+      pagDiv.innerHTML = `
+        <span style="font-size:12px;">Pág. ${_terrenoPage + 1}/${totalPages} (${totalCount})</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-secondary" style="padding:6px 14px;font-size:12px;" ${_terrenoPage === 0 ? 'disabled' : ''} onclick="_terrenoPage--;_renderTerrenoPage();_createIcons();">←</button>
+          <button class="btn btn-secondary" style="padding:6px 14px;font-size:12px;" ${_terrenoPage >= totalPages - 1 ? 'disabled' : ''} onclick="_terrenoPage++;_renderTerrenoPage();_createIcons();">→</button>
+        </div>`;
     }
 
     function openTerrenoClientDetail(clientId) {
@@ -16285,7 +16438,7 @@
 
       const overlay = document.createElement('div');
       overlay.id = 'terreno-detail-modal';
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:12px;overflow-y:auto;';
 
       overlay.innerHTML = `
         <div onclick="event.stopPropagation()" style="background:var(--bg-card);border-radius:16px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;margin:auto;">
@@ -16311,7 +16464,7 @@
             ${distHtml}
 
             <!-- Info del cliente -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+            <div class="terreno-detail-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
               <div style="padding:12px 14px;background:var(--bg-secondary,#f9fafb);border-radius:10px;border:1px solid var(--border);position:relative;overflow:hidden;">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6366f1,#818cf8);"></div>
                 <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">

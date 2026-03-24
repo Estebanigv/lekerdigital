@@ -1,4 +1,4 @@
-const CACHE_NAME = 'leker-v2.9.2';
+const CACHE_NAME = 'leker-v2.9.5';
 
 const STATIC_ASSETS = [
   '/favicon.svg',
