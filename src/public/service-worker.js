@@ -1,4 +1,4 @@
-const CACHE_NAME = 'leker-v2.9.15';
+const CACHE_NAME = 'leker-v2.9.16';
 
 const STATIC_ASSETS = [
   '/favicon.svg',
@@ -55,7 +55,7 @@ self.addEventListener('fetch', (event) => {
           }
           return res;
         })
-        .catch(() => caches.match(request))
+        .catch(() => caches.match(request).then((r) => r || new Response('{"error":"offline"}', { status: 503, headers: { 'Content-Type': 'application/json' } })))
     );
     return;
   }
@@ -69,7 +69,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((c) => c.put(request, clone));
           return res;
         })
-        .catch(() => caches.match(request))
+        .catch(() => caches.match(request).then((r) => r || new Response('Offline', { status: 503 })))
     );
     return;
   }
@@ -81,7 +81,7 @@ self.addEventListener('fetch', (event) => {
         const clone = res.clone();
         caches.open(CACHE_NAME).then((c) => c.put(request, clone));
         return res;
-      });
+      }).catch(() => new Response('', { status: 404 }));
     })
   );
 });
