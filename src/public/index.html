@@ -26030,8 +26030,8 @@
                     </div>
                     <span id="cc-gps-accuracy" style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;"></span>
                   </div>
-                  <div id="cc-gps-map" style="height:220px;border-radius:10px;margin-top:8px;border:1px solid rgba(16,185,129,0.2);overflow:hidden;"></div>
-                  <div style="font-size:10px;color:var(--text-muted);margin-top:4px;text-align:center;">Arrastra el marcador para ajustar la ubicación</div>
+                  <div id="cc-gps-map" style="height:250px;border-radius:10px;margin-top:8px;border:2px solid rgba(37,99,235,0.25);overflow:hidden;"></div>
+                  <div style="font-size:10px;color:#2563eb;margin-top:4px;text-align:center;font-weight:500;">Arrastra el pin o toca el mapa para mover la ubicación</div>
                   <div style="display:flex;gap:8px;margin-top:6px;">
                     <input type="text" id="cc-lat" class="form-control" readonly style="font-size:11px;background:var(--bg-secondary);text-align:center;" placeholder="Lat">
                     <input type="text" id="cc-lng" class="form-control" readonly style="font-size:11px;background:var(--bg-secondary);text-align:center;" placeholder="Lng">
@@ -26283,6 +26283,10 @@
         const mapEl = document.getElementById('cc-gps-map');
         if (!mapEl || typeof google === 'undefined') return;
 
+        // Stop touch events from scrolling the modal
+        mapEl.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+        mapEl.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
+
         const pos = { lat, lng };
         const map = new google.maps.Map(mapEl, {
           center: pos, zoom: 17,
@@ -26292,27 +26296,30 @@
           styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }]
         });
 
+        // Use default Google marker (big red pin, easy to drag)
         const marker = new google.maps.Marker({
           position: pos, map, draggable: true,
           title: 'Arrastra para ajustar',
-          icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 6, fillColor: '#2563eb', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, anchor: new google.maps.Point(0, 4) }
+          animation: google.maps.Animation.DROP
         });
 
-        new google.maps.Circle({
-          map, center: pos, radius: 50,
-          fillColor: '#2563eb', fillOpacity: 0.06, strokeColor: '#2563eb', strokeWeight: 1
-        });
-
-        marker.addListener('dragend', async () => {
+        function _onMarkerMove() {
           const p = marker.getPosition();
           const newLat = p.lat();
           const newLng = p.lng();
           document.getElementById('cc-lat').value = newLat.toFixed(6);
           document.getElementById('cc-lng').value = newLng.toFixed(6);
-          // Reverse geocode new position
           _ccReverseAndFill(newLat, newLng);
+        }
+
+        marker.addListener('dragend', _onMarkerMove);
+
+        // Also allow clicking on map to move marker
+        map.addListener('click', (e) => {
+          marker.setPosition(e.latLng);
+          _onMarkerMove();
         });
-      }, 200);
+      }, 300);
     }
 
     async function saveNewClient() {
