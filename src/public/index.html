@@ -16475,9 +16475,12 @@
           const tag = _clientDateTag(lastDate);
           const tagHtml = tag ? `<span style="font-size:9px;font-weight:600;padding:1px 6px;border-radius:4px;background:${tag.bg};color:${tag.color};">${tag.text}</span>` : '';
 
-          return `<div onclick="openEditClientFullModal('${c.id}')" style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
+          const isAdmin = currentUser && currentUser.role === 'admin';
+          const safeName = name.replace(/'/g, "\\'");
+
+          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);transition:background 0.1s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
             <div style="width:8px;height:8px;border-radius:50%;background:${hasGps ? '#10b981' : '#f59e0b'};flex-shrink:0;"></div>
-            <div style="flex:1;min-width:0;">
+            <div style="flex:1;min-width:0;cursor:pointer;" onclick="openEditClientFullModal('${c.id}')">
               <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                 <span style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</span>
                 <code style="font-size:10px;background:var(--bg-hover);padding:1px 6px;border-radius:3px;color:var(--text-muted);">${c.external_id || ''}</code>
@@ -16486,10 +16489,14 @@
               <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
                 ${c.address || 'Sin dirección'}${c.commune ? ' · ' + c.commune : ''}
               </div>
+              <div style="font-size:10px;color:#6366f1;margin-top:2px;font-weight:500;">
+                <i data-lucide="user" style="width:10px;height:10px;display:inline;vertical-align:-1px;"></i> ${updater} · ${timeStr}
+              </div>
             </div>
-            <div style="text-align:right;flex-shrink:0;">
-              <div style="font-size:11px;color:var(--text-primary);font-weight:600;">${timeStr}</div>
-              <div style="font-size:10px;color:#6366f1;font-weight:500;margin-top:1px;">${updater}</div>
+            <div style="display:flex;gap:4px;flex-shrink:0;">
+              <button onclick="openEditClientFullModal('${c.id}')" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);display:flex;align-items:center;justify-content:center;cursor:pointer;" title="Editar"><i data-lucide="pencil" style="width:13px;height:13px;color:#2563eb;"></i></button>
+              <button onclick="openEditLocationModal('${c.id}','${safeName}','${(c.address||'').replace(/'/g,"\\'")}')" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);display:flex;align-items:center;justify-content:center;cursor:pointer;" title="Mapa GPS"><i data-lucide="map" style="width:13px;height:13px;color:#059669;"></i></button>
+              ${isAdmin ? `<button onclick="event.stopPropagation();_terrenoDeleteClient('${c.id}','${safeName}')" style="width:30px;height:30px;border-radius:8px;border:1px solid rgba(239,68,68,0.2);background:var(--bg-card);display:flex;align-items:center;justify-content:center;cursor:pointer;" title="Eliminar"><i data-lucide="trash-2" style="width:13px;height:13px;color:#ef4444;"></i></button>` : ''}
             </div>
           </div>`;
         }).join('');
@@ -17144,10 +17151,21 @@
       }
 
       try {
+        // Reverse geocode to get address from new coordinates
+        const body = { lat, lng };
+        const geo = await _reverseGeocode(lat, lng);
+        if (geo) {
+          const client = _clientById.get(editingClientId);
+          if (!client?.address || !client.address.trim()) body.address = geo.address;
+          if (!client?.commune || !client.commune.trim()) body.commune = geo.commune;
+          if (!client?.city || !client.city.trim()) body.city = geo.city;
+          if (!client?.region || !client.region.trim()) body.region = geo.region;
+        }
+
         const res = await fetch(`${API}/api/clients/${editingClientId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lat, lng })
+          body: JSON.stringify(body)
         });
 
         const data = await res.json();
