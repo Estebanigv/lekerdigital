@@ -16035,6 +16035,9 @@
             </div>
           </div>
 
+          <!-- Nueva dirección detectada -->
+          <div id="edit-loc-address-preview" style="padding:8px 12px;border-radius:8px;margin-bottom:8px;min-height:20px;"></div>
+
           <!-- Distancia al punto actual -->
           <div id="edit-loc-distance" style="display:none;padding:8px 12px;border-radius:8px;margin-bottom:12px;font-size:12px;text-align:center;"></div>
 
@@ -16071,20 +16074,27 @@
           styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }]
         });
 
-        // Show existing marker if coords exist
+        // Show existing marker if coords exist (draggable)
         if (hasExistingCoords) {
           editLocationMarker = new google.maps.Marker({
             position: { lat: initLat, lng: initLng },
             map: editLocationMap,
+            draggable: true,
             title: clientName
           });
+          editLocationMarker.addListener('dragend', function() {
+            const p = editLocationMarker.getPosition();
+            _updateEditLocationPin(p.lat(), p.lng(), true);
+          });
         }
+
+        editLocationMap.setOptions({ gestureHandling: 'greedy' });
 
         // Add click handler
         editLocationMap.addListener('click', function(e) {
           const lat = e.latLng.lat();
           const lng = e.latLng.lng();
-          _updateEditLocationPin(lat, lng);
+          _updateEditLocationPin(lat, lng, true);
         });
 
         // Auto-detect GPS
@@ -16092,17 +16102,39 @@
       }, 150);
     }
 
-    function _updateEditLocationPin(lat, lng) {
+    async function _updateEditLocationPin(lat, lng, doReverseGeocode) {
       document.getElementById('edit-lat').value = lat.toFixed(6);
       document.getElementById('edit-lng').value = lng.toFixed(6);
       if (editLocationMarker) editLocationMarker.setMap(null);
       editLocationMarker = new google.maps.Marker({
         position: { lat, lng },
-        map: editLocationMap
+        map: editLocationMap,
+        draggable: true
+      });
+      editLocationMarker.addListener('dragend', function() {
+        const p = editLocationMarker.getPosition();
+        _updateEditLocationPin(p.lat(), p.lng(), true);
       });
       editLocationMap.setCenter({ lat, lng });
       if (editLocationMap.getZoom() < 16) editLocationMap.setZoom(16);
       _updateEditLocationDistance(lat, lng);
+
+      // Reverse geocode and show new address
+      if (doReverseGeocode) {
+        const addrDiv = document.getElementById('edit-loc-address-preview');
+        if (addrDiv) addrDiv.innerHTML = '<span style="color:var(--text-muted);font-size:11px;"><i data-lucide="loader-2" class="spin" style="width:11px;height:11px;display:inline;vertical-align:-2px;"></i> Buscando dirección...</span>';
+        const geo = await _reverseGeocode(lat, lng);
+        if (geo && addrDiv) {
+          addrDiv.innerHTML = `<span style="font-size:12px;font-weight:600;color:#10b981;"><i data-lucide="map-pin" style="width:12px;height:12px;display:inline;vertical-align:-2px;"></i> ${geo.address}</span>`;
+          addrDiv.dataset.address = geo.address;
+          addrDiv.dataset.commune = geo.commune;
+          addrDiv.dataset.city = geo.city;
+          addrDiv.dataset.region = geo.region;
+          _createIcons();
+        } else if (addrDiv) {
+          addrDiv.innerHTML = '<span style="font-size:11px;color:#f59e0b;">No se pudo obtener dirección</span>';
+        }
+      }
     }
 
     let _editLocGpsPos = null;
@@ -17196,14 +17228,22 @@
       }
 
       try {
-        // Reverse geocode to get address from new coordinates
+        // Use cached reverse geocode from preview, or do fresh one
         const body = { lat, lng };
-        const geo = await _reverseGeocode(lat, lng);
-        if (geo) {
-          body.address = geo.address;
-          body.commune = geo.commune;
-          body.city = geo.city;
-          body.region = geo.region;
+        const preview = document.getElementById('edit-loc-address-preview');
+        if (preview?.dataset?.address) {
+          body.address = preview.dataset.address;
+          body.commune = preview.dataset.commune || '';
+          body.city = preview.dataset.city || '';
+          body.region = preview.dataset.region || '';
+        } else {
+          const geo = await _reverseGeocode(lat, lng);
+          if (geo) {
+            body.address = geo.address;
+            body.commune = geo.commune;
+            body.city = geo.city;
+            body.region = geo.region;
+          }
         }
 
         const res = await fetch(`${API}/api/clients/${editingClientId}`, {
