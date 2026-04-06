@@ -16815,107 +16815,137 @@
       const vendor = vendorMap[client.assigned_user_id] || 'Sin vendedor';
       const isAdmin = currentUser && currentUser.role === 'admin';
 
-      let distHtml = '';
+      let distInfo = null;
       if (hasGps && _terrenoGpsPos) {
         const dist = _haversineKm(_terrenoGpsPos.lat, _terrenoGpsPos.lng, client.lat, client.lng) * 1000;
         const distText = dist >= 1000 ? (dist/1000).toFixed(1) + ' km' : Math.round(dist) + ' m';
-        const distColor = dist < 100 ? '#10b981' : dist < 500 ? '#f59e0b' : '#ef4444';
-        const distIcon = dist < 100 ? 'check-circle' : dist < 500 ? 'alert-triangle' : 'alert-circle';
-        const distLabel = dist < 100 ? 'Estás en la ubicación del cliente' : `Estás a ${distText} de este cliente`;
-        distHtml = `<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:14px;background:${dist < 100 ? 'rgba(16,185,129,0.1)' : dist < 500 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)'};color:${distColor};border:1px solid ${distColor}22;">
-          <i data-lucide="${distIcon}" style="width:18px;height:18px;flex-shrink:0;"></i> ${distLabel}
-        </div>`;
+        distInfo = {
+          dist, distText,
+          color: dist < 100 ? '#10b981' : dist < 500 ? '#f59e0b' : '#ef4444',
+          bg: dist < 100 ? 'rgba(16,185,129,0.12)' : dist < 500 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
+          icon: dist < 100 ? '✓' : '⚠',
+          label: dist < 100 ? 'Estás en el lugar correcto' : `A ${distText} del cliente`
+        };
       }
 
       const overlay = document.createElement('div');
       overlay.id = 'terreno-detail-modal';
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:12px;overflow-y:auto;';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:10px;overflow-y:auto;backdrop-filter:blur(4px);';
 
       overlay.innerHTML = `
-        <div onclick="event.stopPropagation()" style="background:var(--bg-card);border-radius:16px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden;margin:auto;">
-          <!-- Header -->
-          <div style="padding:18px 20px;background:linear-gradient(135deg,#1e1b4b,#312e81);color:white;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-              <div>
-                <div style="font-size:10px;opacity:0.6;text-transform:uppercase;letter-spacing:0.5px;">Verificar Cliente</div>
-                <div style="font-size:18px;font-weight:700;margin-top:4px;">${name}</div>
-                <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-                  <code style="background:rgba(255,255,255,0.15);padding:2px 8px;border-radius:4px;font-size:11px;">${client.external_id || ''}</code>
+        <div onclick="event.stopPropagation()" style="background:var(--bg-card,#fff);border-radius:20px;max-width:480px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.35);overflow:hidden;margin:auto;border:1px solid rgba(255,255,255,0.08);">
+
+          <!-- HEADER -->
+          <div style="padding:16px 18px 14px;background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 60%,#312e81 100%);color:white;position:relative;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:9px;opacity:0.5;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;">Verificar en Terreno</div>
+                <div style="font-size:16px;font-weight:800;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;">
+                  <span style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);padding:2px 9px;border-radius:6px;font-size:10px;font-family:monospace;letter-spacing:0.5px;">${client.external_id || '—'}</span>
                   ${hasGps
-                    ? '<span style="background:rgba(16,185,129,0.25);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;">GPS ✓</span>'
-                    : '<span style="background:rgba(245,158,11,0.25);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;">Sin GPS</span>'
+                    ? '<span style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.35);padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;color:#6ee7b7;">GPS ✓</span>'
+                    : '<span style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.35);padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;color:#fcd34d;">Sin GPS</span>'
                   }
+                  ${distInfo ? `<span style="background:${distInfo.bg};border:1px solid ${distInfo.color}44;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:700;color:${distInfo.color};">${distInfo.icon} ${distInfo.distText}</span>` : ''}
                 </div>
               </div>
-              <button onclick="document.getElementById('terreno-detail-modal').remove()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;line-height:1;">&times;</button>
+              <button onclick="document.getElementById('terreno-detail-modal').remove()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:white;width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:20px;line-height:1;flex-shrink:0;transition:background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">&times;</button>
             </div>
           </div>
 
-          <div style="padding:16px 20px;">
-            ${distHtml}
+          <!-- MAPA -->
+          <div style="position:relative;background:#e8ecf0;">
+            <div id="terreno-detail-map" style="height:220px;width:100%;"></div>
+            <!-- Leyenda flotante sobre el mapa -->
+            <div style="position:absolute;bottom:10px;left:10px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none;">
+              ${hasGps ? `<div style="background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);border-radius:8px;padding:4px 10px;font-size:10px;font-weight:700;color:#7c3aed;display:flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"><span style="width:9px;height:9px;background:#7c3aed;border-radius:50%;display:inline-block;border:2px solid white;"></span>Cliente</div>` : ''}
+              <div style="background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);border-radius:8px;padding:4px 10px;font-size:10px;font-weight:700;color:#2563eb;display:flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"><span style="width:9px;height:9px;background:#2563eb;border-radius:50%;display:inline-block;border:2px solid white;"></span>Tú ahora</div>
+            </div>
+            <!-- Estado GPS en tiempo real -->
+            <div style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);border-radius:8px;padding:4px 10px;font-size:10px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+              <span id="terreno-detail-gps-status" style="color:#f59e0b;">📡 Obteniendo GPS...</span>
+            </div>
+            ${!hasGps && !_terrenoGpsPos ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:rgba(248,250,252,0.95);"><div style="font-size:28px;">📍</div><div style="font-size:12px;color:#94a3b8;font-weight:600;">Sin coordenadas registradas</div></div>` : ''}
+          </div>
 
-            <!-- Info del cliente -->
-            <div class="terreno-detail-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-              <div style="padding:12px 14px;background:var(--bg-secondary,#f9fafb);border-radius:10px;border:1px solid var(--border);position:relative;overflow:hidden;">
-                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#6366f1,#818cf8);"></div>
-                <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
-                  <i data-lucide="map-pin" style="width:11px;height:11px;color:#6366f1;"></i>
-                  <span style="font-size:10px;color:#6366f1;text-transform:uppercase;font-weight:600;letter-spacing:0.3px;">Dirección</span>
-                </div>
-                <div style="font-size:12px;font-weight:600;color:var(--text-primary);line-height:1.3;">${client.address || 'Sin dirección'}</div>
+          <!-- DISTANCIA banner -->
+          ${distInfo ? `
+          <div style="padding:10px 18px;background:${distInfo.bg};border-bottom:1px solid ${distInfo.color}22;display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:${distInfo.color};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:800;color:${distInfo.color};">${distInfo.label}</div>
+              <div style="font-size:11px;color:var(--text-secondary);margin-top:1px;">
+                ${distInfo.dist < 100 ? 'La ubicación guardada es correcta' : distInfo.dist < 500 ? 'Pequeña diferencia — verifica en el mapa' : 'Diferencia importante — considera corregir el punto'}
               </div>
-              <div style="padding:12px 14px;background:var(--bg-secondary,#f9fafb);border-radius:10px;border:1px solid var(--border);position:relative;overflow:hidden;">
-                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#8b5cf6,#a78bfa);"></div>
-                <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
-                  <i data-lucide="building-2" style="width:11px;height:11px;color:#8b5cf6;"></i>
-                  <span style="font-size:10px;color:#8b5cf6;text-transform:uppercase;font-weight:600;letter-spacing:0.3px;">Comuna / Zona</span>
-                </div>
-                <div style="font-size:12px;font-weight:600;color:var(--text-primary);line-height:1.3;">${client.commune || '—'} ${client.zone ? '· ' + client.zone : ''}</div>
+            </div>
+          </div>` : ''}
+
+          <!-- INFO CLIENTE -->
+          <div style="padding:14px 18px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+              <div style="grid-column:1/-1;padding:11px 13px;background:var(--bg-secondary,#f8fafc);border-radius:11px;border:1px solid var(--border,#e2e8f0);">
+                <div style="font-size:9px;color:#6366f1;text-transform:uppercase;font-weight:700;letter-spacing:0.8px;margin-bottom:3px;">📍 Dirección registrada</div>
+                <div style="font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.3;">${client.address || 'Sin dirección'}</div>
               </div>
-              <div style="padding:12px 14px;background:var(--bg-secondary,#f9fafb);border-radius:10px;border:1px solid var(--border);position:relative;overflow:hidden;">
-                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#3b82f6,#60a5fa);"></div>
-                <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
-                  <i data-lucide="user" style="width:11px;height:11px;color:#3b82f6;"></i>
-                  <span style="font-size:10px;color:#3b82f6;text-transform:uppercase;font-weight:600;letter-spacing:0.3px;">Vendedor</span>
-                </div>
+              <div style="padding:11px 13px;background:var(--bg-secondary,#f8fafc);border-radius:11px;border:1px solid var(--border,#e2e8f0);">
+                <div style="font-size:9px;color:#8b5cf6;text-transform:uppercase;font-weight:700;letter-spacing:0.8px;margin-bottom:3px;">🏙 Comuna</div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-primary);line-height:1.3;">${client.commune || '—'}</div>
+                ${client.zone ? `<div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">${client.zone}</div>` : ''}
+              </div>
+              <div style="padding:11px 13px;background:var(--bg-secondary,#f8fafc);border-radius:11px;border:1px solid var(--border,#e2e8f0);">
+                <div style="font-size:9px;color:#3b82f6;text-transform:uppercase;font-weight:700;letter-spacing:0.8px;margin-bottom:3px;">👤 Vendedor</div>
                 <div style="font-size:12px;font-weight:600;color:var(--text-primary);line-height:1.3;">${vendor}</div>
-              </div>
-              <div style="padding:12px 14px;background:var(--bg-secondary,#f9fafb);border-radius:10px;border:1px solid var(--border);position:relative;overflow:hidden;">
-                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,${hasGps ? '#10b981,#34d399' : '#f59e0b,#fbbf24'});"></div>
-                <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
-                  <i data-lucide="navigation" style="width:11px;height:11px;color:${hasGps ? '#10b981' : '#f59e0b'};"></i>
-                  <span style="font-size:10px;color:${hasGps ? '#10b981' : '#f59e0b'};text-transform:uppercase;font-weight:600;letter-spacing:0.3px;">Coordenadas</span>
-                </div>
-                <div style="font-size:12px;font-weight:600;line-height:1.3;${hasGps ? 'color:#10b981;' : 'color:#f59e0b;'}">${hasGps ? `${Number(client.lat).toFixed(5)}, ${Number(client.lng).toFixed(5)}` : 'No registrado'}</div>
               </div>
             </div>
 
-            <!-- Acciones -->
-            <div style="display:flex;flex-direction:column;gap:10px;">
-              <button onclick="terrenoQuickGps('${client.id}')" style="width:100%;padding:14px;border:none;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;border-radius:12px;cursor:pointer;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(37,99,235,0.3);" id="terreno-quick-gps-btn">
-                <i data-lucide="crosshair" style="width:20px;height:20px;"></i>
-                ${hasGps ? 'Corregir con mi ubicación' : 'Capturar mi ubicación'}
+            <!-- ACCIONES -->
+            <div style="display:flex;flex-direction:column;gap:8px;">
+
+              <!-- Botón principal -->
+              <button onclick="terrenoQuickGps('${client.id}')" id="terreno-quick-gps-btn"
+                style="width:100%;padding:14px;border:none;background:linear-gradient(135deg,#2563eb,#4f46e5);color:white;border-radius:12px;cursor:pointer;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 16px rgba(79,70,229,0.35);transition:transform 0.1s,box-shadow 0.1s;"
+                onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(79,70,229,0.45)'"
+                onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(79,70,229,0.35)'">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                ${hasGps ? 'Corregir con mi ubicación' : 'Capturar mi ubicación GPS'}
               </button>
 
+              <!-- Botones secundarios -->
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                <button onclick="document.getElementById('terreno-detail-modal').remove();openEditLocationModal('${client.id}', '${name.replace(/'/g, "\\'")}', '${(client.address || '').replace(/'/g, "\\'")}')" style="padding:11px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);border-radius:10px;cursor:pointer;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
-                  <i data-lucide="map" style="width:16px;height:16px;color:#059669;"></i> Ajustar en mapa
+                <button onclick="document.getElementById('terreno-detail-modal').remove();openEditLocationModal('${client.id}', '${name.replace(/'/g, "\\'")}', '${(client.address || '').replace(/'/g, "\\'")}')"
+                  style="padding:11px;border:1.5px solid #d1fae5;background:#f0fdf4;color:#059669;border-radius:11px;cursor:pointer;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 0.15s;"
+                  onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                  Ajustar en mapa
                 </button>
                 ${isAdmin ? `
-                <button onclick="document.getElementById('terreno-detail-modal').remove();openEditClientFullModal('${client.id}')" style="padding:11px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);border-radius:10px;cursor:pointer;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
-                  <i data-lucide="pencil" style="width:16px;height:16px;color:#6366f1;"></i> Editar datos
+                <button onclick="document.getElementById('terreno-detail-modal').remove();openEditClientFullModal('${client.id}')"
+                  style="padding:11px;border:1.5px solid #e0e7ff;background:#eef2ff;color:#4f46e5;border-radius:11px;cursor:pointer;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 0.15s;"
+                  onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='#eef2ff'">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Editar datos
                 </button>` : `<div></div>`}
               </div>
 
               ${hasGps ? `
-              <button onclick="terrenoConfirmOk('${client.id}')" style="width:100%;padding:11px;border:1.5px solid #10b981;background:rgba(16,185,129,0.06);color:#10b981;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;">
-                <i data-lucide="check-circle" style="width:18px;height:18px;"></i> Confirmar dirección correcta
+              <button onclick="terrenoConfirmOk('${client.id}')"
+                style="width:100%;padding:12px;border:1.5px solid #a7f3d0;background:#f0fdf4;color:#059669;border-radius:11px;cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.15s;"
+                onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Confirmar dirección correcta
               </button>` : ''}
 
               ${isAdmin ? `
-              <button onclick="_terrenoDeleteClient('${client.id}', '${name.replace(/'/g, "\\'")}')" style="width:100%;padding:10px;border:1px solid rgba(239,68,68,0.2);background:rgba(239,68,68,0.04);color:#ef4444;border-radius:10px;cursor:pointer;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;">
-                <i data-lucide="trash-2" style="width:15px;height:15px;"></i> Eliminar cliente
+              <button onclick="_terrenoDeleteClient('${client.id}', '${name.replace(/'/g, "\\'")}')"
+                style="width:100%;padding:10px;border:1px solid #fecaca;background:#fff5f5;color:#dc2626;border-radius:10px;cursor:pointer;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 0.15s;"
+                onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fff5f5'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                Eliminar cliente
               </button>` : ''}
+
             </div>
           </div>
         </div>`;
@@ -16924,6 +16954,137 @@
       overlay.addEventListener('click', (e) => { if (overlay._mdOnBg && e.target === overlay) overlay.remove(); });
       document.body.appendChild(overlay);
       _createIcons();
+
+      // Inicializar mapa con pin del cliente + ubicación del usuario en tiempo real
+      let _detailMapWatchId = null;
+      setTimeout(() => {
+        const mapEl = document.getElementById('terreno-detail-map');
+        if (!mapEl || typeof google === 'undefined') return;
+
+        const clientLatLng = hasGps ? { lat: parseFloat(client.lat), lng: parseFloat(client.lng) } : null;
+        const center = clientLatLng || (_terrenoGpsPos ? { lat: _terrenoGpsPos.lat, lng: _terrenoGpsPos.lng } : { lat: -33.4489, lng: -70.6693 });
+
+        const map = new google.maps.Map(mapEl, {
+          center,
+          zoom: 16,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: true,
+          zoomControl: true,
+          mapTypeId: 'roadmap',
+          styles: [
+            { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+            { featureType: 'transit', stylers: [{ visibility: 'off' }] }
+          ]
+        });
+
+        // Pin del cliente (morado fijo)
+        if (clientLatLng) {
+          new google.maps.Marker({
+            position: clientLatLng,
+            map,
+            title: name,
+            zIndex: 10,
+            icon: {
+              path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+              fillColor: '#7c3aed',
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 2,
+              scale: 1.6,
+              anchor: new google.maps.Point(12, 22)
+            }
+          });
+        }
+
+        // Marcador del usuario (azul) — se actualiza en tiempo real
+        let userMarker = null;
+        let userCircle = null;
+        let boundsAdjusted = false;
+
+        const gpsStatusEl = document.getElementById('terreno-detail-gps-status');
+
+        function updateUserMarker(pos) {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const acc = pos.coords.accuracy;
+          const latlng = { lat, lng };
+
+          _terrenoGpsPos = { lat, lng, accuracy: acc };
+
+          if (!userMarker) {
+            userMarker = new google.maps.Marker({
+              position: latlng,
+              map,
+              title: 'Tu ubicación',
+              zIndex: 20,
+              icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 9,
+                fillColor: '#2563eb',
+                fillOpacity: 1,
+                strokeColor: '#ffffff',
+                strokeWeight: 3
+              }
+            });
+            userCircle = new google.maps.Circle({
+              map,
+              center: latlng,
+              radius: acc,
+              fillColor: '#2563eb',
+              fillOpacity: 0.08,
+              strokeColor: '#2563eb',
+              strokeOpacity: 0.4,
+              strokeWeight: 1
+            });
+          } else {
+            userMarker.setPosition(latlng);
+            userCircle.setCenter(latlng);
+            userCircle.setRadius(acc);
+          }
+
+          if (gpsStatusEl) {
+            gpsStatusEl.textContent = '📡 GPS ±' + Math.round(acc) + 'm';
+            gpsStatusEl.style.color = acc < 20 ? '#10b981' : acc < 60 ? '#f59e0b' : '#ef4444';
+          }
+
+          // Ajustar bounds la primera vez que tenemos ambos puntos
+          if (!boundsAdjusted && clientLatLng) {
+            boundsAdjusted = true;
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend(clientLatLng);
+            bounds.extend(latlng);
+            map.fitBounds(bounds, { top: 35, bottom: 35, left: 50, right: 50 });
+          }
+        }
+
+        // Iniciar watchPosition para actualización en tiempo real
+        if (navigator.geolocation) {
+          _detailMapWatchId = navigator.geolocation.watchPosition(
+            updateUserMarker,
+            () => { if (gpsStatusEl) { gpsStatusEl.textContent = '⚠ Sin señal GPS'; gpsStatusEl.style.color = '#ef4444'; } },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+          );
+          // También hacer una lectura inmediata de alta precisión
+          navigator.geolocation.getCurrentPosition(updateUserMarker, null, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+        }
+
+        // Centrar en cliente si no hay GPS del usuario todavía
+        if (clientLatLng && !_terrenoGpsPos) {
+          map.setCenter(clientLatLng);
+        }
+      }, 250);
+
+      // Limpiar watchPosition al cerrar el modal
+      const origRemove = overlay.remove.bind(overlay);
+      overlay.remove = function() {
+        if (_detailMapWatchId !== null) navigator.geolocation.clearWatch(_detailMapWatchId);
+        origRemove();
+      };
+      // También limpiar si se cierra por clic en backdrop
+      overlay.addEventListener('click', () => {
+        if (_detailMapWatchId !== null) { navigator.geolocation.clearWatch(_detailMapWatchId); _detailMapWatchId = null; }
+      });
     }
 
     async function terrenoQuickGps(clientId) {

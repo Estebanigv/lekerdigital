@@ -67,7 +67,7 @@ function _trackAiUsage(endpoint, userId, userName, usage) {
 
   _aiUsage.history.unshift({
     endpoint, user: userName || userId, tokens, input, output,
-    model: 'gpt-4o-mini', timestamp: new Date().toISOString()
+    model: 'gpt-4o', timestamp: new Date().toISOString()
   });
   if (_aiUsage.history.length > 50) _aiUsage.history.length = 50;
 }
@@ -407,7 +407,7 @@ IMPORTANTE:
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        model: process.env.OPENAI_MODEL || 'gpt-4o',
         max_tokens: 1024,
         temperature: 0.7,
         messages: messages
@@ -2575,14 +2575,14 @@ setInterval(async () => {
 }, 30 * 60 * 1000); // every 30 minutes
 
 // =============================================
-// AI — OpenAI GPT-4o-mini
+// AI — OpenAI GPT-4o
 // =============================================
 
-// Helper: llama a GPT-4o-mini con system + user prompt
+// Helper: llama a GPT-4o con system + user prompt
 async function askOpenAI(systemPrompt, userPrompt, maxTokens = 600, _reqMeta) {
   if (!openai) throw new Error('OPENAI_API_KEY no configurada');
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-4o',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
@@ -2596,7 +2596,7 @@ async function askOpenAI(systemPrompt, userPrompt, maxTokens = 600, _reqMeta) {
 
 /**
  * POST /api/ai/generate-route
- * Genera una ruta semanal completa usando OpenAI GPT-4o-mini como motor de decisión.
+ * Genera una ruta semanal completa usando OpenAI GPT-4o como motor de decisión.
  * Devuelve el MISMO formato que GET /routes/optimize para ser drop-in replacement.
  */
 app.post('/api/ai/generate-route', authenticate, async (req, res) => {
@@ -2605,8 +2605,8 @@ app.post('/api/ai/generate-route', authenticate, async (req, res) => {
     if (!userId) return res.status(400).json({ success: false, error: 'userId requerido' });
     if (!openai) return res.status(400).json({ success: false, error: 'OpenAI no configurado. Agrega OPENAI_API_KEY en las variables de entorno.' });
     // Modelos permitidos; default gpt-4o-mini
-    const ALLOWED_MODELS = ['gpt-4o-mini', 'gpt-4o', 'o3-mini'];
-    const selectedModel = ALLOWED_MODELS.includes(model) ? model : 'gpt-4o-mini';
+    const ALLOWED_MODELS = ['gpt-4o', 'gpt-4o-mini', 'o3-mini'];
+    const selectedModel = ALLOWED_MODELS.includes(model) ? model : 'gpt-4o';
 
     // 1. Punto de inicio del vendedor
     let startPoint = null;
@@ -3275,7 +3275,7 @@ app.post('/api/ai/route-chat', authenticate, aiLimiter, async (req, res) => {
     const recentHistory = history.slice(-8).map(m => ({ role: m.role, content: m.content }));
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       temperature: 0.4,
       max_tokens: 800,
       messages: [
@@ -3326,7 +3326,7 @@ app.post('/api/ai/route-chat/stream', authenticate, aiLimiter, async (req, res) 
 
     const recentHistory = (history.length > 0 ? history : dbHistory).slice(-8).map(m => ({ role: m.role, content: m.content }));
     const stream = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       temperature: 0.4,
       max_tokens: 800,
       stream: true,
@@ -3372,7 +3372,7 @@ app.post('/api/ai/route-chat/stream', authenticate, aiLimiter, async (req, res) 
       if (learnMatch) {
         const learnContent = learnMatch[2].trim();
         const extraction = await openai.chat.completions.create({
-          model: 'gpt-4o-mini', temperature: 0.2, max_tokens: 200,
+          model: 'gpt-4o', temperature: 0.2, max_tokens: 200,
           messages: [
             { role: 'system', content: 'Extrae un aprendizaje de negocio del texto. Responde JSON: {"category":"general|ventas|rutas|clientes|productos|politicas","title":"titulo corto","content":"explicación"}. SOLO JSON.' },
             { role: 'user', content: learnContent }
@@ -3475,7 +3475,7 @@ app.patch('/api/ai/conversations/:id', authenticate, async (req, res) => {
 
 // GET /api/ai/usage — estadísticas de uso de IA
 app.get('/api/ai/usage', authenticate, authorize('admin', 'supervisor'), async (req, res) => {
-  // Pricing GPT-4o-mini: $0.15/1M input, $0.60/1M output
+  // Pricing GPT-4o: $2.50/1M input, $10.00/1M output
   const inputCost = (_aiUsage.totalInputTokens / 1_000_000) * 0.15;
   const outputCost = (_aiUsage.totalOutputTokens / 1_000_000) * 0.60;
   const totalCost = inputCost + outputCost;
@@ -3488,7 +3488,7 @@ app.get('/api/ai/usage', authenticate, authorize('admin', 'supervisor'), async (
       totalInputTokens: _aiUsage.totalInputTokens,
       totalOutputTokens: _aiUsage.totalOutputTokens,
       estimatedCostUSD: Math.round(totalCost * 10000) / 10000,
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       pricing: { input: '$0.15/1M tokens', output: '$0.60/1M tokens' },
       byEndpoint: _aiUsage.byEndpoint,
       byUser: _aiUsage.byUser,
@@ -3600,7 +3600,7 @@ app.post('/api/ai/learnings/upload', authenticate, authorize('admin', 'superviso
 
     // Pedir a la IA que resuma y extraiga reglas/aprendizajes
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       temperature: 0.3,
       max_tokens: 1200,
       messages: [
@@ -3750,7 +3750,7 @@ app.post('/api/ai/learnings/import-url', authenticate, authorize('admin', 'super
     const textForAI = text.slice(0, maxChars);
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       temperature: 0.3,
       max_tokens: 1200,
       messages: [
