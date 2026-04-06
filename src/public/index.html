@@ -16833,7 +16833,7 @@
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:10px;overflow-y:auto;backdrop-filter:blur(4px);';
 
       overlay.innerHTML = `
-        <div onclick="event.stopPropagation()" style="background:var(--bg-card,#fff);border-radius:20px;max-width:480px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.35);overflow:hidden;margin:auto;border:1px solid rgba(255,255,255,0.08);">
+        <div onclick="event.stopPropagation()" style="background:var(--bg-card,#fff);border-radius:20px;max-width:780px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.35);overflow:hidden;margin:auto;border:1px solid rgba(255,255,255,0.08);">
 
           <!-- HEADER -->
           <div style="padding:16px 18px 14px;background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 60%,#312e81 100%);color:white;position:relative;">
@@ -16856,32 +16856,33 @@
 
           <!-- MAPA -->
           <div style="position:relative;background:#e8ecf0;">
-            <div id="terreno-detail-map" style="height:220px;width:100%;"></div>
+            <div id="terreno-detail-map" style="height:320px;width:100%;"></div>
             <!-- Leyenda flotante sobre el mapa -->
             <div style="position:absolute;bottom:10px;left:10px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none;">
               ${hasGps ? `<div style="background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);border-radius:8px;padding:4px 10px;font-size:10px;font-weight:700;color:#7c3aed;display:flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"><span style="width:9px;height:9px;background:#7c3aed;border-radius:50%;display:inline-block;border:2px solid white;"></span>Cliente</div>` : ''}
               <div style="background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);border-radius:8px;padding:4px 10px;font-size:10px;font-weight:700;color:#2563eb;display:flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"><span style="width:9px;height:9px;background:#2563eb;border-radius:50%;display:inline-block;border:2px solid white;"></span>Tú ahora</div>
             </div>
             <!-- Estado GPS en tiempo real -->
-            <div style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);border-radius:8px;padding:4px 10px;font-size:10px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+            <div style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.92);backdrop-filter:blur(8px);border-radius:8px;padding:4px 10px;font-size:10px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.15);max-width:200px;">
               <span id="terreno-detail-gps-status" style="color:#f59e0b;">📡 Obteniendo GPS...</span>
+            </div>
+            <!-- Hint arrastre (desaparece en 3s) -->
+            <div id="terreno-drag-hint" style="position:absolute;top:8px;left:8px;background:rgba(37,99,235,0.88);backdrop-filter:blur(8px);border-radius:8px;padding:5px 10px;font-size:10px;font-weight:700;color:white;box-shadow:0 2px 8px rgba(0,0,0,0.2);transition:opacity 1s;pointer-events:none;">
+              ✋ Arrastra el punto azul para corregir tu posición
             </div>
             ${!hasGps && !_terrenoGpsPos ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:rgba(248,250,252,0.95);"><div style="font-size:28px;">📍</div><div style="font-size:12px;color:#94a3b8;font-weight:600;">Sin coordenadas registradas</div></div>` : ''}
           </div>
 
-          <!-- DISTANCIA banner -->
-          ${distInfo ? `
-          <div style="padding:10px 18px;background:${distInfo.bg};border-bottom:1px solid ${distInfo.color}22;display:flex;align-items:center;gap:10px;">
-            <div style="width:36px;height:36px;border-radius:10px;background:${distInfo.color};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <!-- DISTANCIA banner (se actualiza en tiempo real al mover pin) -->
+          <div style="padding:10px 18px;background:rgba(37,99,235,0.07);border-bottom:1px solid rgba(37,99,235,0.1);display:flex;align-items:center;gap:10px;">
+            <div style="width:34px;height:34px;border-radius:10px;background:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <div>
-              <div style="font-size:13px;font-weight:800;color:${distInfo.color};">${distInfo.label}</div>
-              <div style="font-size:11px;color:var(--text-secondary);margin-top:1px;">
-                ${distInfo.dist < 100 ? 'La ubicación guardada es correcta' : distInfo.dist < 500 ? 'Pequeña diferencia — verifica en el mapa' : 'Diferencia importante — considera corregir el punto'}
-              </div>
+              <div id="terreno-dist-banner" style="font-size:13px;font-weight:800;color:#2563eb;">${distInfo ? distInfo.label : 'Esperando tu ubicación...'}</div>
+              <div style="font-size:11px;color:var(--text-secondary);margin-top:1px;">Arrastra el punto azul si el GPS no es preciso</div>
             </div>
-          </div>` : ''}
+          </div>
 
           <!-- INFO CLIENTE -->
           <div style="padding:14px 18px;">
@@ -16997,30 +16998,41 @@
           });
         }
 
-        // Marcador del usuario (azul) — se actualiza en tiempo real
+        // Marcador del usuario (azul arrastrable) — se actualiza en tiempo real
         let userMarker = null;
         let userCircle = null;
         let boundsAdjusted = false;
+        let bestAccuracy = Infinity;
+        let userDragged = false; // true si el usuario movió el pin manualmente
 
         const gpsStatusEl = document.getElementById('terreno-detail-gps-status');
+        const ACC_THRESHOLD = 150;
 
-        function updateUserMarker(pos) {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          const acc = pos.coords.accuracy;
-          const latlng = { lat, lng };
+        function _refreshDistanceBanner(lat, lng) {
+          if (!clientLatLng) return;
+          const dist = _haversineKm(lat, lng, clientLatLng.lat, clientLatLng.lng) * 1000;
+          const distText = dist >= 1000 ? (dist/1000).toFixed(1) + ' km' : Math.round(dist) + ' m';
+          const color = dist < 100 ? '#10b981' : dist < 500 ? '#f59e0b' : '#ef4444';
+          const label = dist < 100 ? 'Estás en el lugar correcto' : `A ${distText} del cliente`;
+          const banner = document.getElementById('terreno-dist-banner');
+          if (banner) {
+            banner.style.color = color;
+            banner.textContent = label;
+          }
+        }
 
-          _terrenoGpsPos = { lat, lng, accuracy: acc };
-
+        function _placeUserMarker(latlng, acc, draggable) {
           if (!userMarker) {
             userMarker = new google.maps.Marker({
               position: latlng,
               map,
-              title: 'Tu ubicación',
+              title: 'Tu ubicación — arrastra para corregir',
               zIndex: 20,
+              draggable: true,
+              cursor: 'grab',
               icon: {
                 path: google.maps.SymbolPath.CIRCLE,
-                scale: 9,
+                scale: 10,
                 fillColor: '#2563eb',
                 fillOpacity: 1,
                 strokeColor: '#ffffff',
@@ -17030,49 +17042,104 @@
             userCircle = new google.maps.Circle({
               map,
               center: latlng,
-              radius: acc,
+              radius: acc || 10,
               fillColor: '#2563eb',
-              fillOpacity: 0.08,
+              fillOpacity: 0.07,
               strokeColor: '#2563eb',
-              strokeOpacity: 0.4,
+              strokeOpacity: 0.35,
               strokeWeight: 1
             });
-          } else {
+
+            // Al arrastrar el pin
+            userMarker.addListener('dragstart', () => {
+              userDragged = true;
+              if (userCircle) userCircle.setRadius(0);
+              if (gpsStatusEl) { gpsStatusEl.innerHTML = '✋ Posición manual'; gpsStatusEl.style.color = '#7c3aed'; }
+            });
+            userMarker.addListener('drag', (e) => {
+              const p = e.latLng;
+              userCircle.setCenter(p);
+              _refreshDistanceBanner(p.lat(), p.lng());
+            });
+            userMarker.addListener('dragend', (e) => {
+              const p = e.latLng;
+              _terrenoGpsPos = { lat: p.lat(), lng: p.lng(), accuracy: 0 };
+              _refreshDistanceBanner(p.lat(), p.lng());
+              if (gpsStatusEl) { gpsStatusEl.innerHTML = '📍 Posición ajustada manualmente'; gpsStatusEl.style.color = '#7c3aed'; }
+            });
+          } else if (!userDragged) {
+            // Solo mover si el usuario NO ha arrastrado manualmente
             userMarker.setPosition(latlng);
             userCircle.setCenter(latlng);
-            userCircle.setRadius(acc);
+            if (acc) userCircle.setRadius(acc);
+          }
+          _refreshDistanceBanner(userDragged ? userMarker.getPosition().lat() : latlng.lat, userDragged ? userMarker.getPosition().lng() : latlng.lng);
+        }
+
+        function updateUserMarker(pos) {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const acc = pos.coords.accuracy;
+          const latlng = { lat, lng };
+
+          if (!userDragged) _terrenoGpsPos = { lat, lng, accuracy: acc };
+
+          if (gpsStatusEl && !userDragged) {
+            if (acc > ACC_THRESHOLD) {
+              gpsStatusEl.innerHTML = '⚠ Señal débil ±' + Math.round(acc) + 'm — arrastra el pin si es incorrecto';
+              gpsStatusEl.style.color = '#ef4444';
+            } else {
+              gpsStatusEl.innerHTML = '📡 GPS ±' + Math.round(acc) + 'm';
+              gpsStatusEl.style.color = acc < 20 ? '#10b981' : acc < 60 ? '#f59e0b' : '#e07b00';
+            }
           }
 
-          if (gpsStatusEl) {
-            gpsStatusEl.textContent = '📡 GPS ±' + Math.round(acc) + 'm';
-            gpsStatusEl.style.color = acc < 20 ? '#10b981' : acc < 60 ? '#f59e0b' : '#ef4444';
-          }
+          // Mostrar marcador siempre (la primera vez), luego solo si mejora
+          const isFirstFix = !userMarker;
+          if (!isFirstFix && acc >= bestAccuracy && acc > ACC_THRESHOLD) return;
+          bestAccuracy = Math.min(bestAccuracy, acc);
 
-          // Ajustar bounds la primera vez que tenemos ambos puntos
-          if (!boundsAdjusted && clientLatLng) {
+          _placeUserMarker(latlng, acc, true);
+
+          // Ajustar bounds solo la primera vez con buena precisión
+          if (!boundsAdjusted && (isFirstFix || acc < ACC_THRESHOLD)) {
             boundsAdjusted = true;
-            const bounds = new google.maps.LatLngBounds();
-            bounds.extend(clientLatLng);
-            bounds.extend(latlng);
-            map.fitBounds(bounds, { top: 35, bottom: 35, left: 50, right: 50 });
+            if (clientLatLng) {
+              const bounds = new google.maps.LatLngBounds();
+              bounds.extend(clientLatLng);
+              bounds.extend(latlng);
+              map.fitBounds(bounds, { top: 35, bottom: 35, left: 50, right: 50 });
+            } else {
+              map.setCenter(latlng);
+              map.setZoom(17);
+            }
           }
         }
 
-        // Iniciar watchPosition para actualización en tiempo real
+        // Iniciar watchPosition
         if (navigator.geolocation) {
           _detailMapWatchId = navigator.geolocation.watchPosition(
             updateUserMarker,
-            () => { if (gpsStatusEl) { gpsStatusEl.textContent = '⚠ Sin señal GPS'; gpsStatusEl.style.color = '#ef4444'; } },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            (err) => {
+              if (gpsStatusEl) {
+                gpsStatusEl.textContent = err.code === 1 ? '🚫 Permiso GPS denegado' : '⚠ Sin señal GPS — arrastra el pin manualmente';
+                gpsStatusEl.style.color = '#ef4444';
+              }
+              // Si no hay GPS, colocar pin arrastrable en el centro del mapa para que lo muevan
+              if (!userMarker && clientLatLng) {
+                _placeUserMarker(clientLatLng, 0, true);
+              }
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
           );
-          // También hacer una lectura inmediata de alta precisión
-          navigator.geolocation.getCurrentPosition(updateUserMarker, null, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
         }
 
-        // Centrar en cliente si no hay GPS del usuario todavía
-        if (clientLatLng && !_terrenoGpsPos) {
-          map.setCenter(clientLatLng);
-        }
+        // Hint visual de arrastre sobre el mapa
+        const dragHint = document.getElementById('terreno-drag-hint');
+        setTimeout(() => { if (dragHint) dragHint.style.opacity = '0'; }, 3000);
+
+        // Centrar en cliente mientras no haya GPS
+        if (clientLatLng) map.setCenter(clientLatLng);
       }, 250);
 
       // Limpiar watchPosition al cerrar el modal
