@@ -1805,8 +1805,7 @@
     }
     .gs-table {
       width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
+      border-collapse: collapse;
       font-size: 13px;
       font-variant-numeric: tabular-nums;
     }
@@ -1824,9 +1823,13 @@
       letter-spacing: 0.5px;
       color: var(--text-muted);
       background: var(--bg-secondary);
-      border-bottom: 2px solid var(--border);
+      border-bottom: 2px solid #d1d5db;
+      border-right: 1px solid #d1d5db;
       white-space: nowrap;
       user-select: none;
+    }
+    .gs-table thead th:last-child {
+      border-right: none;
     }
     .gs-table tbody tr {
       transition: background 0.15s;
@@ -1842,11 +1845,29 @@
     }
     .gs-table tbody td {
       padding: 9px 14px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid #e5e7eb;
+      border-right: 1px solid #e5e7eb;
       max-width: 280px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+    .gs-table tbody td:last-child {
+      border-right: none;
+    }
+    [data-theme="dark"] .gs-table thead th {
+      border-bottom-color: #374151;
+      border-right-color: #374151;
+    }
+    [data-theme="dark"] .gs-table tbody td {
+      border-bottom-color: #2d3748;
+      border-right-color: #2d3748;
+    }
+    [data-theme="dark"] .gs-table tbody td[style*="rgba(0,0,0,0.025)"] {
+      background: rgba(255,255,255,0.02) !important;
+    }
+    [data-theme="dark"] .gs-table tbody td[style*="color:#1d4ed8"] {
+      color: #60a5fa !important;
     }
     .gs-table tbody td.num {
       text-align: right;
@@ -1904,13 +1925,22 @@
       background: rgba(59, 130, 246, 0.12);
       color: var(--accent);
     }
+    #gs-add-tab-wrap button:hover {
+      background: var(--bg-hover) !important;
+      color: #6366f1 !important;
+      border-color: #6366f1 !important;
+    }
+    #gs-tab-manager-menu div:last-child {
+      border-bottom: none !important;
+    }
 
     /* GSheets Pagination */
     .gs-pagination {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 0;
+      padding: 16px 4px 8px;
+      margin-top: 4px;
       font-size: 13px;
       color: var(--text-muted);
     }
@@ -4846,7 +4876,7 @@
       <div class="nav-section">
         <div class="nav-section-title">Datos Comerciales</div>
         <div class="nav-item-expandable">
-          <div class="nav-item nav-item-parent" data-tooltip="Datos Comerciales" onclick="toggleSubmenu(this)">
+          <div class="nav-item nav-item-parent" data-tooltip="Datos Comerciales" onclick="toggleSubmenu(this); navigateToGsheets();">
             <i data-lucide="sheet"></i>
             <span>Google Sheets</span>
             <i data-lucide="chevron-down" class="submenu-arrow"></i>
@@ -7783,6 +7813,23 @@
             <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Datos sincronizados desde Google Sheets</p>
           </div>
           <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;align-items:center;">
+            <!-- Gestor de pestañas -->
+            <div style="position:relative;" id="gs-add-tab-wrap">
+              <button onclick="toggleGsTabManager()" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-secondary);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;"
+                onmouseenter="this.style.background='var(--bg-hover)';this.style.color='#6366f1';this.style.borderColor='#6366f1'"
+                onmouseleave="this.style.background='var(--bg-card)';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)'"
+                title="Gestionar pestañas">
+                <i data-lucide="layout-list" style="width:14px;height:14px;"></i> Pestañas
+              </button>
+              <div id="gs-tab-manager-menu" style="display:none; position:absolute; top:calc(100% + 6px); right:0; min-width:240px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.14); z-index:300; overflow:hidden;">
+                <div style="padding:10px 14px 8px; font-size:11px; font-weight:700; color:var(--text-muted); border-bottom:1px solid var(--border); text-transform:uppercase; letter-spacing:.5px;">Pestañas activas</div>
+                <div id="gs-tab-manager-active" style="max-height:260px; overflow-y:auto;"></div>
+                <div id="gs-tab-manager-add-section" style="display:none;">
+                  <div style="padding:8px 14px 6px; font-size:11px; font-weight:700; color:#6366f1; border-top:1px solid var(--border); text-transform:uppercase; letter-spacing:.5px;">+ Hojas disponibles</div>
+                  <div id="gs-add-tab-list" style="max-height:180px; overflow-y:auto;"></div>
+                </div>
+              </div>
+            </div>
             <a href="https://docs.google.com/spreadsheets/d/1W8yim9i13YN3lUx0saEkVplT0MhJm8XYwZKhyK_nzvI/edit?usp=sharing" target="_blank" rel="noopener"
               style="text-decoration:none;display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.25);border-radius:10px;font-size:12px;font-weight:600;letter-spacing:0.2px;transition:all 0.2s;white-space:nowrap;"
               onmouseenter="this.style.background='rgba(16,185,129,0.18)';this.style.boxShadow='0 2px 8px rgba(16,185,129,0.2)'"
@@ -7890,7 +7937,12 @@
             <button class="data-tab" data-gstab="gs-reasignacion" onclick="switchGsheetsTab('gs-reasignacion')">
               <i data-lucide="repeat" style="width: 14px; height: 14px;"></i> Reasignacion <span class="gs-tab-badge" id="gs-badge-reasignacion"></span>
             </button>
+            <button class="data-tab" data-gstab="gs-detalle-mensual" onclick="switchGsheetsTab('gs-detalle-mensual')">
+              <i data-lucide="calendar" style="width: 14px; height: 14px;"></i> Detalle mensual <span class="gs-tab-badge" id="gs-badge-detalle-mensual"></span>
+            </button>
           </div>
+          <!-- Subpaneles dinámicos se insertan aquí -->
+          <div id="gs-dynamic-panels"></div>
 
           <!-- Rendimiento Visitas -->
           <div class="data-subpanel" id="gs-subpanel-gs-rendimiento">
@@ -7971,6 +8023,32 @@
                 <!-- 80/20 legend -->
                 <div id="gs-ventas-legend" style="display:none; padding: 8px 16px 10px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); gap: 16px;">
                   <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:rgba(212,175,55,0.25);border:1px solid rgba(212,175,55,0.5);border-radius:2px;display:inline-block;"></span> Cliente 80/20</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detalle mensual -->
+          <div class="data-subpanel" id="gs-subpanel-gs-detalle-mensual">
+            <div class="card">
+              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <h3><i data-lucide="calendar" style="width: 18px; height: 18px;"></i> Detalle mensual</h3>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                  <div style="position:relative;">
+                    <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
+                    <input type="text" id="gs-detalle-mensual-search" class="form-control" placeholder="Buscar..." style="max-width: 200px; width:100%; padding-left: 32px; font-size: 13px;" oninput="filterGsheetsDetalleMensual()">
+                  </div>
+                  <select id="gs-detalle-mensual-mes" class="form-control" style="max-width: 140px; width:100%; font-size: 13px;" onchange="filterGsheetsDetalleMensual()">
+                    <option value="">Todos los meses</option>
+                  </select>
+                  <select id="gs-detalle-mensual-vendor" class="form-control" style="max-width: 160px; width:100%; font-size: 13px;" onchange="filterGsheetsDetalleMensual()">
+                    <option value="">Todos los vendedores</option>
+                  </select>
+                </div>
+              </div>
+              <div class="card-body" style="padding: 0;">
+                <div id="gs-detalle-mensual-body" style="overflow-x: auto;">
+                  <p style="text-align: center; color: var(--text-muted); padding: 20px;">Sin datos</p>
                 </div>
               </div>
             </div>
@@ -9833,6 +9911,24 @@
     // Region O'Higgins center coordinates
     const REGION_CENTER = [-34.35, -71.0];
     const REGION_ZOOM = 9;
+
+    function navigateToGsheets() {
+      // Activar panel gsheets
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      document.querySelectorAll('.nav-subitem').forEach(i => i.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      const panel = document.getElementById('panel-gsheets');
+      if (panel) panel.classList.add('active');
+      document.getElementById('page-title').textContent = 'Datos Comerciales';
+      localStorage.setItem('leker_active_tab', 'gsheets');
+      // Activar primer sub-tab visible
+      const firstVisible = document.querySelector('#gs-tabs .data-tab:not([style*="display: none"]):not([style*="display:none"])');
+      if (firstVisible) {
+        const tabId = firstVisible.dataset.gstab;
+        if (tabId) switchGsheetsTab(tabId);
+      }
+      loadGoogleSheetsData();
+    }
 
     // Submenu Toggle
     function toggleSubmenu(element) {
@@ -16902,50 +16998,47 @@
               </div>
             </div>
 
-            <!-- ACCIONES -->
+            <!-- ACCIONES — 3 acciones claras -->
             <div style="display:flex;flex-direction:column;gap:8px;">
 
-              <!-- Botón principal -->
+              <!-- Acción 1: Guardar posición del pin (GPS o arrastrado) -->
               <button onclick="terrenoQuickGps('${client.id}')" id="terreno-quick-gps-btn"
-                style="width:100%;padding:14px;border:none;background:linear-gradient(135deg,#2563eb,#4f46e5);color:white;border-radius:12px;cursor:pointer;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 16px rgba(79,70,229,0.35);transition:transform 0.1s,box-shadow 0.1s;"
+                style="width:100%;padding:15px;border:none;background:linear-gradient(135deg,#2563eb,#4f46e5);color:white;border-radius:13px;cursor:pointer;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 4px 16px rgba(79,70,229,0.35);transition:transform 0.1s,box-shadow 0.1s;"
                 onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 20px rgba(79,70,229,0.45)'"
                 onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(79,70,229,0.35)'">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-                ${hasGps ? 'Corregir con mi ubicación' : 'Capturar mi ubicación GPS'}
+                Guardar ubicación del pin azul
               </button>
+              <div style="font-size:10px;color:var(--text-secondary);text-align:center;margin-top:-4px;">Arrastra el pin azul en el mapa al lugar exacto, luego guarda</div>
 
-              <!-- Botones secundarios -->
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                <button onclick="document.getElementById('terreno-detail-modal').remove();openEditLocationModal('${client.id}', '${name.replace(/'/g, "\\'")}', '${(client.address || '').replace(/'/g, "\\'")}')"
-                  style="padding:11px;border:1.5px solid #d1fae5;background:#f0fdf4;color:#059669;border-radius:11px;cursor:pointer;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 0.15s;"
+              <!-- Acción 2: fila — Confirmar OK + Editar datos -->
+              <div style="display:grid;grid-template-columns:1fr${isAdmin ? ' 1fr' : ''};gap:8px;margin-top:2px;">
+                ${hasGps ? `
+                <button onclick="terrenoConfirmOk('${client.id}')"
+                  style="padding:12px;border:1.5px solid #a7f3d0;background:#f0fdf4;color:#059669;border-radius:11px;cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:7px;transition:background 0.15s;"
                   onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-                  Ajustar en mapa
-                </button>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  Ubicación correcta
+                </button>` : '<div></div>'}
                 ${isAdmin ? `
                 <button onclick="document.getElementById('terreno-detail-modal').remove();openEditClientFullModal('${client.id}')"
-                  style="padding:11px;border:1.5px solid #e0e7ff;background:#eef2ff;color:#4f46e5;border-radius:11px;cursor:pointer;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 0.15s;"
+                  style="padding:12px;border:1.5px solid #e0e7ff;background:#eef2ff;color:#4f46e5;border-radius:11px;cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:7px;transition:background 0.15s;"
                   onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='#eef2ff'">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   Editar datos
-                </button>` : `<div></div>`}
+                </button>` : ''}
               </div>
 
-              ${hasGps ? `
-              <button onclick="terrenoConfirmOk('${client.id}')"
-                style="width:100%;padding:12px;border:1.5px solid #a7f3d0;background:#f0fdf4;color:#059669;border-radius:11px;cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.15s;"
-                onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                Confirmar dirección correcta
-              </button>` : ''}
-
+              <!-- Acción 3: Eliminar (solo admin, discreta) -->
               ${isAdmin ? `
-              <button onclick="_terrenoDeleteClient('${client.id}', '${name.replace(/'/g, "\\'")}')"
-                style="width:100%;padding:10px;border:1px solid #fecaca;background:#fff5f5;color:#dc2626;border-radius:10px;cursor:pointer;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 0.15s;"
-                onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fff5f5'">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                Eliminar cliente
-              </button>` : ''}
+              <div style="text-align:center;padding-top:2px;">
+                <button onclick="_terrenoDeleteClient('${client.id}', '${name.replace(/'/g, "\\'")}')"
+                  style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:11px;font-weight:600;opacity:0.6;display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;transition:opacity 0.15s;"
+                  onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  Eliminar cliente
+                </button>
+              </div>` : ''}
 
             </div>
           </div>
@@ -24049,6 +24142,7 @@
     let gsheetsAllVentas = [];
     let gsheetsAllCobranzas = [];
     let gsheetsAllDirecciones = [];
+    let gsheetsAllDetalleMensual = [];
 
     function switchGsheetsTab(tabName) {
       document.querySelectorAll('#panel-gsheets .data-tab').forEach(t => {
@@ -24373,6 +24467,7 @@
 
       // Find and render each sheet
       const ventas = findSheetData(data, ['ventas por mes', 'ventas']);
+      const detalleMensual = findSheetData(data, ['detalle mensual', 'detalle']);
       const cobranzas = findSheetData(data, ['cobranza']);
       const vendedores = findSheetData(data, ['vendedores', 'zonales']);
       const v8020 = findSheetData(data, ['80-20 vendedores', '80-20 vend', '80-20', '80/20', 'pareto', 'analisis 80']);
@@ -24384,6 +24479,7 @@
       const tablaDinamica = findSheetData(data, ['tabla dinámica', 'tabla dinamica']);
 
       renderGsheetsVentas(ventas);
+      renderGsheetsDetalleMensual(detalleMensual);
       renderGsheetsCobranzas(cobranzas);
       renderGsheetsVendedores(vendedores);
       renderGsheets8020(v8020, z8020);
@@ -24397,6 +24493,7 @@
         else if (el) el.textContent = '';
       }
       setBadge('gs-badge-ventas', ventas);
+      setBadge('gs-badge-detalle-mensual', detalleMensual);
       setBadge('gs-badge-cobranzas', cobranzas);
       setBadge('gs-badge-vendedores', vendedores);
       setBadge('gs-badge-8020', v8020);
@@ -24407,6 +24504,250 @@
 
       // Update dashboard summary with fresh data
       renderDashboardSummary();
+
+      // Detectar hojas no mapeadas para el gestor
+      _detectUnmappedSheets(data);
+      // Aplicar tabs ocultos (persiste entre recargas)
+      _gsApplyHiddenTabs();
+    }
+
+    // Patrones ya mapeados a tabs fijos (para excluirlos del "+" menu)
+    const _GS_KNOWN_PATTERNS = [
+      'ventas por mes', 'ventas', 'detalle mensual', 'detalle',
+      'cobranza', 'vendedores', 'zonales', 'ejecutivos',
+      '80-20', '80/20', 'pareto', 'analisis 80',
+      'direccion', 'reasignacion', 'reasignación',
+      'cod. clientes', 'cod clientes', 'codigos',
+      'tabla dinámica', 'tabla dinamica'
+    ];
+
+    let _gsDynamicTabsData = {}; // sheetName → rows[][]
+
+    function _isKnownSheet(name) {
+      const n = name.toLowerCase();
+      return _GS_KNOWN_PATTERNS.some(p => n.includes(p));
+    }
+
+    function _getSheetNames(data) {
+      if (Array.isArray(data)) return data.map(s => s.name).filter(Boolean);
+      if (data && typeof data === 'object') return Object.keys(data);
+      return [];
+    }
+
+    function _getSheetRows(data, name) {
+      if (Array.isArray(data)) {
+        const found = data.find(s => s.name === name);
+        return found ? (found.data || found.rows || found) : null;
+      }
+      return data[name] || null;
+    }
+
+    function _detectUnmappedSheets(data) {
+      const all = _getSheetNames(data);
+      const unmapped = all.filter(n => !_isKnownSheet(n));
+      // Guardar datos de hojas no mapeadas para el gestor
+      unmapped.forEach(name => {
+        _gsDynamicTabsData[name] = _getSheetRows(data, name);
+      });
+    }
+
+    // Lista de tabs estáticos y sus labels
+    const _GS_STATIC_TABS = [
+      { id: 'gs-rendimiento',   label: 'Rendimiento' },
+      { id: 'gs-ventas',        label: 'Ventas' },
+      { id: 'gs-cobranzas',     label: 'Cobranzas' },
+      { id: 'gs-vendedores',    label: 'Vendedores' },
+      { id: 'gs-8020',          label: '80-20' },
+      { id: 'gs-direcciones',   label: 'Direcciones' },
+      { id: 'gs-reasignacion',  label: 'Reasignacion' },
+      { id: 'gs-detalle-mensual', label: 'Detalle mensual' },
+    ];
+
+    const _GS_HIDDEN_KEY = 'leker_gs_hidden_tabs';
+
+    function _gsGetHiddenTabs() {
+      try { return new Set(JSON.parse(localStorage.getItem(_GS_HIDDEN_KEY) || '[]')); }
+      catch(e) { return new Set(); }
+    }
+
+    function _gsSaveHiddenTabs(set) {
+      localStorage.setItem(_GS_HIDDEN_KEY, JSON.stringify([...set]));
+    }
+
+    function _gsApplyHiddenTabs() {
+      const hidden = _gsGetHiddenTabs();
+      document.querySelectorAll('#gs-tabs .data-tab[data-gstab]').forEach(btn => {
+        const id = btn.dataset.gstab;
+        const shouldHide = hidden.has(id);
+        btn.style.display = shouldHide ? 'none' : '';
+        const panel = document.getElementById('gs-subpanel-' + id);
+        if (panel && shouldHide) { panel.classList.remove('active'); }
+      });
+    }
+
+    function toggleGsTabManager() {
+      const menu = document.getElementById('gs-tab-manager-menu');
+      if (!menu) return;
+      const isOpen = menu.style.display !== 'none';
+      if (isOpen) { menu.style.display = 'none'; return; }
+
+      _renderGsTabManager();
+      menu.style.display = 'block';
+      setTimeout(() => {
+        document.addEventListener('click', function _close(e) {
+          if (!document.getElementById('gs-add-tab-wrap')?.contains(e.target)) {
+            menu.style.display = 'none';
+            document.removeEventListener('click', _close);
+          }
+        });
+      }, 10);
+    }
+
+    function _renderGsTabManager() {
+      const hidden = _gsGetHiddenTabs();
+
+      // Tabs activos (estáticos + dinámicos ya agregados)
+      const activeEl = document.getElementById('gs-tab-manager-active');
+      if (activeEl) {
+        const allTabs = [
+          ..._GS_STATIC_TABS,
+          ...[...document.querySelectorAll('#gs-tabs [data-gstab^="gs-dyn-"]')].map(b => ({
+            id: b.dataset.gstab, label: b.dataset.sheetname || b.textContent.trim()
+          }))
+        ];
+
+        activeEl.innerHTML = allTabs.map(({ id, label }) => {
+          const isHidden = hidden.has(id);
+          return `<label style="display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;transition:background .12s;"
+            onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+            <input type="checkbox" ${isHidden ? '' : 'checked'} onchange="toggleGsTabVisibility('${id}', this.checked)"
+              style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent);">
+            <span style="${isHidden ? 'color:var(--text-muted);text-decoration:line-through;' : ''}">${label}</span>
+          </label>`;
+        }).join('');
+      }
+
+      // Hojas no mapeadas del spreadsheet
+      const addSection = document.getElementById('gs-tab-manager-add-section');
+      const addList = document.getElementById('gs-add-tab-list');
+      const alreadyAdded = new Set([
+        ..._GS_STATIC_TABS.map(t => t.id),
+        ...[...document.querySelectorAll('#gs-tabs [data-gstab^="gs-dyn-"]')].map(b => b.dataset.sheetname)
+      ]);
+
+      const available = Object.keys(_gsDynamicTabsData).filter(n => !alreadyAdded.has(n));
+
+      if (addSection) addSection.style.display = available.length > 0 ? 'block' : 'none';
+      if (addList) {
+        addList.innerHTML = available.map(name => {
+          const rows = _gsDynamicTabsData[name];
+          const count = rows && rows.length > 1 ? rows.length - 1 : 0;
+          return `<div onclick="addDynamicGsheetsTab('${name.replace(/'/g, "\\'")}')"
+            style="padding:9px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);font-size:13px;transition:background .12s;"
+            onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+            <span style="display:flex;align-items:center;gap:7px;color:#6366f1;">
+              <i data-lucide="plus-circle" style="width:13px;height:13px;flex-shrink:0;"></i> ${name}
+            </span>
+            ${count > 0 ? `<span class="gs-tab-badge">${count}</span>` : ''}
+          </div>`;
+        }).join('');
+        _createIcons();
+      }
+    }
+
+    function toggleGsTabVisibility(tabId, visible) {
+      const hidden = _gsGetHiddenTabs();
+      if (visible) hidden.delete(tabId);
+      else hidden.add(tabId);
+      _gsSaveHiddenTabs(hidden);
+      _gsApplyHiddenTabs();
+
+      // Si ocultamos el tab activo, ir al primero visible
+      const activeBtn = document.querySelector('#gs-tabs .data-tab.active');
+      if (activeBtn && hidden.has(activeBtn.dataset.gstab)) {
+        const firstVisible = document.querySelector('#gs-tabs .data-tab:not([style*="none"])');
+        if (firstVisible) firstVisible.click();
+      }
+      // Re-render el manager para reflejar el cambio
+      _renderGsTabManager();
+    }
+
+    function addDynamicGsheetsTab(sheetName) {
+      // Cerrar menú gestor
+      const menu = document.getElementById('gs-tab-manager-menu');
+      if (menu) menu.style.display = 'none';
+
+      const tabId = 'gs-dyn-' + sheetName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      if (document.getElementById('gs-subpanel-' + tabId)) {
+        switchGsheetsTab(tabId);
+        return;
+      }
+
+      // Crear botón de tab
+      const tabsBar = document.getElementById('gs-tabs');
+      const addWrap = document.getElementById('gs-add-tab-wrap');
+      const btn = document.createElement('button');
+      btn.className = 'data-tab';
+      btn.dataset.gstab = tabId;
+      btn.dataset.sheetname = sheetName;
+      btn.setAttribute('onclick', `switchGsheetsTab('${tabId}')`);
+      btn.innerHTML = `<i data-lucide="table-2" style="width:14px;height:14px;"></i> ${sheetName} <span class="gs-tab-badge" id="gs-badge-${tabId}"></span>`;
+      tabsBar.insertBefore(btn, addWrap);
+
+      // Crear subpanel
+      const panel = document.createElement('div');
+      panel.className = 'data-subpanel';
+      panel.id = 'gs-subpanel-' + tabId;
+      panel.innerHTML = `
+        <div class="card">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <h3><i data-lucide="table-2" style="width:18px;height:18px;"></i> ${sheetName}</h3>
+            <div style="position:relative;">
+              <i data-lucide="search" style="width:14px;height:14px;position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;"></i>
+              <input type="text" id="gs-dyn-search-${tabId}" class="form-control" placeholder="Buscar..."
+                style="max-width:220px;width:100%;padding-left:32px;font-size:13px;"
+                oninput="filterDynamicGsheetsTab('${tabId}','${sheetName.replace(/'/g, "\\'")}')">
+            </div>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div id="gs-dyn-body-${tabId}" style="overflow-x:auto;">
+              <p style="text-align:center;color:var(--text-muted);padding:20px;">Cargando...</p>
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('gs-dynamic-panels').appendChild(panel);
+
+      // Renderizar datos
+      const rows = _gsDynamicTabsData[sheetName];
+      const cleaned = rows ? cleanSheetData(rows) : null;
+      // Guardar también por tabId para que gsPageTable lo encuentre al paginar
+      if (cleaned) _gsDynamicTabsData[tabId] = cleaned;
+      if (cleaned && cleaned.length > 1) {
+        sheetToTable(cleaned, `gs-dyn-body-${tabId}`, { maxRows: 100, page: 0, storeKey: tabId });
+        const badge = document.getElementById(`gs-badge-${tabId}`);
+        if (badge) badge.textContent = cleaned.length - 1;
+      } else {
+        document.getElementById(`gs-dyn-body-${tabId}`).innerHTML =
+          '<p style="text-align:center;color:var(--text-muted);padding:20px;">Sin datos disponibles</p>';
+      }
+
+      _createIcons();
+      switchGsheetsTab(tabId);
+
+      // Actualizar menú "+" (quitar la hoja recién agregada)
+      if (gsheetsData) _detectUnmappedSheets(gsheetsData);
+    }
+
+    function filterDynamicGsheetsTab(tabId, sheetName) {
+      const rows = _gsDynamicTabsData[sheetName];
+      if (!rows || rows.length === 0) return;
+      const cleaned = cleanSheetData(rows);
+      const search = (document.getElementById(`gs-dyn-search-${tabId}`)?.value || '').toLowerCase();
+      const headers = cleaned[0];
+      const filtered = [headers, ...cleaned.slice(1).filter(row =>
+        !search || row.some(cell => String(cell).toLowerCase().includes(search))
+      )];
+      sheetToTable(filtered, `gs-dyn-body-${tabId}`, { maxRows: 100, page: 0, storeKey: tabId });
     }
 
     function sheetToTable(rows, containerId, opts = {}) {
@@ -24417,7 +24758,15 @@
       }
 
       const headers = rows[0];
-      const dataRows = rows.slice(1).filter(r => r.some(cell => cell !== '' && cell != null));
+      // Detectar si hay columna de código/cliente en posición 0 para filtrar sub-filas de pivot
+      const firstColHasCode = rows.slice(1).some(r => r[0] && String(r[0]).trim() !== '');
+      const dataRows = rows.slice(1).filter(r => {
+        const filled = r.filter(cell => cell !== '' && cell != null).length;
+        if (filled < 2) return false;
+        // Si la primera columna parece ser un código, exigirla para evitar sub-filas de pivot
+        if (firstColHasCode && (!r[0] || String(r[0]).trim() === '')) return false;
+        return true;
+      });
 
       if (opts.maxRows && dataRows.length > opts.maxRows && !opts.showAll) {
         const pageSize = opts.maxRows || 100;
@@ -24426,17 +24775,28 @@
         const pageRows = dataRows.slice(start, start + pageSize);
         const totalPages = Math.ceil(dataRows.length / pageSize);
 
-        let html = buildTableHtml(headers, pageRows, opts);
-        html += `<div class="gs-pagination">
+        // Tabla en el contenedor con scroll horizontal
+        container.innerHTML = buildTableHtml(headers, pageRows, opts);
+
+        // Paginación en el padre (fuera del overflow-x) para que no quede cortada
+        const parent = container.parentElement;
+        const existingPag = parent?.querySelector('.gs-pagination');
+        if (existingPag) existingPag.remove();
+        const pagDiv = document.createElement('div');
+        pagDiv.className = 'gs-pagination';
+        pagDiv.innerHTML = `
           <span class="gs-pagination-info">Mostrando ${start + 1}-${Math.min(start + pageSize, dataRows.length)} de ${dataRows.length} registros</span>
           <div class="gs-pagination-controls">
-            ${page > 0 ? `<button onclick="gsPageTable('${containerId}', ${page - 1}, '${opts.storeKey || ''}')">Anterior</button>` : ''}
+            ${page > 0 ? `<button onclick="gsPageTable('${containerId}', ${page - 1}, '${opts.storeKey || ''}')">← Anterior</button>` : ''}
             <span class="gs-pagination-page">Pag. ${page + 1} / ${totalPages}</span>
-            ${page < totalPages - 1 ? `<button onclick="gsPageTable('${containerId}', ${page + 1}, '${opts.storeKey || ''}')">Siguiente</button>` : ''}
-          </div>
-        </div>`;
-        container.innerHTML = html;
+            ${page < totalPages - 1 ? `<button onclick="gsPageTable('${containerId}', ${page + 1}, '${opts.storeKey || ''}')">Siguiente →</button>` : ''}
+          </div>`;
+        if (parent) parent.appendChild(pagDiv);
       } else {
+        // Limpiar paginación anterior si existía
+        const parent = container.parentElement;
+        const existingPag = parent?.querySelector('.gs-pagination');
+        if (existingPag) existingPag.remove();
         container.innerHTML = buildTableHtml(headers, dataRows, opts);
       }
 
@@ -24445,9 +24805,17 @@
     }
 
     function buildTableHtml(headers, rows, opts = {}) {
+      // Columnas de meses: headers numéricos 1-12
+      const monthCols = new Set(
+        headers.map((h, i) => ({ h: String(h || '').trim(), i }))
+          .filter(({ h }) => /^\d{1,2}$/.test(h))
+          .map(({ i }) => i)
+      );
+
       let html = '<div class="gs-table-wrap"><table class="gs-table"><thead><tr>';
-      headers.forEach(h => {
-        html += `<th>${h || ''}</th>`;
+      headers.forEach((h, i) => {
+        const isMonth = monthCols.has(i);
+        html += `<th style="${isMonth ? 'text-align:right;min-width:80px;' : ''}">${h || ''}</th>`;
       });
       html += '</tr></thead><tbody>';
 
@@ -24466,13 +24834,23 @@
           const val = cell != null ? cell : '';
           const isNum = isNumericColumn(cell);
           const str = String(val);
+          const isEmpty = str.trim() === '';
+          const isMonth = monthCols.has(i);
           const truncated = str.length > 50 ? str.slice(0, 47) + '...' : str;
           const titleAttr = str.length > 50 ? ` title="${str.replace(/"/g, '&quot;')}"` : '';
           const isAccent = opts.accentCols && opts.accentCols.includes(i);
           const isBlue = opts.blueCols && opts.blueCols.includes(i);
-          const cellStyle = isBlue && str ? ` style="color: #3b82f6; font-weight: 600;"` :
-                            (isAccent && str ? ` style="color: var(--accent); font-weight: 600;"` : '');
-          html += `<td${isNum ? ' class="num"' : ''}${titleAttr}${cellStyle}>${truncated}</td>`;
+
+          let style = '';
+          if (isMonth && isEmpty) style = 'background:#f3f4f6;border-right:1px solid #e5e7eb;';
+          else if (isMonth && !isEmpty) style = 'color:#1d4ed8;font-weight:600;text-align:right;border-right:1px solid #e5e7eb;';
+          else if (isBlue && str) style = 'color:#3b82f6;font-weight:600;';
+          else if (isAccent && str) style = 'color:var(--accent);font-weight:600;';
+
+          const styleAttr = style ? ` style="${style}"` : '';
+          const cls = isNum ? ' class="num"' : '';
+          const content = isMonth && isEmpty ? '<span style="color:#d1d5db;">—</span>' : truncated;
+          html += `<td${cls}${titleAttr}${styleAttr}>${content}</td>`;
         });
         html += '</tr>';
       });
@@ -24638,6 +25016,180 @@
 
       _renderVentasGrouped(filtered, 'gs-ventas-body');
       _showVentasLegend();
+    }
+
+    // Detalle mensual — limpiador específico para tabla pivot
+    function _detalleMensualClean(rawData) {
+      if (!rawData || rawData.length < 2) return rawData;
+
+      // 1. Buscar la fila real de encabezados: contiene "cod" o "cliente" o "nombre"
+      let headerIdx = -1;
+      for (let i = 0; i < Math.min(rawData.length, 10); i++) {
+        const row = rawData[i];
+        const rowStr = row.map(c => String(c || '').toLowerCase()).join('|');
+        if (rowStr.includes('cod') || rowStr.includes('cliente') || rowStr.includes('nombre')) {
+          headerIdx = i;
+          break;
+        }
+      }
+      if (headerIdx < 0) headerIdx = 0;
+
+      const headers = rawData[headerIdx];
+
+      // 2. Columnas de meses: header es solo número 1-12
+      const numCols = headers
+        .map((h, i) => ({ i, h: String(h || '').trim() }))
+        .filter(({ h }) => /^\d{1,2}$/.test(h))
+        .map(({ i }) => i);
+
+      // 3. Columna de código (col 0 o la que contenga "cod")
+      const codeIdx = headers.findIndex(h => h && String(h).toLowerCase().includes('cod'));
+      const anchorIdx = codeIdx >= 0 ? codeIdx : 0;
+
+      // 4. Filtrar: solo filas donde col ancla tiene valor Y al menos un mes tiene valor
+      const rows = rawData.slice(headerIdx + 1).filter(row => {
+        const hasCode = row[anchorIdx] && String(row[anchorIdx]).trim() !== '';
+        if (!hasCode) return false;
+        if (numCols.length === 0) return true;
+        return numCols.some(i => row[i] !== '' && row[i] != null && String(row[i]).trim() !== '');
+      });
+
+      return [headers, ...rows];
+    }
+
+    function renderGsheetsDetalleMensual(data) {
+      if (!data || data.length === 0) return;
+      data = _detalleMensualClean(data);
+      gsheetsAllDetalleMensual = data;
+
+      const headers = data[0] || [];
+      const vendIdx = _ventasVendorIdx(headers);
+
+      const mesSelect = document.getElementById('gs-detalle-mensual-mes');
+      if (mesSelect) mesSelect.style.display = 'none';
+
+      const vendorSelect = document.getElementById('gs-detalle-mensual-vendor');
+      if (vendIdx >= 0 && vendorSelect) {
+        const vendors = [...new Set(data.slice(1).map(r => r[vendIdx]).filter(Boolean))].sort();
+        vendorSelect.innerHTML = '<option value="">Todos los vendedores</option>' + vendors.map(v => `<option value="${v}">${v}</option>`).join('');
+      }
+
+      _renderDetalleMensualPivot(data, 0);
+    }
+
+    function filterGsheetsDetalleMensual() {
+      if (!gsheetsAllDetalleMensual || gsheetsAllDetalleMensual.length === 0) return;
+      const search = (document.getElementById('gs-detalle-mensual-search').value || '').toLowerCase();
+      const vendor = document.getElementById('gs-detalle-mensual-vendor')?.value || '';
+      const headers = gsheetsAllDetalleMensual[0];
+      const vendIdx = _ventasVendorIdx(headers);
+      let filtered = [headers];
+      gsheetsAllDetalleMensual.slice(1).forEach(row => {
+        const matchSearch = !search || row.some(cell => String(cell).toLowerCase().includes(search));
+        const matchVendor = !vendor || (vendIdx >= 0 && String(row[vendIdx] || '') === vendor);
+        if (matchSearch && matchVendor) filtered.push(row);
+      });
+      _renderDetalleMensualPivot(filtered, 0);
+    }
+
+    function _renderDetalleMensualPivot(data, page) {
+      const container = document.getElementById('gs-detalle-mensual-body');
+      if (!container || !data || data.length < 2) return;
+
+      const headers = data[0];
+      const allRows = data.slice(1);
+      const pageSize = 100;
+      const totalPages = Math.ceil(allRows.length / pageSize);
+      const start = page * pageSize;
+      const rows = allRows.slice(start, start + pageSize);
+
+      // Clasificar columnas
+      const monthCols = headers.map((h, i) => ({ i, h: String(h || '').trim() })).filter(({ h }) => /^\d{1,2}$/.test(h));
+      const monthIdx = new Set(monthCols.map(m => m.i));
+      // Columnas de texto: las que NO son mes y NO están completamente vacías en los datos
+      const textCols = headers.map((h, i) => i).filter(i => !monthIdx.has(i) && headers[i] && String(headers[i]).trim() !== '');
+      // Excluir columnas "AÑO" y "MES" que son meta del pivot y suelen estar vacías
+      const skipLabels = ['año', 'mes', 'year', 'month'];
+      const infoColsFiltered = textCols.filter(i => !skipLabels.includes(String(headers[i] || '').toLowerCase()));
+
+      const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+      // Calcular totales anuales por fila
+      const hasTotal = monthCols.length > 0;
+
+      let html = `<div class="gs-table-wrap"><table class="gs-table" style="border-collapse:collapse;">
+        <thead><tr>`;
+
+      // Cabeceras de texto
+      infoColsFiltered.forEach(i => {
+        html += `<th style="background:#f8fafc;border-bottom:2px solid #e2e8f0;border-right:1px solid #e2e8f0;padding:10px 14px;white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">${headers[i] || ''}</th>`;
+      });
+      // Cabeceras de meses
+      monthCols.forEach(({ i, h }, mi) => {
+        const label = MONTHS[parseInt(h) - 1] || h;
+        html += `<th style="background:#eff6ff;border-bottom:2px solid #bfdbfe;border-right:1px solid #dbeafe;padding:10px 8px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#3b82f6;min-width:72px;">${label}</th>`;
+      });
+      if (hasTotal) {
+        html += `<th style="background:#f0fdf4;border-bottom:2px solid #bbf7d0;border-right:none;padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#16a34a;">Total</th>`;
+      }
+      html += '</tr></thead><tbody>';
+
+      rows.forEach((row, ri) => {
+        const rowBg = ri % 2 === 0 ? '#ffffff' : '#fafafa';
+        html += `<tr>`;
+
+        // Celdas de texto
+        infoColsFiltered.forEach(i => {
+          const val = String(row[i] || '');
+          html += `<td style="background:${rowBg};border-bottom:1px solid #e2e8f0;border-right:1px solid #e2e8f0;padding:9px 14px;white-space:nowrap;font-size:13px;">${val}</td>`;
+        });
+
+        // Celdas de meses
+        let rowTotal = 0;
+        monthCols.forEach(({ i }, mi) => {
+          const raw = row[i];
+          const isEmpty = raw === '' || raw == null || String(raw).trim() === '';
+          if (!isEmpty) {
+            const num = parseFloat(String(raw).replace(/\./g, '').replace(',', '.'));
+            if (!isNaN(num)) rowTotal += num;
+          }
+          if (isEmpty) {
+            html += `<td style="background:#f1f5f9;border-bottom:1px solid #e2e8f0;border-right:1px solid #dbeafe;padding:9px 8px;text-align:right;color:#cbd5e1;font-size:12px;">—</td>`;
+          } else {
+            const formatted = String(raw).trim();
+            html += `<td style="background:${rowBg};border-bottom:1px solid #e2e8f0;border-right:1px solid #dbeafe;padding:9px 8px;text-align:right;color:#1d4ed8;font-weight:600;font-size:13px;">${formatted}</td>`;
+          }
+        });
+
+        // Total fila
+        if (hasTotal) {
+          const totalFmt = rowTotal > 0 ? rowTotal.toLocaleString('es-CL') : '—';
+          const totalStyle = rowTotal > 0 ? 'color:#15803d;font-weight:700;' : 'color:#cbd5e1;';
+          html += `<td style="background:#f0fdf4;border-bottom:1px solid #e2e8f0;border-right:none;padding:9px 12px;text-align:right;font-size:13px;${totalStyle}">${totalFmt}</td>`;
+        }
+
+        html += '</tr>';
+      });
+
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+
+      // Paginación
+      const parent = container.parentElement;
+      const existingPag = parent?.querySelector('.gs-pagination');
+      if (existingPag) existingPag.remove();
+      if (totalPages > 1) {
+        const pagDiv = document.createElement('div');
+        pagDiv.className = 'gs-pagination';
+        pagDiv.innerHTML = `
+          <span class="gs-pagination-info">Mostrando ${start + 1}–${Math.min(start + pageSize, allRows.length)} de ${allRows.length} registros</span>
+          <div class="gs-pagination-controls">
+            ${page > 0 ? `<button onclick="_renderDetalleMensualPivot(gsheetsAllDetalleMensual,${page-1})">← Anterior</button>` : ''}
+            <span class="gs-pagination-page">Pág. ${page + 1} / ${totalPages}</span>
+            ${page < totalPages - 1 ? `<button onclick="_renderDetalleMensualPivot(gsheetsAllDetalleMensual,${page+1})">Siguiente →</button>` : ''}
+          </div>`;
+        if (parent) parent.appendChild(pagDiv);
+      }
     }
 
     // Cobranzas
@@ -28393,7 +28945,12 @@
         case 'ventas': data = gsheetsAllVentas; break;
         case 'cobranzas': data = gsheetsAllCobranzas; break;
         case 'direcciones': data = gsheetsAllDirecciones; break;
-        default: return;
+        case 'detalle-mensual': data = gsheetsAllDetalleMensual; break;
+        default:
+          // Tabs dinámicos
+          if (_gsDynamicTabsData && _gsDynamicTabsData[storeKey]) {
+            data = cleanSheetData(_gsDynamicTabsData[storeKey]);
+          } else return;
       }
       if (!data) return;
 
