@@ -2437,6 +2437,25 @@ app.get('/api/gsheets/:sheet', async (req, res) => {
   }
 });
 
+// Actualiza la línea de crédito de un cliente en el Google Sheet
+app.post('/api/gsheets/linea-credito', authenticate, async (req, res) => {
+  try {
+    const { externalId, sheetName, value } = req.body;
+    if (!externalId || value === undefined || value === null || isNaN(Number(value)) || Number(value) <= 0) {
+      return res.status(400).json({ success: false, error: 'externalId y value (número positivo) requeridos' });
+    }
+    const sheet = sheetName || 'Cobranzas';
+    const result = await googleSheetsService.updateSheetCell(
+      sheet, String(externalId).trim(),
+      ['linea', 'limite', 'credito'],
+      Number(value)
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // =============================================
 // WEBHOOK: Google Apps Script → Backend (push instantáneo)
 // =============================================

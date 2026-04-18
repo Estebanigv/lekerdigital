@@ -372,6 +372,33 @@ class GoogleSheetsService {
     }
   }
 
+  /**
+   * Actualiza una celda específica de una hoja buscando el cliente por código
+   * y la columna por patrones de header.
+   */
+  async updateSheetCell(sheetName, externalId, columnPatterns, value) {
+    if (!this.isConfigured()) return { success: false, error: 'Google Sheets no configurado' };
+    try {
+      const sheets = await this._sheets();
+      const { rowIndex, headers } = await this._findClientRow(sheets, sheetName, externalId);
+      if (rowIndex === -1) return { success: false, error: `Cliente ${externalId} no encontrado en hoja "${sheetName}"` };
+      const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const colIdx = headers.findIndex(h => columnPatterns.some(p => norm(h).includes(norm(p))));
+      if (colIdx === -1) return { success: false, error: `Columna no encontrada en "${sheetName}" (patrones: ${columnPatterns.join(', ')})` };
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: this.spreadsheetId,
+        range: `${sheetName}!${this._colLetter(colIdx + 1)}${rowIndex}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[value]] }
+      });
+      console.log(`[GSheets] updateSheetCell(${sheetName}, ${externalId}) → col ${colIdx + 1} fila ${rowIndex} = ${value}`);
+      return { success: true };
+    } catch (error) {
+      console.error('[GSheets] updateSheetCell error:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
   // ─────────────────────────────────────────────
   // COMPATIBILIDAD (ya no se usa Apps Script)
   // ─────────────────────────────────────────────
