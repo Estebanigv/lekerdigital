@@ -17285,23 +17285,34 @@
         }
       }
 
-      // Cobranzas
+      // Cobranzas — incluye detalle de cada documento/factura
       if (gsheetsAllCobranzas && gsheetsAllCobranzas.length > 1) {
         const hdrs = gsheetsAllCobranzas[0];
-        const codIdx = hdrs.findIndex(h => h && (h.toLowerCase().includes('código') || h.toLowerCase().includes('codigo') || h.toLowerCase() === 'cod' || h.toLowerCase() === 'rut'));
+        const codIdx   = hdrs.findIndex(h => h && (h.toLowerCase().includes('código') || h.toLowerCase().includes('codigo') || h.toLowerCase() === 'cod' || h.toLowerCase() === 'rut'));
         const montoIdx = hdrs.findIndex(h => h && (h.toLowerCase().includes('monto') || h.toLowerCase().includes('saldo') || h.toLowerCase().includes('deuda')));
-        const diasIdx = hdrs.findIndex(h => h && (h.toLowerCase().includes('días') || h.toLowerCase().includes('dias') || h.toLowerCase().includes('atraso')));
+        const diasIdx  = hdrs.findIndex(h => h && (h.toLowerCase().includes('días') || h.toLowerCase().includes('dias') || h.toLowerCase().includes('atraso')));
         const lineaIdx = hdrs.findIndex(h => h && (h.toLowerCase().includes('linea') || h.toLowerCase().includes('límite') || h.toLowerCase().includes('limite') || h.toLowerCase().includes('credito') || h.toLowerCase().includes('crédito')));
+        const docIdx   = hdrs.findIndex(h => h && (h.toLowerCase().includes('documento') || h.toLowerCase().includes('factura') || h.toLowerCase().includes('folio') || h.toLowerCase() === 'doc'));
+        const vencIdx  = hdrs.findIndex(h => h && (h.toLowerCase().includes('venc') || h.toLowerCase().includes('fecha')));
         if (codIdx >= 0) {
           const rows = gsheetsAllCobranzas.slice(1).filter(r => String(r[codIdx] || '').trim() === extId);
           if (rows.length > 0) {
             let totalMonto = 0, maxDias = 0, linea = null;
+            const docs = [];
             rows.forEach(r => {
-              if (montoIdx >= 0 && r[montoIdx]) totalMonto += _parseChileanNum(r[montoIdx]);
-              if (diasIdx >= 0 && r[diasIdx]) { const d = _parseChileanNum(r[diasIdx]); if (d > maxDias) maxDias = d; }
+              const monto = montoIdx >= 0 ? _parseChileanNum(r[montoIdx]) : 0;
+              const dias  = diasIdx  >= 0 ? _parseChileanNum(r[diasIdx])  : 0;
+              if (monto) totalMonto += monto;
+              if (dias > maxDias) maxDias = dias;
               if (lineaIdx >= 0 && r[lineaIdx] && !linea) linea = _parseChileanNum(r[lineaIdx]) || null;
+              docs.push({
+                doc:   docIdx  >= 0 ? String(r[docIdx]  || '').trim() : '',
+                fecha: vencIdx >= 0 ? String(r[vencIdx] || '').trim() : '',
+                monto,
+                dias,
+              });
             });
-            result.cobranzas = { total: totalMonto, dias: maxDias, count: rows.length, linea };
+            result.cobranzas = { total: totalMonto, dias: maxDias, count: rows.length, linea, docs };
           }
         }
       }
@@ -17759,8 +17770,36 @@
                 const cob = comercial.cobranzas;
                 const isVencido = cob && cob.dias > 0;
 
+                // Detalle de documentos de cobranza para la tabla
+                const cobDocs = cob && cob.docs ? cob.docs : [];
+                const cobDocsHtml = cobDocs.length > 0 ? `
+                  <div style="margin-top:10px;border-top:1px solid ${_c.divider};padding-top:8px;">
+                    <div style="display:grid;grid-template-columns:1fr auto auto;gap:0;font-size:8.5px;font-weight:700;color:${_c.textMuted};text-transform:uppercase;letter-spacing:0.5px;padding:0 4px 5px;border-bottom:1px solid ${_c.divider};">
+                      <span>Documento</span>
+                      <span style="text-align:right;padding-right:12px;">Vencimiento</span>
+                      <span style="text-align:right;">Saldo</span>
+                    </div>
+                    ${cobDocs.map(d => {
+                      const rowColor = d.dias > 0 ? (d.dias > 30 ? '#ef4444' : '#f59e0b') : '#10b981';
+                      const rowBg = d.dias > 0
+                        ? (_isDark ? 'rgba(239,68,68,0.06)' : 'rgba(239,68,68,0.04)')
+                        : 'transparent';
+                      return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:0;padding:5px 4px;background:${rowBg};border-radius:5px;margin-top:2px;align-items:center;">
+                        <span style="font-size:10px;font-weight:700;color:${_isDark ? '#93c5fd' : '#2563eb'};display:flex;align-items:center;gap:4px;">
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                          Fac. ${d.doc || '—'}
+                        </span>
+                        <span style="font-size:9px;color:${rowColor};text-align:right;padding-right:12px;font-weight:600;">${d.fecha || '—'}${d.dias > 0 ? ` <span style="opacity:0.8;">(${d.dias}d)</span>` : ''}</span>
+                        <span style="font-size:10px;font-weight:700;color:${rowColor};text-align:right;">${fmtFull(d.monto)}</span>
+                      </div>`;
+                    }).join('')}
+                  </div>` : '';
+
                 const fichaHtml = `
-                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+                  <div style="display:flex;flex-direction:column;gap:10px;">
+
+                  <!-- FILA SUPERIOR: ventas + línea de crédito -->
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
 
                     <!-- VENTA TOTAL AÑO -->
                     <div style="background:${_c.cardBg};border-radius:12px;padding:16px 14px 14px;border:1px solid ${_c.cardBorder};box-shadow:${_isDark ? 'inset 0 1px 0 rgba(255,255,255,0.03),0 2px 8px rgba(0,0,0,0.4)' : '0 1px 4px rgba(0,0,0,0.06)'};position:relative;overflow:hidden;">
@@ -17774,26 +17813,9 @@
                       <div style="margin-top:8px;padding-top:7px;border-top:1px solid ${_c.divider};font-size:9px;color:${_c.textMuted};">${mesesActivos}/12 meses activos</div>
                     </div>
 
-                    <!-- DEUDA / COBRANZA -->
-                    <div style="background:${_c.cardBg};border-radius:12px;padding:16px 14px 14px;border:1px solid ${_c.cardBorder};box-shadow:${_isDark ? 'inset 0 1px 0 rgba(255,255,255,0.03),0 2px 8px rgba(0,0,0,0.4)' : '0 1px 4px rgba(0,0,0,0.06)'};position:relative;overflow:hidden;">
-                      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${cob ? (isVencido ? '#ef4444' : '#10b981') : _c.cardBorder};border-radius:14px 14px 0 0;"></div>
-                      <div style="font-size:8.5px;color:${_c.textMuted};text-transform:uppercase;font-weight:700;letter-spacing:0.8px;margin-bottom:8px;display:flex;align-items:center;gap:4px;">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${cob ? (isVencido ? '#f87171' : '#34d399') : _c.textMuted}" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                        Deuda
-                      </div>
-                      ${cob
-                        ? `<div style="font-size:22px;font-weight:800;color:${isVencido?'#f87171':'#34d399'};line-height:1;letter-spacing:-0.5px;">${fmt(cob.total)}</div>
-                           <div style="font-size:9px;color:${_c.textDisabled};margin-top:3px;">${fmtFull(cob.total)}</div>
-                           <div style="margin-top:8px;padding-top:7px;border-top:1px solid ${_c.divider};font-size:9px;color:${isVencido?'#f87171':'#34d399'};">${cob.dias > 0 ? cob.dias + 'd vencido · ' + cob.count + ' doc.' : '✓ Al día · ' + cob.count + ' doc.'}</div>`
-                        : `<div style="font-size:22px;font-weight:800;color:${_c.textDisabled};line-height:1;letter-spacing:-0.5px;">—</div>
-                           <div style="font-size:9px;color:${_c.textDisabled};margin-top:3px;">Sin cobranzas</div>
-                           <div style="margin-top:8px;padding-top:7px;border-top:1px solid ${_c.divider};font-size:9px;color:${_c.textMuted};">No registrado</div>`
-                      }
-                    </div>
-
                     <!-- LÍNEA DE CRÉDITO -->
                     <div style="background:${_c.cardBg};border-radius:12px;padding:16px 14px 14px;border:1px solid ${_c.cardBorder};box-shadow:${_isDark ? 'inset 0 1px 0 rgba(255,255,255,0.03),0 2px 8px rgba(0,0,0,0.4)' : '0 1px 4px rgba(0,0,0,0.06)'};position:relative;overflow:hidden;">
-                      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${cob && cob.linea ? '#7c3aed' : _c.cardBorder};border-radius:14px 14px 0 0;"></div>
+                      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${cob && cob.linea ? '#7c3aed' : _c.cardBorder};"></div>
                       <div style="font-size:8.5px;color:${_c.textMuted};text-transform:uppercase;font-weight:700;letter-spacing:0.8px;margin-bottom:8px;display:flex;align-items:center;gap:4px;">
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${cob && cob.linea ? '#a78bfa' : _c.textMuted}" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                         Línea crédito
@@ -17811,6 +17833,30 @@
                            </div>`
                       }
                     </div>
+                  </div>
+
+                  <!-- DEUDA / COBRANZA — ancho completo con detalle de facturas -->
+                  <div style="background:${_c.cardBg};border-radius:12px;padding:14px 16px;border:1px solid ${cob && isVencido ? 'rgba(239,68,68,0.35)' : cob ? 'rgba(16,185,129,0.3)' : _c.cardBorder};box-shadow:${_isDark ? '0 2px 8px rgba(0,0,0,0.4)' : '0 1px 4px rgba(0,0,0,0.06)'};position:relative;overflow:hidden;">
+                    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${cob ? (isVencido ? '#ef4444' : '#10b981') : _c.cardBorder};"></div>
+
+                    <!-- Header de deuda -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="display:flex;align-items:center;gap:4px;font-size:8.5px;color:${_c.textMuted};text-transform:uppercase;font-weight:700;letter-spacing:0.8px;">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${cob ? (isVencido ? '#f87171' : '#34d399') : _c.textMuted}" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                          Deuda / Cobranzas
+                        </div>
+                        ${cob ? `<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:5px;background:${isVencido ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)'};color:${isVencido ? '#f87171' : '#34d399'};border:1px solid ${isVencido ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'};">${isVencido ? cob.dias + 'd vencido' : '✓ Al día'}</span>` : ''}
+                      </div>
+                      ${cob ? `<div style="text-align:right;">
+                        <div style="font-size:20px;font-weight:800;color:${isVencido ? '#f87171' : '#34d399'};line-height:1;letter-spacing:-0.5px;">${fmt(cob.total)}</div>
+                        <div style="font-size:9px;color:${_c.textDisabled};margin-top:1px;">${fmtFull(cob.total)} · ${cob.count} doc.</div>
+                      </div>` : `<div style="font-size:18px;font-weight:800;color:${_c.textDisabled};">—</div>`}
+                    </div>
+
+                    <!-- Tabla de documentos -->
+                    ${cob && cobDocs.length > 0 ? cobDocsHtml : `<div style="margin-top:10px;font-size:10px;color:${_c.textMuted};padding:8px 0;">Sin documentos pendientes registrados</div>`}
+                  </div>
                   </div>`;
 
                 return fichaHtml + ventasHtml;
