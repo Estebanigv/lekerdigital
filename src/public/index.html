@@ -5096,6 +5096,125 @@
       .login-overlay { padding: 8px !important; }
       .login-card { padding: 16px 20px !important; }
     }
+
+    /* ── Terreno: layout dos columnas ── */
+    #terreno-split {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 0;
+      height: calc(100vh - 140px);
+      min-height: 500px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    #terreno-list-col {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--bg-secondary);
+    }
+
+    #terreno-list-scroll {
+      flex: 1;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    #terreno-detail-col {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    #terreno-detail-col.empty {
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+    }
+
+    /* Item de cliente en lista */
+    .terreno-list-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+      position: relative;
+    }
+    .terreno-list-item:hover { background: var(--bg-hover); }
+    .terreno-list-item.active {
+      background: var(--bg-hover);
+      border-left: 3px solid var(--primary, #2563eb);
+    }
+    .terreno-list-item .tli-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .terreno-list-item .tli-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .terreno-list-item .tli-gps {
+      flex-shrink: 0;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 1px;
+    }
+
+    /* Scrollbar lista */
+    #terreno-list-scroll::-webkit-scrollbar { width: 4px; }
+    #terreno-list-scroll::-webkit-scrollbar-track { background: transparent; }
+    #terreno-list-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Detail pane scroll */
+    #terreno-detail-inner {
+      flex: 1;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    #terreno-detail-inner::-webkit-scrollbar { width: 4px; }
+    #terreno-detail-inner::-webkit-scrollbar-track { background: transparent; }
+    #terreno-detail-inner::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Mobile: ocultar columna derecha inicialmente */
+    @media (max-width: 900px) {
+      #terreno-split {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      #terreno-detail-col {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        border-radius: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+      #terreno-detail-col.mobile-open {
+        display: flex;
+      }
+      #terreno-list-col {
+        height: calc(100vh - 260px);
+        min-height: 300px;
+        border-right: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -7214,120 +7333,140 @@
       <!-- Terreno Panel - Verificación en campo -->
       <div class="panel" id="panel-terreno">
         <!-- Header -->
-        <div class="card" style="margin-bottom: 20px; background: #111827;">
-          <div class="card-body" style="padding: 16px 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-              <div style="color: white;">
-                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7;">Administración</div>
-                <div style="font-size: 20px; font-weight: 700;">Verificar en Terreno</div>
+        <div class="card" style="margin-bottom:12px;background:#111827;">
+          <div class="card-body" style="padding:14px 20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+              <div style="color:white;">
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.6;">Administración</div>
+                <div style="font-size:18px;font-weight:700;">Verificar en Terreno</div>
               </div>
-              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                <button onclick="openCreateClientModal()" style="display:flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;background:rgba(255,255,255,0.15);color:white;font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,0.25);cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
-                  <i data-lucide="user-plus" style="width:15px;height:15px;"></i> Nuevo Cliente
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <button onclick="openCreateClientModal()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;background:rgba(255,255,255,0.15);color:white;font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,0.25);cursor:pointer;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                  <i data-lucide="user-plus" style="width:14px;height:14px;"></i> Nuevo Cliente
                 </button>
-                <div id="terreno-gps-badge" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;background:rgba(255,255,255,0.12);color:white;font-size:12px;border:1px solid rgba(255,255,255,0.15);">
-                  <i data-lucide="loader-2" class="spin" style="width:14px;height:14px;"></i> GPS...
+                <div id="terreno-gps-badge" style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;background:rgba(255,255,255,0.12);color:white;font-size:12px;border:1px solid rgba(255,255,255,0.15);">
+                  <i data-lucide="loader-2" class="spin" style="width:13px;height:13px;"></i> GPS...
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Stats Cards -->
-        <div id="terreno-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;"></div>
+        <!-- Stats -->
+        <div id="terreno-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px;"></div>
 
-        <!-- Filtros -->
-        <div class="card" style="margin-bottom: 16px;">
-          <div class="card-body" style="padding: 12px 16px;">
-            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-              <div style="position:relative;flex:1;min-width:220px;">
-                <i data-lucide="search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-muted);"></i>
-                <input id="terreno-search" type="text" class="form-control" placeholder="Buscar código, nombre, dirección..." style="padding-left:32px;font-size:13px;" oninput="filterTerrenoClients()">
+        <!-- Filtros compactos -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+          <div style="position:relative;flex:1;min-width:180px;">
+            <i data-lucide="search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--text-muted);pointer-events:none;"></i>
+            <input id="terreno-search" type="text" class="form-control" placeholder="Buscar código, nombre, dirección..." style="padding-left:30px;font-size:13px;" oninput="filterTerrenoClients()">
+          </div>
+          <select id="terreno-vendor-filter" class="form-control" style="max-width:160px;font-size:13px;" onchange="filterTerrenoClients()">
+            <option value="">Todos los vendedores</option>
+          </select>
+          <select id="terreno-zone-filter" class="form-control" style="max-width:130px;font-size:13px;" onchange="filterTerrenoClients()">
+            <option value="">Todas las zonas</option>
+          </select>
+          <select id="terreno-gps-filter" class="form-control" style="max-width:120px;font-size:13px;" onchange="filterTerrenoClients()">
+            <option value="">Todo GPS</option>
+            <option value="no-gps">Sin GPS</option>
+            <option value="has-gps">Con GPS</option>
+          </select>
+          <select id="terreno-date-filter" class="form-control" style="max-width:130px;font-size:13px;" onchange="filterTerrenoClients()">
+            <option value="">Todas las fechas</option>
+            <option value="today">Hoy</option>
+            <option value="yesterday">Ayer</option>
+            <option value="week">Esta semana</option>
+            <option value="month">Este mes</option>
+          </select>
+          <select id="terreno-sort-filter" class="form-control" style="max-width:140px;font-size:13px;" onchange="filterTerrenoClients()">
+            <option value="gps">Sin GPS primero</option>
+            <option value="near">Más cercanos</option>
+            <option value="recent">Recientes primero</option>
+            <option value="name">Nombre A-Z</option>
+            <option value="code">Código</option>
+          </select>
+          <button class="btn btn-secondary" style="font-size:12px;padding:6px 10px;" onclick="resetTerrenoFilters()">
+            <i data-lucide="x" style="width:13px;height:13px;"></i> Limpiar
+          </button>
+          <span id="terreno-count" style="font-size:12px;color:var(--text-muted);white-space:nowrap;"></span>
+        </div>
+
+        <!-- Split layout: lista + detalle -->
+        <div id="terreno-split">
+          <!-- Columna izquierda: lista -->
+          <div id="terreno-list-col">
+            <div id="terreno-list-scroll">
+              <!-- Tabla desktop (oculta en mobile, reemplazada por list items) -->
+              <div id="terreno-table-wrapper" style="display:none;">
+                <table class="data-table" id="terreno-table">
+                  <thead>
+                    <tr>
+                      <th style="width:110px;">Código</th>
+                      <th>Cliente</th>
+                      <th>Dirección / Comuna</th>
+                      <th style="width:120px;">Zona</th>
+                      <th style="width:130px;">Vendedor</th>
+                      <th style="width:70px;">GPS</th>
+                      <th style="width:80px;">Distancia</th>
+                      <th style="width:100px;">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="terreno-table-body">
+                    <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:40px;">
+                      Selecciona un vendedor o busca un cliente para verificar
+                    </td></tr>
+                  </tbody>
+                </table>
               </div>
-              <select id="terreno-vendor-filter" class="form-control" style="max-width:180px;font-size:13px;" onchange="filterTerrenoClients()">
-                <option value="">Todos los vendedores</option>
-              </select>
-              <select id="terreno-zone-filter" class="form-control" style="max-width:150px;font-size:13px;" onchange="filterTerrenoClients()">
-                <option value="">Todas las zonas</option>
-              </select>
-              <select id="terreno-gps-filter" class="form-control" style="max-width:130px;font-size:13px;" onchange="filterTerrenoClients()">
-                <option value="">Todo GPS</option>
-                <option value="no-gps">Sin GPS</option>
-                <option value="has-gps">Con GPS</option>
-              </select>
-              <select id="terreno-date-filter" class="form-control" style="max-width:140px;font-size:13px;" onchange="filterTerrenoClients()">
-                <option value="">Todas las fechas</option>
-                <option value="today">Hoy</option>
-                <option value="yesterday">Ayer</option>
-                <option value="week">Esta semana</option>
-                <option value="month">Este mes</option>
-              </select>
-              <select id="terreno-sort-filter" class="form-control" style="max-width:140px;font-size:13px;" onchange="filterTerrenoClients()">
-                <option value="gps">Sin GPS primero</option>
-                <option value="near">Más cercanos</option>
-                <option value="recent">Recientes primero</option>
-                <option value="name">Nombre A-Z</option>
-                <option value="code">Código</option>
-              </select>
-              <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px;white-space:nowrap;" onclick="resetTerrenoFilters()">
-                <i data-lucide="x" style="width:13px;height:13px;"></i> Limpiar
+              <!-- Lista de items (nueva, siempre visible) -->
+              <div id="terreno-list-items">
+                <div style="text-align:center;padding:48px 20px;color:var(--text-muted);">
+                  <div style="font-size:13px;">Selecciona un vendedor o busca un cliente</div>
+                </div>
+              </div>
+              <div id="terreno-pagination" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);flex-wrap:wrap;gap:8px;"></div>
+              <!-- Cards mobile (mantener para compatibilidad) -->
+              <div id="terreno-cards-wrapper" style="display:none;">
+                <div id="terreno-cards-body" style="display:flex;flex-direction:column;gap:8px;"></div>
+                <div id="terreno-cards-pagination" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:12px;color:var(--text-muted);flex-wrap:wrap;gap:8px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna derecha: detalle -->
+          <div id="terreno-detail-col" class="empty">
+            <!-- Botón volver en mobile -->
+            <div id="terreno-detail-back" style="display:none;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;">
+              <button onclick="_terrenoCloseDetail()" style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:13px;font-weight:600;padding:4px 0;">
+                <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Volver a la lista
               </button>
-              <span id="terreno-count" style="font-size:12px;color:var(--text-muted);white-space:nowrap;margin-left:4px;"></span>
+            </div>
+            <div id="terreno-detail-inner">
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:300px;gap:12px;opacity:0.4;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <div style="font-size:13px;font-weight:600;">Selecciona un cliente de la lista</div>
+              </div>
             </div>
           </div>
-        </div>
-
-        <!-- Tabla de clientes (desktop) -->
-        <div class="card" id="terreno-table-wrapper">
-          <div class="card-body" style="padding:0;">
-            <div style="overflow-x:auto;">
-              <table class="data-table" id="terreno-table">
-                <thead>
-                  <tr>
-                    <th style="width:110px;white-space:nowrap;">Código</th>
-                    <th>Cliente</th>
-                    <th>Dirección / Comuna</th>
-                    <th style="width:120px;">Zona</th>
-                    <th style="width:130px;">Vendedor</th>
-                    <th style="width:70px;">GPS</th>
-                    <th style="width:80px;">Distancia</th>
-                    <th style="width:100px;">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody id="terreno-table-body">
-                  <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:40px;">
-                    <i data-lucide="crosshair" style="width:28px;height:28px;margin-bottom:8px;opacity:0.3;display:inline-block;"></i><br>
-                    Selecciona un vendedor o busca un cliente para verificar
-                  </td></tr>
-                </tbody>
-              </table>
-            </div>
-            <div id="terreno-pagination" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid var(--border);font-size:13px;color:var(--text-muted);flex-wrap:wrap;gap:8px;"></div>
-          </div>
-        </div>
-
-        <!-- Cards de clientes (mobile) -->
-        <div id="terreno-cards-wrapper" style="display:none;">
-          <div id="terreno-cards-body" style="display:flex;flex-direction:column;gap:8px;"></div>
-          <div id="terreno-cards-pagination" style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:13px;color:var(--text-muted);flex-wrap:wrap;gap:8px;"></div>
         </div>
 
         <!-- Historial de modificaciones -->
-        <div class="card" style="margin-top:20px;">
+        <div class="card" style="margin-top:16px;">
           <div class="card-body" style="padding:0;">
-            <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
               <div style="display:flex;align-items:center;gap:8px;">
-                <i data-lucide="history" style="width:16px;height:16px;color:#6366f1;"></i>
-                <span style="font-size:14px;font-weight:700;color:var(--text-primary);">Historial de Modificaciones</span>
+                <i data-lucide="history" style="width:15px;height:15px;color:#6366f1;"></i>
+                <span style="font-size:13px;font-weight:700;color:var(--text-primary);">Historial de Modificaciones</span>
               </div>
-              <select id="terreno-history-range" class="form-control" style="max-width:140px;font-size:12px;" onchange="_renderTerrenoHistory()">
+              <select id="terreno-history-range" class="form-control" style="max-width:130px;font-size:12px;" onchange="_renderTerrenoHistory()">
                 <option value="all" selected>Todo</option>
                 <option value="today">Hoy</option>
                 <option value="week">Esta semana</option>
                 <option value="month">Este mes</option>
               </select>
             </div>
-            <div id="terreno-history-body" style="max-height:400px;overflow-y:auto;padding:8px 14px;"></div>
+            <div id="terreno-history-body" style="max-height:320px;overflow-y:auto;padding:8px 14px;"></div>
           </div>
         </div>
       </div>
@@ -17108,6 +17247,7 @@
           ${searchVal ? `<br><button onclick="openCreateClientModal()" style="margin-top:12px;padding:10px 20px;border:none;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:6px;"><i data-lucide="user-plus" style="width:16px;height:16px;"></i> Agregar cliente nuevo</button>` : ''}
         </td></tr>`;
         if (pagDiv) pagDiv.innerHTML = '';
+        _terrenoRenderSplitList([]);
         _createIcons();
         return;
       }
@@ -17156,6 +17296,7 @@
       }).join('');
 
       _renderTerrenoPagination(pagDiv, filtered.length);
+      _terrenoRenderSplitList(page);
     }
 
     function _renderTerrenoCards() {
@@ -17288,26 +17429,49 @@
       // Cobranzas — incluye detalle de cada documento/factura
       if (gsheetsAllCobranzas && gsheetsAllCobranzas.length > 1) {
         const hdrs = gsheetsAllCobranzas[0];
-        const codIdx   = hdrs.findIndex(h => h && (h.toLowerCase().includes('código') || h.toLowerCase().includes('codigo') || h.toLowerCase() === 'cod' || h.toLowerCase() === 'rut'));
-        const montoIdx = hdrs.findIndex(h => h && (h.toLowerCase().includes('monto') || h.toLowerCase().includes('saldo') || h.toLowerCase().includes('deuda')));
+        // Columna código: busca "COD CLIENTE", "CODIGO", "RUT AUXILIAR", etc.
+        const codIdx   = hdrs.findIndex(h => h && (h.toLowerCase().includes('cod') || h.toLowerCase().includes('rut')));
+        const montoIdx = hdrs.findIndex(h => h && (h.toLowerCase().includes('saldo') || h.toLowerCase().includes('monto') || h.toLowerCase().includes('deuda')));
         const diasIdx  = hdrs.findIndex(h => h && (h.toLowerCase().includes('días') || h.toLowerCase().includes('dias') || h.toLowerCase().includes('atraso')));
         const lineaIdx = hdrs.findIndex(h => h && (h.toLowerCase().includes('linea') || h.toLowerCase().includes('límite') || h.toLowerCase().includes('limite') || h.toLowerCase().includes('credito') || h.toLowerCase().includes('crédito')));
-        const docIdx   = hdrs.findIndex(h => h && (h.toLowerCase().includes('documento') || h.toLowerCase().includes('factura') || h.toLowerCase().includes('folio') || h.toLowerCase() === 'doc'));
+        const docIdx   = hdrs.findIndex(h => h && (h.toLowerCase().includes('documento') || h.toLowerCase().includes('factura') || h.toLowerCase().includes('folio')));
         const vencIdx  = hdrs.findIndex(h => h && (h.toLowerCase().includes('venc') || h.toLowerCase().includes('fecha')));
+
+        // Normalizar RUT para comparación: quitar puntos, dejar solo dígitos y guión
+        const _normRut = v => String(v || '').replace(/\./g, '').trim();
+
         if (codIdx >= 0) {
-          const rows = gsheetsAllCobranzas.slice(1).filter(r => String(r[codIdx] || '').trim() === extId);
+          const rows = gsheetsAllCobranzas.slice(1).filter(r => _normRut(r[codIdx]) === extId);
           if (rows.length > 0) {
             let totalMonto = 0, maxDias = 0, linea = null;
             const docs = [];
+            // Helper: calcular días vencidos desde una fecha (formatos: "25 03 2026", "25/03/2026", "2026-03-25")
+            const _diasVencidos = (fechaStr) => {
+              if (!fechaStr) return 0;
+              const s = String(fechaStr).trim();
+              let d;
+              // "25 03 2026" o "25/03/2026" o "25-03-2026"
+              const m1 = s.match(/^(\d{1,2})[\s\/\-](\d{1,2})[\s\/\-](\d{4})$/);
+              if (m1) d = new Date(+m1[3], +m1[2] - 1, +m1[1]);
+              // "2026-03-25" ISO
+              else { d = new Date(s); }
+              if (!d || isNaN(d)) return 0;
+              const diff = Math.floor((Date.now() - d.getTime()) / 86400000);
+              return diff; // positivo = vencido, negativo = pendiente (aún no vence)
+            };
+
             rows.forEach(r => {
-              const monto = montoIdx >= 0 ? _parseChileanNum(r[montoIdx]) : 0;
-              const dias  = diasIdx  >= 0 ? _parseChileanNum(r[diasIdx])  : 0;
+              const monto     = montoIdx >= 0 ? _parseChileanNum(r[montoIdx]) : 0;
+              const fechaStr  = vencIdx  >= 0 ? String(r[vencIdx] || '').trim() : '';
+              // Usar columna días si existe, sino calcular desde fecha
+              const diasCol   = diasIdx  >= 0 ? _parseChileanNum(r[diasIdx]) : null;
+              const dias      = diasCol !== null && diasCol > 0 ? diasCol : _diasVencidos(fechaStr);
               if (monto) totalMonto += monto;
               if (dias > maxDias) maxDias = dias;
               if (lineaIdx >= 0 && r[lineaIdx] && !linea) linea = _parseChileanNum(r[lineaIdx]) || null;
               docs.push({
                 doc:   docIdx  >= 0 ? String(r[docIdx]  || '').trim() : '',
-                fecha: vencIdx >= 0 ? String(r[vencIdx] || '').trim() : '',
+                fecha: fechaStr,
                 monto,
                 dias,
               });
@@ -17336,12 +17500,60 @@
         const data = await res.json();
         if (data.success) {
           showToast('success', 'Línea guardada', '$' + Math.round(num).toLocaleString('es-CL') + ' actualizado en Google Sheets');
-          document.getElementById('terreno-detail-modal')?.remove();
+          _terrenoCloseDetail();
           if (clientId) openTerrenoClientDetail(clientId);
         } else {
           showToast('error', 'Error al guardar', data.error || 'Revisa la conexión');
         }
       } catch (e) { showToast('error', 'Error de red', e.message || ''); }
+    }
+
+    // Renderiza la lista de clientes en el panel split (reemplaza tabla en panel)
+    function _terrenoRenderSplitList(clients) {
+      const container = document.getElementById('terreno-list-items');
+      if (!container) return;
+      if (!clients || clients.length === 0) {
+        container.innerHTML = `<div style="text-align:center;padding:48px 20px;color:var(--text-muted);font-size:13px;">No hay clientes para mostrar</div>`;
+        return;
+      }
+      container.innerHTML = clients.map(c => {
+        const hasGps = c.lat && c.lng;
+        const name = c.fantasy_name || c.name || '—';
+        const sub = [c.address ? c.address.replace(/,?\s*\d{7}[^,]*/g,'').trim() : null, c.commune].filter(Boolean).join(', ') || 'Sin dirección';
+        const dist = (hasGps && _terrenoGpsPos)
+          ? (() => { const d = _haversineKm(_terrenoGpsPos.lat, _terrenoGpsPos.lng, c.lat, c.lng)*1000; return d >= 1000 ? (d/1000).toFixed(1)+'km' : Math.round(d)+'m'; })()
+          : null;
+        const gpsColor = hasGps ? '#10b981' : '#f59e0b';
+        const vendorMap = {}; (executives||[]).forEach(u => vendorMap[u.id]=u.full_name);
+        const vendor = vendorMap[c.assigned_user_id] || '';
+        return `<div class="terreno-list-item" id="tli-${c.id}" onclick="openTerrenoClientDetail('${c.id}')">
+          <div style="width:8px;height:8px;border-radius:50%;background:${gpsColor};flex-shrink:0;margin-top:2px;"></div>
+          <div style="flex:1;min-width:0;">
+            <div class="tli-name">${name}</div>
+            <div class="tli-sub">${c.external_id ? `<span style="font-family:monospace;font-size:10px;color:var(--text-muted);">${c.external_id}</span> · ` : ''}${sub}</div>
+            ${vendor ? `<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">${vendor}</div>` : ''}
+          </div>
+          <div style="flex-shrink:0;text-align:right;">
+            ${dist ? `<div style="font-size:11px;font-weight:700;color:var(--text-secondary);">${dist}</div>` : ''}
+            ${!hasGps ? `<div style="font-size:9px;color:#f59e0b;font-weight:700;">Sin GPS</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // Cierra el panel de detalle en mobile
+    function _terrenoCloseDetail() {
+      // Limpiar watchPosition del GPS si existe
+      if (window._terrenoDetailMapWatchId !== null && window._terrenoDetailMapWatchId !== undefined) {
+        navigator.geolocation.clearWatch(window._terrenoDetailMapWatchId);
+        window._terrenoDetailMapWatchId = null;
+      }
+      const col = document.getElementById('terreno-detail-col');
+      const back = document.getElementById('terreno-detail-back');
+      if (col) { col.classList.remove('mobile-open'); col.classList.add('empty'); }
+      if (back) back.style.display = 'none';
+      // Deselect active item
+      document.querySelectorAll('.terreno-list-item.active').forEach(el => el.classList.remove('active'));
     }
 
     function openTerrenoClientDetail(clientId) {
@@ -17479,7 +17691,7 @@
                     style="background:${_c.btnMenuBg};border:1px solid ${_c.btnMenuBorder};color:${_c.btnMenuColor};width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all 0.12s;"
                     onmouseover="this.style.background='${_isDark ? '#131c27' : '#e2e8f0'}';this.style.color='${_c.label}';this.style.borderColor='${_isDark ? '#2a3f58' : '#cbd5e1'}'" onmouseout="this.style.background='${_c.btnMenuBg}';this.style.color='${_c.btnMenuColor}';this.style.borderColor='${_c.btnMenuBorder}'">⋮</button>
                   <div id="terreno-admin-menu" style="display:none;position:absolute;top:42px;right:0;background:${_c.menuBg};border:1px solid ${_c.menuBorder};border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,${_isDark ? '0.8' : '0.15'});min-width:170px;z-index:10;overflow:hidden;">
-                    <button onclick="document.getElementById('terreno-detail-modal').remove();openEditClientFullModal('${client.id}')"
+                    <button onclick="_terrenoCloseDetail();openEditClientFullModal('${client.id}')"
                       style="width:100%;padding:11px 14px;border:none;background:none;text-align:left;cursor:pointer;font-size:12px;font-weight:600;color:${_c.menuText};display:flex;align-items:center;gap:8px;transition:background 0.1s;"
                       onmouseover="this.style.background='${_isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)'}'" onmouseout="this.style.background='none'">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7ab8ff" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -17494,7 +17706,7 @@
                     </button>
                   </div>
                 </div>` : ''}
-                <button onclick="document.getElementById('terreno-detail-modal').remove()"
+                <button onclick="_terrenoCloseDetail()"
                   style="background:${_c.btnMenuBg};border:1px solid ${_c.btnMenuBorder};color:${_c.btnMenuColor};width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;transition:all 0.12s;"
                   onmouseover="this.style.background='rgba(194,59,59,0.15)';this.style.color='#f07070';this.style.borderColor='rgba(194,59,59,0.3)'" onmouseout="this.style.background='${_c.btnMenuBg}';this.style.color='${_c.btnMenuColor}';this.style.borderColor='${_c.btnMenuBorder}'">&times;</button>
               </div>
@@ -17718,7 +17930,7 @@
                           </span>
                           ${noSaleBadge}
                         </div>
-                        <span onclick="navigateToGsheets();document.getElementById('terreno-detail-modal')?.remove();" style="font-size:10px;color:${_isDark ? '#5b8fc9' : '#3b82f6'};cursor:pointer;font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Ver completo →</span>
+                        <span onclick="navigateToGsheets();_terrenoCloseDetail();" style="font-size:10px;color:${_isDark ? '#5b8fc9' : '#3b82f6'};cursor:pointer;font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Ver completo →</span>
                       </div>
                       <div style="background:${_c.cardBg};border-radius:12px;padding:14px 10px 10px;border:1px solid ${_c.cardBorder};box-shadow:${_isDark ? 'inset 0 1px 0 rgba(255,255,255,0.03),0 2px 8px rgba(0,0,0,0.4)' : '0 1px 4px rgba(0,0,0,0.06)'};">
                         <div style="display:flex;gap:2px;align-items:flex-end;">${bars}</div>
@@ -17865,13 +18077,44 @@
           </div>
         </div>`;
 
-      overlay.addEventListener('mousedown', (e) => { overlay._mdOnBg = e.target === overlay; });
-      overlay.addEventListener('click', (e) => {
-        if (overlay._mdOnBg && e.target === overlay) overlay.remove();
+      // Marcar item activo en la lista
+      document.querySelectorAll('.terreno-list-item.active').forEach(el => el.classList.remove('active'));
+      const activeItem = document.getElementById(`tli-${clientId}`);
+      if (activeItem) { activeItem.classList.add('active'); activeItem.scrollIntoView({ block: 'nearest' }); }
+
+      // Cerrar click en menú admin al hacer click fuera
+      document.addEventListener('click', function _menuClose(e) {
         const menu = document.getElementById('terreno-admin-menu');
         if (menu && !e.target.closest('#terreno-menu-btn') && !e.target.closest('#terreno-admin-menu')) menu.style.display = 'none';
-      });
-      document.body.appendChild(overlay);
+      }, { once: false });
+
+      // Renderizar en panel derecho (no como modal)
+      const detailCol = document.getElementById('terreno-detail-col');
+      const detailInner = document.getElementById('terreno-detail-inner');
+      const backBtn = document.getElementById('terreno-detail-back');
+      if (detailCol && detailInner) {
+        detailCol.classList.remove('empty');
+        // En mobile: mostrar como pantalla completa
+        const isMobile = window.innerWidth <= 900;
+        if (isMobile) {
+          detailCol.classList.add('mobile-open');
+          if (backBtn) backBtn.style.display = 'block';
+        }
+        // El overlay.innerHTML ya tiene el HTML del modal — extraer el div interior
+        const inner = overlay.querySelector('div[onclick]') || overlay.firstElementChild;
+        if (inner) {
+          // Adaptar estilos: quitar border-radius y height fijos del modal
+          inner.style.borderRadius = '0';
+          inner.style.height = '100%';
+          inner.style.maxHeight = 'none';
+          inner.style.width = '100%';
+          inner.style.maxWidth = '100%';
+          inner.style.boxShadow = 'none';
+          inner.style.margin = '0';
+          detailInner.innerHTML = '';
+          detailInner.appendChild(inner);
+        }
+      }
       _createIcons();
 
       // Inicializar mapa con pin del cliente + ubicación del usuario en tiempo real
@@ -18058,18 +18301,10 @@
 
         // Centrar en cliente mientras no haya GPS
         if (clientLatLng) map.setCenter(clientLatLng);
-      }, 250);
 
-      // Limpiar watchPosition al cerrar el modal
-      const origRemove = overlay.remove.bind(overlay);
-      overlay.remove = function() {
-        if (_detailMapWatchId !== null) navigator.geolocation.clearWatch(_detailMapWatchId);
-        origRemove();
-      };
-      // También limpiar si se cierra por clic en backdrop
-      overlay.addEventListener('click', () => {
-        if (_detailMapWatchId !== null) { navigator.geolocation.clearWatch(_detailMapWatchId); _detailMapWatchId = null; }
-      });
+        // Guardar el watchId en variable de módulo para limpiarlo al cerrar el panel
+        window._terrenoDetailMapWatchId = _detailMapWatchId;
+      }, 250);
     }
 
     async function terrenoQuickGps(clientId) {
@@ -18126,7 +18361,7 @@
         <button onclick="_terrenoConfirmSaveGps('${clientId}')" id="terreno-confirm-save-btn" style="width:100%;padding:14px;border:none;background:linear-gradient(135deg,#059669,#10b981);color:white;border-radius:12px;cursor:pointer;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(16,185,129,0.3);">
           <i data-lucide="check-circle" style="width:20px;height:20px;"></i> Confirmar y guardar ubicación
         </button>
-        <button onclick="document.getElementById('terreno-detail-modal')?.remove();openTerrenoClientDetail('${clientId}')" style="width:100%;padding:11px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-muted);border-radius:10px;cursor:pointer;font-weight:500;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <button onclick="_terrenoCloseDetail();openTerrenoClientDetail('${clientId}')" style="width:100%;padding:11px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-muted);border-radius:10px;cursor:pointer;font-weight:500;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
           <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> Volver
         </button>
       `;
@@ -18265,7 +18500,7 @@
           _rebuildClientIndexes();
           const addrMsg = geo?.address ? ` — ${geo.address}` : '';
           showToast('success', 'GPS guardado', `Ubicación actualizada (±${Math.round(_terrenoGpsPos.accuracy)}m)${addrMsg}`);
-          document.getElementById('terreno-detail-modal')?.remove();
+          _terrenoCloseDetail();
           _renderTerrenoStats();
           _renderTerrenoHistory();
           filterTerrenoClients();
@@ -18328,7 +18563,7 @@
           _rebuildClientIndexes();
           showToast('success', 'Eliminado', `Cliente "${clientName}" eliminado`);
           document.getElementById('modal-confirm-delete')?.remove();
-          document.getElementById('terreno-detail-modal')?.remove();
+          _terrenoCloseDetail();
           _renderTerrenoStats();
           _renderTerrenoHistory();
           _renderHistorialPanel();
@@ -18347,7 +18582,7 @@
       const client = _clientById.get(clientId);
       if (!client) return;
       showToast('success', 'Verificado', `${client.fantasy_name || client.name} — dirección confirmada OK`);
-      document.getElementById('terreno-detail-modal')?.remove();
+      _terrenoCloseDetail();
     }
 
     // Edición inline de dirección desde el modal de terreno
@@ -18457,8 +18692,8 @@
             _rebuildClientIndexes();
           }
           showToast('success', 'Dirección y mapa actualizados', `${newAddress}${newCommune ? ', ' + newCommune : ''}`);
-          // Reabrir el modal para que el mapa refleje las nuevas coordenadas
-          document.getElementById('terreno-detail-modal')?.remove();
+          // Reabrir el detalle para que el mapa refleje las nuevas coordenadas
+          _terrenoCloseDetail();
           setTimeout(() => openTerrenoClientDetail(clientId), 150);
         } else {
           showToast('warning', 'Dirección guardada', 'No se pudo geocodificar automáticamente. Ajusta el pin en el mapa.');
