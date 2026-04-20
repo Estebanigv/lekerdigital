@@ -18164,13 +18164,18 @@
             else reject(new Error(status));
           });
         });
-        let address = result.formatted_address || '';
-        let commune = '', city = '', region = '';
+        // Construir dirección limpia desde components (no usar formatted_address —
+        // Google incluye código postal y región completa, ej: "Calle 123, 8010000 Comuna, RM, Chile")
+        let streetNumber = '', route = '', commune = '', city = '', region = '';
         for (const comp of result.address_components) {
+          if (comp.types.includes('street_number')) streetNumber = comp.long_name;
+          if (comp.types.includes('route')) route = comp.long_name;
           if (comp.types.includes('locality') || comp.types.includes('administrative_area_level_3')) commune = comp.long_name;
           if (comp.types.includes('administrative_area_level_2')) city = comp.long_name;
           if (comp.types.includes('administrative_area_level_1')) region = comp.long_name;
         }
+        // "Calle 123" o solo "Calle" si no hay número
+        const address = route ? (streetNumber ? `${route} ${streetNumber}` : route) : (result.formatted_address || '');
         return { address, commune, city, region };
       } catch (e) {
         console.warn('Reverse geocode failed:', e);
