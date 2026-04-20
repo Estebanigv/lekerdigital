@@ -742,7 +742,10 @@ class RoutesService {
 
     // 2) Geocodificar con dirección completa (siempre si forceAddress=true)
     if (!loc) {
-      const parts = [client.address, client.commune, client.city, client.region, 'Chile'].filter(Boolean);
+      // Limpiar código postal chileno (7 dígitos) del campo address antes de geocodificar
+      // Ej: "Los Robles 10840, 8010000 El Bosque" → "Los Robles 10840"
+      const cleanAddress = (client.address || '').replace(/,?\s*\d{7}\s*/g, '').trim();
+      const parts = [cleanAddress, client.commune, client.city, client.region, 'Chile'].filter(Boolean);
       loc = await this._geocodeAddress(parts.join(', '));
     }
 
