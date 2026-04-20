@@ -17523,9 +17523,19 @@
 
               <!-- INFO CLIENTE -->
               <div style="padding:14px 16px;flex:0 0 auto;background:${_c.leftBg};border-top:1px solid ${_c.headerBorder};">
-                <div style="margin-bottom:10px;">
-                  <div style="font-size:9px;color:${_c.textMuted};text-transform:uppercase;font-weight:700;letter-spacing:0.7px;margin-bottom:5px;">Dirección registrada</div>
-                  <div style="font-size:12px;font-weight:600;color:${_c.textSecondary};line-height:1.4;">${client.address || '—'}</div>
+                <div style="margin-bottom:10px;" id="terreno-address-block">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+                    <div style="font-size:9px;color:${_c.textMuted};text-transform:uppercase;font-weight:700;letter-spacing:0.7px;">Dirección registrada</div>
+                    <button onclick="_terrenoInlineEditAddress('${client.id}')"
+                      title="Editar dirección y actualizar mapa"
+                      style="background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:5px;color:${_isDark ? '#4a6280' : '#94a3b8'};display:flex;align-items:center;gap:3px;font-size:10px;font-weight:600;transition:all 0.12s;"
+                      onmouseover="this.style.color='${_isDark ? '#7ab8ff' : '#2563eb'}';this.style.background='${_isDark ? 'rgba(79,142,247,0.1)' : 'rgba(37,99,235,0.06)'}'"
+                      onmouseout="this.style.color='${_isDark ? '#4a6280' : '#94a3b8'}';this.style.background='none'">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      Editar
+                    </button>
+                  </div>
+                  <div id="terreno-address-display" style="font-size:12px;font-weight:600;color:${_c.textSecondary};line-height:1.4;">${client.address || '—'}</div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
                   <div style="padding:10px 12px;background:${_c.cardBg};border-radius:10px;border:1px solid ${_c.cardBorder};">
@@ -18287,6 +18297,128 @@
       if (!client) return;
       showToast('success', 'Verificado', `${client.fantasy_name || client.name} — dirección confirmada OK`);
       document.getElementById('terreno-detail-modal')?.remove();
+    }
+
+    // Edición inline de dirección desde el modal de terreno
+    function _terrenoInlineEditAddress(clientId) {
+      const client = _clientById.get(clientId);
+      if (!client) return;
+
+      const block = document.getElementById('terreno-address-block');
+      if (!block) return;
+
+      const _isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const inputBg = _isDark ? '#0e1826' : '#f8fafc';
+      const inputBorder = _isDark ? '#2a3a54' : '#e2e8f0';
+      const inputColor = _isDark ? '#dde5f5' : '#0f172a';
+      const btnBg = _isDark ? '#1d4ed8' : '#2563eb';
+
+      block.innerHTML = `
+        <div style="font-size:9px;color:${_isDark ? '#5b8fc9' : '#3b82f6'};text-transform:uppercase;font-weight:700;letter-spacing:0.7px;margin-bottom:7px;">Editar dirección</div>
+        <input id="terreno-addr-input" value="${(client.address || '').replace(/"/g,'&quot;')}"
+          placeholder="Calle y número"
+          style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid ${inputBorder};background:${inputBg};color:${inputColor};font-size:12px;font-weight:500;outline:none;box-sizing:border-box;margin-bottom:6px;"
+          onkeydown="if(event.key==='Enter')_terrenoSaveAddress('${clientId}');if(event.key==='Escape')_terrenoInlineEditAddressCancel('${clientId}')"
+        />
+        <input id="terreno-commune-input" value="${(client.commune || '').replace(/"/g,'&quot;')}"
+          placeholder="Comuna"
+          style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid ${inputBorder};background:${inputBg};color:${inputColor};font-size:12px;font-weight:500;outline:none;box-sizing:border-box;margin-bottom:8px;"
+          onkeydown="if(event.key==='Enter')_terrenoSaveAddress('${clientId}');if(event.key==='Escape')_terrenoInlineEditAddressCancel('${clientId}')"
+        />
+        <div style="display:flex;gap:6px;">
+          <button onclick="_terrenoSaveAddress('${clientId}')"
+            style="flex:1;padding:8px;border:none;background:${btnBg};color:white;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">
+            Guardar y actualizar mapa
+          </button>
+          <button onclick="_terrenoInlineEditAddressCancel('${clientId}')"
+            style="padding:8px 12px;border:1px solid ${inputBorder};background:none;color:${_isDark ? '#8fa3bf' : '#64748b'};border-radius:8px;cursor:pointer;font-size:12px;">
+            ✕
+          </button>
+        </div>
+        <div style="font-size:9px;color:${_isDark ? '#3d5570' : '#94a3b8'};margin-top:5px;">El mapa se actualizará automáticamente</div>
+      `;
+      block.querySelector('#terreno-addr-input').focus();
+    }
+
+    function _terrenoInlineEditAddressCancel(clientId) {
+      const client = _clientById.get(clientId);
+      if (!client) return;
+      const block = document.getElementById('terreno-address-block');
+      if (!block) return;
+      const _isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      block.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+          <div style="font-size:9px;color:${_isDark ? '#4e5a6a' : '#64748b'};text-transform:uppercase;font-weight:700;letter-spacing:0.7px;">Dirección registrada</div>
+          <button onclick="_terrenoInlineEditAddress('${clientId}')"
+            style="background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:5px;color:${_isDark ? '#4a6280' : '#94a3b8'};display:flex;align-items:center;gap:3px;font-size:10px;font-weight:600;"
+            onmouseover="this.style.color='${_isDark ? '#7ab8ff' : '#2563eb'}'" onmouseout="this.style.color='${_isDark ? '#4a6280' : '#94a3b8'}'">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Editar
+          </button>
+        </div>
+        <div id="terreno-address-display" style="font-size:12px;font-weight:600;color:${_isDark ? '#c8d4eb' : '#1e293b'};line-height:1.4;">${client.address || '—'}</div>
+      `;
+    }
+
+    async function _terrenoSaveAddress(clientId) {
+      const addrInput = document.getElementById('terreno-addr-input');
+      const communeInput = document.getElementById('terreno-commune-input');
+      if (!addrInput) return;
+
+      const newAddress = addrInput.value.trim();
+      const newCommune = communeInput ? communeInput.value.trim() : null;
+      if (!newAddress) { showToast('warning', 'Dirección requerida', 'Ingresa una dirección'); return; }
+
+      const saveBtn = addrInput.closest('div[style]').querySelector('button');
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Guardando...'; }
+
+      try {
+        // 1) Guardar nueva dirección en BD
+        const res = await fetch(`${API}/api/clients/${clientId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address: newAddress, ...(newCommune && { commune: newCommune }) })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Error al guardar');
+
+        // Actualizar cache local
+        const idx = allClients.findIndex(c => c.id === clientId);
+        if (idx >= 0) {
+          allClients[idx].address = newAddress;
+          if (newCommune) allClients[idx].commune = newCommune;
+          _rebuildClientIndexes();
+        }
+
+        // 2) Geocodificar con nueva dirección (forceAddress=true)
+        showToast('info', 'Actualizando mapa...', 'Buscando coordenadas para la nueva dirección');
+        const geoRes = await fetch(`${API}/api/clients/${clientId}/geocode`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ forceAddress: true })
+        });
+        const geoData = await geoRes.json();
+        if (geoData.success && geoData.data?.lat) {
+          const idx2 = allClients.findIndex(c => c.id === clientId);
+          if (idx2 >= 0) {
+            allClients[idx2].lat = geoData.data.lat;
+            allClients[idx2].lng = geoData.data.lng;
+            _rebuildClientIndexes();
+          }
+          showToast('success', 'Dirección y mapa actualizados', `${newAddress}${newCommune ? ', ' + newCommune : ''}`);
+          // Reabrir el modal para que el mapa refleje las nuevas coordenadas
+          document.getElementById('terreno-detail-modal')?.remove();
+          setTimeout(() => openTerrenoClientDetail(clientId), 150);
+        } else {
+          showToast('warning', 'Dirección guardada', 'No se pudo geocodificar automáticamente. Ajusta el pin en el mapa.');
+          _terrenoInlineEditAddressCancel(clientId);
+          const displayEl = document.getElementById('terreno-address-display');
+          if (displayEl) displayEl.textContent = newAddress;
+        }
+      } catch (e) {
+        showToast('error', 'Error', e.message);
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Guardar y actualizar mapa'; }
+      }
     }
 
     function closeEditLocationModal() {
@@ -20478,7 +20610,11 @@
     // Auto-geocode after address save: updates lat/lng and patches allClients
     async function _geocodeClientAfterSave(clientId) {
       try {
-        const res = await fetch(`${API}/api/clients/${clientId}/geocode`, { method: 'POST' });
+        const res = await fetch(`${API}/api/clients/${clientId}/geocode`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ forceAddress: true }) // ignora geo_link viejo, usa nueva dirección
+        });
         const result = await res.json();
         if (result.success && result.data) {
           const idx = allClients.findIndex(c => c.id === clientId);
@@ -20486,13 +20622,18 @@
             allClients[idx].lat = result.data.lat;
             allClients[idx].lng = result.data.lng;
             allClients[idx].address_status = result.data.address_status;
+            _rebuildClientIndexes();
           }
           if (result.data.lat) {
-            showToast('success', 'GPS actualizado', 'Coordenadas actualizadas con la nueva dirección');
+            showToast('success', 'GPS actualizado', 'Mapa actualizado con la nueva dirección');
+          } else {
+            showToast('warning', 'Dirección no encontrada', 'La dirección no pudo georeferenciarse. Ajusta el pin manualmente en el mapa.');
           }
+        } else if (!result.success) {
+          showToast('warning', 'GPS no actualizado', result.error || 'No se pudo geocodificar la dirección');
         }
       } catch (e) {
-        // Geocoding failure is non-critical — silently ignore
+        showToast('warning', 'GPS no actualizado', 'Error al geocodificar: ' + e.message);
       }
     }
 

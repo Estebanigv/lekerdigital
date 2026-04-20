@@ -540,9 +540,11 @@ app.delete('/api/clients/:id', async (req, res) => {
 });
 
 // Geocodificar cliente (actualiza lat/lng usando su dirección actual)
-app.post('/api/clients/:id/geocode', authorize('admin', 'supervisor'), async (req, res) => {
+app.post('/api/clients/:id/geocode', authorize('admin', 'supervisor', 'executive'), async (req, res) => {
   try {
-    const result = await routesService.geocodeClient(req.params.id);
+    // forceAddress=true cuando viene de una edición de dirección — ignora geo_link viejo
+    const forceAddress = req.body?.forceAddress === true;
+    const result = await routesService.geocodeClient(req.params.id, { forceAddress });
     res.json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

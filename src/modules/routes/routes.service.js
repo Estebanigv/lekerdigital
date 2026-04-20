@@ -714,7 +714,7 @@ class RoutesService {
   /**
    * Geocodifica un cliente usando su dirección actual y actualiza lat/lng en la DB
    */
-  async geocodeClient(clientId) {
+  async geocodeClient(clientId, { forceAddress = false } = {}) {
     const { data: client, error } = await supabase
       .from('clients')
       .select('id, address, commune, city, region, geo_link')
@@ -725,8 +725,9 @@ class RoutesService {
 
     let loc = null;
 
-    // 1) Intentar extraer coordenadas del geo_link si tiene formato ?q=lat,lng
-    if (client.geo_link) {
+    // 1) Intentar extraer coordenadas del geo_link solo si NO se forzó re-geocodificación
+    //    (forceAddress=true cuando la dirección acaba de cambiar — el geo_link es de la dirección anterior)
+    if (!forceAddress && client.geo_link) {
       const coordMatch = client.geo_link.match(/[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
       if (coordMatch) {
         const lat = parseFloat(coordMatch[1]);
@@ -739,7 +740,7 @@ class RoutesService {
       }
     }
 
-    // 2) Si no hay coords en geo_link, geocodificar con dirección completa (incluye ciudad y región)
+    // 2) Geocodificar con dirección completa (siempre si forceAddress=true)
     if (!loc) {
       const parts = [client.address, client.commune, client.city, client.region, 'Chile'].filter(Boolean);
       loc = await this._geocodeAddress(parts.join(', '));
