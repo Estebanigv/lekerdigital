@@ -18315,7 +18315,7 @@
 
       block.innerHTML = `
         <div style="font-size:9px;color:${_isDark ? '#5b8fc9' : '#3b82f6'};text-transform:uppercase;font-weight:700;letter-spacing:0.7px;margin-bottom:7px;">Editar dirección</div>
-        <input id="terreno-addr-input" value="${(client.address || '').replace(/"/g,'&quot;')}"
+        <input id="terreno-addr-input" value="${(client.address || '').replace(/,?\s*\d{7}[^,]*/g,'').replace(/,\s*(Región\s+\w[\w\s]*)$/i,'').trim().replace(/"/g,'&quot;')}"
           placeholder="Calle y número"
           style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid ${inputBorder};background:${inputBg};color:${inputColor};font-size:12px;font-weight:500;outline:none;box-sizing:border-box;margin-bottom:6px;"
           onkeydown="if(event.key==='Enter')_terrenoSaveAddress('${clientId}');if(event.key==='Escape')_terrenoInlineEditAddressCancel('${clientId}')"
