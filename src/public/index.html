@@ -4751,11 +4751,11 @@
     }
 
     /* ═══════════════════════════════════════════════
-       GLASS UI — Diseño oscuro con efecto vidrio
+       GLASS UI — Solo aplica en modo oscuro
        ═══════════════════════════════════════════════ */
 
     /* 1. Variables del tema oscuro */
-    :root {
+    [data-theme="dark"] {
       --bg-primary:   #0c0e15;
       --bg-secondary: rgba(255,255,255,0.04);
       --bg-card:      rgba(255,255,255,0.055);
@@ -4771,12 +4771,12 @@
     }
 
     /* 2. Fondo oscuro plano */
-    body {
+    [data-theme="dark"] body {
       background: #0c0e15 !important;
     }
 
     /* 3. Sidebar flotante con vidrio */
-    .sidebar {
+    [data-theme="dark"] .sidebar {
       left: 10px !important;
       top: 10px !important;
       height: calc(100vh - 20px) !important;
@@ -4789,26 +4789,26 @@
       box-shadow: 0 8px 48px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.07) !important;
     }
 
-    .sidebar-header {
+    [data-theme="dark"] .sidebar-header {
       border-bottom: 1px solid rgba(255,255,255,0.07) !important;
     }
 
-    .sidebar-footer {
+    [data-theme="dark"] .sidebar-footer {
       border-top: 1px solid rgba(255,255,255,0.07) !important;
       background: transparent !important;
     }
 
     /* 4. Main: offset para sidebar flotante */
-    .main {
+    [data-theme="dark"] .main {
       margin-left: 262px !important;
     }
 
-    .sidebar.collapsed ~ .main {
+    [data-theme="dark"] .sidebar.collapsed ~ .main {
       margin-left: 90px !important;
     }
 
     /* 5. Topbar vidrio */
-    .topbar {
+    [data-theme="dark"] .topbar {
       background: rgba(10,12,20,0.72) !important;
       backdrop-filter: blur(24px) !important;
       -webkit-backdrop-filter: blur(24px) !important;
@@ -4816,7 +4816,7 @@
     }
 
     /* 6. Cards con efecto vidrio difuso */
-    .card {
+    [data-theme="dark"] .card {
       background: rgba(255,255,255,0.055) !important;
       backdrop-filter: blur(18px) !important;
       -webkit-backdrop-filter: blur(18px) !important;
@@ -4825,62 +4825,276 @@
       box-shadow: 0 2px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06) !important;
     }
 
-    .card-header {
+    [data-theme="dark"] .card-header {
       background: rgba(255,255,255,0.03) !important;
       border-bottom: 1px solid rgba(255,255,255,0.07) !important;
       border-radius: 16px 16px 0 0 !important;
     }
 
     /* 7. Nav items */
-    .nav-item { color: rgba(180,196,218,0.72) !important; }
-    .nav-item:hover { background: rgba(255,255,255,0.08) !important; color: #dde4ee !important; }
-    .nav-item.active {
+    [data-theme="dark"] .nav-item { color: rgba(180,196,218,0.72) !important; }
+    [data-theme="dark"] .nav-item:hover { background: rgba(255,255,255,0.08) !important; color: #dde4ee !important; }
+    [data-theme="dark"] .nav-item.active {
       background: rgba(79,142,247,0.16) !important;
       color: #7ab8ff !important;
       box-shadow: inset 3px 0 0 #4f8ef7 !important;
     }
 
     /* 8. Inputs dentro de cards */
-    input:not([type=range]), select, textarea {
+    [data-theme="dark"] input:not([type=range]),
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea {
       background: rgba(255,255,255,0.07) !important;
       border-color: rgba(255,255,255,0.12) !important;
       color: #dde4ee !important;
     }
 
-    input::placeholder, textarea::placeholder {
+    [data-theme="dark"] input::placeholder,
+    [data-theme="dark"] textarea::placeholder {
       color: rgba(180,196,218,0.3) !important;
     }
 
     /* 9. Tablas */
-    table { background: transparent !important; }
-    th {
+    [data-theme="dark"] table { background: transparent !important; }
+    [data-theme="dark"] th {
       background: rgba(255,255,255,0.04) !important;
       color: rgba(180,196,218,0.55) !important;
       border-color: rgba(255,255,255,0.07) !important;
     }
-    td { border-color: rgba(255,255,255,0.05) !important; }
-    tr:hover > td { background: rgba(255,255,255,0.04) !important; }
+    [data-theme="dark"] td { border-color: rgba(255,255,255,0.05) !important; }
+    [data-theme="dark"] tr:hover > td { background: rgba(255,255,255,0.04) !important; }
 
     /* 10. Scrollbars */
-    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02) !important; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12) !important; border-radius: 4px !important; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2) !important; }
+    [data-theme="dark"] ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02) !important; }
+    [data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12) !important; border-radius: 4px !important; }
+    [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2) !important; }
 
     /* 11. Sidebar search */
-    .sidebar-search-input {
+    [data-theme="dark"] .sidebar-search-input {
       background: rgba(255,255,255,0.07) !important;
       border-color: rgba(255,255,255,0.1) !important;
       color: #dde4ee !important;
     }
-    .sidebar-search-input::placeholder { color: rgba(180,196,218,0.3) !important; }
+    [data-theme="dark"] .sidebar-search-input::placeholder { color: rgba(180,196,218,0.3) !important; }
 
     /* 12. Logo invertido sobre fondo oscuro */
-    .sidebar .logo-img { filter: brightness(0) invert(1) !important; }
+    [data-theme="dark"] .sidebar .logo-img { filter: brightness(0) invert(1) !important; }
 
     /* 13. Stat cards dentro de cards */
-    .stat-card, [class*="stat-"] {
+    [data-theme="dark"] .stat-card,
+    [data-theme="dark"] [class*="stat-"] {
       background: rgba(255,255,255,0.05) !important;
       border-color: rgba(255,255,255,0.08) !important;
+    }
+
+    /* ═══════════════════════════════════════════════
+       RESPONSIVE OVERRIDES — Mobile & Tablet
+       Estos !important deben ir AL FINAL para anular
+       el bloque Glass UI de arriba.
+       ═══════════════════════════════════════════════ */
+
+    /* ── Tablet & Mobile: 1024px ── */
+    @media (max-width: 1024px) {
+      /* Resetear sidebar flotante → drawer normal (anula Glass UI dark) */
+      .sidebar,
+      [data-theme="dark"] .sidebar {
+        left: 0 !important;
+        top: 0 !important;
+        height: 100vh !important;
+        border-radius: 0 !important;
+        transform: translateX(-100%);
+      }
+      .sidebar.open,
+      [data-theme="dark"] .sidebar.open {
+        transform: translateX(0) !important;
+      }
+      /* Main sin margen — ocupa todo el ancho */
+      .main,
+      [data-theme="dark"] .main {
+        margin-left: 0 !important;
+      }
+      /* Topbar sin offset */
+      .topbar {
+        left: 0 !important;
+        width: 100% !important;
+      }
+      /* Overlay para cerrar sidebar al tocar afuera */
+      .sidebar-overlay {
+        display: block;
+      }
+    }
+
+    /* ── Tablet: 768px ── */
+    @media (max-width: 768px) {
+      /* Topbar: evitar overflow con título largo */
+      .topbar { padding: 0 12px !important; }
+      .topbar-left { gap: 8px !important; }
+
+      /* Contenido principal: menos padding */
+      .main-content { padding: 12px !important; }
+      .panel { padding: 0 !important; }
+
+      /* Cards: padding compacto */
+      .card-header { padding: 12px 14px !important; }
+      .card-body { padding: 12px 14px !important; }
+
+      /* CRM tabla: scroll horizontal */
+      #crm-table-container,
+      #crm-clients-table-wrap {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      #crm-table-container table,
+      #crm-clients-table-wrap table { min-width: 650px !important; }
+
+      /* Inteligencia de mercado: tablas scrolleables */
+      #intelligence-price-table-wrap,
+      #intel-comparison-table,
+      [id*="intel"][id*="table"] {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      #intelligence-price-table-wrap table,
+      #intel-comparison-table table { min-width: 600px !important; }
+
+      /* Historial: tabla scroll */
+      #historial-table-wrap,
+      #historial-visits-wrap {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      #historial-table-wrap table,
+      #historial-visits-wrap table { min-width: 700px !important; }
+
+      /* Usuarios: tabla scroll */
+      #users-table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+      #users-table-wrap table { min-width: 600px !important; }
+
+      /* Data panel: tabla scroll */
+      #data-table-wrap,
+      .data-table-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      #data-table-wrap table,
+      .data-table-container table { min-width: 700px !important; }
+
+      /* Fix min-width en buscadores inline que desbordaban */
+      .crm-search-wrap,
+      [style*="min-width: 200px"],
+      [style*="min-width:200px"],
+      [style*="min-width: 220px"],
+      [style*="min-width:220px"] {
+        min-width: 0 !important;
+        width: 100% !important;
+      }
+
+      /* Botones de acción en tablas: solo ícono */
+      .btn-action-text { display: none !important; }
+
+      /* Marketing panel: grid 1-col */
+      .marketing-grid,
+      #marketing-campaigns-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Intelligence panel: layout vertical */
+      #intel-layout,
+      .intelligence-layout {
+        flex-direction: column !important;
+      }
+      #intel-sidebar,
+      .intelligence-sidebar {
+        width: 100% !important;
+        max-height: 240px !important;
+        overflow-y: auto;
+      }
+
+      /* AI Learnings: grid 1-col */
+      #ai-learnings-grid,
+      .ai-learnings-grid { grid-template-columns: 1fr !important; }
+
+      /* GSheets panel: tablas scroll */
+      #gs-table-wrap,
+      [id^="gs-"][id$="-body"] {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      [id^="gs-"][id$="-body"] table { min-width: 560px !important; }
+
+      /* Modal fullscreen en mobile */
+      .modal-container,
+      [id$="-modal"] > div[onclick] > div:not([onclick]) {
+        max-width: 100vw !important;
+        width: 100vw !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        max-height: 100vh !important;
+      }
+      /* Excepto modales pequeños de confirmación */
+      .modal-sm { max-width: 90vw !important; width: auto !important; border-radius: 12px !important; }
+    }
+
+    /* ── Mobile: 480px ── */
+    @media (max-width: 480px) {
+      /* Main content: sin padding lateral */
+      .main-content { padding: 8px !important; }
+
+      /* Stat grids: 1 columna */
+      .stats-grid,
+      #exec-stats-grid,
+      #exec-clients-segmentation,
+      #exec-ventas-summary,
+      .route-dashboard-stats {
+        grid-template-columns: 1fr !important;
+      }
+      /* Quitar "span 2" en 1-col layout */
+      #exec-stats-grid .stat-card:nth-child(5),
+      .route-stat-card:nth-child(5) {
+        grid-column: 1 !important;
+      }
+
+      /* Cards: padding mínimo */
+      .card-header { padding: 10px 12px !important; }
+      .card-body { padding: 10px 12px !important; }
+
+      /* Topbar: ocultar elementos secundarios */
+      .topbar-sync-btn span,
+      .topbar-actions .btn span:not(.badge) { display: none !important; }
+      .topbar-actions .btn { padding: 6px !important; min-width: 32px; }
+
+      /* CRM filtros: 1 col */
+      .crm-filters { grid-template-columns: 1fr !important; }
+
+      /* Buttons full width en panels */
+      .panel-action-bar .btn { flex: 1 !important; justify-content: center !important; }
+      .panel-action-bar { flex-wrap: wrap !important; gap: 6px !important; }
+
+      /* Modal del verificar terreno: sin radius en mobile */
+      #terreno-detail-modal > div:first-child > div:first-child {
+        border-radius: 0 !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow-y: auto !important;
+      }
+
+      /* Intel: producto list ocupa todo */
+      #intel-products-list { max-height: 180px !important; }
+
+      /* Texto valores grandes: reducir */
+      .metric-value,
+      .kpi-value { font-size: 22px !important; }
+    }
+
+    /* ── Landscape mobile: altura reducida ── */
+    @media (max-width: 768px) and (orientation: landscape) {
+      .map-container[style*="calc(100vh"] {
+        height: 60vh !important;
+        min-height: 200px !important;
+      }
+      #terreno-confirm-map { height: 160px !important; }
+      .login-overlay { padding: 8px !important; }
+      .login-card { padding: 16px 20px !important; }
     }
   </style>
 </head>
@@ -5197,7 +5411,7 @@
       <div class="topbar-actions">
         <!-- Botón novedades GSheets -->
         <!-- Sync GSheets manual -->
-        <button id="btn-sync-gsheets-now" onclick="forceSyncFromSheets()" title="Sincronizar desde Google Sheets ahora" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--text-secondary);display:flex;align-items:center;gap:5px;transition:background 0.15s;font-size:11px;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
+        <button id="btn-sync-gsheets-now" onclick="forceSyncFromSheets()" title="Forzar recarga de Excel (se carga automáticamente 1 vez por día)" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--text-secondary);display:flex;align-items:center;gap:5px;transition:background 0.15s;font-size:11px;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
           <i data-lucide="refresh-cw" style="width:16px;height:16px;" id="icon-sync-gs"></i>
           <span id="lbl-last-sync-gs" style="display:none;color:var(--text-muted);">—</span>
         </button>
@@ -17153,58 +17367,114 @@
         _fl.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap';
         document.head.appendChild(_fl);
       }
-      if (!document.getElementById('td-modal-style')) {
-        const _st = document.createElement('style');
-        _st.id = 'td-modal-style';
-        _st.textContent = '#terreno-detail-modal,#terreno-detail-modal *{font-family:"Outfit",-apple-system,BlinkMacSystemFont,system-ui,sans-serif!important}' +
-          '@keyframes gpsPulse{0%,100%{opacity:1}50%{opacity:0.35}}' +
-          '#terreno-modal-right::-webkit-scrollbar{width:4px}' +
-          '#terreno-modal-right::-webkit-scrollbar-track{background:transparent}' +
-          '#terreno-modal-right::-webkit-scrollbar-thumb{background:#1e2d42;border-radius:4px}' +
-          '@media(max-width:720px){#terreno-modal-grid{grid-template-columns:1fr!important;overflow-y:auto!important;overflow:auto!important}' +
-          '#terreno-detail-modal>div{height:auto!important;max-height:none!important}' +
-          '#terreno-modal-right{border-top:1px solid #1a2535!important}}';
-        document.head.appendChild(_st);
-      }
+      // Detect theme for color tokens
+      const _isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const _c = _isDark ? {
+        overlayBg: 'rgba(2,4,10,0.88)',
+        modalBg: '#1b2538',
+        headerBg: '#101828',
+        headerBorder: '#243048',
+        leftBg: '#1b2538',
+        rightBg: '#172032',
+        cardBg: '#0e1826',
+        cardBorder: '#1e2d42',
+        divider: '#1a2535',
+        textPrimary: '#e8edf5',
+        textSecondary: '#c8d4eb',
+        textMuted: '#3d5570',
+        textDisabled: '#2d4560',
+        label: '#8fa3bf',
+        badgeBg: '#0e1a2c',
+        badgeBorder: '#1e2d42',
+        badgeText: '#5a7898',
+        btnMenuBg: '#0e1a2c',
+        btnMenuBorder: '#1e2d42',
+        btnMenuColor: '#4a6280',
+        menuBg: '#101828',
+        menuBorder: '#243048',
+        menuText: '#b8c8e0',
+        scrollThumb: '#1e2d42',
+      } : {
+        overlayBg: 'rgba(15,23,42,0.55)',
+        modalBg: '#ffffff',
+        headerBg: '#f8fafc',
+        headerBorder: '#e2e8f0',
+        leftBg: '#f8fafc',
+        rightBg: '#f1f5f9',
+        cardBg: '#ffffff',
+        cardBorder: '#e2e8f0',
+        divider: '#e2e8f0',
+        textPrimary: '#0f172a',
+        textSecondary: '#1e293b',
+        textMuted: '#64748b',
+        textDisabled: '#94a3b8',
+        label: '#475569',
+        badgeBg: '#f1f5f9',
+        badgeBorder: '#cbd5e1',
+        badgeText: '#64748b',
+        btnMenuBg: '#f1f5f9',
+        btnMenuBorder: '#e2e8f0',
+        btnMenuColor: '#64748b',
+        menuBg: '#ffffff',
+        menuBorder: '#e2e8f0',
+        menuText: '#374151',
+        scrollThumb: '#cbd5e1',
+      };
+
+      // Remove stale style tag so it gets recreated with correct theme colors
+      const _staleStyle = document.getElementById('td-modal-style');
+      if (_staleStyle) _staleStyle.remove();
+
+      const _st = document.createElement('style');
+      _st.id = 'td-modal-style';
+      _st.textContent = '#terreno-detail-modal,#terreno-detail-modal *{font-family:"Outfit",-apple-system,BlinkMacSystemFont,system-ui,sans-serif!important}' +
+        '@keyframes gpsPulse{0%,100%{opacity:1}50%{opacity:0.35}}' +
+        '#terreno-modal-right::-webkit-scrollbar{width:4px}' +
+        '#terreno-modal-right::-webkit-scrollbar-track{background:transparent}' +
+        `#terreno-modal-right::-webkit-scrollbar-thumb{background:${_c.scrollThumb};border-radius:4px}` +
+        `@media(max-width:720px){#terreno-modal-grid{grid-template-columns:1fr!important;overflow-y:auto!important;overflow:auto!important}` +
+        `#terreno-detail-modal>div{height:auto!important;max-height:none!important}` +
+        `#terreno-modal-right{border-top:1px solid ${_c.headerBorder}!important}}`;
+      document.head.appendChild(_st);
 
       const overlay = document.createElement('div');
       overlay.id = 'terreno-detail-modal';
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(2,4,10,0.88);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);';
+      overlay.style.cssText = `position:fixed;inset:0;background:${_c.overlayBg};z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);`;
 
       const _curMonth = new Date().getMonth(); // 0-indexed, para resaltar mes actual
       overlay.innerHTML = `
-        <div onclick="event.stopPropagation()" style="background:#1b2538;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:18px;max-width:1300px;width:100%;height:calc(100vh - 32px);max-height:920px;box-shadow:0 0 0 1px #2a3a54,0 32px 80px rgba(0,0,0,0.75),0 4px 16px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.05);overflow:hidden;display:flex;flex-direction:column;margin:auto;">
+        <div onclick="event.stopPropagation()" style="background:${_c.modalBg};backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:18px;max-width:1300px;width:100%;height:calc(100vh - 32px);max-height:920px;box-shadow:0 0 0 1px ${_c.headerBorder},0 32px 80px rgba(0,0,0,0.35),0 4px 16px rgba(0,0,0,0.15),inset 0 1px 0 rgba(255,255,255,0.05);overflow:hidden;display:flex;flex-direction:column;margin:auto;">
 
           <!-- HEADER -->
-          <div style="background:#101828;flex-shrink:0;border-bottom:1px solid #243048;">
+          <div style="background:${_c.headerBg};flex-shrink:0;border-bottom:1px solid ${_c.headerBorder};">
             <div style="padding:20px 22px 18px;display:flex;align-items:center;gap:0;">
               <div style="flex:1;min-width:0;">
-                <div style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#2d4560;font-weight:600;margin-bottom:7px;">Verificar en Terreno</div>
-                <div style="font-size:22px;font-weight:800;color:#e8edf5;line-height:1;letter-spacing:-0.6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</div>
+                <div style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:${_isDark ? '#5b8fc9' : '#3b82f6'};font-weight:600;margin-bottom:7px;">Verificar en Terreno</div>
+                <div style="font-size:20px;font-weight:800;color:${_c.textPrimary};line-height:1;letter-spacing:-0.6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</div>
                 <div style="display:flex;align-items:center;gap:6px;margin-top:11px;flex-wrap:wrap;">
-                  ${client.external_id ? `<span style="background:#0e1a2c;border:1px solid #1e2d42;padding:3px 10px;border-radius:6px;font-size:10px;font-family:monospace;letter-spacing:1px;color:#5a7898;">${client.external_id}</span>` : ''}
+                  ${client.external_id ? `<span style="background:${_c.badgeBg};border:1px solid ${_c.badgeBorder};padding:3px 10px;border-radius:6px;font-size:10px;font-family:monospace;letter-spacing:1px;color:${_c.badgeText};">${client.external_id}</span>` : ''}
                   ${hasGps
                     ? '<span style="background:rgba(16,166,109,0.1);border:1px solid rgba(16,166,109,0.2);padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600;color:#2abd86;display:inline-flex;align-items:center;gap:5px;"><svg width="7" height="7" viewBox="0 0 10 10" style="animation:gpsPulse 2s ease-in-out infinite"><circle cx="5" cy="5" r="4" fill="#10a66d"/></svg>GPS activo</span>'
                     : '<span style="background:rgba(196,140,10,0.1);border:1px solid rgba(196,140,10,0.2);padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600;color:#c48c0a;">Sin GPS</span>'
                   }
-                  ${distInfo ? `<span style="background:#0d1624;border:1px solid #1a2535;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600;color:${distInfo.color};">${distInfo.distText}</span>` : ''}
-                  <span style="background:transparent;border:1px solid #1a2535;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:400;color:#3d5570;">${vendor}</span>
+                  ${distInfo ? `<span style="background:${_c.badgeBg};border:1px solid ${_c.badgeBorder};padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600;color:${distInfo.color};">${distInfo.distText}</span>` : ''}
+                  <span style="background:transparent;border:1px solid ${_c.badgeBorder};padding:3px 9px;border-radius:6px;font-size:10px;font-weight:400;color:${_c.textMuted};">${vendor}</span>
                 </div>
               </div>
               <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:20px;">
                 ${isAdmin ? `
                 <div style="position:relative;">
                   <button id="terreno-menu-btn" onclick="document.getElementById('terreno-admin-menu').style.display=document.getElementById('terreno-admin-menu').style.display==='block'?'none':'block';event.stopPropagation();"
-                    style="background:#0e1a2c;border:1px solid #1e2d42;color:#4a6280;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all 0.12s;"
-                    onmouseover="this.style.background='#131c27';this.style.color='#8fa3bf';this.style.borderColor='#2a3f58'" onmouseout="this.style.background='#0d1624';this.style.color='#4a6280';this.style.borderColor='#1a2840'">⋮</button>
-                  <div id="terreno-admin-menu" style="display:none;position:absolute;top:42px;right:0;background:#101828;border:1px solid #243048;border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,0.8);min-width:170px;z-index:10;overflow:hidden;">
+                    style="background:${_c.btnMenuBg};border:1px solid ${_c.btnMenuBorder};color:${_c.btnMenuColor};width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all 0.12s;"
+                    onmouseover="this.style.background='${_isDark ? '#131c27' : '#e2e8f0'}';this.style.color='${_c.label}';this.style.borderColor='${_isDark ? '#2a3f58' : '#cbd5e1'}'" onmouseout="this.style.background='${_c.btnMenuBg}';this.style.color='${_c.btnMenuColor}';this.style.borderColor='${_c.btnMenuBorder}'">⋮</button>
+                  <div id="terreno-admin-menu" style="display:none;position:absolute;top:42px;right:0;background:${_c.menuBg};border:1px solid ${_c.menuBorder};border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,${_isDark ? '0.8' : '0.15'});min-width:170px;z-index:10;overflow:hidden;">
                     <button onclick="document.getElementById('terreno-detail-modal').remove();openEditClientFullModal('${client.id}')"
-                      style="width:100%;padding:11px 14px;border:none;background:none;text-align:left;cursor:pointer;font-size:12px;font-weight:600;color:#b8c8e0;display:flex;align-items:center;gap:8px;transition:background 0.1s;"
-                      onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='none'">
+                      style="width:100%;padding:11px 14px;border:none;background:none;text-align:left;cursor:pointer;font-size:12px;font-weight:600;color:${_c.menuText};display:flex;align-items:center;gap:8px;transition:background 0.1s;"
+                      onmouseover="this.style.background='${_isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)'}'" onmouseout="this.style.background='none'">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7ab8ff" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       Editar cliente
                     </button>
-                    <div style="height:1px;background:#1a2535;margin:0;"></div>
+                    <div style="height:1px;background:${_c.divider};margin:0;"></div>
                     <button onclick="_terrenoDeleteClient('${client.id}', '${name.replace(/'/g, "\\'")}')"
                       style="width:100%;padding:11px 14px;border:none;background:none;text-align:left;cursor:pointer;font-size:12px;font-weight:600;color:#f87171;display:flex;align-items:center;gap:8px;transition:background 0.1s;"
                       onmouseover="this.style.background='rgba(239,68,68,0.08)'" onmouseout="this.style.background='none'">
@@ -17214,8 +17484,8 @@
                   </div>
                 </div>` : ''}
                 <button onclick="document.getElementById('terreno-detail-modal').remove()"
-                  style="background:#0e1a2c;border:1px solid #1e2d42;color:#4a6280;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;transition:all 0.12s;"
-                  onmouseover="this.style.background='rgba(194,59,59,0.15)';this.style.color='#f07070';this.style.borderColor='rgba(194,59,59,0.3)'" onmouseout="this.style.background='#0d1624';this.style.color='#4a6280';this.style.borderColor='#1a2840'">&times;</button>
+                  style="background:${_c.btnMenuBg};border:1px solid ${_c.btnMenuBorder};color:${_c.btnMenuColor};width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;transition:all 0.12s;"
+                  onmouseover="this.style.background='rgba(194,59,59,0.15)';this.style.color='#f07070';this.style.borderColor='rgba(194,59,59,0.3)'" onmouseout="this.style.background='${_c.btnMenuBg}';this.style.color='${_c.btnMenuColor}';this.style.borderColor='${_c.btnMenuBorder}'">&times;</button>
               </div>
             </div>
           </div>
@@ -17224,10 +17494,10 @@
           <div id="terreno-modal-grid" style="display:grid;grid-template-columns:1fr 1fr;flex:1;min-height:0;overflow:hidden;">
 
             <!-- COLUMNA IZQUIERDA: Mapa + Info + Acciones -->
-            <div style="display:flex;flex-direction:column;height:100%;border-right:1px solid #243048;overflow-y:auto;background:#1b2538;">
+            <div style="display:flex;flex-direction:column;height:100%;border-right:1px solid ${_c.headerBorder};overflow-y:auto;background:${_c.leftBg};">
 
               <!-- MAPA -->
-              <div style="position:relative;flex:1;min-height:340px;background:#101828;">
+              <div style="position:relative;flex:1;min-height:340px;background:${_c.headerBg};">
                 <div id="terreno-detail-map" style="height:100%;width:100%;min-height:340px;"></div>
                 <div style="position:absolute;bottom:8px;left:8px;display:flex;gap:5px;pointer-events:none;">
                   ${hasGps ? `<div style="background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);border-radius:7px;padding:4px 10px;font-size:10px;font-weight:700;color:#7c3aed;display:flex;align-items:center;gap:4px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"><span style="width:8px;height:8px;background:#7c3aed;border-radius:50%;border:2px solid white;display:inline-block;"></span>Cliente</div>` : ''}
@@ -17237,35 +17507,35 @@
                   <span id="terreno-detail-gps-status" style="color:#f59e0b;display:flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> GPS...</span>
                 </div>
                 <div id="terreno-drag-hint" style="position:absolute;top:8px;left:8px;background:rgba(37,99,235,0.9);backdrop-filter:blur(8px);border-radius:7px;padding:5px 10px;font-size:10px;font-weight:700;color:white;box-shadow:0 2px 8px rgba(0,0,0,0.2);transition:opacity 1s;pointer-events:none;display:flex;align-items:center;gap:5px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M12 12v.01"/></svg> Arrastra el pin azul para ajustar</div>
-                ${!hasGps && !_terrenoGpsPos ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:rgba(8,11,18,0.92);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3d4a5c" stroke-width="1.5" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><div style="font-size:12px;color:#94a3b8;font-weight:600;">Sin coordenadas registradas</div></div>` : ''}
+                ${!hasGps && !_terrenoGpsPos ? `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:${_isDark ? 'rgba(8,11,18,0.92)' : 'rgba(241,245,249,0.92)'};"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="${_isDark ? '#3d4a5c' : 'rgba(0,0,0,0.2)'}" stroke-width="1.5" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><div style="font-size:12px;color:${_c.textMuted};font-weight:600;">Sin coordenadas registradas</div></div>` : ''}
               </div>
 
               <!-- STRIP DISTANCIA -->
-              <div id="terreno-dist-banner" style="padding:11px 16px;background:#101828;border-top:1px solid #243048;display:flex;align-items:center;gap:10px;flex-shrink:0;">
+              <div id="terreno-dist-banner" style="padding:11px 16px;background:${_c.headerBg};border-top:1px solid ${_c.headerBorder};display:flex;align-items:center;gap:10px;flex-shrink:0;">
                 <div style="width:32px;height:32px;border-radius:9px;background:${distInfo ? (distInfo.dist < 100 ? 'rgba(16,166,109,0.15)' : distInfo.dist < 500 ? 'rgba(196,140,10,0.15)' : 'rgba(194,59,59,0.15)') : 'rgba(45,107,196,0.15)'};border:1px solid ${distInfo ? (distInfo.dist < 100 ? 'rgba(16,166,109,0.3)' : distInfo.dist < 500 ? 'rgba(196,140,10,0.3)' : 'rgba(194,59,59,0.3)') : 'rgba(45,107,196,0.3)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${distInfo ? distInfo.color : '#2d6bc4'}" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
                 <div>
                   <div style="font-size:13px;font-weight:800;color:${distInfo ? distInfo.color : '#60a5fa'};">${distInfo ? distInfo.label : 'Esperando ubicación...'}</div>
-                  <div style="font-size:10px;color:#2d4560;margin-top:1px;">Arrastra el pin azul si el GPS no es exacto</div>
+                  <div style="font-size:10px;color:${_c.textDisabled};margin-top:1px;">Arrastra el pin azul si el GPS no es exacto</div>
                 </div>
               </div>
 
               <!-- INFO CLIENTE -->
-              <div style="padding:14px 16px;flex:0 0 auto;background:#1b2538;border-top:1px solid #243048;">
+              <div style="padding:14px 16px;flex:0 0 auto;background:${_c.leftBg};border-top:1px solid ${_c.headerBorder};">
                 <div style="margin-bottom:10px;">
-                  <div style="font-size:9px;color:#3d5570;text-transform:uppercase;font-weight:700;letter-spacing:0.7px;margin-bottom:5px;">Dirección registrada</div>
-                  <div style="font-size:12px;font-weight:600;color:#c8d4eb;line-height:1.4;">${client.address || '—'}</div>
+                  <div style="font-size:9px;color:${_c.textMuted};text-transform:uppercase;font-weight:700;letter-spacing:0.7px;margin-bottom:5px;">Dirección registrada</div>
+                  <div style="font-size:12px;font-weight:600;color:${_c.textSecondary};line-height:1.4;">${client.address || '—'}</div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-                  <div style="padding:10px 12px;background:#101c2e;border-radius:10px;border:1px solid #1e2d42;">
-                    <div style="font-size:9px;color:#a78bfa;text-transform:uppercase;font-weight:700;letter-spacing:0.6px;margin-bottom:4px;">Comuna</div>
-                    <div style="font-size:13px;font-weight:700;color:#dde5f5;">${client.commune || '—'}</div>
-                    ${client.zone ? `<div style="font-size:10px;color:#6b7a96;margin-top:2px;">${client.zone}</div>` : ''}
+                  <div style="padding:10px 12px;background:${_c.cardBg};border-radius:10px;border:1px solid ${_c.cardBorder};">
+                    <div style="font-size:9px;color:${_isDark ? '#5b8fc9' : '#3b82f6'};text-transform:uppercase;font-weight:700;letter-spacing:0.6px;margin-bottom:4px;">Comuna</div>
+                    <div style="font-size:13px;font-weight:700;color:${_c.textSecondary};">${client.commune || '—'}</div>
+                    ${client.zone ? `<div style="font-size:10px;color:${_c.textMuted};margin-top:2px;">${client.zone}</div>` : ''}
                   </div>
-                  <div style="padding:10px 12px;background:#101c2e;border-radius:10px;border:1px solid #1e2d42;">
-                    <div style="font-size:9px;color:#60a5fa;text-transform:uppercase;font-weight:700;letter-spacing:0.6px;margin-bottom:4px;">Vendedor</div>
-                    <div style="font-size:13px;font-weight:700;color:#dde5f5;">${vendor}</div>
+                  <div style="padding:10px 12px;background:${_c.cardBg};border-radius:10px;border:1px solid ${_c.cardBorder};">
+                    <div style="font-size:9px;color:${_isDark ? '#60a5fa' : '#2563eb'};text-transform:uppercase;font-weight:700;letter-spacing:0.6px;margin-bottom:4px;">Vendedor</div>
+                    <div style="font-size:13px;font-weight:700;color:${_c.textSecondary};">${vendor}</div>
                   </div>
                 </div>
 
@@ -17278,7 +17548,7 @@
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
                     Guardar ubicación del pin
                   </button>
-                  <div style="font-size:9px;color:#2d4560;text-align:center;">Arrastra el pin azul en el mapa al lugar exacto, luego guarda</div>
+                  <div style="font-size:9px;color:${_c.textDisabled};text-align:center;">Arrastra el pin azul en el mapa al lugar exacto, luego guarda</div>
                   ${hasGps ? `
                   <button onclick="terrenoConfirmOk('${client.id}')"
                     style="width:100%;padding:11px;border:1px solid #1a3d2b;background:rgba(16,166,109,0.08);color:#34d399;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:7px;transition:background 0.12s ease,border-color 0.12s ease;"
@@ -17291,7 +17561,7 @@
             </div>
 
             <!-- COLUMNA DERECHA: Datos Comerciales -->
-            <div id="terreno-modal-right" style="padding:20px;background:#172032;display:flex;flex-direction:column;gap:14px;overflow-y:auto;">
+            <div id="terreno-modal-right" style="padding:20px;background:${_c.rightBg};display:flex;flex-direction:column;gap:14px;overflow-y:auto;">
               ${(() => {
                 const comercial = _getTerrenoComercialData(client.external_id);
                 const fmt  = n => n >= 1000000 ? '$' + (n/1000000).toFixed(1) + 'M' : n >= 1000 ? '$' + (n/1000).toFixed(0) + 'K' : n > 0 ? '$' + Math.round(n) : '—';
@@ -17304,7 +17574,7 @@
                   mesesActivos = comercial.ventas.filter(m => m.value > 0).length;
                 }
 
-                let ventasHtml = '<div style="flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:32px;"><div><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><div style="font-size:12px;color:rgba(255,255,255,0.3);font-weight:600;line-height:1.5;">Datos comerciales no disponibles.<br><span style="font-weight:400;font-size:11px;color:rgba(255,255,255,0.2);">Carga primero Datos Comerciales.</span></div></div></div>';
+                let ventasHtml = `<div style="flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:32px;"><div><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="${_isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><div style="font-size:12px;color:${_c.textMuted};font-weight:600;line-height:1.5;">Datos comerciales no disponibles.<br><span style="font-weight:400;font-size:11px;color:${_c.textDisabled};">Carga primero Datos Comerciales.</span></div></div></div>`;
 
                 if (comercial.ventas && comercial.ventas.length > 0) {
                   const withVal = comercial.ventas.filter(m => m.value > 0);
@@ -17338,9 +17608,9 @@
                       numColor = '#f87171'; lblColor = '#f87171'; dotColor = '#ef4444';
                     } else if (hasVal) {
                       barBg = '#3b82f6';
-                      numColor = '#93c5fd'; lblColor = '#7ab8ff'; dotColor = null;
+                      numColor = _isDark ? '#93c5fd' : '#1d4ed8'; lblColor = _isDark ? '#7ab8ff' : '#2563eb'; dotColor = null;
                     } else {
-                      barBg = 'transparent'; numColor = 'transparent'; lblColor = 'rgba(255,255,255,0.2)'; dotColor = null;
+                      barBg = 'transparent'; numColor = 'transparent'; lblColor = _c.textDisabled; dotColor = null;
                     }
 
                     const noSaleBarH = isNoSale ? 16 : 0; // barra roja fija visible
@@ -17374,15 +17644,15 @@
                     : `<span style="font-size:9px;color:#34d399;background:rgba(16,185,129,0.12);padding:2px 7px;border-radius:5px;font-weight:700;border:1px solid rgba(16,185,129,0.25);">Sin ausencias</span>`;
 
                   const avg4Html = avg4 ? `
-                    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0e1826;border-radius:10px;border:1px solid #1e2d42;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:${_c.cardBg};border-radius:10px;border:1px solid ${_c.cardBorder};">
                       <div style="display:flex;align-items:center;gap:8px;">
                         <div style="width:16px;border-top:2px dashed #818cf8;flex-shrink:0;"></div>
                         <div>
-                          <div style="font-size:11px;color:#a5b4fc;font-weight:700;">Promedio últimos ${last4.length} meses</div>
-                          <div style="font-size:9px;color:rgba(165,180,252,0.6);margin-top:1px;">${last4.map(m=>m.label).join(' · ')}</div>
+                          <div style="font-size:11px;color:${_isDark ? '#a5b4fc' : '#6366f1'};font-weight:700;">Promedio últimos ${last4.length} meses</div>
+                          <div style="font-size:9px;color:${_isDark ? 'rgba(165,180,252,0.6)' : 'rgba(99,102,241,0.6)'};margin-top:1px;">${last4.map(m=>m.label).join(' · ')}</div>
                         </div>
                       </div>
-                      <div style="font-size:17px;font-weight:800;color:#c4b5fd;">${fmt(avg4)}</div>
+                      <div style="font-size:17px;font-weight:800;color:${_isDark ? '#c4b5fd' : '#4f46e5'};">${fmt(avg4)}</div>
                     </div>` : '';
 
                   // Tarjeta "Este mes"
@@ -17409,10 +17679,10 @@
                     const idx = mNames.indexOf(m.label);
                     const isCur = mNames[_curMonth] === m.label;
                     const isPastNoSale = idx >= 0 && idx < _curMonth && !m.value;
-                    const bg = isCur ? 'rgba(37,99,235,0.12)' : isPastNoSale ? 'rgba(239,68,68,0.08)' : 'transparent';
-                    const color = isCur ? '#93c5fd' : isPastNoSale ? '#f87171' : (m.value>0 ? 'rgba(220,230,245,0.85)' : 'rgba(255,255,255,0.18)');
+                    const bg = isCur ? (_isDark ? 'rgba(37,99,235,0.12)' : 'rgba(37,99,235,0.08)') : isPastNoSale ? 'rgba(239,68,68,0.08)' : 'transparent';
+                    const color = isCur ? (_isDark ? '#93c5fd' : '#2563eb') : isPastNoSale ? '#f87171' : (m.value>0 ? _c.textSecondary : _c.textDisabled);
                     return `<tr style="background:${bg};">
-                      <td style="padding:5px 10px;font-size:10px;font-weight:700;color:${isCur?'#60a5fa':isPastNoSale?'#f87171':'rgba(255,255,255,0.35)'};width:36px;">${m.label}</td>
+                      <td style="padding:5px 10px;font-size:10px;font-weight:700;color:${isCur ? (_isDark ? '#60a5fa' : '#2563eb') : isPastNoSale ? '#f87171' : _c.textDisabled};width:36px;">${m.label}</td>
                       <td style="padding:5px 10px;font-size:11px;font-weight:${m.value>0?'700':'400'};color:${color};text-align:right;">${m.value>0 ? fmtFull(m.value) : (isPastNoSale ? '✕ Sin compra' : '—')}</td>
                     </tr>`;
                   }).join('');
@@ -17421,21 +17691,21 @@
                     <div>
                       <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                          <span style="font-size:12px;font-weight:700;color:#8fa3bf;display:flex;align-items:center;gap:5px;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5b8fc9" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                          <span style="font-size:12px;font-weight:700;color:${_c.label};display:flex;align-items:center;gap:5px;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${_isDark ? '#5b8fc9' : '#3b82f6'}" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                             Ventas por mes
                           </span>
                           ${noSaleBadge}
                         </div>
-                        <span onclick="navigateToGsheets();document.getElementById('terreno-detail-modal')?.remove();" style="font-size:10px;color:#5b8fc9;cursor:pointer;font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Ver completo →</span>
+                        <span onclick="navigateToGsheets();document.getElementById('terreno-detail-modal')?.remove();" style="font-size:10px;color:${_isDark ? '#5b8fc9' : '#3b82f6'};cursor:pointer;font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Ver completo →</span>
                       </div>
-                      <div style="background:#0e1826;border-radius:12px;padding:14px 10px 10px;border:1px solid #1e2d42;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03),0 2px 8px rgba(0,0,0,0.4);">
+                      <div style="background:${_c.cardBg};border-radius:12px;padding:14px 10px 10px;border:1px solid ${_c.cardBorder};box-shadow:${_isDark ? 'inset 0 1px 0 rgba(255,255,255,0.03),0 2px 8px rgba(0,0,0,0.4)' : '0 1px 4px rgba(0,0,0,0.06)'};">
                         <div style="display:flex;gap:2px;align-items:flex-end;">${bars}</div>
-                        <div style="display:flex;gap:10px;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid #1a2535;flex-wrap:wrap;">
-                          <span style="font-size:9px;color:#3d5570;display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;border-radius:2px;background:#3b82f6;display:inline-block;"></span>Con venta</span>
-                          <span style="font-size:9px;color:#3d5570;display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;border-radius:2px;background:#f97316;display:inline-block;"></span>Mes actual</span>
-                          <span style="font-size:9px;color:#3d5570;display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;border-radius:2px;background:#ef4444;display:inline-block;"></span>Sin compra</span>
-                          ${avg4 ? `<span style="font-size:9px;color:#3d5570;display:flex;align-items:center;gap:3px;"><span style="width:12px;border-top:1.5px dashed #818cf8;display:inline-block;"></span>Promedio</span>` : ''}
+                        <div style="display:flex;gap:10px;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid ${_c.divider};flex-wrap:wrap;">
+                          <span style="font-size:9px;color:${_c.textMuted};display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;border-radius:2px;background:#3b82f6;display:inline-block;"></span>Con venta</span>
+                          <span style="font-size:9px;color:${_c.textMuted};display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;border-radius:2px;background:#f97316;display:inline-block;"></span>Mes actual</span>
+                          <span style="font-size:9px;color:${_c.textMuted};display:flex;align-items:center;gap:3px;"><span style="width:9px;height:9px;border-radius:2px;background:#ef4444;display:inline-block;"></span>Sin compra</span>
+                          ${avg4 ? `<span style="font-size:9px;color:${_c.textMuted};display:flex;align-items:center;gap:3px;"><span style="width:12px;border-top:1.5px dashed #818cf8;display:inline-block;"></span>Promedio</span>` : ''}
                         </div>
                       </div>
                     </div>
@@ -17445,28 +17715,28 @@
 
                     <!-- KPIs fila -->
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-                      <div style="padding:11px 12px;background:#0e1826;border-radius:10px;border:1px solid #1e2d42;text-align:center;">
-                        <div style="font-size:8px;color:#3d5570;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">Total año</div>
-                        <div style="font-size:14px;font-weight:800;color:#93c5fd;">${fmt(totalAnual)}</div>
-                        <div style="font-size:9px;color:#2d4560;margin-top:2px;">${fmtFull(totalAnual)}</div>
+                      <div style="padding:11px 12px;background:${_c.cardBg};border-radius:10px;border:1px solid ${_c.cardBorder};text-align:center;">
+                        <div style="font-size:8px;color:${_c.textMuted};text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">Total año</div>
+                        <div style="font-size:14px;font-weight:800;color:${_isDark ? '#93c5fd' : '#2563eb'};">${fmt(totalAnual)}</div>
+                        <div style="font-size:9px;color:${_c.textDisabled};margin-top:2px;">${fmtFull(totalAnual)}</div>
                       </div>
-                      <div style="padding:11px 12px;background:#0e1826;border-radius:10px;border:1px solid #1e2d42;text-align:center;">
-                        <div style="font-size:8px;color:#3d5570;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">Meses activos</div>
-                        <div style="font-size:14px;font-weight:800;color:#93c5fd;">${mesesActivos}<span style="font-size:10px;color:#2d4560;font-weight:400;">/12</span></div>
-                        <div style="font-size:9px;color:#2d4560;margin-top:2px;">${Math.round(mesesActivos/12*100)}% del año</div>
+                      <div style="padding:11px 12px;background:${_c.cardBg};border-radius:10px;border:1px solid ${_c.cardBorder};text-align:center;">
+                        <div style="font-size:8px;color:${_c.textMuted};text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">Meses activos</div>
+                        <div style="font-size:14px;font-weight:800;color:${_isDark ? '#93c5fd' : '#2563eb'};">${mesesActivos}<span style="font-size:10px;color:${_c.textDisabled};font-weight:400;">/12</span></div>
+                        <div style="font-size:9px;color:${_c.textDisabled};margin-top:2px;">${Math.round(mesesActivos/12*100)}% del año</div>
                       </div>
-                      <div style="padding:11px 12px;background:#0e1826;border-radius:10px;border:1px solid #1e2d42;text-align:center;">
-                        <div style="font-size:8px;color:#3d5570;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">Prom. mensual</div>
-                        <div style="font-size:14px;font-weight:800;color:#93c5fd;">${fmt(mesesActivos>0?totalAnual/mesesActivos:0)}</div>
-                        <div style="font-size:9px;color:#2d4560;margin-top:2px;">${fmtFull(mesesActivos>0?Math.round(totalAnual/mesesActivos):0)}</div>
+                      <div style="padding:11px 12px;background:${_c.cardBg};border-radius:10px;border:1px solid ${_c.cardBorder};text-align:center;">
+                        <div style="font-size:8px;color:${_c.textMuted};text-transform:uppercase;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">Prom. mensual</div>
+                        <div style="font-size:14px;font-weight:800;color:${_isDark ? '#93c5fd' : '#2563eb'};">${fmt(mesesActivos>0?totalAnual/mesesActivos:0)}</div>
+                        <div style="font-size:9px;color:${_c.textDisabled};margin-top:2px;">${fmtFull(mesesActivos>0?Math.round(totalAnual/mesesActivos):0)}</div>
                       </div>
                     </div>
 
                     <!-- Tabla números completos -->
-                    <div style="background:#0e1826;border-radius:12px;border:1px solid #1e2d42;overflow:hidden;">
-                      <div style="padding:10px 12px 8px;border-bottom:1px solid #1e2d42;font-size:10px;font-weight:700;color:#4a6280;display:flex;justify-content:space-between;">
+                    <div style="background:${_c.cardBg};border-radius:12px;border:1px solid ${_c.cardBorder};overflow:hidden;">
+                      <div style="padding:10px 12px 8px;border-bottom:1px solid ${_c.cardBorder};font-size:10px;font-weight:700;color:${_c.label};display:flex;justify-content:space-between;">
                         <span>Detalle mensual completo</span>
-                        <span style="color:#2d4560;font-weight:400;">Total: ${fmtFull(totalAnual)}</span>
+                        <span style="color:${_c.textDisabled};font-weight:400;">Total: ${fmtFull(totalAnual)}</span>
                       </div>
                       <table style="width:100%;border-collapse:collapse;">
                         <tbody>${tablaRows}</tbody>
@@ -17483,51 +17753,51 @@
                   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
 
                     <!-- VENTA TOTAL AÑO -->
-                    <div style="background:#0e1826;border-radius:12px;padding:16px 14px 14px;border:1px solid #1e2d42;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03),0 2px 8px rgba(0,0,0,0.4);position:relative;overflow:hidden;">
+                    <div style="background:${_c.cardBg};border-radius:12px;padding:16px 14px 14px;border:1px solid ${_c.cardBorder};box-shadow:${_isDark ? 'inset 0 1px 0 rgba(255,255,255,0.03),0 2px 8px rgba(0,0,0,0.4)' : '0 1px 4px rgba(0,0,0,0.06)'};position:relative;overflow:hidden;">
                       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:#2d6bc4;"></div>
-                      <div style="font-size:8.5px;color:#3d5570;text-transform:uppercase;font-weight:700;letter-spacing:0.8px;margin-bottom:8px;display:flex;align-items:center;gap:4px;">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                      <div style="font-size:8.5px;color:${_c.textMuted};text-transform:uppercase;font-weight:700;letter-spacing:0.8px;margin-bottom:8px;display:flex;align-items:center;gap:4px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${_isDark ? '#60a5fa' : '#3b82f6'}" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                         Venta año
                       </div>
-                      <div style="font-size:22px;font-weight:800;color:#dde5f7;line-height:1;letter-spacing:-0.5px;">${fmt(totalAnual)}</div>
-                      <div style="font-size:9px;color:#2d4560;margin-top:3px;">${fmtFull(totalAnual)}</div>
-                      <div style="margin-top:8px;padding-top:7px;border-top:1px solid #1a2535;font-size:9px;color:#3d5570;">${mesesActivos}/12 meses activos</div>
+                      <div style="font-size:22px;font-weight:800;color:${_isDark ? '#dde5f7' : '#0f172a'};line-height:1;letter-spacing:-0.5px;">${fmt(totalAnual)}</div>
+                      <div style="font-size:9px;color:${_c.textDisabled};margin-top:3px;">${fmtFull(totalAnual)}</div>
+                      <div style="margin-top:8px;padding-top:7px;border-top:1px solid ${_c.divider};font-size:9px;color:${_c.textMuted};">${mesesActivos}/12 meses activos</div>
                     </div>
 
                     <!-- DEUDA / COBRANZA -->
-                    <div style="background:#0e1826;border-radius:12px;padding:16px 14px 14px;border:1px solid #1e2d42;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03),0 2px 8px rgba(0,0,0,0.4);position:relative;overflow:hidden;">
-                      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${cob ? (isVencido ? '#ef4444' : '#10b981') : 'rgba(255,255,255,0.12)'};border-radius:14px 14px 0 0;"></div>
-                      <div style="font-size:8.5px;color:#3d5570;text-transform:uppercase;font-weight:700;letter-spacing:0.8px;margin-bottom:8px;display:flex;align-items:center;gap:4px;">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${cob ? (isVencido ? '#f87171' : '#34d399') : '#3f4a62'}" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    <div style="background:${_c.cardBg};border-radius:12px;padding:16px 14px 14px;border:1px solid ${_c.cardBorder};box-shadow:${_isDark ? 'inset 0 1px 0 rgba(255,255,255,0.03),0 2px 8px rgba(0,0,0,0.4)' : '0 1px 4px rgba(0,0,0,0.06)'};position:relative;overflow:hidden;">
+                      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${cob ? (isVencido ? '#ef4444' : '#10b981') : _c.cardBorder};border-radius:14px 14px 0 0;"></div>
+                      <div style="font-size:8.5px;color:${_c.textMuted};text-transform:uppercase;font-weight:700;letter-spacing:0.8px;margin-bottom:8px;display:flex;align-items:center;gap:4px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${cob ? (isVencido ? '#f87171' : '#34d399') : _c.textMuted}" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                         Deuda
                       </div>
                       ${cob
                         ? `<div style="font-size:22px;font-weight:800;color:${isVencido?'#f87171':'#34d399'};line-height:1;letter-spacing:-0.5px;">${fmt(cob.total)}</div>
-                           <div style="font-size:9px;color:#2d4560;margin-top:3px;">${fmtFull(cob.total)}</div>
-                           <div style="margin-top:8px;padding-top:7px;border-top:1px solid #1a2535;font-size:9px;color:${isVencido?'#f87171':'#34d399'};">${cob.dias > 0 ? cob.dias + 'd vencido · ' + cob.count + ' doc.' : '✓ Al día · ' + cob.count + ' doc.'}</div>`
-                        : `<div style="font-size:22px;font-weight:800;color:#2a3048;line-height:1;letter-spacing:-0.5px;">—</div>
-                           <div style="font-size:9px;color:#2d4560;margin-top:3px;">Sin cobranzas</div>
-                           <div style="margin-top:8px;padding-top:7px;border-top:1px solid #1a2535;font-size:9px;color:#3a4258;">No registrado</div>`
+                           <div style="font-size:9px;color:${_c.textDisabled};margin-top:3px;">${fmtFull(cob.total)}</div>
+                           <div style="margin-top:8px;padding-top:7px;border-top:1px solid ${_c.divider};font-size:9px;color:${isVencido?'#f87171':'#34d399'};">${cob.dias > 0 ? cob.dias + 'd vencido · ' + cob.count + ' doc.' : '✓ Al día · ' + cob.count + ' doc.'}</div>`
+                        : `<div style="font-size:22px;font-weight:800;color:${_c.textDisabled};line-height:1;letter-spacing:-0.5px;">—</div>
+                           <div style="font-size:9px;color:${_c.textDisabled};margin-top:3px;">Sin cobranzas</div>
+                           <div style="margin-top:8px;padding-top:7px;border-top:1px solid ${_c.divider};font-size:9px;color:${_c.textMuted};">No registrado</div>`
                       }
                     </div>
 
                     <!-- LÍNEA DE CRÉDITO -->
-                    <div style="background:#0e1826;border-radius:12px;padding:16px 14px 14px;border:1px solid #1e2d42;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03),0 2px 8px rgba(0,0,0,0.4);position:relative;overflow:hidden;">
-                      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${cob && cob.linea ? '#7c3aed' : 'rgba(255,255,255,0.12)'};border-radius:14px 14px 0 0;"></div>
-                      <div style="font-size:8.5px;color:#3d5570;text-transform:uppercase;font-weight:700;letter-spacing:0.8px;margin-bottom:8px;display:flex;align-items:center;gap:4px;">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${cob && cob.linea ? '#a78bfa' : '#3f4a62'}" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <div style="background:${_c.cardBg};border-radius:12px;padding:16px 14px 14px;border:1px solid ${_c.cardBorder};box-shadow:${_isDark ? 'inset 0 1px 0 rgba(255,255,255,0.03),0 2px 8px rgba(0,0,0,0.4)' : '0 1px 4px rgba(0,0,0,0.06)'};position:relative;overflow:hidden;">
+                      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${cob && cob.linea ? '#7c3aed' : _c.cardBorder};border-radius:14px 14px 0 0;"></div>
+                      <div style="font-size:8.5px;color:${_c.textMuted};text-transform:uppercase;font-weight:700;letter-spacing:0.8px;margin-bottom:8px;display:flex;align-items:center;gap:4px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${cob && cob.linea ? '#a78bfa' : _c.textMuted}" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                         Línea crédito
                       </div>
                       ${cob && cob.linea
-                        ? `<div style="font-size:22px;font-weight:800;color:#c4b5fd;line-height:1;letter-spacing:-0.5px;">${fmt(cob.linea)}</div>
-                           <div style="font-size:9px;color:#2d4560;margin-top:3px;">${fmtFull(cob.linea)}</div>
-                           <div style="margin-top:8px;padding-top:7px;border-top:1px solid #1a2535;font-size:9px;color:#a78bfa;">${cob.total > 0 && cob.linea > 0 ? 'Usado: ' + Math.round(cob.total/cob.linea*100) + '% de la línea' : '—'}</div>`
-                        : `<div style="font-size:22px;font-weight:800;color:#2a3048;line-height:1;letter-spacing:-0.5px;">—</div>
-                           <div style="font-size:9px;color:#2d4560;margin-top:3px;">No registrada</div>
-                           <div style="margin-top:8px;padding-top:7px;border-top:1px solid #1a2535;">
+                        ? `<div style="font-size:22px;font-weight:800;color:${_isDark ? '#c4b5fd' : '#7c3aed'};line-height:1;letter-spacing:-0.5px;">${fmt(cob.linea)}</div>
+                           <div style="font-size:9px;color:${_c.textDisabled};margin-top:3px;">${fmtFull(cob.linea)}</div>
+                           <div style="margin-top:8px;padding-top:7px;border-top:1px solid ${_c.divider};font-size:9px;color:${_isDark ? '#a78bfa' : '#7c3aed'};">${cob.total > 0 && cob.linea > 0 ? 'Usado: ' + Math.round(cob.total/cob.linea*100) + '% de la línea' : '—'}</div>`
+                        : `<div style="font-size:22px;font-weight:800;color:${_c.textDisabled};line-height:1;letter-spacing:-0.5px;">—</div>
+                           <div style="font-size:9px;color:${_c.textDisabled};margin-top:3px;">No registrada</div>
+                           <div style="margin-top:8px;padding-top:7px;border-top:1px solid ${_c.divider};">
                              <button onclick="_terrenoEditLinea('${(client.external_id||'').replace(/'/g,"\\'")}','${client.id}')"
-                               style="font-size:9px;color:#9d7fe8;background:#1a1330;border:1px solid #2d1f52;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:700;width:100%;transition:background 0.12s;"
-                               onmouseover="this.style.background='#221840'" onmouseout="this.style.background='#1a1330'">+ Agregar línea</button>
+                               style="font-size:9px;color:${_isDark ? '#9d7fe8' : '#7c3aed'};background:${_isDark ? '#1a1330' : '#f5f3ff'};border:1px solid ${_isDark ? '#2d1f52' : '#ddd6fe'};padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:700;width:100%;transition:background 0.12s;"
+                               onmouseover="this.style.background='${_isDark ? '#221840' : '#ede9fe'}'" onmouseout="this.style.background='${_isDark ? '#1a1330' : '#f5f3ff'}'">+ Agregar línea</button>
                            </div>`
                       }
                     </div>
@@ -24719,15 +24989,15 @@
       }
     }
 
-    // Cache key for sessionStorage
+    // Cache key para localStorage (persiste entre sesiones, carga 1x por día)
     const GS_CACHE_KEY = 'leker_gsheets_cache';
     const GS_CACHE_TS_KEY = 'leker_gsheets_ts';
     let _gsScriptUrl = null; // Fetched from backend
 
     function _gsCacheGet() {
       try {
-        const raw = sessionStorage.getItem(GS_CACHE_KEY);
-        const ts = sessionStorage.getItem(GS_CACHE_TS_KEY);
+        const raw = localStorage.getItem(GS_CACHE_KEY);
+        const ts = localStorage.getItem(GS_CACHE_TS_KEY);
         if (raw && ts) return { data: JSON.parse(raw), ts: parseInt(ts) };
       } catch (e) { /* cache miss */ }
       return null;
@@ -24735,9 +25005,18 @@
 
     function _gsCacheSet(data) {
       try {
-        sessionStorage.setItem(GS_CACHE_KEY, JSON.stringify(data));
-        sessionStorage.setItem(GS_CACHE_TS_KEY, String(Date.now()));
+        localStorage.setItem(GS_CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(GS_CACHE_TS_KEY, String(Date.now()));
       } catch (e) { /* storage full — ignore */ }
+    }
+
+    // Retorna true si el timestamp ts pertenece al día de hoy
+    function _gsCacheIsToday(ts) {
+      const d = new Date(ts);
+      const now = new Date();
+      return d.getFullYear() === now.getFullYear() &&
+             d.getMonth()    === now.getMonth() &&
+             d.getDate()     === now.getDate();
     }
 
     /**
@@ -24780,12 +25059,13 @@
         // continue to try loading anyway
       }
 
-      // Try loading from sessionStorage cache first (instant)
+      // Intentar cargar desde localStorage (persiste entre sesiones)
+      // Solo se considera válido si fue cargado hoy
       const cached = _gsCacheGet();
-      const cacheAge = cached ? (Date.now() - cached.ts) / 1000 : Infinity;
-      if (cached && !forceRefresh && cacheAge < 86400) {
-        // Cache is < 24h old — use it instantly
-        _gsLoadProgress(50, 'Cargando desde caché...', 'Datos recientes disponibles');
+      if (cached && !forceRefresh && _gsCacheIsToday(cached.ts)) {
+        const cacheAge = Math.round((Date.now() - cached.ts) / 60000);
+        const cacheTime = new Date(cached.ts).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+        _gsLoadProgress(50, 'Cargando desde caché...', `Datos de hoy (${cacheTime})`);
         gsheetsData = cached.data;
         gsheetsLoaded = true;
 
@@ -24794,26 +25074,20 @@
         if (errorDiv) errorDiv.style.display = 'none';
 
         renderAllGsheetsData(gsheetsData);
-        _gsLoadProgress(100, 'Listo', `Desde caché (${Math.round(cacheAge / 60)} min)`);
+        _gsLoadProgress(100, 'Listo', `Cargado hoy a las ${cacheTime}`);
 
         if (initialLoad) {
           updateDashLoadingProgress(95, 'Renderizando dashboard...');
           renderDashboardSummary();
           updateDashLoadingProgress(100, 'Dashboard listo');
         }
+        // Mostrar hora de carga del caché en el label del topbar
+        const lbl = document.getElementById('lbl-last-sync-gs');
+        if (lbl) { lbl.textContent = cacheTime; lbl.style.display = 'inline'; }
         _createIcons();
 
         // Auto-generate geo links in background (silent)
         setTimeout(() => batchGenerateGeoLinks(false), 2000);
-
-        // Background refresh if cache > 3 min
-        if (cacheAge > 180) {
-          _gsFetchViaBackend().then(data => {
-            gsheetsData = data;
-            _gsCacheSet(data);
-            renderAllGsheetsData(gsheetsData);
-          }).catch(() => { /* silent fail for background refresh */ });
-        }
         return;
       }
 
@@ -24891,19 +25165,21 @@
 
         // If fetch failed but we have stale cache, use it
         if (cached) {
+          const staleDate = new Date(cached.ts).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' });
+          const staleTime = new Date(cached.ts).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
           _gsLoadProgress(80, 'Usando caché anterior...', 'No se pudo descargar nueva data');
           gsheetsData = cached.data;
           gsheetsLoaded = true;
           if (loading) loading.style.display = 'none';
           if (content) content.style.display = 'block';
           renderAllGsheetsData(gsheetsData);
-          _gsLoadProgress(100, 'Listo (caché)', `Última actualización: ${new Date(cached.ts).toLocaleTimeString('es-CL')}`);
+          _gsLoadProgress(100, 'Listo (caché)', `Datos del ${staleDate} a las ${staleTime}`);
           if (initialLoad) {
             updateDashLoadingProgress(95, 'Renderizando dashboard...');
             renderDashboardSummary();
             updateDashLoadingProgress(100, 'Dashboard listo');
           }
-          showToast('warning', 'Sin conexión', 'Usando datos en caché. Los cambios recientes pueden no aparecer.');
+          showToast('warning', 'Sin conexión a Excel', `Usando datos del ${staleDate}. Usa el botón de sincronización para actualizar.`);
         } else {
           _gsLoadProgress(100, 'Error al cargar', error.message);
           if (loading) loading.style.display = 'none';
