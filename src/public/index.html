@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
   <title>LEKER - Sistema de Gestión Logística</title>
   <!-- Favicon: color en light mode, blanco en dark mode -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" media="(prefers-color-scheme: light)">
@@ -708,6 +708,11 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
     }
 
     body {
@@ -4918,8 +4923,8 @@
         left: 0 !important;
         width: 100% !important;
       }
-      /* Overlay para cerrar sidebar al tocar afuera */
-      .sidebar-overlay {
+      /* Overlay para cerrar sidebar al tocar afuera — solo cuando está abierto */
+      .sidebar-overlay.active {
         display: block;
       }
     }
@@ -5530,7 +5535,7 @@
       <div class="topbar-actions">
         <!-- Botón novedades GSheets -->
         <!-- Sync GSheets manual -->
-        <button id="btn-sync-gsheets-now" onclick="forceSyncFromSheets()" title="Forzar recarga de Excel (se carga automáticamente 1 vez por día)" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--text-secondary);display:flex;align-items:center;gap:5px;transition:background 0.15s;font-size:11px;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
+        <button id="btn-sync-gsheets-now" onclick="forceSyncFromSheets()" title="Forzar recarga de Excel (se actualiza automáticamente los lunes a las 8:00 y 20:00)" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--text-secondary);display:flex;align-items:center;gap:5px;transition:background 0.15s;font-size:11px;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='none'">
           <i data-lucide="refresh-cw" style="width:16px;height:16px;" id="icon-sync-gs"></i>
           <span id="lbl-last-sync-gs" style="display:none;color:var(--text-muted);">—</span>
         </button>
@@ -7351,9 +7356,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Stats -->
-        <div id="terreno-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px;"></div>
 
         <!-- Filtros compactos -->
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
@@ -11339,6 +11341,11 @@
 
         // Índices O(1) sobre allClients — reconstruir con _rebuildClientIndexes()
         _rebuildClientIndexes();
+
+        // Si el panel terreno ya está activo, refrescar con datos reales
+        if (document.getElementById('panel-terreno')?.classList.contains('active')) {
+          initTerrenoPanel();
+        }
 
         // Show LEKER AI FAB now that user is authenticated and data is loaded
         _showLekerAIFab();
@@ -16837,9 +16844,9 @@
           zoneSel.appendChild(opt);
         });
       }
-      _renderTerrenoStats();
       _startTerrenoGps();
       _renderTerrenoHistory();
+      filterTerrenoClients();
       _createIcons();
     }
 
@@ -18133,6 +18140,7 @@
           streetViewControl: false,
           fullscreenControl: true,
           zoomControl: true,
+          gestureHandling: 'cooperative',
           mapTypeId: 'roadmap',
           styles: [
             { featureType: 'poi', stylers: [{ visibility: 'off' }] },
@@ -18380,6 +18388,7 @@
           streetViewControl: false,
           fullscreenControl: false,
           zoomControl: true,
+          gestureHandling: 'cooperative',
           styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }]
         });
 
@@ -25437,13 +25446,28 @@
       } catch (e) { /* storage full — ignore */ }
     }
 
-    // Retorna true si el timestamp ts pertenece al día de hoy
-    function _gsCacheIsToday(ts) {
-      const d = new Date(ts);
+    // Retorna el timestamp del último slot de actualización del Excel
+    // Slots fijos: lunes 08:00 y lunes 20:00
+    function _gsLastUpdateSlot() {
       const now = new Date();
-      return d.getFullYear() === now.getFullYear() &&
-             d.getMonth()    === now.getMonth() &&
-             d.getDate()     === now.getDate();
+      const day = now.getDay(); // 0=Dom, 1=Lun
+      const daysToLastMonday = day === 0 ? 6 : day - 1;
+      const lastMonday = new Date(now);
+      lastMonday.setDate(now.getDate() - daysToLastMonday);
+      lastMonday.setHours(0, 0, 0, 0);
+      const slotAM = new Date(lastMonday); slotAM.setHours(8, 0, 0, 0);
+      const slotPM = new Date(lastMonday); slotPM.setHours(20, 0, 0, 0);
+      if (now >= slotPM) return slotPM;
+      if (now >= slotAM) return slotAM;
+      // Antes del AM del lunes actual → usar slot PM del lunes anterior
+      const prevMondayPM = new Date(slotPM);
+      prevMondayPM.setDate(slotPM.getDate() - 7);
+      return prevMondayPM;
+    }
+
+    // Retorna true si el caché fue cargado después del último slot de actualización
+    function _gsCacheIsCurrentPeriod(ts) {
+      return ts >= _gsLastUpdateSlot().getTime();
     }
 
     /**
@@ -25489,7 +25513,7 @@
       // Intentar cargar desde localStorage (persiste entre sesiones)
       // Solo se considera válido si fue cargado hoy
       const cached = _gsCacheGet();
-      if (cached && !forceRefresh && _gsCacheIsToday(cached.ts)) {
+      if (cached && !forceRefresh && _gsCacheIsCurrentPeriod(cached.ts)) {
         const cacheAge = Math.round((Date.now() - cached.ts) / 60000);
         const cacheTime = new Date(cached.ts).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
         _gsLoadProgress(50, 'Cargando desde caché...', `Datos de hoy (${cacheTime})`);
